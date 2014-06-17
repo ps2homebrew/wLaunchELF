@@ -1,5 +1,20 @@
 Unofficial LaunchELF by EP + dlanor
 
+LaunchELF v3.41m
+usb_mass new additions and changes:
+-Updated usb_mass driver to version 0.32 along with radad's change to fat_driver.c.
+-Added the ability of reading of day, month, and year from variable "mtime".
+-Added the ability of reading of hours, minutes, and seconds from variable "mtime".
+-Fixed a bug that caused a corrupt month timestamp with newly created files in fat_write.c
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Added "hdd" as a supported filesystem device so it shows up with "mc", "pfs", and "mass" in the root device listing.
+-Changed a few things to support HDD partition viewing by fixing a sub directory issue.
+-Made changes to only show the same partitions that unofficial LaunchELF shows.
+-Fixed issue where mc save folders, that are copy protected, showed up as files instead of folders.
+-Fixed protection attributes not showing up properly with mass.
+-Removed workaround for "mass" and timestamp issues since it's no longer needed do to changes to usb_mass driver.
+-Altered files: fat_driver.c=usb_mass changes, fat_write.c=usb_mass month fix, FileSystem.c=ftpd changes, draw.c=version_id
+
 LaunchELF v3.41l
 -Added a modified makefile for loader to the source package that was forgotten early on.
 -Added "Development related issues.txt" file to the source package.

@@ -42,6 +42,7 @@
 #include "mass_debug.h"
 // Added by Hermes 
 extern unsigned Size_Sector; // store size of sector from usb mass
+extern unsigned g_MaxLBA;
 
 #define MEMCPY(a,b,c) memcpy((a),(b),(c))
 
@@ -325,29 +326,49 @@ void fat_invalidateLastChainResult() {
 }
 
 
-void fat_getPartitionTable(fat_part* part) {
-	part_raw_record* part_raw;
-	int i;
-	int ret;
-	workPartition = 0;
+void fat_getPartitionTable ( fat_part* part ) {
 
-	ret = READ_SECTOR(0 , sbuf); //read sector 0 - Disk MBR
+ part_raw_record* part_raw;
+ int              i;
+ int              ret;
 
-	if (ret < 0) {
-		printf("FAT driver: Read sector 0 failed ! \n");
-		return;
-	}
+ workPartition = -1;
 
-	/* read 4 partition records */
-	for (i= 0; i < 4; i++) {
-		part_raw = (part_raw_record*) (sbuf + 0x01BE + (i* 16));
-		fat_getPartitionRecord(part_raw, &part->record[i]);
-		if (part->record[i].sid == 6 || part->record[i].sid == 4 || part->record[i].sid == 1 ||// fat 16, fat 12
-			part->record[i].sid == 0x0B || part->record[i].sid == 0x0C) { // fat 32 
-			workPartition = i;
-		}
-	}
-}
+ ret = READ_SECTOR( 0 , sbuf );  // read sector 0 - Disk MBR or boot sector
+
+ if ( ret < 0 ) {
+
+  printf ( "FAT driver: Read sector 0 failed!\n" );
+  return;
+
+ }  /* end if */
+
+/* read 4 partition records */
+ for ( i = 0; i < 4; ++i ) {
+
+  part_raw = ( part_raw_record* )(  sbuf + 0x01BE + ( i * 16 )  );
+
+  fat_getPartitionRecord ( part_raw, &part -> record[ i ] );
+
+  if ( part -> record[ i ].sid == 6    ||
+       part -> record[ i ].sid == 4    ||
+       part -> record[ i ].sid == 1    ||  // fat 16, fat 12
+       part -> record[ i ].sid == 0x0B ||
+       part -> record[ i ].sid == 0x0C     // fat 32 
+  ) workPartition = i;
+
+ }  /* end for */
+
+ if ( workPartition == -1 ) {  // no partition table detected
+                               // try to use "floppy" option
+  workPartition = 0;
+  part -> record[ 0 ].sid   =
+  part -> record[ 0 ].start = 0;
+  part -> record[ 0 ].count = g_MaxLBA;
+
+ }  /* end if */
+
+}  /* end fat_getPartitionTable */
 
 void fat_determineFatType(fat_bpb* bpb) {
 	int sector;
@@ -440,8 +461,8 @@ int fat_getDirentry(fat_direntry_sfn* dsfn, fat_direntry_lfn* dlfn, fat_direntry
 	int offset;
 	int cont;
 
-	//detect last entry - all zeros
-	if (dsfn->name[0] == 0 && dsfn->name[1] == 0) {
+	//detect last entry - all zeros (slight modification by radad)
+	if (dsfn->name[0] == 0) {
 		return 0;
 	}
 	//detect deleted entry - it will be ignored
@@ -1506,6 +1527,16 @@ int fs_dread  (iop_file_t *fd, void* data) {
  
 		strcpy(buffer->name, (const char*)(((D_PRIVATE*)fd->privdata)->fatdir).name);
  
+		//set Date: Day, Month, Year
+		buffer->stat.mtime[4] = (((D_PRIVATE*)fd->privdata)->fatdir).date[0];
+		buffer->stat.mtime[5] = (((D_PRIVATE*)fd->privdata)->fatdir).date[1];
+		buffer->stat.mtime[6] = (((D_PRIVATE*)fd->privdata)->fatdir).date[2];
+ 
+		//set Time: Hours, Minutes, Seconds
+		buffer->stat.mtime[3] = (((D_PRIVATE*)fd->privdata)->fatdir).time[0];
+		buffer->stat.mtime[2] = (((D_PRIVATE*)fd->privdata)->fatdir).time[1];
+		buffer->stat.mtime[1] = (((D_PRIVATE*)fd->privdata)->fatdir).time[2];
+
 		if (fat_getNextDirentry(&(((D_PRIVATE*)fd->privdata)->fatdir))<1)
 			((D_PRIVATE*)fd->privdata)->status = 1;	/* no more entries */
 	} while (notgood);

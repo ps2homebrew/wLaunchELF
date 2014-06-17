@@ -10,6 +10,12 @@ FileSystem.c
 -Added "mass" as a supported filesystem device so it shows up with "mc" and "pfs" in the root device listing.
 -Changed a few things in order to accommodate support for USB mass fixing a sub directory issue.
 -Created a workaround to fix a "mass" listing issue do to timestamps not being able to be accessed. (Note: Hopefully this is only temporary but as of now all files/folders timestamps for "mass" show up as "1/1/1970").
+-Added "hdd" as a supported filesystem device so it shows up with "mc", "pfs", and "mass" in the root device listing.
+-Changed a few things to support HDD partition viewing by fixing a sub directory issue.
+-Made changes to only show the same partitions that unofficial LaunchELF shows.
+-Fixed issue where mc save folders, that are copy protected, showed up as files instead of folders.
+-Fixed protection attributes not showing up properly with mass.
+-Removed workaround for "mass" and timestamp issues since it's no longer needed do to changes to usb_mass driver.
 
 I have included a binary of ps2ftpd in the modules directory for the unofficial LaunchELF with all the changes noted above.
 

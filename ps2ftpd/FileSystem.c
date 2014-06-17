@@ -325,31 +325,23 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					strcpy(pInfo->m_Name,ent.name);
 
 					pInfo->m_iSize = ent.stat.size;
-					pInfo->m_eType = FIO_SO_ISDIR(ent.stat.mode) ? FT_DIRECTORY : FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 
-					// temporary hack for mass where the value for year is 0
-					if (ent.stat.mtime[6] == 0)
-						pInfo->m_TS.m_iYear = 1970;
-					else
-						pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+					// fix for mc copy protected attribute, mode 47 is a directory
+					pInfo->m_eType = FIO_SO_ISDIR(ent.stat.mode) || (47 == ent.stat.mode) ? FT_DIRECTORY : FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 
-					// temporary hack for mass where the value for month is 0
-					if (ent.stat.mtime[5] == 0)
-						pInfo->m_TS.m_iMonth = 1;
-					else
-						pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
-
-					// temporary hack for mass where the value for day is 0
-					if (ent.stat.mtime[4] == 0)
-						pInfo->m_TS.m_iDay = 1;
-					else
-						pInfo->m_TS.m_iDay = ent.stat.mtime[4];
+					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
+					pInfo->m_TS.m_iDay = ent.stat.mtime[4];
 
 					pInfo->m_TS.m_iHour = ent.stat.mtime[3];
 					pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
 
 					pInfo->m_iProtection = ent.stat.mode & (FIO_SO_IROTH|FIO_SO_IWOTH|FIO_SO_IXOTH);
 					pInfo->m_iProtection = pInfo->m_iProtection|(pInfo->m_iProtection << 3)|(pInfo->m_iProtection << 6);
+
+					// fix for mass file/directory protection attributes
+					if( (ent.stat.mode == 16) || (ent.stat.mode == 32) )
+						pInfo->m_iProtection = 511;
 
 					return 0;					
 				}
@@ -362,28 +354,28 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 				if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) > 0 )
 				{
+					// hide hdl and other special ps2 partitions from view
+					while( !strcmp(pContext->m_kFile.device->name, "hdd") && 
+						(!strncmp(ent.name, "PP.HDL.", 7) || (!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot"))) )
+					{
+						// move to next entry and check if it's the last
+						if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) == 0 )
+							break;
+					}
+
+					// check last entry
+					if( !strcmp(pContext->m_kFile.device->name, "hdd") && 
+						(!strncmp(ent.name, "PP.HDL.", 7) || (!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot"))) )
+						break;
+
 					strcpy(pInfo->m_Name,ent.name);
 
 					pInfo->m_iSize = ent.stat.size;
 					pInfo->m_eType = FIO_S_ISDIR(ent.stat.mode) ? FT_DIRECTORY : FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 
-					// temporary hack for mass where the value for year is 0
-					if (ent.stat.mtime[6] == 0)
-						pInfo->m_TS.m_iYear = 1970;
-					else
-						pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
-
-					// temporary hack for mass where the value for month is 0
-					if (ent.stat.mtime[5] == 0)
-						pInfo->m_TS.m_iMonth = 1;
-					else
-						pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
-
-					// temporary hack for mass where the value for day is 0
-					if (ent.stat.mtime[4] == 0)
-						pInfo->m_TS.m_iDay = 1;
-					else
-						pInfo->m_TS.m_iDay = ent.stat.mtime[4];
+					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
+					pInfo->m_TS.m_iDay = ent.stat.mtime[4];
 
 					pInfo->m_TS.m_iHour = ent.stat.mtime[3];
 					pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
@@ -410,6 +402,20 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					memset(&stat,0,sizeof(stat));
 
+					// fix for hdd and mass, forces subdirectory "0"
+					if( !strcmp(pContext->m_kFile.device->name, "hdd") || !strcmp(pContext->m_kFile.device->name, "mass") )
+					{
+						itoa(pInfo->m_Name,unit);
+						pInfo->m_iSize = 0;
+						pInfo->m_eType = FT_DIRECTORY;
+						pContext->m_kFile.unit = 16; // stops the looping
+						return 0;
+					}
+
+					// fix for multiple mc directories, when both slots contain PS2 memory cards
+					if( !strcmp(pContext->m_kFile.device->name, "mc") && (pContext->m_kFile.unit > 1) )
+						break;
+
 					// get status from root directory of device
 					ret = pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), "/", (io_stat_t*)&stat );
 
@@ -417,16 +423,11 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					if( (ret >= 0) && !stat.mode  )
 						ret = -1;
 
-					// Fix for multiple mc directories, when both slots contain PS2 memory cards
-					if( !strcmp(pContext->m_kFile.device->name, "mc") && (pContext->m_kFile.unit > 1) )
-						ret = -1;
-
 					// increase to next unit
 					pContext->m_kFile.unit++;
 
 					// currently we stop evaluating devices if one was not found (so if mc 1 exists and not mc 0, it will not show)
-					// Added a simple fix to allow for mass storage subdirectory
-					if( (ret < 0) && !(!strcmp(pContext->m_kFile.device->name, "mass") && (unit < 1)) )
+					if( ret < 0 )
 						return -1;
 
 					itoa(pInfo->m_Name,unit);
@@ -464,7 +465,10 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					int unit = pContext->m_kFile.unit;
 					pContext->m_kFile.unit++;
 
-					if( strcmp(ppkDevices[unit]->name, "mass") && strcmp(ppkDevices[unit]->name, "mc") && strcmp(ppkDevices[unit]->name, "pfs") )
+					if( strcmp(ppkDevices[unit]->name, "hdd") && 
+						strcmp(ppkDevices[unit]->name, "mass") && 
+							strcmp(ppkDevices[unit]->name, "mc") && 
+								strcmp(ppkDevices[unit]->name, "pfs") )
 						continue;
 
 					if( !ppkDevices[unit] )
