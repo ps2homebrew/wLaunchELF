@@ -13,18 +13,21 @@ enum
 	DEF_DISCCONTROL = TRUE,
 	DEF_INTERLACE = FALSE,
 	DEF_RESETIOP = FALSE,
+	DEF_NUMCNF = 1,
+	DEF_SWAPKEYS = FALSE,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
 	DISCCONTROL,
 	FILENAME,
 	SCREEN,
-	RESETIOP,
+	SETTINGS,
 	OK,
 	CANCEL
 };
 
-SETTING *setting, *tmpsetting;
+SETTING *setting = NULL;
+SETTING *tmpsetting;
 
 ////////////////////////////////////////////////////////////////////////
 // メモリーカードの状態をチェックする。
@@ -32,14 +35,14 @@ SETTING *setting, *tmpsetting;
 // メモリーカードが挿さっていない場合は-11を返す。
 int CheckMC(void)
 {
-	int ret;
+	int dummy, ret;
 	
-	mcGetInfo(0, 0, NULL, NULL, NULL);
+	mcGetInfo(0, 0, &dummy, &dummy, &dummy);
 	mcSync(0, NULL, &ret);
 
 	if( -1 == ret || 0 == ret) return 0;
 
-	mcGetInfo(0, 0, NULL, NULL, NULL);
+	mcGetInfo(1, 0, &dummy, &dummy, &dummy);
 	mcSync(0, NULL, &ret);
 
 	if( -1 == ret || 0 == ret ) return 1;
@@ -53,11 +56,11 @@ void saveConfig(char *mainMsg, char *CNF)
 {
 	int i, ret, fd, size;
 	const char LF[3]={0x0D, 0x0A, 0};
-	char c[MAX_PATH], tmp[23][MAX_PATH];
+	char c[MAX_PATH], tmp[25][MAX_PATH];
 	char* p;
 	
 	// 設定をメモリに格納
-	for(i=0; i<13; i++)
+	for(i=0; i<12; i++)
 		strcpy(tmp[i], setting->dirElf[i]);
 	sprintf(tmp[12], "%d", setting->timeout);
 	sprintf(tmp[13], "%d", setting->filename);
@@ -68,11 +71,13 @@ void saveConfig(char *mainMsg, char *CNF)
 	sprintf(tmp[20], "%d", setting->discControl);
 	sprintf(tmp[21], "%d", setting->interlace);
 	sprintf(tmp[22], "%d", setting->resetIOP);
+	sprintf(tmp[23], "%d", setting->numCNF);
+	sprintf(tmp[24], "%d", setting->swapKeys);
 	
 	p = (char*)malloc(sizeof(SETTING));
 	p[0]=0;
 	size=0;
-	for(i=0; i<23; i++){
+	for(i=0; i<25; i++){
 		strcpy(c, tmp[i]);
 		strcat(c, LF);
 		strcpy(p+size, c);
@@ -99,7 +104,7 @@ void saveConfig(char *mainMsg, char *CNF)
 			strcat(c, CNF);
 		}
 	}
-	strcpy(mainMsg,"Save Failed");
+	sprintf(mainMsg, "Failed To Save %s", CNF);
 	// 書き込み
 	if((fd=fioOpen(c,O_CREAT|O_WRONLY|O_TRUNC)) < 0){
 		return;
@@ -116,11 +121,14 @@ void loadConfig(char *mainMsg, char *CNF)
 {
 	int i, j, k, fd, len, mcport;
 	size_t size;
-	char path[MAX_PATH], tmp[23][MAX_PATH], *p;
+	char path[MAX_PATH], tmp[25][MAX_PATH], *p;
 	
+	if(setting!=NULL)
+		free(setting);
 	setting = (SETTING*)malloc(sizeof(SETTING));
 	// LaunchELFが実行されたパスから設定ファイルを開く
-	sprintf(path, "%s%s", LaunchElfDir, CNF);
+	strcpy(path, LaunchElfDir);
+	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
 	fd = fioOpen(path, O_RDONLY);
 	// 開けなかったら、SYS-CONFの設定ファイルを開く
@@ -130,14 +138,18 @@ void loadConfig(char *mainMsg, char *CNF)
 		else
 			mcport = CheckMC();
 		if(mcport==1 || mcport==0){
-			char strtmp[MAX_PATH] = "mc%d:/SYS-CONF/";
-			sprintf(path, strcat(strtmp, CNF), mcport);
+			char strtmp[MAX_PATH];
+			sprintf(strtmp, "mc%d:/SYS-CONF/", mcport);
+			strcpy(path, strtmp);
+			strcat(path, CNF);
 			fd = fioOpen(path, O_RDONLY);
+			if(fd>=0)
+				strcpy(LaunchElfDir, strtmp);
 		}
 	}
 	// どのファイルも開けなかった場合、設定を初期化する
 	if(fd<0) {
-		for(i=0; i<13; i++)
+		for(i=0; i<12; i++)
 			setting->dirElf[i][0] = 0;
 		setting->timeout = DEF_TIMEOUT;
 		setting->filename = DEF_FILENAME;
@@ -150,13 +162,15 @@ void loadConfig(char *mainMsg, char *CNF)
 		setting->discControl = DEF_DISCCONTROL;
 		setting->interlace = DEF_INTERLACE;
 		setting->resetIOP = DEF_RESETIOP;
-		mainMsg[0] = 0;
+		setting->numCNF = DEF_NUMCNF;
+		setting->swapKeys = DEF_SWAPKEYS;
+		sprintf(mainMsg, "Failed To Load %s", CNF);
 	} else {
 		// 設定ファイルをメモリに読み込み
 		size = fioLseek(fd, 0, SEEK_END);
 		printf("size=%d\n", size);
 		fioLseek(fd, 0, SEEK_SET);
-		p = (char*)malloc(sizeof(size));
+		p = (char*)malloc(size);
 		fioRead(fd, p, size);
 		fioClose(fd);
 		
@@ -179,12 +193,12 @@ void loadConfig(char *mainMsg, char *CNF)
 					strcpy(tmp[j++], &p[k]);
 				} else
 					break;
-				if(j>=23)
+				if(j>=25)
 					break;
 				k=i+2;
 			}
 		}
-		while(j<23)
+		while(j<25)
 			tmp[j++][0] = 0;
 		// ボタンセッティング
 		for(i=0; i<12; i++) {
@@ -258,6 +272,19 @@ void loadConfig(char *mainMsg, char *CNF)
 			setting->resetIOP = tmp[22][0]-'0';
 		else
 			setting->resetIOP = DEF_RESETIOP;
+		// Num CNF's
+		if(tmp[23][0]) {
+			setting->numCNF = 0;
+			j = strlen(tmp[23]);
+			for(i=1; j; i*=10)
+				setting->numCNF += (tmp[23][--j]-'0')*i;
+		} else
+			setting->numCNF = DEF_NUMCNF;
+		// Swap keys
+		if(tmp[24][0])
+			setting->swapKeys = tmp[24][0]-'0';
+		else
+			setting->swapKeys = DEF_SWAPKEYS;
 		free(p);
 		sprintf(mainMsg, "Load Config (%s)", path);
 	}
@@ -319,7 +346,7 @@ void setColor(void)
 				else if(s>=3) s=6;
 				else s=3;
 			}
-			else if(new_pad & PAD_CROSS)
+			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				if(s<12) {
 					if(rgb[s/3][s%3] > 0) {
@@ -342,7 +369,7 @@ void setColor(void)
 					}
 				}
 			}
-			else if(new_pad & PAD_CIRCLE)
+			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
 				if(s<12) {
 					if(rgb[s/3][s%3] < 255) {
@@ -443,9 +470,138 @@ void setColor(void)
 		
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if (s <= 13) strcpy(c, "○:Add ×:Subtract");
-		else if(s==14) strcpy(c, "○:Change");
-		else strcpy(c, "○:OK");
+		if (s <= 13) {
+			if (swapKeys)
+				strcpy(c, "×:Add ○:Subtract");
+			else
+				strcpy(c, "○:Add ×:Subtract");
+		} else if(s==14) {
+			if (swapKeys)
+				strcpy(c, "×:Change");
+			else
+				strcpy(c, "○:Change");
+		} else {
+			if (swapKeys)
+				strcpy(c, "×:OK");
+			else
+				strcpy(c, "○:OK");
+		}
+		
+		setScrTmp("", c);
+		drawScr();
+	}
+}
+
+////////////////////////////////////////////////////////////////////////
+// Other settings by EP
+void setSettings(void)
+{
+	int s;
+	int x, y;
+	char c[MAX_PATH];
+	
+	s=1;
+	while(1)
+	{
+		waitPadReady(0, 0);
+		if(readpad())
+		{
+			if(new_pad & PAD_UP)
+			{
+				if(s!=1) s--;
+				else s=4;
+			}
+			else if(new_pad & PAD_DOWN)
+			{
+				if(s!=4) s++;
+				else s=1;
+			}
+			else if(new_pad & PAD_LEFT)
+			{
+				if(s!=4) s=4;
+				else s=1;
+			}
+			else if(new_pad & PAD_RIGHT)
+			{
+				if(s!=4) s=4;
+				else s=1;
+			}
+			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
+			{
+				if(s==2)
+				{
+					if(setting->numCNF > 1)
+						setting->numCNF--;
+				}
+			}
+			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
+			{
+				if(s==1)
+					setting->resetIOP = !setting->resetIOP;
+				else if(s==2)
+					setting->numCNF++;
+				else if(s==3)
+					setting->swapKeys = !setting->swapKeys;
+				else
+					return;
+			}
+		}
+		
+		clrScr(setting->color[0]);
+		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+		
+		printXY("STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
+		if(setting->resetIOP)
+			sprintf(c, "  RESET IOP: ON");
+		else
+			sprintf(c, "  RESET IOP: OFF");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
+		sprintf(c, "  NUMBER OF CNF'S: %d", setting->numCNF);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
+		if(setting->swapKeys)
+			sprintf(c, "  KEY MAPPING: ×:OK ○:CANCEL");
+		else
+			sprintf(c, "  KEY MAPPING: ○:OK ×:CANCEL");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
+		y += FONT_HEIGHT / 2;
+		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
+		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
+		
+		if(s>=4) y+=FONT_HEIGHT/2;
+		drawChar(127, x, y/2, setting->color[3]);
+		
+		if (s == 1) {
+			if (swapKeys)
+				strcpy(c, "×:Change");
+			else
+				strcpy(c, "○:Change");
+		} else if (s == 2) {
+			if (swapKeys)
+				strcpy(c, "×:Add ○:Subtract");
+			else
+				strcpy(c, "○:Add ×:Subtract");
+		} else if( s== 3) {
+			if (swapKeys)
+				sprintf(c, "×:Change");
+			else
+				sprintf(c, "○:Change");
+		} else {
+			if (swapKeys)
+				strcpy(c, "×:OK");
+			else
+				strcpy(c, "○:OK");
+		}
 		
 		setScrTmp("", c);
 		drawScr();
@@ -500,7 +656,7 @@ void config(char *mainMsg, char *CNF)
 				else if(s<OK)
 					s=OK;
 			}
-			else if(new_pad & PAD_CROSS)
+			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				if(s<TIMEOUT)
 					setting->dirElf[s][0]=0;
@@ -510,7 +666,7 @@ void config(char *mainMsg, char *CNF)
 						setting->timeout--;
 				}
 			}
-			else if(new_pad & PAD_CIRCLE)
+			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
 				if(s<TIMEOUT)
 				{
@@ -528,8 +684,8 @@ void config(char *mainMsg, char *CNF)
 					setting->discControl = !setting->discControl;
 				else if(s==SCREEN)
 					setColor();
-				else if(s==RESETIOP)
-					setting->resetIOP = !setting->resetIOP;
+				else if(s==SETTINGS)
+					setSettings();
 				else if(s==OK)
 				{
 					free(tmpsetting);
@@ -630,12 +786,7 @@ void config(char *mainMsg, char *CNF)
 		
 		printXY("  SCREEN SETTING", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		
-		if(setting->resetIOP)
-			sprintf(c, "  RESET IOP: ON");
-		else
-			sprintf(c, "  RESET IOP: OFF");
-		printXY(c, x, y/2, setting->color[3], TRUE);
+		printXY("  STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
 		printXY("  OK", x, y/2, setting->color[3], TRUE);
@@ -647,13 +798,33 @@ void config(char *mainMsg, char *CNF)
 			y += FONT_HEIGHT + FONT_HEIGHT / 2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
-		if (s < TIMEOUT) sprintf(c, "○:Edit ×:Clear");
-		else if(s==TIMEOUT) sprintf(c, "○:Add ×:Subtract");
-		else if(s==FILENAME) sprintf(c, "○:Change");
-		else if(s==DISCCONTROL) sprintf(c, "○:Change");
-		else if(s==RESETIOP) sprintf(c, "○:Change");
-		else sprintf(c, "○:OK");
-		
+		if (s < TIMEOUT) {
+			if (swapKeys)
+				sprintf(c, "×:Edit ○:Clear");
+			else
+				sprintf(c, "○:Edit ×:Clear");
+		} else if(s==TIMEOUT) {
+			if (swapKeys)
+				sprintf(c, "×:Add ○:Subtract");
+			else
+				sprintf(c, "○:Add ×:Subtract");
+		} else if(s==FILENAME) { 
+			if (swapKeys)
+				sprintf(c, "×:Change");
+			else
+				sprintf(c, "○:Change");
+		} else if(s==DISCCONTROL) {
+			if (swapKeys)
+				sprintf(c, "×:Change");
+			else
+				sprintf(c, "○:Change");
+		} else {
+			if (swapKeys)
+				sprintf(c, "×:OK");
+			else
+				sprintf(c, "○:OK");
+		}
+
 		setScrTmp("", c);
 		drawScr();
 	}

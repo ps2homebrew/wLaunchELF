@@ -1,9 +1,62 @@
-Unofficial LaunchELF by EP
+Unofficial LaunchELF by EP + dlanor
+
+LuanchELF v3.41i
+-Fixed issue with ps2ftpd root directory listing bug with other ftp clients.
+-Included ps2ftpd.irx compile with source changes in a separate package.
+
+LaunchELF v3.41h
+-Replaced usb_mass driver with latest version, for support of more devices
+
+LaunchELF v3.41g
+-Added config name to another failure message (missed it for 'save config' earlier).
+-Corrected a malloc size error (Reported by 'slartibartfast' at ps2-scene)
+-Recompiled all components (including ps2sdk) using v2.8.1 of the IOP compiler
+
+LaunchELF v3.41f
+-Added config name to both failure messages (Name of config that failed to load/save).
+-Replaced ps2ftpd module to eliminate a problem with memory card transfers.
+NB: Matrix Infinity Dev.2 boot again works with either of the ELFs.
+
+LaunchELF v3.41e
+-Changed ps2dev9.irx module from present PS2SDK to an older version, to achieve much
+ improved reliability for the host: interface. All other functionality is unchanged.
+NB: Matrix Infinity Dev.2 boot again requires the non-packed ELF for this version.
+
+LaunchELF v3.41d
+-Fixed bug from v3.41c, causing IOP reset to fail in some cicumstances
+ This was fixed by not using initsbv_patches before IOP reset.
+ For future updates, we need to be aware of possible conflicts with this.
+-Fixed bug from v3.41c, causing Net Config values to not be displayed.
+NB: Matrix Infinity Dev.2 boot works for either ELF, with or without IOP reset
+NB: Matrix Infinity Dev.1 boot works for either ELF, with or without IOP reset
+NB: Exploit boot works with either ELF, with or without IOP reset
+
+LaunchELF v3.41c
+-Added key config MISC/PS2NET which starts FTP server and PS2NetFS
+-Added 'host:' device with ability to browse PC filesystems (ps2client at PC end).
+-Added alternate sort order when showing titles: L1=sort_by_title, L2=sort_by_folder
+-Added IOP module checker to avoid many module conflicts
+-Added experimental PS2SDK functions to allow IOP reset with MCMAN functionality
+-Added alternate iomanX module to improve HDD access reliability
+-Tweaked and twisted various stuff to improve operation in general
+NB: Matrix Infinity Dev2 booting requires the non-packed ELF, and IOP reset OFF in CNF
+NB: Those things do not matter for Dev1 booting with the same chip though.
+NB: Exploit booting works with either ELF, but seems to dislike IOP reset
+
+LaunchELF v3.41b
+-Changed to a cycle like function for config loading.
+-Renamed newer launch screen menu items to reflect changes to config loading.
+-Added new menu, "STARTUP SETTINGS", and moved "RESET IOP" to it.
+-Added "NUMBER OF CNF's" to "STARTUP SETTINGS". (NOTE: Sets the max number of config files).
+-Added kthu's "KEY MAPPING" to "STARTUP SETTINGS". (NOTE: Sets the X:OK and O:CANCEL).
+-Added dlanor's many fixes including memory leak fix for loadConfig, reset IOP bug, memory card access issue, and config loading problems with compressed ELF's.
+
+Note: Defaults are "RESET IOP: OFF", "NUMBER OF CNF'S: 1", and "KEY MAPPING: O:OK X:CANCEL".
 
 LaunchELF v3.41a
 -Added reset IOP on start as a toggle (Note: off by default).
 -Added dlanor's fix for the elf launching bug.
--Changed text info from "away" to "subtract" in the menus because it's more proper to say add or subtract than add or away.
+-Changed text info from "AWAY" to "SUBTRACT" in the menus because it's more proper to say add or subtract than add or away.
 -Changed text for setting "INIT" to "INITIAL SCREEN SETTINGS".
 -Added support for two total configs press d-pad left or right to switch between configs. (Note: the two configs are LAUNCHELF.CNF and LAUNCHELF1.CNF).
 -Added two menus below the Select config item - left and right to load configs via menu.
@@ -17,6 +70,7 @@ I used some other peoples code so if anyone should get credit they should. I als
 Special Thanks to the following:
 Mr. Mirakich the author of LaunchELF?
 Hermes for reset IOP (BOOT.c cogswaploader)
-dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file.
+dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new fixes.
+kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
 pixel for ps2-packer that made the small BOOTc.ELF
 all those who like LaunchELF

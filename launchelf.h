@@ -1,7 +1,6 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#include <ito.h>
 #include <stdio.h>
 #include <tamtypes.h>
 #include <sifcmd.h>
@@ -21,11 +20,16 @@
 #include <iopcontrol.h>
 #include <stdarg.h>
 #include <sbv_patches.h>
+#include <slib.h>
+#include <smem.h>
+#include <smod.h>
 #include <sys/fcntl.h>
 #include <debug.h>
+#include <ito.h>
 #include <cdvd_rpc.h>
 #include "cd.h"
 #include "mass_rpc.h"
+#include "iopmod_name.h"
 
 // 垂直スキャンレート
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
@@ -57,10 +61,13 @@ typedef struct
 	int discControl;
 	int interlace;
 	int resetIOP;
+	int numCNF;
+	int swapKeys;
 } SETTING;
 
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
 
+void	load_ps2host(void);
 void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
@@ -94,5 +101,11 @@ void config(char *, char *);
 /* filer.c */
 unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
+void	initHOST(void);
+char *makeHostPath(char *dp, char*sp);
+
+
+/* main.c */
+int swapKeys;
 
 #endif

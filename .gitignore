@@ -2,7 +2,6 @@
 *.elf
 *.erl
 *.exe
-*.irx
 *.o
 *.swp
 *.tmp

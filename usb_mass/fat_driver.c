@@ -495,10 +495,10 @@ int fat_getDirentry(fat_direntry_sfn* dsfn, fat_direntry_lfn* dlfn, fat_direntry
 		//copy name
 		for (i = 0; i < 8 && dsfn->name[i]!= 32; i++) {
 			dir->sname[i] = dsfn->name[i];
-			// NT—\–ñ—Ìˆæ“Ç‚ÝŽæ‚è
+			// NT—adaption for LaunchELF
 			if (dsfn->reservedNT & 0x08 &&
 			  dir->sname[i] >= 'A' && dir->sname[i] <= 'Z') {
-				dir->sname[i] += 0x20;
+				dir->sname[i] += 0x20;	//Force standard letters in name to lower case
 			}
 		}
 		for (j=0; j < 3 && dsfn->ext[j] != 32; j++) {
@@ -507,10 +507,10 @@ int fat_getDirentry(fat_direntry_sfn* dsfn, fat_direntry_lfn* dlfn, fat_direntry
 				i++;
 			}
 			dir->sname[i+j] = dsfn->ext[j];
-			// NT—\–ñ—Ìˆæ“Ç‚ÝŽæ‚è
+			// NT—adaption for LaunchELF
 			if (dsfn->reservedNT & 0x10 &&
 			  dir->sname[i+j] >= 'A' && dir->sname[i+j] <= 'Z') {
-				dir->sname[i+j] += 0x20;
+				dir->sname[i+j] += 0x20;	//Force standard letters in ext to lower case
 			}
 		}
 		dir->sname[i+j] = 0; //terminate
@@ -1413,7 +1413,7 @@ int fs_mkdir  (iop_file_t *fd, const char *name) {
 	if (fat_mountCheck() < 0)
  		return -1;
 #ifdef _PS2_
-	printf("fs_mkdir: name=%s \n",name);
+	XPRINTF("fs_mkdir: name=%s \n",name);
 	//workaround for bug that invokes fioMkdir right after fioRemove
 	sig = getNameSignature(name);
 	millis = getMillis();
@@ -1430,7 +1430,7 @@ int fs_mkdir  (iop_file_t *fd, const char *name) {
 	}
 	FLUSH_SECTORS();
 	return ret;
-#else
+#else  /* write support */
 	return fs_dummy();
 #endif /* write support */
 }

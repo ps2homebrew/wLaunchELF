@@ -1,3 +1,6 @@
+//--------------------------------------------------------------
+//File name:   main.c
+//--------------------------------------------------------------
 #include "launchelf.h"
 
 extern u8 *iomanx_irx;
@@ -6,6 +9,14 @@ extern u8 *filexio_irx;
 extern int size_filexio_irx;
 extern u8 *ps2dev9_irx;
 extern int size_ps2dev9_irx;
+extern u8 *ps2ip_irx;
+extern int size_ps2ip_irx;
+extern u8 *ps2smap_irx;
+extern int size_ps2smap_irx;
+extern u8 *ps2host_irx;
+extern int size_ps2host_irx;
+extern u8 *ps2ftpd_irx;
+extern int size_ps2ftpd_irx;
 extern u8 *ps2atad_irx;
 extern int size_ps2atad_irx;
 extern u8 *ps2hdd_irx;
@@ -42,15 +53,171 @@ enum
 	DPAD
 };
 
+void Reset();
+
 int trayopen=FALSE;
 int selected=0;
 int timeout=0;
 int mode=BUTTON;
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
 char CNF[MAX_PATH];
+int numCNF=0;
+int maxCNF;
+int swapKeys;
 
-////////////////////////////////////////////////////////////////////////
-// メイン画面の描画
+#define IPCONF_MAX_LEN  (3*16)
+char if_conf[IPCONF_MAX_LEN];
+int if_conf_len;
+
+char ip[16]      = "192.168.0.10";
+char netmask[16] = "255.255.255.0";
+char gw[16]      = "192.168.0.1";
+
+char netConfig[IPCONF_MAX_LEN+64];	//Adjust size as needed
+
+//State of module collections
+int have_NetModules = 0;
+int have_HDD_modules = 0;
+//State of sbv_patches
+int have_sbv_patches = 0;
+//Old State of Checkable Modules (valid header)
+int	old_sio2man  = 0;
+int	old_mcman    = 0;
+int	old_mcserv   = 0;
+int	old_padman   = 0;
+int old_fakehost = 0;
+int old_poweroff = 0;
+int	old_iomanx   = 0;
+int	old_filexio  = 0;
+int	old_ps2dev9  = 0;
+int	old_ps2ip    = 0;
+int	old_ps2atad  = 0;
+int old_ps2hdd   = 0;
+int old_ps2fs    = 0;
+int old_ps2netfs = 0;
+//State of Uncheckable Modules (invalid header)
+int	have_cdvd     = 0;
+int	have_usbd     = 0;
+int	have_usb_mass = 0;
+int	have_ps2smap  = 0;
+int	have_ps2host  = 0;
+int	have_ps2ftpd  = 0;
+//State of Checkable Modules (valid header)
+int have_urgent   = 0;	//flags presence of urgently needed modules
+int	have_sio2man  = 0;
+int	have_mcman    = 0;
+int	have_mcserv   = 0;
+int	have_padman   = 0;
+int have_fakehost = 0;
+int have_poweroff = 0;
+int	have_iomanx   = 0;
+int	have_filexio  = 0;
+int	have_ps2dev9  = 0;
+int	have_ps2ip    = 0;
+int	have_ps2atad  = 0;
+int have_ps2hdd   = 0;
+int have_ps2fs    = 0;
+int have_ps2netfs = 0;
+//--------------------------------------------------------------
+//executable code
+//--------------------------------------------------------------
+//Function to print a text row to the 'ito' screen
+//------------------------------
+void	PrintRow(int row, char *text_p)
+{	int x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH + 4;
+	int y = (SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12 + FONT_HEIGHT*row)/2;
+
+	printXY(text_p, x, y, setting->color[3], TRUE);
+}
+//------------------------------
+//endfunc PrintRow
+//--------------------------------------------------------------
+//Function to show a screen with debugging info
+//------------------------------
+void ShowDebugScreen(void)
+{	char TextRow[256];
+
+	clrScr(setting->color[0]);
+	sprintf(TextRow, "Urgent = %3d", have_urgent);
+	PrintRow(0, TextRow);
+	drawScr();
+	waitPadReady(0, 0);
+	while(1)
+	{	if	(readpad())
+			if	(new_pad & PAD_CROSS)
+				break;
+	}
+}
+//------------------------------
+//endfunc ShowDebugScreen
+//--------------------------------------------------------------
+//Function to check for presence of key modules
+//------------------------------
+void	CheckModules(void)
+{	smod_mod_info_t	mod_t;
+
+	old_sio2man  = (have_sio2man = smod_get_mod_by_name(IOPMOD_NAME_SIO2MAN, &mod_t));
+	old_mcman    = (have_mcman = smod_get_mod_by_name(IOPMOD_NAME_MCMAN, &mod_t));
+	old_mcserv   = (have_mcserv = smod_get_mod_by_name(IOPMOD_NAME_MCSERV, &mod_t));
+	old_padman   = (have_padman = smod_get_mod_by_name(IOPMOD_NAME_PADMAN, &mod_t));
+	old_fakehost = (have_fakehost = smod_get_mod_by_name(IOPMOD_NAME_FAKEHOST, &mod_t));
+	old_poweroff = (have_poweroff = smod_get_mod_by_name(IOPMOD_NAME_POWEROFF, &mod_t));
+	old_iomanx   = (have_iomanx = smod_get_mod_by_name(IOPMOD_NAME_IOMANX, &mod_t));
+	old_filexio  = (have_filexio = smod_get_mod_by_name(IOPMOD_NAME_FILEXIO, &mod_t));
+	old_ps2dev9  = (have_ps2dev9 = smod_get_mod_by_name(IOPMOD_NAME_PS2DEV9, &mod_t));
+	old_ps2ip    = (have_ps2ip = smod_get_mod_by_name(IOPMOD_NAME_PS2IP, &mod_t));
+	old_ps2atad  = (have_ps2atad = smod_get_mod_by_name(IOPMOD_NAME_PS2ATAD, &mod_t));
+	old_ps2hdd   = (have_ps2hdd = smod_get_mod_by_name(IOPMOD_NAME_PS2HDD, &mod_t));
+	old_ps2fs    = (have_ps2fs = smod_get_mod_by_name(IOPMOD_NAME_PS2FS, &mod_t));
+	old_ps2netfs = (have_ps2netfs= smod_get_mod_by_name(IOPMOD_NAME_PS2NETFS, &mod_t));
+}
+//------------------------------
+//endfunc CheckModules
+//--------------------------------------------------------------
+// Parse network configuration from IPCONFIG.DAT
+// Now completely rewritten to fix some problems
+//------------------------------
+static void getIpConfig(void)
+{
+	int fd;
+	int i;
+	int len;
+	char c;
+	char buf[IPCONF_MAX_LEN];
+
+	fd = fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_RDONLY);
+	if (fd >= 0) 
+	{	bzero(buf, IPCONF_MAX_LEN);
+		len = fioRead(fd, buf, IPCONF_MAX_LEN - 1); //Save a byte for termination
+		fioClose(fd);
+	}
+
+	if	((fd > 0) && (len > 0))
+	{	buf[len] = '\0'; //Ensure string termination, regardless of file content
+		for	(i=0; ((c = buf[i]) != '\0'); i++) //Clear out spaces and any CR/LF
+			if	((c == ' ') || (c == '\r') || (c == '\n'))
+				buf[i] = '\0';
+		strncpy(ip, buf, 15);
+		i = strlen(ip)+1;
+		strncpy(netmask, buf+i, 15);
+		i += strlen(netmask)+1;
+		strncpy(gw, buf+i, 15);
+	}
+
+	bzero(if_conf, IPCONF_MAX_LEN);
+	strncpy(if_conf, ip, 15);
+	i = strlen(ip) + 1;
+	strncpy(if_conf+i, netmask, 15);
+	i += strlen(netmask) + 1;
+	strncpy(if_conf+i, gw, 15);
+	i += strlen(gw) + 1;
+	if_conf_len = i;
+	sprintf(netConfig, "Net config: %s %s %s", ip, netmask, gw);
+
+}
+//------------------------------
+//endfunc getIpConfig
+//--------------------------------------------------------------
 int drawMainScreen(void)
 {
 	int nElfs=0;
@@ -61,8 +228,10 @@ int drawMainScreen(void)
 	char *p;
 	
 	strcpy(setting->dirElf[12], "CONFIG");
-	strcpy(setting->dirElf[13], "LOAD LAUNCHELF.CNF");
-	strcpy(setting->dirElf[14], "LOAD LAUNCHELF1.CNF");
+	if (maxCNF > 1){
+		strcpy(setting->dirElf[13], "LOAD CONFIG--");
+		strcpy(setting->dirElf[14], "LOAD CONFIG++");
+	}
 	
 	clrScr(setting->color[0]);
 	
@@ -143,21 +312,24 @@ int drawMainScreen(void)
 			y += FONT_HEIGHT;
 		}
 	}
-	
-	// 操作説明
 	x = SCREEN_MARGIN;
 	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
 	if(mode==BUTTON)	sprintf(c, "PUSH ANY BUTTON or D-PAD!");
-	else				sprintf(c, "○:OK ×:Cancel");
+	else{
+		if(swapKeys) 
+			sprintf(c, "×:OK ○:Cancel");
+		else
+			sprintf(c, "○:OK ×:Cancel");
+	}
 	
 	setScrTmp(mainMsg, c);
 	drawScr();
 	
 	return nElfs;
 }
-
-////////////////////////////////////////////////////////////////////////
-// loadModules
+//------------------------------
+//endfunc drawMainScreen
+//--------------------------------------------------------------
 void delay(int count)
 {
 	int i;
@@ -167,92 +339,250 @@ void delay(int count)
 		while(ret--) asm("nop\nnop\nnop\nnop");
 	}
 }
-
+//------------------------------
+//endfunc delay
+//--------------------------------------------------------------
 void initsbv_patches(void)
 {
-	static int SbvPatchesInited=FALSE;
-	
-	if(!SbvPatchesInited){
-		dbgprintf("Init MrBrown sbv_patches\n");
+	if(!have_sbv_patches)
+	{	dbgprintf("Init MrBrown sbv_patches\n");
 		sbv_patch_enable_lmb();
 		sbv_patch_disable_prefix_check();
-		SbvPatchesInited=TRUE;
+		have_sbv_patches = 1;
 	}
 }
-
-void loadModules(void)
+//------------------------------
+//endfunc initsbv_patches
+//--------------------------------------------------------------
+void	load_iomanx(void)
 {
-	dbgprintf("Loading SIO2MAN\n");
-	SifLoadModule("rom0:SIO2MAN", 0, NULL);
-	dbgprintf("Loading MCMAN\n");
-	SifLoadModule("rom0:MCMAN", 0, NULL);
-	dbgprintf("Loading MCSERV\n");
-	SifLoadModule("rom0:MCSERV", 0, NULL);
-	dbgprintf("Loading PADMAN\n");
-	SifLoadModule("rom0:PADMAN", 0, NULL);
-}
+	int ret;
 
+	if	(!have_iomanx)
+	{	SifExecModuleBuffer(&iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
+		have_iomanx = 1;
+	}
+}
+//------------------------------
+//endfunc load_iomanx
+//--------------------------------------------------------------
+void	load_filexio(void)
+{
+	int ret;
+
+	if	(!have_filexio)
+	{	SifExecModuleBuffer(&filexio_irx, size_filexio_irx, 0, NULL, &ret);
+		have_filexio = 1;
+	}
+}
+//------------------------------
+//endfunc load_filexio
+//--------------------------------------------------------------
+void	load_ps2dev9(void)
+{
+	int ret;
+
+	load_iomanx();
+	if	(!have_ps2dev9)
+	{	SifExecModuleBuffer(&ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
+		have_ps2dev9 = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2dev9
+//--------------------------------------------------------------
+void	load_ps2ip(void)
+{
+	int ret;
+
+	load_ps2dev9();
+	if	(!have_ps2ip)
+	{	SifExecModuleBuffer(&ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
+		have_ps2ip = 1;
+	}
+	if	(!have_ps2smap)
+	{	SifExecModuleBuffer(&ps2smap_irx, size_ps2smap_irx,
+		                    if_conf_len, &if_conf[0], &ret);
+		have_ps2smap = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2ip
+//--------------------------------------------------------------
+void	load_ps2atad(void)
+{
+	int ret;
+	static char hddarg[] = "-o" "\0" "4" "\0" "-n" "\0" "20";
+	static char pfsarg[] = "-m" "\0" "4" "\0" "-o" "\0" "10" "\0" "-n" "\0" "40";
+
+	load_ps2dev9();
+	if	(!have_ps2atad)
+	{	SifExecModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL, &ret);
+		have_ps2atad = 1;
+	}
+	if	(!have_ps2hdd)
+	{	SifExecModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
+		have_ps2hdd = 1;
+	}
+	if	(!have_ps2fs)
+	{	SifExecModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
+		have_ps2fs = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2atad
+//--------------------------------------------------------------
+void	load_ps2host(void)
+{
+	int ret;
+
+	load_ps2ip();
+	if	(!have_ps2host)
+	{	SifExecModuleBuffer(&ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
+		have_ps2host = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2host
+//--------------------------------------------------------------
+void	load_ps2ftpd(void)
+{
+	int 	ret;
+	int		arglen;
+	char* arg_p;
+
+	arg_p = "-anonymous";
+	arglen = strlen(arg_p);
+
+	load_ps2ip();
+	if	(!have_ps2ftpd)
+	{	SifExecModuleBuffer(&ps2ftpd_irx, size_ps2ftpd_irx, arglen, arg_p, &ret);
+		have_ps2ftpd = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2ftpd
+//--------------------------------------------------------------
+void	load_ps2netfs(void)
+{
+	int ret;
+
+	load_ps2ip();
+	if	(!have_ps2netfs)
+	{	SifExecModuleBuffer(&ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
+		have_ps2netfs = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2netfs
+//--------------------------------------------------------------
+void loadBasicModules(void)
+{
+	if	(!have_sio2man)
+	{	SifLoadModule("rom0:SIO2MAN", 0, NULL);
+		have_sio2man = 1;
+	}
+	if	(!have_mcman)
+	{	SifLoadModule("rom0:MCMAN", 0, NULL);
+		have_mcman = 1;
+	}
+	if	(!have_mcserv)
+	{	SifLoadModule("rom0:MCSERV", 0, NULL);
+		have_mcserv = 1;
+	}
+	if	(!have_padman)
+	{	SifLoadModule("rom0:PADMAN", 0, NULL);
+		have_padman = 1;
+	}
+}
+//------------------------------
+//endfunc loadBasicModules
+//--------------------------------------------------------------
 void loadCdModules(void)
 {
-	static int loaded=FALSE;
 	int ret;
 	
-	if(!loaded){
-		initsbv_patches();
-		SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
+	if	(!have_cdvd)
+	{	SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
 		cdInit(CDVD_INIT_INIT);
 		CDVD_Init();
-		loaded=TRUE;
+		have_cdvd = 1;
 	}
 }
-
+//------------------------------
+//endfunc loadCdModules
+//--------------------------------------------------------------
 void loadUsbModules(void)
 {
-	static int loaded=FALSE;
 	int ret;
 	
-	if(!loaded){
-		initsbv_patches();
-		SifExecModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&usb_mass_irx, size_usb_mass_irx, 0, NULL, &ret);
+	if	(!have_usbd)
+	{	SifExecModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL, &ret);
+		have_usbd = 1;
+	}
+	if	(!have_usb_mass)	
+	{	SifExecModuleBuffer(&usb_mass_irx, size_usb_mass_irx, 0, NULL, &ret);
 		delay(3);
 		ret = usb_mass_bindRpc();
-		loaded=TRUE;
+		have_usb_mass = 1;
 	}
 }
-
+//------------------------------
+//endfunc loadUsbModules
+//--------------------------------------------------------------
 void poweroffHandler(int i)
 {
 	hddPowerOff();
 }
-
+//------------------------------
+//endfunc poweroffHandler
+//--------------------------------------------------------------
 void loadHddModules(void)
 {
-	static int loaded=FALSE;
 	int ret;
 	int i=0;
-	static char hddarg[] = "-o" "\0" "4" "\0" "-n" "\0" "20";
-	static char pfsarg[] = "-m" "\0" "4" "\0" "-o" "\0" "10" "\0" "-n" "\0" "40";
 	
-	if(!loaded){
-		drawMsg("Loading HDD Modules...");
+	if(!have_HDD_modules)
+	{	drawMsg("Loading HDD Modules...");
 		hddPreparePoweroff();
 		hddSetUserPoweroffCallback((void *)poweroffHandler,(void *)i);
-		
-		initsbv_patches();
-		SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&filexio_irx, size_filexio_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL, &ret);
-		SifExecModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
-		SifExecModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
-		SifExecModuleBuffer(&ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
-		loaded = TRUE;
+		if	(!have_poweroff)
+		{	SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
+			have_poweroff = 1;
+		}
+		load_iomanx();
+		load_filexio();
+		load_ps2dev9();
+		load_ps2atad(); //also loads ps2hdd & ps2fs
+		have_HDD_modules = TRUE;
 	}
 }
-
-////////////////////////////////////////////////////////////////////////
+//RA NB: I have removed the loading of ps2netfs from loadHddModules as it made
+//no sense. That is a networking module, not an HDD module. It needs ps2ip+smap.
+//I also consider it a wasted resource to always use up one server thread for a
+//server having no convenient clients.
+//------------------------------
+//endfunc loadHddModules
+//--------------------------------------------------------------
+// Load Network modules by EP (modified by RA)
+//------------------------------
+void loadNetModules(void)
+{
+	if(!have_NetModules){
+		loadHddModules();
+		drawMsg("Loading FTP Modules...");
+		
+		// getIpConfig(); //RA NB: I always get that info, early in init
+		// Also, my module checking makes some other tests redundant
+		load_ps2netfs(); // loads ps2netfs from internal buffer
+		load_ps2ftpd();  // loads ps2dftpd from internal buffer
+		have_NetModules = 1;
+	}
+	strcpy(mainMsg, netConfig);
+}
+//------------------------------
+//endfunc loadNetModules
+//--------------------------------------------------------------
 // SYSTEM.CNFの読み取り
 int ReadCNF(char *direlf)
 {
@@ -304,8 +634,9 @@ int ReadCNF(char *direlf)
 	}
 	return 0;
 }
-
-////////////////////////////////////////////////////////////////////////
+//------------------------------
+//endfunc ReadCNF
+//--------------------------------------------------------------
 // ELFのテストと実行
 void RunElf(const char *path)
 {
@@ -350,13 +681,23 @@ void RunElf(const char *path)
 			sprintf(mainMsg, "%s is Not Found.", path);
 			return;
 		}
+	}else if(!strncmp(path, "host:", 5)){
+		initHOST();
+		party[0] = 0;
+		strcpy(fullpath, "host:");
+		strcat(fullpath, path+6);
+		makeHostPath(fullpath, fullpath);
+		if(checkELFheader(fullpath)<0){
+			sprintf(mainMsg, "%s is Not Found.", path);
+			return;
+		}
 	}else if(!stricmp(path, "MISC/PS2Disc")){
 		drawMsg("Reading SYSTEM.CNF...");
 		strcpy(mainMsg, "Failed");
 		party[0]=0;
 		trayopen=FALSE;
 		if(!ReadCNF(fullpath)) return;
-		//strcpy(mainMsg, "Succece!"); return;
+		//strcpy(mainMsg, "Success!"); return;
 	}else if(!stricmp(path, "MISC/FileBrowser")){
 		mainMsg[0] = 0;
 		tmp[0] = 0;
@@ -367,6 +708,26 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/PS2Browser")){
 		party[0]=0;
 		strcpy(fullpath,"rom0:OSDSYS");
+	}else if(!stricmp(path, "MISC/PS2Net")){
+		mainMsg[0] = 0;
+		loadNetModules();
+		return;
+//Next two clauses are only for debugging
+/*
+	}else if(!stricmp(path, "MISC/IOP Reset")){
+		mainMsg[0] = 0;
+		Reset();
+		if(!strncmp(LaunchElfDir, "mass:", 5))
+			loadUsbModules();
+		padReset();
+		setupPad();
+		return;
+	}else if(!stricmp(path, "MISC/Debug Screen")){
+		mainMsg[0] = 0;
+		ShowDebugScreen();
+		return;
+*/
+//end of two clauses used only for debugging
 	}else if(!strncmp(path, "cdfs", 4)){
 		party[0] = 0;
 		strcpy(fullpath, path);
@@ -386,9 +747,9 @@ void RunElf(const char *path)
 	padPortClose(0,0);
 	RunLoaderElf(fullpath, party);
 }
-
-////////////////////////////////////////////////////////////////////////
-// 方向キーで選択されたELFの実行
+//------------------------------
+//endfunc RunElf
+//--------------------------------------------------------------
 void RunSelectedElf(void)
 {
 	int n=0;
@@ -401,13 +762,56 @@ void RunSelectedElf(void)
 		}
 	}
 }
-
-/////////////////////////////////////////////////////////////////////
+//------------------------------
+//endfunc RunSelectedElf
+//--------------------------------------------------------------
+// Config Cycle Left  (--) by EP
+void decConfig()
+{
+	if (numCNF > 0)
+		numCNF--;
+	else
+		numCNF = maxCNF-1;
+	
+	if (numCNF == 0)
+		strcpy(CNF, "LAUNCHELF.CNF");
+	else
+		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
+	loadConfig(mainMsg, CNF);
+	
+	timeout = (setting->timeout+1)*SCANRATE;
+	if(setting->discControl)
+		loadCdModules();
+}
+//------------------------------
+//endfunc decConfig
+//--------------------------------------------------------------
+// Config Cycle Right (++) by EP
+void incConfig()
+{
+	if (numCNF < maxCNF-1)
+		numCNF++;
+	else
+		numCNF = 0;
+	
+	if (numCNF == 0)
+		strcpy(CNF, "LAUNCHELF.CNF");
+	else
+		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
+	loadConfig(mainMsg, CNF);
+	
+	timeout = (setting->timeout+1)*SCANRATE;
+	if(setting->discControl)
+		loadCdModules();
+}
+//------------------------------
+//endfunc incConfig
+//--------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 void Reset()
 {
 	SifIopReset("rom0:UDNL rom0:EELOADCNF",0);
-	while (SifIopSync());
+	while(SifIopSync());
 	fioExit();
 	SifExitIopHeap();
 	SifLoadFileExit();
@@ -417,39 +821,109 @@ void Reset()
 	SifInitRpc(0);
 	FlushCache(0);
 	FlushCache(2);
-}
 
-////////////////////////////////////////////////////////////////////////
-// main
+	have_cdvd     = 0;
+	have_usbd     = 0;
+	have_usb_mass = 0;
+	have_ps2smap  = 0;
+	have_ps2host  = 0;
+	have_ps2ftpd  = 0;
+	have_NetModules = 0;
+	have_HDD_modules = 0;
+	have_sbv_patches = 0;
+
+	CheckModules();
+	loadBasicModules();
+	mcInit(MC_TYPE_RESET);
+	mcInit(MC_TYPE_MC);
+}
+//------------------------------
+//endfunc Reset
+//--------------------------------------------------------------
 int main(int argc, char *argv[])
 {
 	char *p;
 	int nElfs;
 	CdvdDiscType_t cdmode;
-	
+	int hdd_booted = 0;
+	int host_or_hdd_booted = 0;
+	int mass_booted = 0;
+	int mc_booted = 0;
+	int cdvd_booted = 0;
+	int	host_booted = 0;
+
 	SifInitRpc(0);
-	loadModules();
-	
-	strcpy(LaunchElfDir, argv[0]);
-	if((p=strrchr(LaunchElfDir, '/'))==NULL)
-		p=strrchr(LaunchElfDir, '\\');
-	if(p!=NULL) *(p+1)=0;
-	LastDir[0] = 0;
-	
-	loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-	
-	if(setting->resetIOP){
-		Reset();
-		loadModules();
-	}
-	
-	setupPad();
-	
+	while(SifIopSync());
+	CheckModules();
+	loadBasicModules();
 	mcInit(MC_TYPE_MC);
-	
+
+	if	((argc > 0) && argv[0])
+	{	if	(!strncmp(argv[0], "mass", 4))
+			mass_booted = 1;
+		else if	(!strncmp(argv[0], "mc", 2))
+			mc_booted = 1;
+		else if	(!strncmp(argv[0], "cd", 2))
+			cdvd_booted = 1;
+		else if	((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
+			hdd_booted = 1;
+		else if	((!strncmp(argv[0], "host", 4)))
+		{	host_or_hdd_booted = 1;
+			if	(have_fakehost)
+				hdd_booted = 1;
+			else
+			  host_booted = 1;
+		}
+	}
+
+	if	(host_booted)	//Fix untestable modules for host booting
+	{	have_ps2smap = 1;
+		have_ps2host	= 1;
+	}
+
+	if	(mass_booted)	//Fix untestable module for USB_mass booting
+	{	have_usbd = 1;
+		//have_usb_mass = 1;
+	}
+
+	strcpy(LaunchElfDir, argv[0]);
+	if	(	((p=strrchr(LaunchElfDir, '/'))==NULL)
+			&&((p=strrchr(LaunchElfDir, '\\'))==NULL)
+			)	p=strrchr(LaunchElfDir, ':');
+	if	(p!=NULL)
+		*(p+1)=0;
+
+	LastDir[0] = 0;
+
+	loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	maxCNF = setting->numCNF;
+	swapKeys = setting->swapKeys;
+	if(setting->resetIOP)
+	{	Reset();
+		if(!strncmp(LaunchElfDir, "mass:", 5))
+		{	initsbv_patches();
+			loadUsbModules();
+		}
+	}
+	getIpConfig();
+	setupPad();
+	initsbv_patches();
+
+
 	if(setting->discControl)
 		loadCdModules();
-	
+
+//Last chance to look at bootup screen, so allow braking here
+/*
+	if(readpad() && (new_pad && PAD_UP))
+	{ scr_printf("________ Boot paused. Press 'Circle' to continue.\n");
+		while(1)
+		{	if(new_pad & PAD_CIRCLE)
+				break;
+			while(!readpad());
+		}
+	}
+*/
 	setupito();
 	
 	timeout = (setting->timeout+1)*SCANRATE;
@@ -502,16 +976,10 @@ int main(int argc, char *argv[])
 					timeout = (setting->timeout+1)*SCANRATE;
 					if(setting->discControl)
 						loadCdModules();
-				}else if(new_pad & PAD_LEFT){
-					loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-					timeout = (setting->timeout+1)*SCANRATE;
-					if(setting->discControl)
-						loadCdModules();
-				}else if(new_pad & PAD_RIGHT){
-					loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF1.CNF"));
-					timeout = (setting->timeout+1)*SCANRATE;
-					if(setting->discControl)
-						loadCdModules();
+				}else if(maxCNF > 1 && new_pad & PAD_LEFT){
+					decConfig();
+				}else if(maxCNF > 1 && new_pad & PAD_RIGHT){
+					incConfig();
 				}else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
 					selected=0;
 					mode=DPAD;
@@ -527,25 +995,21 @@ int main(int argc, char *argv[])
 					selected++;
 					if(selected>=nElfs)
 						selected=0;
-				}else if(new_pad & PAD_CROSS){
+				}else if((!swapKeys && new_pad & PAD_CROSS)
+				      || (swapKeys && new_pad & PAD_CIRCLE) ){
 					mode=BUTTON;
 					timeout = (setting->timeout+1)*SCANRATE;
-				}else if(new_pad & PAD_CIRCLE){
-					if(selected==nElfs-3){
+				}else if((swapKeys && new_pad & PAD_CROSS)
+				      || (!swapKeys && new_pad & PAD_CIRCLE) ){
+					if(maxCNF > 1 && selected==nElfs-1){
+						mode=BUTTON;
+						incConfig();
+					}else if(maxCNF > 1 && selected==nElfs-2){
+						mode=BUTTON;
+						decConfig();
+					}else if((maxCNF > 1 && selected==nElfs-3) || (selected==nElfs-1)){
 						mode=BUTTON;
 						config(mainMsg, CNF);
-						timeout = (setting->timeout+1)*SCANRATE;
-						if(setting->discControl)
-							loadCdModules();
-					}else if(selected==nElfs-2){
-						mode=BUTTON;
-						loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-						timeout = (setting->timeout+1)*SCANRATE;
-						if(setting->discControl)
-							loadCdModules();
-					}else if(selected==nElfs-1){
-						mode=BUTTON;
-						loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF1.CNF"));
 						timeout = (setting->timeout+1)*SCANRATE;
 						if(setting->discControl)
 							loadCdModules();
@@ -561,3 +1025,8 @@ int main(int argc, char *argv[])
 		}
 	}
 }
+//------------------------------
+//endfunc main
+//--------------------------------------------------------------
+//End of file: main.c
+//--------------------------------------------------------------

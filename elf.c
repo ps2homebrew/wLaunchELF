@@ -71,7 +71,8 @@ int checkELFheader(const char *path)
 		fileXioClose(fd);
 		fileXioUmount("pfs0:");
 	}else if(!strncmp(fullpath, "mc", 2) ||
-		!strncmp(fullpath, "mass", 4)) {
+		!strncmp(fullpath, "mass", 4) ||
+		!strncmp(fullpath, "host", 4)){
 		if ((fd = fioOpen(fullpath, O_RDONLY)) < 0) 
 			goto error;
 		size = fioLseek(fd, 0, SEEK_END);
