@@ -34,6 +34,9 @@
 // 垂直スキャンレート
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
+// sincro needed for modified getfilepath
+#define USBD_IRX_CNF 3
+
 enum
 {
 	SCREEN_WIDTH = 512,
@@ -53,6 +56,7 @@ enum
 typedef struct
 {
 	char dirElf[15][MAX_PATH];
+	char usbd[MAX_PATH];
 	int timeout;
 	int filename;
 	uint64 color[4];

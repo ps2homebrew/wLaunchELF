@@ -1,5 +1,16 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.42  (2006.02.15) NB: switched date format to YYYY.MM.DD
+-Implemented mcPaste command in submenu. Like the old Paste command this copies all selected files and folders (recursively), but it is specially intended for MC backups. It can only be used either to copy from MC to non-MC (making backups from MC) or to copy from non-MC to MC (restoring backups to MC). These backups on non-MC media will have an extra file in each folder, holding the original MC attributes and timestamps of all files in that folder. This data will be used when restoring the backups to MC, so that games will accept the restored files as being the originals. The 'extra' files are filtered out from such copying so they don't appear among the restored files on MC. Those 'extra' files all use the same filename, which is "PS2_MC_Backup_Attributes.BUP.bin" (to avoid any confusion with 'real' files).
+
+LaunchELF v3.41u (02/13/2006)
+-Implemented new standards for handling of file and folder attributes on PS2 memory cards. This ensures that all gamesaves copied from one such MC to another such MC will have all attributes and timestamps preserved, so the copies remain acceptable to the games. It also improves the chances of successful backup/restore of gamesaves to/from non-MC devices, by using standard attributes for files and folders that match what the majority of games use.
+-Implemented a patch to the 'Get Size' command, so that it will display real attributes and modification timestamp of a file/folder on MC. For non MC this will show a standard attribute and zeroed timestamp, so that's not very useful. This patch is just a temporary thing, until we make something better.
+-Implemented selection of external USBD.IRX files, for those that have trouble using the one embedded into LaunchELF. (This change was contributed by 'sincro'.)
+
+LaunchELF v3.41t (02/03/2006)
+-Implemented a new CNF format and various new defaults for the settings. Essentially this means that all settings are specified as named variables, and line order is no longer significant. This will allow easy human editing as well as many new features in the future. For details on new defaults, study the enclosed LAUNCHELF.CNF
+
 LaunchELF v3.41s (01/13/2006)
 -Modified a comment in fat_write.c to fix an IOP 3.2.2 compiler issue for the usb mass driver.
 -Added a new line to the end of imports.lst to eliminate an IOP 3.2.2 compiler warning for host.

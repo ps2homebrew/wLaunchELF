@@ -13,7 +13,7 @@ EE_LIBS = -lpad -lito -lmc -lhdd -lcdvdfs -lfileXio -lpatches -lpoweroff  -ldebu
 all:	$(EE_BIN)
 
 usbd.s:
-	bin2s modules/usbd.irx usbd.s usbd_irx
+	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx
 
 usb_mass.s:
 	bin2s modules/usb_mass.irx usb_mass.s usb_mass_irx

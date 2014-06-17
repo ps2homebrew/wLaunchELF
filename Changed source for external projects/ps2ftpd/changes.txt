@@ -39,6 +39,8 @@ FileSystem.c
 -Fixed an issue with auto-mounting hdd partitions for those using Internet Explorer as their ftp client.
 -Fixed a bug with the IOP 3.2.2 compiler by moving "int iOpened = 0" variable declaration in function FileSystem_OpenFile to the top with the other variable declarations. (Note: this fixes the crashing issue that occurred when transferring a new file to the memory card).
 -Rewrote some of the auto-mount partitions code to also work with the IOP 3.2.2 compiler.
+-Altered the partition filter to prevent sub partitions from also appearing in the listing.
+-Changed the size value to zero for all folders including partitions in the hdd listing.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

@@ -335,10 +335,17 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 				{
 					strcpy(pInfo->m_Name,ent.name);
 
-					pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
-
-					// fix for mc copy protected attribute, mode 47 is a directory
-					pInfo->m_eType = FIO_SO_ISDIR(ent.stat.mode) || (47 == ent.stat.mode) ? FT_DIRECTORY : FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
+					// fix for mc copy protected attribute, mode 0x002F is a directory
+					if( FIO_SO_ISDIR(ent.stat.mode) == FT_DIRECTORY || ent.stat.mode == 0x002F )
+					{
+						pInfo->m_iSize = 0;
+						pInfo->m_eType = FT_DIRECTORY;
+					}
+					else
+					{
+						pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
+						pInfo->m_eType = FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
+					}
 
 					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
 					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
@@ -354,13 +361,13 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					pInfo->m_iProtection = pInfo->m_iProtection|(pInfo->m_iProtection << 3)|(pInfo->m_iProtection << 6);
 
 					// fix for mass file/directory protection attributes
-					if( (ent.stat.mode == 16) || (ent.stat.mode == 32) )
-						pInfo->m_iProtection = 511;
+					if( (ent.stat.mode == 0x0010) || (ent.stat.mode == 0x0020) )
+						pInfo->m_iProtection = 0x1FF;
 
 					/* debug info
 					printf( "Name:          \t%s\n", ent.name );
 					printf( "Size:          \t%li\n", (u32)ent.stat.size );
-					printf( "Mode:          \t%i\n", ent.stat.mode );
+					printf( "Mode:          \t0x%04X\n", ent.stat.mode );
 					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
 					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
 					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );
@@ -387,29 +394,37 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 				if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) > 0 )
 				{
-					// skip over certain ps2 hdd partitions therefore keeping them out of the listing
+					// hdd partition filter: skip over certain ps2 hdd partitions
 					while( !strcmp(pContext->m_kFile.device->name, "hdd") && 
-						(!strncmp(ent.name, "PP.HDL.", 7) || (!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot"))) )
+						( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
+							(!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot")) ) )
 					{
 						// move to next entry and check if it's the last
 						if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) == 0 )
-							break;
-					}
+						{
+							// check last entry
+							if( !strcmp(pContext->m_kFile.device->name, "hdd") && 
+								( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
+									(!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot")) ) )
+								return -1;
 
-					// check last entry
-					if( !strcmp(pContext->m_kFile.device->name, "hdd") && 
-						(!strncmp(ent.name, "PP.HDL.", 7) || (!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot"))) )
-						break;
+							break;
+						}
+					}
 
 					strcpy(pInfo->m_Name,ent.name);
 
-					pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
-
 					// auto-mounting partitions: changed hdd partitions to directories
-					if( !strcmp(pContext->m_kFile.device->name, "hdd") )
+					if( FIO_S_ISDIR(ent.stat.mode) == FT_DIRECTORY || ent.stat.mode == 0x0100 )
+					{
+						pInfo->m_iSize = 0;
 						pInfo->m_eType = FT_DIRECTORY;
+					}
 					else
-						pInfo->m_eType = FIO_S_ISDIR(ent.stat.mode) ? FT_DIRECTORY : FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
+					{
+						pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
+						pInfo->m_eType = FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
+					}
 
 					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
 					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
@@ -425,10 +440,9 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					/* debug info
 					printf( "Name:          \t%s\n", ent.name );
-					printf( "Size:          \t%i\n", ent.stat.size );
-					printf( "Mode:          \t%li\n", (u32)ent.stat.mode );
-					if( !strcmp(pContext->m_kFile.device->name, "pfs") )
-						printf( "Attr:          \t%i\n", ent.stat.attr );
+					printf( "Size:          \t%li\n", (u32)ent.stat.size );
+					printf( "Mode:          \t0x%04X\n", ent.stat.mode );
+					printf( "Attr:          \t0x%04X\n", ent.stat.attr );
 					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
 					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
 					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );

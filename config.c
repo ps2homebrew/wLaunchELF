@@ -1,18 +1,22 @@
+//---------------------------------------------------------------------------
+// File name:   config.c
+//---------------------------------------------------------------------------
 #include "launchelf.h"
+#include <stdbool.h>
 
 enum
 {
 	DEF_TIMEOUT = 10,
 	DEF_FILENAME = TRUE,
-	DEF_COLOR1 = ITO_RGBA(30,30,50,0),
-	DEF_COLOR2 = ITO_RGBA(85,85,95,0),
-	DEF_COLOR3 = ITO_RGBA(160,160,160,0),
-	DEF_COLOR4 = ITO_RGBA(255,255,255,0),
+	DEF_COLOR1 = ITO_RGBA(128,128,128,0),
+	DEF_COLOR2 = ITO_RGBA(64,64,64,0),
+	DEF_COLOR3 = ITO_RGBA(96,0,0,0),
+	DEF_COLOR4 = ITO_RGBA(0,0,0,0),
 	DEF_SCREEN_X = 128,
 	DEF_SCREEN_Y = 30,
-	DEF_DISCCONTROL = TRUE,
+	DEF_DISCCONTROL = FALSE,
 	DEF_INTERLACE = FALSE,
-	DEF_RESETIOP = FALSE,
+	DEF_RESETIOP = TRUE,
 	DEF_NUMCNF = 1,
 	DEF_SWAPKEYS = FALSE,
 	
@@ -29,11 +33,52 @@ enum
 
 SETTING *setting = NULL;
 SETTING *tmpsetting;
+//---------------------------------------------------------------------------
+// End of declarations
+// Start of functions
+//---------------------------------------------------------------------------
+// get_CNF_string is the main CNF parser called for each CNF variable in a
+// CNF file. Input and output data is handled via its pointer parameters.
+// The return value flags 'false' when no variable is found. (normal at EOF)
+//---------------------------------------------------------------------------
+int	get_CNF_string(unsigned char **CNF_p_p,
+                   unsigned char **name_p_p,
+                   unsigned char **value_p_p)
+{
+	unsigned char *np, *vp, *tp = *CNF_p_p;
 
-////////////////////////////////////////////////////////////////////////
-// メモリーカードの状態をチェックする。
-// 戻り値は有効なメモリーカードスロットの番号。
-// メモリーカードが挿さっていない場合は-11を返す。
+start_line:
+	while((*tp<=' ') && (*tp>'\0')) tp+=1;  //Skip leading whitespace, if any
+	if(*tp=='\0')	return false;            //but exit at EOF
+	np = tp;                               //Current pos is potential name
+	if(*tp<'A')                            //but may be a comment line
+	{                                      //We must skip a comment line
+		while((*tp!='\r')&&(*tp!='\n')&&(tp!='\0')) tp+=1;  //Seek line end
+		goto start_line;                     //Go back to try next line
+	}
+
+	while((*tp>='A')||((*tp>='0')&&(*tp<='9'))) tp+=1;  //Seek name end
+	if(*tp=='\0')	return false;            //but exit at EOF
+	*tp++ = '\0';                          //terminate name string (passing)
+	while((*tp<=' ') && (*tp>'\0')) tp+=1; //Skip post-name whitespace, if any
+	if(*tp!='=') return false;             //exit (syntax error) if '=' missing
+	tp += 1;                               //skip '='
+	while((*tp<=' ') && (*tp>'\0')         //Skip pre-value whitespace, if any
+		&& (*tp!='\r') && (*tp!='\n'))tp+=1; //but do not pass the end of the line
+	if(*tp=='\0')	return false;            //but exit at EOF
+	vp = tp;                               //Current pos is potential value
+
+	while((*tp!='\r')&&(*tp!='\n')&&(tp!='\0')) tp+=1;  //Seek line end
+	if(*tp!='\0') *tp++ = '\0';            //terminate value (passing if not EOF)
+	while((*tp<=' ') && (*tp>'\0')) tp+=1;  //Skip following whitespace, if any
+
+	*CNF_p_p = tp;                         //return new CNF file position
+	*name_p_p = np;                        //return found variable name
+	*value_p_p = vp;                       //return found variable value
+	return true;                           //return control to caller
+}	//Ends get_CNF_string
+
+//---------------------------------------------------------------------------
 int CheckMC(void)
 {
 	int dummy, ret;
@@ -50,41 +95,74 @@ int CheckMC(void)
 
 	return -11;
 }
-
-////////////////////////////////////////////////////////////////////////
-// LAUNCHELF.CNF に設定を保存する
+//---------------------------------------------------------------------------
+// Save LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
+// sincro: ADD save USBD_FILE string
+//---------------------------------------------------------------------------
 void saveConfig(char *mainMsg, char *CNF)
 {
-	int i, ret, fd, size;
-	const char LF[3]={0x0D, 0x0A, 0};
-	char c[MAX_PATH], tmp[25][MAX_PATH];
-	char* p;
-	
-	// 設定をメモリに格納
-	for(i=0; i<12; i++)
-		strcpy(tmp[i], setting->dirElf[i]);
-	sprintf(tmp[12], "%d", setting->timeout);
-	sprintf(tmp[13], "%d", setting->filename);
-	for(i=0; i<4; i++)
-		sprintf(tmp[14+i], "%lu", setting->color[i]);
-	sprintf(tmp[18], "%d", setting->screen_x);
-	sprintf(tmp[19], "%d", setting->screen_y);
-	sprintf(tmp[20], "%d", setting->discControl);
-	sprintf(tmp[21], "%d", setting->interlace);
-	sprintf(tmp[22], "%d", setting->resetIOP);
-	sprintf(tmp[23], "%d", setting->numCNF);
-	sprintf(tmp[24], "%d", setting->swapKeys);
-	
-	p = (char*)malloc(sizeof(SETTING));
-	p[0]=0;
-	size=0;
-	for(i=0; i<25; i++){
-		strcpy(c, tmp[i]);
-		strcat(c, LF);
-		strcpy(p+size, c);
-		size += strlen(c);
-	}
-	// LaunchELFのディレクトリにCNFがあったらLaunchELFのディレクトリにセーブ
+	int ret, fd;
+	char c[MAX_PATH], tmp[26*MAX_PATH];
+	size_t CNF_size;
+
+	sprintf(tmp,
+		"CNF_version = 2.0\r\n"
+		"LK_auto_E1 = %s\r\n"
+		"LK_Circle_E1 = %s\r\n"
+		"LK_Cross_E1 = %s\r\n"
+		"LK_Square_E1 = %s\r\n"
+		"LK_Triangle_E1 = %s\r\n"
+		"LK_L1_E1 = %s\r\n"
+		"LK_R1_E1 = %s\r\n"
+		"LK_L2_E1 = %s\r\n"
+		"LK_R2_E1 = %s\r\n"
+		"LK_L3_E1 = %s\r\n"
+		"LK_R3_E1 = %s\r\n"
+		"LK_Start_E1 = %s\r\n"
+		"LK_auto_Timer = %d\r\n"
+		"Menu_Hide_Paths = %d\r\n"
+		"GUI_Col_1_ABGR = %08lX\r\n"
+		"GUI_Col_2_ABGR = %08lX\r\n"
+		"GUI_Col_3_ABGR = %08lX\r\n"
+		"GUI_Col_4_ABGR = %08lX\r\n"
+		"Screen_X = %d\r\n"
+		"Screen_Y = %d\r\n"
+		"Init_CDVD_Check = %d\r\n"
+		"Screen_Interlace = %d\r\n"
+		"Init_Reset_IOP = %d\r\n"
+		"Menu_Pages = %d\r\n"
+		"GUI_Swap_Keys = %d\r\n"
+		"USBD_FILE = %s\r\n"
+		"%n",           // %n causes NO output, but only a measurement
+		setting->dirElf[0],  //auto
+		setting->dirElf[1],  //Circle
+		setting->dirElf[2],  //Cross
+		setting->dirElf[3],  //Square
+		setting->dirElf[4],  //Triangle
+		setting->dirElf[5],  //L1
+		setting->dirElf[6],  //R1
+		setting->dirElf[7],  //L2
+		setting->dirElf[8],  //R2
+		setting->dirElf[9],  //L3
+		setting->dirElf[10], //R3
+		setting->dirElf[11], //Start
+		setting->timeout,    //auto_Timer
+		setting->filename,   //Menu_Hide_Path
+		setting->color[0],   //Col_0
+		setting->color[1],   //Col_1
+		setting->color[2],   //Col_2
+		setting->color[3],   //Col_3
+		setting->screen_x,   //Screen_X
+		setting->screen_y,   //Screen_Y
+		setting->discControl,  //Init_CDVD_Check
+		setting->interlace,  //Screen_Interlace
+		setting->resetIOP,   //Init_Reset_IOP
+		setting->numCNF,     //Menu_Pages
+		setting->swapKeys,   //GUI_Swap_Keys
+		setting->usbd,       //USBD_FILE
+		&CNF_size       // This variable measure the size of sprintf data
+  );
+
 	strcpy(c, LaunchElfDir);
 	strcat(c, CNF);
 	if((fd=fioOpen(c, O_RDONLY)) >= 0)
@@ -94,45 +172,77 @@ void saveConfig(char *mainMsg, char *CNF)
 			sprintf(c, "mc%d:/SYS-CONF", LaunchElfDir[2]-'0');
 		else
 			sprintf(c, "mc%d:/SYS-CONF", CheckMC());
-		// SYS-CONFがあったらSYS-CONFにセーブ
+
 		if((fd=fioDopen(c)) >= 0){
 			fioDclose(fd);
 			char strtmp[MAX_PATH] = "/";
 			strcat(c, strcat(strtmp, CNF));
-		// SYS-CONFがなかったらLaunchELFのディレクトリにセーブ
 		}else{
 			strcpy(c, LaunchElfDir);
 			strcat(c, CNF);
 		}
 	}
-	sprintf(mainMsg, "Failed To Save %s", CNF);
-	// 書き込み
+
 	if((fd=fioOpen(c,O_CREAT|O_WRONLY|O_TRUNC)) < 0){
+		sprintf(mainMsg, "Failed To Save %s", CNF);
 		return;
 	}
-	ret = fioWrite(fd,p,size);
-	if(ret==size) sprintf(mainMsg, "Saved Config (%s)", c);
+	ret = fioWrite(fd,&tmp,CNF_size);
+	if(ret==CNF_size)
+		sprintf(mainMsg, "Saved Config (%s)", c);
+	else
+		sprintf(mainMsg, "Failed writing %s", CNF);
 	fioClose(fd);
-	free(p);
 }
+//---------------------------------------------------------------------------
+unsigned long hextoul(char *string)
+{
+	unsigned long value;
+	char c;
 
-////////////////////////////////////////////////////////////////////////
-// LAUNCHELF.CNF から設定を読み込む
+	value = 0;
+	while( !(((c=*string++)<'0')||(c>'F')||((c>'9')&&(c<'A'))) )
+		value = value*16 + ((c>'9') ? (c-'A'+10) : (c-'0'));
+	return value;
+}
+//---------------------------------------------------------------------------
+// Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
+// sincro: ADD load USBD_FILE string
+//---------------------------------------------------------------------------
 void loadConfig(char *mainMsg, char *CNF)
 {
-	int i, j, k, fd, len, mcport;
-	size_t size;
-	char path[MAX_PATH], tmp[25][MAX_PATH], *p;
+	int i, fd, mcport, var_cnt, CNF_version;
+	size_t CNF_size;
+	char path[MAX_PATH];
+	unsigned char *RAM_p, *CNF_p, *name, *value;
 	
 	if(setting!=NULL)
 		free(setting);
 	setting = (SETTING*)malloc(sizeof(SETTING));
-	// LaunchELFが実行されたパスから設定ファイルを開く
+
+	for(i=0; i<12; i++)
+		setting->dirElf[i][0] = 0;
+	strcpy(setting->dirElf[1], "MISC/FileBrowser");
+	strcpy(setting->usbd, "\0");
+	setting->timeout = DEF_TIMEOUT;
+	setting->filename = DEF_FILENAME;
+	setting->color[0] = DEF_COLOR1;
+	setting->color[1] = DEF_COLOR2;
+	setting->color[2] = DEF_COLOR3;
+	setting->color[3] = DEF_COLOR4;
+	setting->screen_x = DEF_SCREEN_X;
+	setting->screen_y = DEF_SCREEN_Y;
+	setting->discControl = DEF_DISCCONTROL;
+	setting->interlace = DEF_INTERLACE;
+	setting->resetIOP = DEF_RESETIOP;
+	setting->numCNF = DEF_NUMCNF;
+	setting->swapKeys = DEF_SWAPKEYS;
+
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
 	fd = fioOpen(path, O_RDONLY);
-	// 開けなかったら、SYS-CONFの設定ファイルを開く
+
 	if(fd<0) {
 		if(!strncmp(LaunchElfDir, "mc", 2))
 			mcport = LaunchElfDir[2]-'0';
@@ -148,152 +258,67 @@ void loadConfig(char *mainMsg, char *CNF)
 				strcpy(LaunchElfDir, strtmp);
 		}
 	}
-	// どのファイルも開けなかった場合、設定を初期化する
+
 	if(fd<0) {
-		for(i=0; i<12; i++)
-			setting->dirElf[i][0] = 0;
-		setting->timeout = DEF_TIMEOUT;
-		setting->filename = DEF_FILENAME;
-		setting->color[0] = DEF_COLOR1;
-		setting->color[1] = DEF_COLOR2;
-		setting->color[2] = DEF_COLOR3;
-		setting->color[3] = DEF_COLOR4;
-		setting->screen_x = DEF_SCREEN_X;
-		setting->screen_y = DEF_SCREEN_Y;
-		setting->discControl = DEF_DISCCONTROL;
-		setting->interlace = DEF_INTERLACE;
-		setting->resetIOP = DEF_RESETIOP;
-		setting->numCNF = DEF_NUMCNF;
-		setting->swapKeys = DEF_SWAPKEYS;
+failed_load:
 		sprintf(mainMsg, "Failed To Load %s", CNF);
-	} else {
-		// 設定ファイルをメモリに読み込み
-		size = fioLseek(fd, 0, SEEK_END);
-		printf("size=%d\n", size);
-		fioLseek(fd, 0, SEEK_SET);
-		p = (char*)malloc(size);
-		fioRead(fd, p, size);
-		fioClose(fd);
-		
-		// 計22行のテキストを読み込む
-		// 12行目まではボタンセッティング
-		// 13行目は TIMEOUT 値
-		// 14行目は PRINT ONLY FILENAME の設定値
-		// 15行目はカラー1
-		// 16行目はカラー2
-		// 17行目はカラー3
-		// 18行目はカラー4
-		// 19行目はスクリーンX
-		// 20行目はスクリーンY
-		// 21行目はディスクコントロール
-		// 22行目はインターレース
-		for(i=j=k=0; i<size; i++) {
-			if(p[i]==0x0D && p[i+1]==0x0A) {
-				if(i-k<MAX_PATH) {
-					p[i]=0;
-					strcpy(tmp[j++], &p[k]);
-				} else
-					break;
-				if(j>=25)
-					break;
-				k=i+2;
-			}
-		}
-		while(j<25)
-			tmp[j++][0] = 0;
-		// ボタンセッティング
-		for(i=0; i<12; i++) {
-			// v3.01以前のバージョンとの上位互換
-			if(tmp[i][0] == '/')
-				sprintf(setting->dirElf[i], "mc:%s", tmp[i]);
-			else
-				strcpy(setting->dirElf[i], tmp[i]);
-		}
-		// TIMEOUT値の設定
-		if(tmp[12][0]) {
-			setting->timeout = 0;
-			len = strlen(tmp[12]);
-			i = 1;
-			while(len-- != 0) {
-				setting->timeout += (tmp[12][len]-'0') * i;
-				i *= 10;
-			}
-		} else
-			setting->timeout = DEF_TIMEOUT;
-		// PRINT ONLY FILENAME の設定
-		if(tmp[13][0])
-			setting->filename = tmp[13][0]-'0';
-		else
-			setting->filename = DEF_FILENAME;
-		// カラー1から4の設定
-		if(tmp[14][0]) {
-			for(i=0; i<4; i++) {
-				setting->color[i] = 0;
-				len = strlen(tmp[14+i]);
-				j = 1;
-				while(len-- != 0) {
-					setting->color[i] += (tmp[14+i][len]-'0') * j;
-					j *= 10;
-				}
-			}
-		} else {
-			setting->color[0] = DEF_COLOR1;
-			setting->color[1] = DEF_COLOR2;
-			setting->color[2] = DEF_COLOR3;
-			setting->color[3] = DEF_COLOR4;
-		}
-		// スクリーンXの設定
-		if(tmp[18][0]) {
-			setting->screen_x = 0;
-			j = strlen(tmp[18]);
-			for(i=1; j; i*=10)
-				setting->screen_x += (tmp[18][--j]-'0')*i;
-		} else
-			setting->screen_x = DEF_SCREEN_X;
-		// スクリーンYの設定
-		if(tmp[19][0]) {
-			setting->screen_y = 0;
-			j = strlen(tmp[19]);
-			for(i=1; j; i*=10)
-				setting->screen_y += (tmp[19][--j]-'0')*i;
-		} else
-			setting->screen_y = DEF_SCREEN_Y;
-		// ディスクコントロールの設定
-		if(tmp[20][0])
-			setting->discControl = tmp[20][0]-'0';
-		else
-			setting->discControl = DEF_DISCCONTROL;
-		// インターレースの設定
-		if(tmp[21][0])
-			setting->interlace = tmp[21][0]-'0';
-		else
-			setting->interlace = DEF_INTERLACE;
-		// Reset IOP
-		if(tmp[22][0])
-			setting->resetIOP = tmp[22][0]-'0';
-		else
-			setting->resetIOP = DEF_RESETIOP;
-		// Num CNF's
-		if(tmp[23][0]) {
-			setting->numCNF = 0;
-			j = strlen(tmp[23]);
-			for(i=1; j; i*=10)
-				setting->numCNF += (tmp[23][--j]-'0')*i;
-		} else
-			setting->numCNF = DEF_NUMCNF;
-		// Swap keys
-		if(tmp[24][0])
-			setting->swapKeys = tmp[24][0]-'0';
-		else
-			setting->swapKeys = DEF_SWAPKEYS;
-		free(p);
-		sprintf(mainMsg, "Loaded Config (%s)", path);
+		return;
 	}
+	// This point is only reached after succefully opening CNF
+
+	CNF_size = fioLseek(fd, 0, SEEK_END);
+	printf("CNF_size=%d\n", CNF_size);
+	fioLseek(fd, 0, SEEK_SET);
+	RAM_p = (char*)malloc(CNF_size);
+	CNF_p = RAM_p;
+	if	(CNF_p==NULL)	{ fioClose(fd); goto failed_load; }
+		
+	fioRead(fd, CNF_p, CNF_size);  //Read CNF as one long string
+	fioClose(fd);
+	CNF_p[CNF_size] = '\0';        //Terminate the CNF string
+
+//RA NB: in the code below, the 'LK_' variables havee been implemented such that
+//       any _Ex suffix will be accepted, with identical results. This will need
+//       to be modified when more execution metods are implemented.
+
+  CNF_version = 0;  // The CNF version is still unidentified
+	for(var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
+	{	// A variable was found, now we dispose of its value.
+		if(!strcmp(name,"CNF_version")) CNF_version = atoi(value);
+		else if(CNF_version == 0) goto failed_load;  // Refuse unidentified CNF
+		else if(!strncmp(name,"LK_auto_E",9))      strcpy(setting->dirElf[0], value);
+		else if(!strncmp(name,"LK_Circle_E",11))   strcpy(setting->dirElf[1], value);
+		else if(!strncmp(name,"LK_Cross_E",10))    strcpy(setting->dirElf[2], value);
+		else if(!strncmp(name,"LK_Square_E",11))   strcpy(setting->dirElf[3], value);
+		else if(!strncmp(name,"LK_Triangle_E",13)) strcpy(setting->dirElf[4], value);
+		else if(!strncmp(name,"LK_L1_E",7))        strcpy(setting->dirElf[5], value);
+		else if(!strncmp(name,"LK_R1_E",7))        strcpy(setting->dirElf[6], value);
+		else if(!strncmp(name,"LK_L2_E",7))        strcpy(setting->dirElf[7], value);
+		else if(!strncmp(name,"LK_R2_E",7))        strcpy(setting->dirElf[8], value);
+		else if(!strncmp(name,"LK_L3_E",7))        strcpy(setting->dirElf[9], value);
+		else if(!strncmp(name,"LK_R3_E",7))        strcpy(setting->dirElf[10],value);
+		else if(!strncmp(name,"LK_Start_E",10))    strcpy(setting->dirElf[11],value);
+		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
+		else if(!strcmp(name,"Menu_Hide_Paths")) setting->filename = atoi(value);
+		else if(!strcmp(name,"GUI_Col_1_ABGR")) setting->color[0] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_2_ABGR")) setting->color[1] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_3_ABGR")) setting->color[2] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_4_ABGR")) setting->color[3] = hextoul(value);
+		else if(!strcmp(name,"Screen_X")) setting->screen_x = atoi(value);
+		else if(!strcmp(name,"Screen_Y")) setting->screen_y = atoi(value);
+		else if(!strcmp(name,"Init_CDVD_Check")) setting->discControl = atoi(value);
+		else if(!strcmp(name,"Screen_Interlace")) setting->interlace = atoi(value);
+		else if(!strcmp(name,"Init_Reset_IOP")) setting->resetIOP = atoi(value);
+		else if(!strcmp(name,"Menu_Pages")) setting->numCNF = atoi(value);
+		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
+		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd,value);
+	}
+	free(RAM_p);
+	sprintf(mainMsg, "Loaded Config (%s)", path);
 	return;
 }
 
-////////////////////////////////////////////////////////////////////////
-// スクリーンセッティング画面
+//---------------------------------------------------------------------------
 void setColor(void)
 {
 	int i;
@@ -493,8 +518,10 @@ void setColor(void)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------
 // Other settings by EP
+// sincro: ADD USBD SELECTOR MENU
+//---------------------------------------------------------------------------
 void setSettings(void)
 {
 	int s;
@@ -510,21 +537,21 @@ void setSettings(void)
 			if(new_pad & PAD_UP)
 			{
 				if(s!=1) s--;
-				else s=4;
+				else s=5;
 			}
 			else if(new_pad & PAD_DOWN)
 			{
-				if(s!=4) s++;
+				if(s!=5) s++;
 				else s=1;
 			}
 			else if(new_pad & PAD_LEFT)
 			{
-				if(s!=4) s=4;
+				if(s!=5) s=5;
 				else s=1;
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
-				if(s!=4) s=4;
+				if(s!=5) s=5;
 				else s=1;
 			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
@@ -534,6 +561,7 @@ void setSettings(void)
 					if(setting->numCNF > 1)
 						setting->numCNF--;
 				}
+				else if(s==4) strcpy(setting->usbd,"\0");
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -543,6 +571,8 @@ void setSettings(void)
 					setting->numCNF++;
 				else if(s==3)
 					setting->swapKeys = !setting->swapKeys;
+				else if(s==4)
+					getFilePath(setting->usbd, USBD_IRX_CNF);
 				else
 					return;
 			}
@@ -573,6 +603,14 @@ void setSettings(void)
 			sprintf(c, "  KEY MAPPING: ○:OK ×:CANCEL");
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
+
+		if(strlen(setting->usbd)==0)
+			sprintf(c, "  USBD IRX: DEFAULT");
+		else
+			sprintf(c, "  USBD IRX: %s",setting->usbd);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
 		
 		y += FONT_HEIGHT / 2;
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
@@ -580,7 +618,7 @@ void setSettings(void)
 		
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
 		
-		if(s>=4) y+=FONT_HEIGHT/2;
+		if(s>=5) y+=FONT_HEIGHT/2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
 		if (s == 1) {
@@ -598,6 +636,11 @@ void setSettings(void)
 				sprintf(c, "×:Change");
 			else
 				sprintf(c, "○:Change");
+		} else if( s== 4) {
+			if (swapKeys)
+				sprintf(c, "×:Select ○:Clear");
+			else
+				sprintf(c, "○:Select ×:Clear");
 		} else {
 			if (swapKeys)
 				strcpy(c, "×:OK");
@@ -610,8 +653,9 @@ void setSettings(void)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
-// Network settings by Slam-Tilt
+//---------------------------------------------------------------------------
+// Network settings GUI by Slam-Tilt
+//---------------------------------------------------------------------------
 void saveNetworkSettings(char *Message)
 {
 	char firstline[50];
@@ -685,6 +729,9 @@ void saveNetworkSettings(char *Message)
 }
 
 
+//---------------------------------------------------------------------------
+// Convert IP string to numbers
+//---------------------------------------------------------------------------
 void ipStringToOctet(char *ip, int ip_octet[4])
 {
 
@@ -917,8 +964,9 @@ void setNetwork(void)
 
 }
 
-////////////////////////////////////////////////////////////////////////
-// Config画面
+//---------------------------------------------------------------------------
+// Configuration menu
+//---------------------------------------------------------------------------
 void config(char *mainMsg, char *CNF)
 {
 	char c[MAX_PATH];
@@ -1142,3 +1190,6 @@ void config(char *mainMsg, char *CNF)
 	
 	return;
 }
+//---------------------------------------------------------------------------
+// End of file: config.c
+//---------------------------------------------------------------------------

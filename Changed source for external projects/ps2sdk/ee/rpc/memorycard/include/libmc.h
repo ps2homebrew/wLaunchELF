@@ -58,6 +58,10 @@ extern "C" {
 #define MC_ATTR_PDAEXEC         0x0800
 #define MC_ATTR_PSX             0x1000
 
+// Additional valid bits for MC attributes, deduced by 'dlanor'
+#define MC_ATTR_FILE            0x0010  //Set for any file on MC
+#define MC_ATTR_OBJECT          0x0030  //Mask to find either folder or file
+
 // function numbers returned by mcSync in the 'cmd' pointer
 #define MC_FUNC_GET_INFO	0x01
 #define MC_FUNC_OPEN		0x02
@@ -274,11 +278,11 @@ int mcGetDir(int port, int slot, const char *name, unsigned mode, int maxent, mc
 // args:	port number
 //			slot number
 //			filename to access
-//			data to be changed
-//			flags to show which data is valid
+//			data to be changed  //RA NB: This is an mcTable struct
+//			flags to show which data is valid //0xFFFF works with valid mcTable structs
 // returns:	0   = successful
 //			< 0 = error
-int mcSetFileInfo(int port, int slot, const char* name, const char* info, unsigned flags);
+int mcSetFileInfo(int port, int slot, const char* name, const mcTable* info, unsigned flags);
 
 // delete file
 // mcSync returns:	0 if deleted successfully

@@ -1,0 +1,91 @@
+# ----------------------------------------------------------------------
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.02.13
+# Created by:   Ronald Andersson        Creation Date: 2006.02.02
+# Purpose:      Define new format and defaults for LaunchELF CNF files,
+#               to serve as a guide in developing the code implementing
+#               these changes.
+# ----------------------------------------------------------------------
+# Note that LaunchELF v3.41t (or later) will accept this file as-is when
+# loading CNF, but if you modify any settings so that LaunchELF saves
+# the file again, then all comments will be removed.
+# ----------------------------------------------------------------------
+CNF_version = 2.0
+# ----------------------------------------------------------------------
+# The CNF_version variable MUST exist for a CNF to be accepted as valid,
+# and it must also be the first variable defined in the file. That way
+# an old CNF can't cause damage when read by new LaunchELF versions.
+# Future LaunchELF versions may also check the value for some features.
+# ----------------------------------------------------------------------
+# Next follows the 12 (as yet) launching links, here kept in traditional
+# order, though users are allowed to vary the order at will. For these
+# 12 variables the following name conventions apply:
+#
+# "LK_" is an abbreviation for "Launch Key" and is used as a prefix for
+# the key descriptor (eg: "Square"). That is then followed by the suffix
+# "_E1" which is an abbreviation for "Execution Method 1". At present
+# that is the only method we have, but hopefully that will change...
+#
+# The default value for most of these should be an empty string, except
+# that one link should start the file browser, so people can start to
+# copy stuff without having to make a new CNF.
+# ----------------------------------------------------------------------
+LK_auto_E1     =
+LK_Circle_E1   = MISC/FileBrowser
+LK_Cross_E1    =
+LK_Square_E1   =
+LK_Triangle_E1 =
+LK_L1_E1       =
+LK_R1_E1       =
+LK_L2_E1       =
+LK_R2_E1       =
+LK_L3_E1       =
+LK_R3_E1       =
+LK_Start_E1    =
+# ----------------------------------------------------------------------
+# After the launch key definitions we have the variables for diverse
+# settings, most of which use obvious naming schemes and have their
+# traditional default values. Some exceptions are the variables for
+# GUI colour values, which are described in the next section.
+# ----------------------------------------------------------------------
+LK_auto_Timer   = 10
+Menu_Hide_Paths = 1
+# ----------------------------------------------------------------------
+# Next we have the GUI colour values, for which I made some choices that
+# differ widely from all the other variables so far. First and foremost,
+# I switched their data format to pure hex, to make it practical for a
+# human to edit the byte values. I also added a suffix to the names,
+# so the user has a mnemonic key to the usage of the byte values.
+# And finally, I chose some new default values that I've been working on
+# for a while. The effects of these settings are as follows:
+#
+# Normal text is fully black, while the background is half-level white.
+# Border, submenus, and LaunchELF title text use a medium grey colour,
+# with half the brightness of the background, while alerts and progress
+# messages use a clear but subdued red colour.
+#
+# My goal with these defaults was to achieve max clarity with no glare,
+# and I think this succeeded fairly well, though the final results do
+# depend greatly on your monitor settings as well.
+# ----------------------------------------------------------------------
+GUI_Col_1_ABGR = 00808080
+GUI_Col_2_ABGR = 00404040
+GUI_Col_3_ABGR = 00000060
+GUI_Col_4_ABGR = 00000000
+# ----------------------------------------------------------------------
+Screen_X  = 128
+Screen_Y  = 30
+# ----------------------------------------------------------------------
+# Note that I have changed the default for IOP reset, as this has been
+# long-term tested now, and proven superior to starting without it.
+# I have also changed the default for CDVD checking, as the old default
+# could cause lockup on some PS2 models if started with empty tray.
+# ----------------------------------------------------------------------
+Init_CDVD_Check  = 0
+Screen_Interlace = 0
+Init_Reset_IOP   = 1
+Menu_Pages       = 1
+GUI_Swap_Keys    = 0
+USBD_FILE =
+# ----------------------------------------------------------------------
+# End of file: LAUNCHELF.CNF
+# ----------------------------------------------------------------------
