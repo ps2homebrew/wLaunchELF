@@ -65,6 +65,13 @@ typedef struct
 	int swapKeys;
 } SETTING;
 
+typedef struct
+{
+	int ip[4];
+	int nm[4];
+	int gw[4];
+} data_ip_struct;
+
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
 
 void	load_ps2host(void);

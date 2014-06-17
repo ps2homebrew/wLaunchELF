@@ -1,8 +1,28 @@
 Unofficial LaunchELF by EP + dlanor
 
-LuanchELF v3.41i
+LaunchELF v3.41l
+-Added a modified makefile for loader to the source package that was forgotten early on.
+-Added "Development related issues.txt" file to the source package.
+-Added Slam-Tilts "NETWORK SETTINGS" option that allows the user to edit the IPCONFIG.DAT file at mc0:/SYS-CONF.
+-Renamed a few things such as menus and menu messages.
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Added a fix for multiple mc directories bug, which occurs when both slots contain PS2 memory cards.
+-Added "mass" as a supported filesystem device so it shows up with "mc" and "pfs" in the root device listing.
+-Changed a few things in order to accommodate support for USB mass fixing a sub directory issue.
+-Created a workaround to fix a "mass" listing issue do to timestamps not being able to be accessed. (Note: Hopefully this is only temporary but as of now all files/folders timestamps for "mass" show up as "1/1/1970").
+-Altered files: config.c/launchelf.h=Network Settings option, main.c=load usb device driver when launching ps2net, draw.c=version_id
+
+LaunchELF v3.41k
+-Fixed bug that prevented zero-sized files from being pasted
+-Altered files: filer.c=Bugfix, draw.c=version_id
+-Matrix Infinity Dev.2 boot will require the non-packed ELF
+
+LaunchELF v3.41j
+-Fixed LIBCDVD 1.15 issue with DVD-ROMs: Thanks to Neme for the explanation and solution.
+
+LaunchELF v3.41i
 -Fixed issue with ps2ftpd root directory listing bug with other ftp clients.
--Included ps2ftpd.irx compile with source changes in a separate package.
+-Included ps2ftpd.irx compile with source changes.
 
 LaunchELF v3.41h
 -Replaced usb_mass driver with latest version, for support of more devices
@@ -65,12 +85,13 @@ I have included two binaries: BOOT.ELF - the normal binary and BOOTc.ELF - a com
 
 I release my changes to parts of the source in the hopes that the author of LaunchELF may add some or all of my modifications. I have included all the files that I made changes to in the src folder. Also diff's are included as well in the src\diff folder just apply against the source of v3.41 or just use my already modified src files.
 
-I used some other peoples code so if anyone should get credit they should. I also used some other people’s ideas, which I'm thankful for.
+I used some other peoples code so if anyone should get credit they should. I also used some other people's ideas, which I'm thankful for.
 
 Special Thanks to the following:
 Mr. Mirakich the author of LaunchELF?
 Hermes for reset IOP (BOOT.c cogswaploader)
 dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new fixes.
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
+Slam-Tilt for the NETWORK SETTINGS option source changes.
 pixel for ps2-packer that made the small BOOTc.ELF
 all those who like LaunchELF

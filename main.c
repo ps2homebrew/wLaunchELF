@@ -569,6 +569,7 @@ void loadHddModules(void)
 void loadNetModules(void)
 {
 	if(!have_NetModules){
+		loadUsbModules();
 		loadHddModules();
 		drawMsg("Loading FTP Modules...");
 		

@@ -829,6 +829,11 @@ int newdir(const char *path, const char *name)
 	return ret;
 }
 //--------------------------------------------------------------
+//The function 'copy' below is called to copy a single object,
+//indicated by 'file' from 'inPath' to 'outPath', but this may
+//be either a single file or a folder. In the latter case the
+//folder contents should also be copied, recursively.
+//--------------------------------------------------------------
 int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 {
 	FILEINFO files[MAX_ENTRY];
@@ -889,8 +894,10 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 		out[3]=pfsout+'0';
 	}else
 		sprintf(out, "%s%s", outPath, file.name);
-	
+
+//Here we have an object to copy, which may be either file or folder
 	if(file.attr & FIO_S_IFDIR){
+//Here we have a folder to copy, starting with an attempt to create it
 		ret = newdir(outPath, file.name);
 		if(ret == -17){
 			ret=-1;
@@ -901,14 +908,20 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 			drawMsg("Pasting...");
 		} else if(ret < 0)
 			return -1;
+//The return code above is for failure to create destination folder
+//Here a destination folder exists, ready to receive files
 		sprintf(out, "%s%s/", outPath, file.name);
 		sprintf(in, "%s%s/", inPath, file.name);
 		nfiles = getDir(in, files);
 		for(i=0; i<nfiles; i++)
 			if(copy(out, in, files[i], n+1) < 0) return -1;
+//folder contents are copied by the recursive call above, with error handling
+//the return code below is used if there were no errors copying a folder
 		return 0;
 	}
 
+//Here we know that the object to copy is a file, not a folder
+//It is now time to open the input file, indicated by 'in_fd'
 	if(hddin){
 		in_fd = fileXioOpen(in, O_RDONLY, fileMode);
 		if(in_fd<0) goto error;
@@ -922,6 +935,19 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 		size = fioLseek(in_fd,0,SEEK_END);
 		fioLseek(in_fd,0,SEEK_SET);
 	}
+
+//Here the input file has been opened, indicated by 'in_fd'
+//It is now time to open the output file, indicated by 'out_fd'
+		if(hddout){
+			fileXioRemove(out);
+			out_fd = fileXioOpen(out,O_WRONLY|O_TRUNC|O_CREAT,fileMode);
+			if(out_fd<0) goto error;
+		}else{
+			out_fd=fioOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
+			if(out_fd<0) goto error;
+		}
+//Here the output file has been opened, indicated by 'out_fd'
+
 	buff = (char*)malloc(size);
 	if(buff==NULL){
 		buff = (char*)malloc(32768);
@@ -932,12 +958,6 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 		if(hddin) buffSize = fileXioRead(in_fd, buff, buffSize);
 		else	  buffSize = fioRead(in_fd, buff, buffSize);
 		if(hddout){
-			if(out_fd<0){
-				fileXioRemove(out);
-				
-				out_fd = fileXioOpen(out,O_WRONLY|O_TRUNC|O_CREAT,fileMode);
-				if(out_fd<0) goto error;
-			}
 			outsize = fileXioWrite(out_fd,buff,buffSize);
 			if(buffSize!=outsize){
 				fileXioClose(out_fd); out_fd=-1;
@@ -945,10 +965,6 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 				goto error;
 			}
 		}else{
-			if(out_fd<0){
-				out_fd=fioOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
-				if(out_fd<0) goto error;
-			}
 			outsize = fioWrite(out_fd,buff,buffSize);
 			if(buffSize!=outsize){
 				FILEINFO *FI_p = &file;
@@ -960,13 +976,16 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int n)
 		size -= buffSize;
 	}
 	ret=0;
+//Here the file has been copied. without error, as indicated by 'ret' above
+//The code below is also used for all errors in copying a file,
+//but those cases are distinguished by a negative value in 'ret'
 error:
 	free(buff);
 	if(in_fd>0){
 		if(hddin) fileXioClose(in_fd);
 		else	  fioClose(in_fd);
 	}
-	if(in_fd>0){
+	if(out_fd>0){
 		if(hddout) fileXioClose(out_fd);
 		else	  fioClose(out_fd);
 	}

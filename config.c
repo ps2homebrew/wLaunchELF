@@ -22,6 +22,7 @@ enum
 	FILENAME,
 	SCREEN,
 	SETTINGS,
+	NETWORK,
 	OK,
 	CANCEL
 };
@@ -110,7 +111,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		return;
 	}
 	ret = fioWrite(fd,p,size);
-	if(ret==size) sprintf(mainMsg, "Save Config (%s)", c);
+	if(ret==size) sprintf(mainMsg, "Saved Config (%s)", c);
 	fioClose(fd);
 	free(p);
 }
@@ -286,7 +287,7 @@ void loadConfig(char *mainMsg, char *CNF)
 		else
 			setting->swapKeys = DEF_SWAPKEYS;
 		free(p);
-		sprintf(mainMsg, "Load Config (%s)", path);
+		sprintf(mainMsg, "Loaded Config (%s)", path);
 	}
 	return;
 }
@@ -456,7 +457,7 @@ void setColor(void)
 		
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		printXY("  INITIAL SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
+		printXY("  DEFAULT SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
@@ -553,6 +554,7 @@ void setSettings(void)
 		
 		printXY("STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
+		y += FONT_HEIGHT / 2;
 		
 		if(setting->resetIOP)
 			sprintf(c, "  RESET IOP: ON");
@@ -576,7 +578,7 @@ void setSettings(void)
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
-		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
+		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
 		
 		if(s>=4) y+=FONT_HEIGHT/2;
 		drawChar(127, x, y/2, setting->color[3]);
@@ -606,6 +608,316 @@ void setSettings(void)
 		setScrTmp("", c);
 		drawScr();
 	}
+}
+
+////////////////////////////////////////////////////////////////////////
+// Network settings by Slam-Tilt
+void saveNetworkSettings(char *Message)
+{
+	char firstline[50];
+	extern char ip[16];
+	extern char netmask[16];
+	extern char gw[16];
+    int out_fd,in_fd;
+    int ret=0,i=0;
+	int size,sizeleft=0;
+	char *ipconfigfile=0;
+
+	// Default message, will get updated if save is sucessfull
+	strcpy(Message,"Saved Failed");
+
+	sprintf(firstline,"%s %s %s\n\r",ip,netmask,gw);
+
+
+	mcSync(0,NULL,NULL);
+	mcMkDir(0, 0, "SYS-CONF");
+	mcSync(0, NULL, &ret);
+
+	// This block looks at the existing ipconfig.dat and works out if there is
+	// already any data beyond the first line. If there is it will get appended to the output
+	// to new file later.
+
+	in_fd = fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_RDONLY);
+	if (in_fd >= 0) {
+
+		size = fioLseek(in_fd, 0, SEEK_END);
+		printf("size of existing file is %ibtyes\n\r",size);
+
+		ipconfigfile = (char *)malloc(size);
+
+		fioLseek(in_fd, 0, SEEK_SET);
+		fioRead(in_fd, ipconfigfile, size);
+
+
+		for (i=0; (ipconfigfile[i] != 0 && i<=size); i++)
+
+		{
+			// printf("%i-%c\n\r",i,ipconfigfile[i]);
+		}
+
+		sizeleft=size-i;
+
+		fioClose(in_fd);
+	}
+
+	// Writing the data out
+
+	out_fd=fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_WRONLY | O_TRUNC | O_CREAT);
+	if(out_fd >=0)
+	{
+		mcSync(0, NULL, &ret);
+		fioWrite(out_fd,firstline,strlen(firstline));
+		mcSync(0, NULL, &ret);
+
+		// If we have any extra data, spit that out too.
+		if (sizeleft > 0)
+		{
+			mcSync(0, NULL, &ret);
+			fioWrite(out_fd,&ipconfigfile[i],sizeleft);
+			mcSync(0, NULL, &ret);
+		}
+
+		strcpy(Message,"Saved mc0:/SYS-CONF/IPCONFIG.DAT");
+
+		fioClose(out_fd);
+
+	}
+}
+
+
+void ipStringToOctet(char *ip, int ip_octet[4])
+{
+
+	// This takes a string (ip) representing an IP address and converts it
+	// into an array of ints (ip_octet)
+
+	char oct_str[5];
+	int oct_cnt,i;
+	char f[3];
+
+	oct_cnt = 0;
+	oct_str[0]=0;
+
+	for (i=0;i<15;i++)
+	{
+		if (ip[i] == '.' || ip[i] == '\0' || ip[i] == '\n' || ip[i] == '\r')
+		{
+			ip_octet[oct_cnt] = atoi(oct_str);
+			oct_cnt++;
+			oct_str[0]=0;
+		} else
+		{
+			sprintf(f,"%c",ip[i]);
+			strcat(oct_str,f);
+		}
+	}
+
+}
+
+
+data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
+{
+
+	// Populate 3 arrays with the ip address (as ints)
+
+	data_ip_struct iplist;
+
+	ipStringToOctet(ip,iplist.ip);
+	ipStringToOctet(nm,iplist.nm);
+	ipStringToOctet(gw,iplist.gw);
+
+	return(iplist);
+}
+
+
+void setNetwork(void)
+{
+
+	// Menu System for Network Settings Page.
+
+	int s,l;
+	int x, y;
+	char c[MAX_PATH];
+	extern char ip[16];
+	extern char netmask[16];
+	extern char gw[16];
+	data_ip_struct ipdata;
+	char NetMsg[MAX_PATH] = "";
+
+	s=1;
+	l=1;
+
+	ipdata = BuildOctets(ip,netmask,gw);
+
+	while(1)
+	{
+
+
+		waitPadReady(0, 0);
+		if(readpad())
+		{
+			if(new_pad & PAD_UP)
+			{
+				if(s!=1) s--;
+				else {s=5; l=1; }
+			}
+			else if(new_pad & PAD_DOWN)
+			{
+				if(s!=5) s++;
+				else s=1;
+				if(s>3) l=1;
+
+			}
+			else if(new_pad & PAD_LEFT)
+			{
+				if(s<4)
+					if(l>1)
+						l--;
+
+			}
+			else if(new_pad & PAD_RIGHT)
+			{
+				if(s<4)
+					if(l<5)
+						l++;
+			}
+			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
+			{
+				if((s<4) && (l>1))
+				{
+					if (s == 1)
+					{
+							if (ipdata.ip[l-2] > 0)
+							{
+								ipdata.ip[l-2]--;
+							}
+					}
+					else if (s == 2)
+					{
+							if (ipdata.nm[l-2] > 0)
+							{
+								ipdata.nm[l-2]--;
+							}
+					}
+					else if (s == 3)
+					{
+							if (ipdata.gw[l-2] > 0)
+							{
+								ipdata.gw[l-2]--;
+							}
+					}
+
+				}
+			}
+			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
+			{
+				if((s<4) && (l>1))
+				{
+					if (s == 1)
+					{
+							if (ipdata.ip[l-2] < 255)
+							{
+								ipdata.ip[l-2]++;
+							}
+					}
+					else if (s == 2)
+					{
+							if (ipdata.nm[l-2] < 255)
+							{
+								ipdata.nm[l-2]++;
+							}
+					}
+					else if (s == 3)
+					{
+							if (ipdata.gw[l-2] < 255)
+							{
+								ipdata.gw[l-2]++;
+							}
+					}
+
+				}
+
+				else if(s==4)
+				{
+					sprintf(ip,"%i.%i.%i.%i",ipdata.ip[0],ipdata.ip[1],ipdata.ip[2],ipdata.ip[3]);
+					sprintf(netmask,"%i.%i.%i.%i",ipdata.nm[0],ipdata.nm[1],ipdata.nm[2],ipdata.nm[3]);
+					sprintf(gw,"%i.%i.%i.%i",ipdata.gw[0],ipdata.gw[1],ipdata.gw[2],ipdata.gw[3]);
+
+					saveNetworkSettings(NetMsg);
+				}
+				else
+					return;
+			}
+		}
+
+
+		clrScr(setting->color[0]);
+		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+
+		printXY("NETWORK SETTINGS", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT / 2;
+
+		sprintf(c, "  IP ADDRESS:  %.3i . %.3i . %.3i . %.3i",ipdata.ip[0],ipdata.ip[1],ipdata.ip[2],ipdata.ip[3]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+
+		sprintf(c, "  NETMASK:     %.3i . %.3i . %.3i . %.3i",ipdata.nm[0],ipdata.nm[1],ipdata.nm[2],ipdata.nm[3]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+
+		sprintf(c, "  GATEWAY:     %.3i . %.3i . %.3i . %.3i",ipdata.gw[0],ipdata.gw[1],ipdata.gw[2],ipdata.gw[3]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT / 2;
+
+		sprintf(c, "  SAVE");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT / 2;
+		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
+
+		if(s>=4) y+=FONT_HEIGHT/2;
+		if(s>=5) y+=FONT_HEIGHT/2;
+
+		if (l > 1)
+			x += l*48 + 15;
+
+		drawChar(127, x, y/2, setting->color[3]);
+
+		if ((s <4) && (l==1)) {
+				strcpy(c, "Right D-Pad to Edit");
+		} else if (s < 4) {
+			if (swapKeys)
+				strcpy(c, "~:Add ›:Subtract");
+			else
+				strcpy(c, "›:Add ~:Subtract");
+		} else if( s== 4) {
+			if (swapKeys)
+				sprintf(c, "~:Save");
+			else
+				sprintf(c, "›:Save");
+		} else {
+			if (swapKeys)
+				strcpy(c, "~:OK");
+			else
+				strcpy(c, "›:OK");
+		}
+
+		setScrTmp(NetMsg, c);
+		drawScr();
+	}
+
+
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -686,6 +998,8 @@ void config(char *mainMsg, char *CNF)
 					setColor();
 				else if(s==SETTINGS)
 					setSettings();
+				else if(s==NETWORK)
+					setNetwork();
 				else if(s==OK)
 				{
 					free(tmpsetting);
@@ -764,8 +1078,6 @@ void config(char *mainMsg, char *CNF)
 		
 		y += FONT_HEIGHT / 2;
 		
-		printXY("MISC", x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
 		sprintf(c, "  TIMEOUT: %d", setting->timeout);
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
@@ -784,9 +1096,11 @@ void config(char *mainMsg, char *CNF)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
-		printXY("  SCREEN SETTING", x, y/2, setting->color[3], TRUE);
+		printXY("  SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		printXY("  STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		printXY("  NETWORK SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
 		printXY("  OK", x, y/2, setting->color[3], TRUE);
@@ -795,7 +1109,7 @@ void config(char *mainMsg, char *CNF)
 		
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*3+12+LINE_THICKNESS;
 		if(s>=TIMEOUT)
-			y += FONT_HEIGHT + FONT_HEIGHT / 2;
+			y += FONT_HEIGHT / 2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
 		if (s < TIMEOUT) {

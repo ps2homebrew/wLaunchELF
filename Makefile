@@ -19,7 +19,8 @@ usb_mass.s:
 	bin2s modules/usb_mass.irx usb_mass.s usb_mass_irx
 
 cdvd.s:
-	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
+#	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
+	bin2s modules/cdvd.irx cdvd.s cdvd_irx
 
 poweroff.s:
 	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
