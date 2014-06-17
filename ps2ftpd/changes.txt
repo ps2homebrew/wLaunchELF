@@ -3,6 +3,12 @@ Unofficial ps2ftpd.irx module by EP
 FtpClient.c
 -Changed string format to "MMM DD YYYY" format, which is based on "FTP LIST Specification". (NOTE: fixes the Unknown list format errors with most ftp clients).
 -Added the possibility to change within the included sources the option for changing to "MMM DD hh:mm" format. (NOTE: read the comments in the included source file).
+-Changed list string format slightly to match a known ftp list format as it was only off by two.
+-Made the necessary changes for rename to be implemented.
+-Changed to MS-style LIST format for testing. More compatible?
+-Made slight changes to the previously used UNIX-style LIST format.
+-Added the possibility to change within the included sources the option for going back to the UNIX-style LIST format.
+-Changed MS-style list format slightly to show 12:00AM instead of 00:00AM, which was wrong earlier. (Note: some ftp clients will get this wrong and show 12:00PM instead so be aware).
 
 FileSystem.c
 -Added a check in the scan filesystem devices function that hides all except "mc" and "pfs" directories from the ftp clients. (Note: Now modified to fix bug with some ftp clients)
@@ -16,6 +22,12 @@ FileSystem.c
 -Fixed issue where mc save folders, that are copy protected, showed up as files instead of folders.
 -Fixed protection attributes not showing up properly with mass.
 -Removed workaround for "mass" and timestamp issues since it's no longer needed do to changes to usb_mass driver.
+-Fixed attributes of newly created files/dirs on hdd that matches LaunchELF's implementation.
+-Made a workaround for "ps2fs: Warning: NULL buffer returned" issue that occurred when writing files to the hdd.
+-Added the ability to rename files/folders for mounted hdd partitons.
+
+FtpClient.h, FileSystem.h, and FtpCommands.c 
+-Made the necessary changes for rename to be implemented.
 
 I have included a binary of ps2ftpd in the modules directory for the unofficial LaunchELF with all the changes noted above.
 

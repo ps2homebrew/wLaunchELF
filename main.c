@@ -212,7 +212,7 @@ static void getIpConfig(void)
 	strncpy(if_conf+i, gw, 15);
 	i += strlen(gw) + 1;
 	if_conf_len = i;
-	sprintf(netConfig, "Net config: %s %s %s", ip, netmask, gw);
+	sprintf(netConfig, "Net Config:  %-15s %-15s %-15s", ip, netmask, gw);
 
 }
 //------------------------------
@@ -569,8 +569,8 @@ void loadHddModules(void)
 void loadNetModules(void)
 {
 	if(!have_NetModules){
-		loadUsbModules();
 		loadHddModules();
+		loadUsbModules();
 		drawMsg("Loading FTP Modules...");
 		
 		// getIpConfig(); //RA NB: I always get that info, early in init

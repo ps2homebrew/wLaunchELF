@@ -298,6 +298,8 @@ void FtpClient_OnCommand( FtpClient* pClient, const char* pString )
 			case FTPCMD_XMKD:
 			case FTPCMD_RMD:
 			case FTPCMD_XRMD:
+			case FTPCMD_RNFR:
+			case FTPCMD_RNTO:
 			case FTPCMD_SITE:
 			case FTPCMD_MODE:
 			case FTPCMD_STRU:
@@ -317,6 +319,8 @@ void FtpClient_OnCommand( FtpClient* pClient, const char* pString )
 						case FTPCMD_DELE: FtpClient_OnCmdDele(pClient,arg); break;
 						case FTPCMD_MKD: case FTPCMD_XMKD: FtpClient_OnCmdMkd(pClient,arg); break;
 						case FTPCMD_RMD: case FTPCMD_XRMD: FtpClient_OnCmdRmd(pClient,arg); break;
+						case FTPCMD_RNFR: FtpClient_OnCmdRnfr(pClient,arg); break;
+						case FTPCMD_RNTO: FtpClient_OnCmdRnto(pClient,arg); break;
 						case FTPCMD_SITE: FtpClient_OnCmdSite(pClient,arg); break;
 						case FTPCMD_MODE: FtpClient_OnCmdMode(pClient,arg); break;
 						case FTPCMD_STRU: FtpClient_OnCmdStru(pClient,arg); break;
@@ -587,9 +591,63 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 					int i;
 					int digits;
 					int number = pInfo->m_iSize;
+					char year[4];
+
+					/* MS-style LIST format */
+					i = pInfo->m_TS.m_iMonth;
+					if( i > 12 )
+						i = 1;
+					if( i < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), i );
+
+					strcat( buffer, "-" );
+					if( pInfo->m_TS.m_iDay < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iDay );
+
+					strcat(buffer, "-" );
+					itoa( year, pInfo->m_TS.m_iYear );
+					strcat( buffer, year+2 );
+
+					strcat( buffer, "  " );
+					i = pInfo->m_TS.m_iHour;
+					if( i > 12 )
+						i -= 12;
+					if( i == 0 )
+						i = 12;
+					if( i < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), i );
+
+					strcat( buffer, ":" );
+					if( pInfo->m_TS.m_iMinute < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iMinute );
+					if( pInfo->m_TS.m_iHour < 12 )
+						strcat( buffer, "AM       " );
+					else
+						strcat( buffer, "PM       " );
+
+					if( FT_DIRECTORY == pInfo->m_eType )
+						strcat( buffer, "<DIR>         " );
+					else
+					{
+						// determine number of digits of m_iSize
+						for( digits = 0; number >= 10; digits++ )
+							number /= 10;
+						// pad the string by 13 - number of digits
+						for( i = 0; i < 13 - digits; i++ )
+							strcat( buffer, " " );
+						itoa( buffer + strlen(buffer), pInfo->m_iSize );
+					}
+					strcat( buffer, " " );
+					// end of MS-style LIST format
 
 					// this one needs a rewrite
 
+					/* UNIX-style LIST format: To use uncomment this format after commenting out MS-style LIST format 
+						and making changes to FtpCommands.c's method FtpClient_OnCmdSyst
 					strcat( buffer, (FT_DIRECTORY == pInfo->m_eType) ? "d" : (FT_LINK == pInfo->m_eType) ? "l" : "-" );
 					for( i = 0; i < 9; i++ )
 					{
@@ -605,7 +663,7 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 						else
 							strcat( buffer, "-" );
 					}
-					strcat( buffer, "   1 ps2        ps2 " );
+					strcat( buffer, "   1 ps2      ps2 " );
 
 					// determine number of digits of m_iSize
 					for( digits = 0; number >= 10; digits++ )
@@ -618,7 +676,7 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 					itoa( buffer + strlen(buffer), pInfo->m_iSize );
 					strcat( buffer, " " );
 
-					// month: changed for proper "MMM DD YYYY" format
+					// month: changed for proper "MMM DD  YYYY" format
 					switch( pInfo->m_TS.m_iMonth )
 					{
 						case 1: strcat( buffer, "Jan " ); break;
@@ -638,14 +696,15 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 
 					// day
 					if( pInfo->m_TS.m_iDay < 10 )
-						strcat( buffer, "0" );
+						strcat( buffer, " " );
 					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iDay );
 					strcat( buffer, " " );
 
-					/* year: used for "MMM DD YYYY" format */
+					// year: used for "MMM DD  YYYY" format //
 					strcat( buffer, " " );
 					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iYear );
 					strcat( buffer, " " );
+					*/
 
 					/* time: uncomment for "MMM DD hh:mm" format after commenting out year
 					if( pInfo->m_TS.m_iHour < 10 )
@@ -657,6 +716,7 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iMinute );
 					strcat( buffer, " " );
 					*/
+					// end of UNIX-style LIST format
 				}
 				strcat( buffer, pInfo->m_Name );
 				strcat( buffer, "\r\n" );

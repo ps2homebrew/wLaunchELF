@@ -67,6 +67,7 @@ void FileSystem_Destroy( FSContext* pContext )
 int FileSystem_OpenFile( FSContext* pContext, const char* pFile, FileMode eMode, int iContinue )
 {
 	int flags;
+	int fileMode = 0;
 
 	FileSystem_Close(pContext);
 	FileSystem_BuildPath( buffer, pContext->m_Path, pFile );
@@ -131,7 +132,12 @@ int FileSystem_OpenFile( FSContext* pContext, const char* pFile, FileMode eMode,
 			}
 
 			pContext->m_kFile.mode = flags;
-			if( pContext->m_kFile.device->ops->open( &(pContext->m_kFile), pFile, flags, 0 ) >= 0 )
+
+			// check if hdd, then set permissions to 511
+			if( !strcmp(pContext->m_kFile.device->name, "pfs") )
+				fileMode = 511;
+
+			if( pContext->m_kFile.device->ops->open( &(pContext->m_kFile), pFile, flags, fileMode ) >= 0 )
 				return 0;
 
 		}
@@ -527,6 +533,7 @@ int FileSystem_DeleteFile( FSContext* pContext, const char* pFile )
 
 int FileSystem_CreateDir( FSContext* pContext, const char* pDir )
 {
+	int fileMode = 0;
 	FileSystem_BuildPath( buffer, pContext->m_Path, pDir );
 
 #ifdef LINUX
@@ -541,7 +548,12 @@ int FileSystem_CreateDir( FSContext* pContext, const char* pDir )
 		{
 			if( !pContext->m_kFile.device )
 				break;
-			return pContext->m_kFile.device->ops->mkdir( &(pContext->m_kFile), pDir, 0 );
+
+			// check if hdd, then set permissions to 511
+			if( !strcmp(pContext->m_kFile.device->name, "pfs") )
+				fileMode = 511;
+
+			return pContext->m_kFile.device->ops->mkdir( &(pContext->m_kFile), pDir, fileMode );
 		}
 		break;
 
@@ -569,6 +581,34 @@ int FileSystem_DeleteDir( FSContext* pContext, const char* pDir )
 			if( !pContext->m_kFile.device )
 				break;
 			return pContext->m_kFile.device->ops->rmdir( &(pContext->m_kFile), pDir );
+		}
+		break;
+
+		default: return -1;
+	}
+
+	return -1;
+#endif
+}
+
+int FileSystem_Rename( FSContext* pContext, const char* oldName, const char* newName )
+{
+	FileSystem_BuildPath( buffer, pContext->m_Path, newName );
+
+#ifdef LINUX
+	return -1;
+#else
+	if( NULL == (newName = FileSystem_ClassifyPath( pContext, buffer )) )
+		return -1;
+
+	switch( pContext->m_eType )
+	{
+		case FS_IODEVICE:
+		{
+			// rename only available to pfs
+			if( !pContext->m_kFile.device || strcmp(pContext->m_kFile.device->name, "pfs") )
+				break;
+			return pContext->m_kFile.device->ops->rename( &(pContext->m_kFile), oldName, newName );
 		}
 		break;
 
@@ -703,6 +743,10 @@ int FileSystem_GetFileSize( FSContext* pContext, const char* pFile )
 			iox_stat_t stat;
 
 			memset(&stat,0,sizeof(stat));
+
+			// break early if hdd, otherwise get status results in "ps2fs: Warning: NULL buffer returned"
+			if( !strcmp(pContext->m_kFile.device->name, "pfs") )
+				break;
 
 			// get status from root directory of device
 			if( pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), pFile, (io_stat_t*)&stat ) < 0 )

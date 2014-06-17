@@ -690,26 +690,23 @@ void ipStringToOctet(char *ip, int ip_octet[4])
 
 	// This takes a string (ip) representing an IP address and converts it
 	// into an array of ints (ip_octet)
+	// Rewritten 22/10/05
 
 	char oct_str[5];
 	int oct_cnt,i;
-	char f[3];
 
 	oct_cnt = 0;
 	oct_str[0]=0;
 
-	for (i=0;i<15;i++)
+	for (i=0; ((i<=strlen(ip)) && (oct_cnt<4)); i++)
 	{
-		if (ip[i] == '.' || ip[i] == '\0' || ip[i] == '\n' || ip[i] == '\r')
+		if ((ip[i] == '.') | (i==strlen(ip)))
 		{
 			ip_octet[oct_cnt] = atoi(oct_str);
 			oct_cnt++;
 			oct_str[0]=0;
 		} else
-		{
-			sprintf(f,"%c",ip[i]);
-			strcat(oct_str,f);
-		}
+			sprintf(oct_str,"%s%c",oct_str,ip[i]);
 	}
 
 }

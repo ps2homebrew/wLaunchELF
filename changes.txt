@@ -1,6 +1,34 @@
 Unofficial LaunchELF by EP + dlanor
 
-LaunchELF v3.41m
+LaunchELF v3.41O (11/13/2005)
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Fixed a bug with MS-style list format and many ftp clients.
+-Changed MS-style list format slightly to show 12:00AM instead of 00:00AM, which was wrong earlier. (Note: some ftp clients will get this wrong and show 12:00PM instead so be aware).
+-Altered files: draw.c=version_id, FtpClient.c + FtpCommands.c=ps2ftpd changes
+
+LaunchELF v3.41o (11/12/2005)
+-Updated iomanX.irx module and source file with radad's changes.
+-Updated "Development related issues.txt" updating an issue that radad found a fix for.
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Changed to MS-style LIST format for testing. More compatible?
+-Made slight changes to the previously used UNIX-style LIST format.
+-Added the possibility to change within the included sources the option for going back to the UNIX-style LIST format.
+-Altered files: iomanX.c=radad's changes, draw.c=version_id, FtpClient.c=ps2ftpd changes
+
+LaunchELF v3.41n (10/30/2005)
+-Changed order of loading device drivers when starting ps2net. 
+-Updated Slam-Tilts "NETWORK SETTINGS" with dlanor's added change to hopefully fix an issue some were experiencing.
+-Updated ps2sdk's libmc.c, with dlanor's prior changes, to the source package.
+-Updated "Development related issues.txt" removing an issue that has now been resolved.
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Fixed attributes of newly created files/dirs on hdd that matches LaunchELF's implementation.
+-Made a workaround for "ps2fs: Warning: NULL buffer returned" issue that occurred when writing files to the hdd.
+-Changed list string format slightly to match a known ftp list format as it was only off by two.
+-Made the necessary changes for rename to be implemented.
+-Added the ability to rename files/folders for mounted hdd partitons.
+-Altered files: main.c=minor changes, config.c=ipStringToOctet changes, draw.c=version_id, libmc.c=updated, FileSystem.c + FileSystem.h + FtpClient.c + FtpClient.h + FtpCommands.c=ps2ftpd changes
+
+LaunchELF v3.41m (10/16/2005)
 usb_mass new additions and changes:
 -Updated usb_mass driver to version 0.32 along with radad's change to fat_driver.c.
 -Added the ability of reading of day, month, and year from variable "mtime".
@@ -13,9 +41,9 @@ ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
 -Fixed issue where mc save folders, that are copy protected, showed up as files instead of folders.
 -Fixed protection attributes not showing up properly with mass.
 -Removed workaround for "mass" and timestamp issues since it's no longer needed do to changes to usb_mass driver.
--Altered files: fat_driver.c=usb_mass changes, fat_write.c=usb_mass month fix, FileSystem.c=ftpd changes, draw.c=version_id
+-Altered files: fat_driver.c=usb_mass changes, fat_write.c=usb_mass month fix, FileSystem.c=ps2ftpd changes, draw.c=version_id
 
-LaunchELF v3.41l
+LaunchELF v3.41l (09/18/2005)
 -Added a modified makefile for loader to the source package that was forgotten early on.
 -Added "Development related issues.txt" file to the source package.
 -Added Slam-Tilts "NETWORK SETTINGS" option that allows the user to edit the IPCONFIG.DAT file at mc0:/SYS-CONF.
@@ -27,37 +55,37 @@ ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
 -Created a workaround to fix a "mass" listing issue do to timestamps not being able to be accessed. (Note: Hopefully this is only temporary but as of now all files/folders timestamps for "mass" show up as "1/1/1970").
 -Altered files: config.c/launchelf.h=Network Settings option, main.c=load usb device driver when launching ps2net, draw.c=version_id
 
-LaunchELF v3.41k
+LaunchELF v3.41k (08/16/2005)
 -Fixed bug that prevented zero-sized files from being pasted
 -Altered files: filer.c=Bugfix, draw.c=version_id
 -Matrix Infinity Dev.2 boot will require the non-packed ELF
 
-LaunchELF v3.41j
+LaunchELF v3.41j (07/20/2005)
 -Fixed LIBCDVD 1.15 issue with DVD-ROMs: Thanks to Neme for the explanation and solution.
 
-LaunchELF v3.41i
+LaunchELF v3.41i (07/03/2005)
 -Fixed issue with ps2ftpd root directory listing bug with other ftp clients.
 -Included ps2ftpd.irx compile with source changes.
 
-LaunchELF v3.41h
+LaunchELF v3.41h (06/21/2005)
 -Replaced usb_mass driver with latest version, for support of more devices
 
-LaunchELF v3.41g
+LaunchELF v3.41g (06/20/2005)
 -Added config name to another failure message (missed it for 'save config' earlier).
 -Corrected a malloc size error (Reported by 'slartibartfast' at ps2-scene)
 -Recompiled all components (including ps2sdk) using v2.8.1 of the IOP compiler
 
-LaunchELF v3.41f
+LaunchELF v3.41f (06/18/2005)
 -Added config name to both failure messages (Name of config that failed to load/save).
 -Replaced ps2ftpd module to eliminate a problem with memory card transfers.
 NB: Matrix Infinity Dev.2 boot again works with either of the ELFs.
 
-LaunchELF v3.41e
+LaunchELF v3.41e (06/17/2005)
 -Changed ps2dev9.irx module from present PS2SDK to an older version, to achieve much
  improved reliability for the host: interface. All other functionality is unchanged.
 NB: Matrix Infinity Dev.2 boot again requires the non-packed ELF for this version.
 
-LaunchELF v3.41d
+LaunchELF v3.41d (06/17/2005)
 -Fixed bug from v3.41c, causing IOP reset to fail in some cicumstances
  This was fixed by not using initsbv_patches before IOP reset.
  For future updates, we need to be aware of possible conflicts with this.
@@ -66,7 +94,7 @@ NB: Matrix Infinity Dev.2 boot works for either ELF, with or without IOP reset
 NB: Matrix Infinity Dev.1 boot works for either ELF, with or without IOP reset
 NB: Exploit boot works with either ELF, with or without IOP reset
 
-LaunchELF v3.41c
+LaunchELF v3.41c (06/15/2005)
 -Added key config MISC/PS2NET which starts FTP server and PS2NetFS
 -Added 'host:' device with ability to browse PC filesystems (ps2client at PC end).
 -Added alternate sort order when showing titles: L1=sort_by_title, L2=sort_by_folder
@@ -78,7 +106,7 @@ NB: Matrix Infinity Dev2 booting requires the non-packed ELF, and IOP reset OFF 
 NB: Those things do not matter for Dev1 booting with the same chip though.
 NB: Exploit booting works with either ELF, but seems to dislike IOP reset
 
-LaunchELF v3.41b
+LaunchELF v3.41b (06/07/2005)
 -Changed to a cycle like function for config loading.
 -Renamed newer launch screen menu items to reflect changes to config loading.
 -Added new menu, "STARTUP SETTINGS", and moved "RESET IOP" to it.
@@ -88,7 +116,7 @@ LaunchELF v3.41b
 
 Note: Defaults are "RESET IOP: OFF", "NUMBER OF CNF'S: 1", and "KEY MAPPING: O:OK X:CANCEL".
 
-LaunchELF v3.41a
+LaunchELF v3.41a (05/30/2005)
 -Added reset IOP on start as a toggle (Note: off by default).
 -Added dlanor's fix for the elf launching bug.
 -Changed text info from "AWAY" to "SUBTRACT" in the menus because it's more proper to say add or subtract than add or away.
