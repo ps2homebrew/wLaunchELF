@@ -47,6 +47,7 @@ int selected=0;
 int timeout=0;
 int mode=BUTTON;
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
+char CNF[MAX_PATH];
 
 ////////////////////////////////////////////////////////////////////////
 // ƒƒCƒ“‰æ–Ê‚Ì•`‰æ
@@ -60,6 +61,8 @@ int drawMainScreen(void)
 	char *p;
 	
 	strcpy(setting->dirElf[12], "CONFIG");
+	strcpy(setting->dirElf[13], "LOAD LAUNCHELF.CNF");
+	strcpy(setting->dirElf[14], "LOAD LAUNCHELF1.CNF");
 	
 	clrScr(setting->color[0]);
 	
@@ -72,7 +75,7 @@ int drawMainScreen(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
-	for(i=0; i<13; i++){
+	for(i=0; i<15; i++){
 		if(setting->dirElf[i][0]){
 			switch(i){
 			case 0:
@@ -113,6 +116,12 @@ int drawMainScreen(void)
 				break;
 			case 12:
 				strcpy(c," SELECT: ");
+				break;
+			case 13:
+				strcpy(c,"   LEFT: ");
+				break;
+			case 14:
+				strcpy(c,"  RIGHT: ");
 				break;
 			}
 			if(setting->filename){
@@ -393,6 +402,23 @@ void RunSelectedElf(void)
 	}
 }
 
+/////////////////////////////////////////////////////////////////////
+// reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
+void Reset()
+{
+	SifIopReset("rom0:UDNL rom0:EELOADCNF",0);
+	while (SifIopSync());
+	fioExit();
+	SifExitIopHeap();
+	SifLoadFileExit();
+	SifExitRpc();
+	SifExitCmd();
+
+	SifInitRpc(0);
+	FlushCache(0);
+	FlushCache(2);
+}
+
 ////////////////////////////////////////////////////////////////////////
 // main
 int main(int argc, char *argv[])
@@ -410,10 +436,17 @@ int main(int argc, char *argv[])
 	if(p!=NULL) *(p+1)=0;
 	LastDir[0] = 0;
 	
+	loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	
+	if(setting->resetIOP){
+		Reset();
+		loadModules();
+	}
+	
 	setupPad();
 	
 	mcInit(MC_TYPE_MC);
-	loadConfig(mainMsg);
+	
 	if(setting->discControl)
 		loadCdModules();
 	
@@ -465,7 +498,17 @@ int main(int argc, char *argv[])
 				else if(new_pad & PAD_START)
 					RunElf(setting->dirElf[11]);
 				else if(new_pad & PAD_SELECT){
-					config(mainMsg);
+					config(mainMsg, CNF);
+					timeout = (setting->timeout+1)*SCANRATE;
+					if(setting->discControl)
+						loadCdModules();
+				}else if(new_pad & PAD_LEFT){
+					loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+					timeout = (setting->timeout+1)*SCANRATE;
+					if(setting->discControl)
+						loadCdModules();
+				}else if(new_pad & PAD_RIGHT){
+					loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF1.CNF"));
 					timeout = (setting->timeout+1)*SCANRATE;
 					if(setting->discControl)
 						loadCdModules();
@@ -488,9 +531,21 @@ int main(int argc, char *argv[])
 					mode=BUTTON;
 					timeout = (setting->timeout+1)*SCANRATE;
 				}else if(new_pad & PAD_CIRCLE){
-					if(selected==nElfs-1){
+					if(selected==nElfs-3){
 						mode=BUTTON;
-						config(mainMsg);
+						config(mainMsg, CNF);
+						timeout = (setting->timeout+1)*SCANRATE;
+						if(setting->discControl)
+							loadCdModules();
+					}else if(selected==nElfs-2){
+						mode=BUTTON;
+						loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+						timeout = (setting->timeout+1)*SCANRATE;
+						if(setting->discControl)
+							loadCdModules();
+					}else if(selected==nElfs-1){
+						mode=BUTTON;
+						loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF1.CNF"));
 						timeout = (setting->timeout+1)*SCANRATE;
 						if(setting->discControl)
 							loadCdModules();

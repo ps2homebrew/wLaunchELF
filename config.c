@@ -12,12 +12,14 @@ enum
 	DEF_SCREEN_Y = 30,
 	DEF_DISCCONTROL = TRUE,
 	DEF_INTERLACE = FALSE,
+	DEF_RESETIOP = FALSE,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
 	DISCCONTROL,
 	FILENAME,
 	SCREEN,
+	RESETIOP,
 	OK,
 	CANCEL
 };
@@ -47,15 +49,15 @@ int CheckMC(void)
 
 ////////////////////////////////////////////////////////////////////////
 // LAUNCHELF.CNF に設定を保存する
-void saveConfig(char *mainMsg)
+void saveConfig(char *mainMsg, char *CNF)
 {
 	int i, ret, fd, size;
 	const char LF[3]={0x0D, 0x0A, 0};
-	char c[MAX_PATH], tmp[22][MAX_PATH];
+	char c[MAX_PATH], tmp[23][MAX_PATH];
 	char* p;
 	
 	// 設定をメモリに格納
-	for(i=0; i<12; i++)
+	for(i=0; i<13; i++)
 		strcpy(tmp[i], setting->dirElf[i]);
 	sprintf(tmp[12], "%d", setting->timeout);
 	sprintf(tmp[13], "%d", setting->filename);
@@ -65,11 +67,12 @@ void saveConfig(char *mainMsg)
 	sprintf(tmp[19], "%d", setting->screen_y);
 	sprintf(tmp[20], "%d", setting->discControl);
 	sprintf(tmp[21], "%d", setting->interlace);
+	sprintf(tmp[22], "%d", setting->resetIOP);
 	
 	p = (char*)malloc(sizeof(SETTING));
 	p[0]=0;
 	size=0;
-	for(i=0; i<22; i++){
+	for(i=0; i<23; i++){
 		strcpy(c, tmp[i]);
 		strcat(c, LF);
 		strcpy(p+size, c);
@@ -77,7 +80,7 @@ void saveConfig(char *mainMsg)
 	}
 	// LaunchELFのディレクトリにCNFがあったらLaunchELFのディレクトリにセーブ
 	strcpy(c, LaunchElfDir);
-	strcat(c, "LAUNCHELF.CNF");
+	strcat(c, CNF);
 	if((fd=fioOpen(c, O_RDONLY)) >= 0)
 		fioClose(fd);
 	else{
@@ -88,11 +91,12 @@ void saveConfig(char *mainMsg)
 		// SYS-CONFがあったらSYS-CONFにセーブ
 		if((fd=fioDopen(c)) >= 0){
 			fioDclose(fd);
-			strcat(c, "/LAUNCHELF.CNF");
+			char strtmp[MAX_PATH] = "/";
+			strcat(c, strcat(strtmp, CNF));
 		// SYS-CONFがなかったらLaunchELFのディレクトリにセーブ
 		}else{
 			strcpy(c, LaunchElfDir);
-			strcat(c, "LAUNCHELF.CNF");
+			strcat(c, CNF);
 		}
 	}
 	strcpy(mainMsg,"Save Failed");
@@ -108,15 +112,15 @@ void saveConfig(char *mainMsg)
 
 ////////////////////////////////////////////////////////////////////////
 // LAUNCHELF.CNF から設定を読み込む
-void loadConfig(char *mainMsg)
+void loadConfig(char *mainMsg, char *CNF)
 {
 	int i, j, k, fd, len, mcport;
 	size_t size;
-	char path[MAX_PATH], tmp[22][MAX_PATH], *p;
+	char path[MAX_PATH], tmp[23][MAX_PATH], *p;
 	
 	setting = (SETTING*)malloc(sizeof(SETTING));
 	// LaunchELFが実行されたパスから設定ファイルを開く
-	sprintf(path, "%s%s", LaunchElfDir, "LAUNCHELF.CNF");
+	sprintf(path, "%s%s", LaunchElfDir, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
 	fd = fioOpen(path, O_RDONLY);
 	// 開けなかったら、SYS-CONFの設定ファイルを開く
@@ -126,13 +130,14 @@ void loadConfig(char *mainMsg)
 		else
 			mcport = CheckMC();
 		if(mcport==1 || mcport==0){
-			sprintf(path, "mc%d:/SYS-CONF/LAUNCHELF.CNF", mcport);
+			char strtmp[MAX_PATH] = "mc%d:/SYS-CONF/";
+			sprintf(path, strcat(strtmp, CNF), mcport);
 			fd = fioOpen(path, O_RDONLY);
 		}
 	}
 	// どのファイルも開けなかった場合、設定を初期化する
 	if(fd<0) {
-		for(i=0; i<12; i++)
+		for(i=0; i<13; i++)
 			setting->dirElf[i][0] = 0;
 		setting->timeout = DEF_TIMEOUT;
 		setting->filename = DEF_FILENAME;
@@ -144,6 +149,7 @@ void loadConfig(char *mainMsg)
 		setting->screen_y = DEF_SCREEN_Y;
 		setting->discControl = DEF_DISCCONTROL;
 		setting->interlace = DEF_INTERLACE;
+		setting->resetIOP = DEF_RESETIOP;
 		mainMsg[0] = 0;
 	} else {
 		// 設定ファイルをメモリに読み込み
@@ -173,12 +179,12 @@ void loadConfig(char *mainMsg)
 					strcpy(tmp[j++], &p[k]);
 				} else
 					break;
-				if(j>=22)
+				if(j>=23)
 					break;
 				k=i+2;
 			}
 		}
-		while(j<22)
+		while(j<23)
 			tmp[j++][0] = 0;
 		// ボタンセッティング
 		for(i=0; i<12; i++) {
@@ -247,7 +253,11 @@ void loadConfig(char *mainMsg)
 			setting->interlace = tmp[21][0]-'0';
 		else
 			setting->interlace = DEF_INTERLACE;
-		
+		// Reset IOP
+		if(tmp[22][0])
+			setting->resetIOP = tmp[22][0]-'0';
+		else
+			setting->resetIOP = DEF_RESETIOP;
 		free(p);
 		sprintf(mainMsg, "Load Config (%s)", path);
 	}
@@ -419,7 +429,7 @@ void setColor(void)
 		
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		printXY("  INIT", x, y/2, setting->color[3], TRUE);
+		printXY("  INITIAL SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
@@ -433,7 +443,7 @@ void setColor(void)
 		
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if (s <= 13) strcpy(c, "○:Add ×:Away");
+		if (s <= 13) strcpy(c, "○:Add ×:Subtract");
 		else if(s==14) strcpy(c, "○:Change");
 		else strcpy(c, "○:OK");
 		
@@ -444,7 +454,7 @@ void setColor(void)
 
 ////////////////////////////////////////////////////////////////////////
 // Config画面
-void config(char *mainMsg)
+void config(char *mainMsg, char *CNF)
 {
 	char c[MAX_PATH];
 	int i;
@@ -518,10 +528,12 @@ void config(char *mainMsg)
 					setting->discControl = !setting->discControl;
 				else if(s==SCREEN)
 					setColor();
+				else if(s==RESETIOP)
+					setting->resetIOP = !setting->resetIOP;
 				else if(s==OK)
 				{
 					free(tmpsetting);
-					saveConfig(mainMsg);
+					saveConfig(mainMsg, CNF);
 					break;
 				}
 				else if(s==CANCEL)
@@ -618,7 +630,14 @@ void config(char *mainMsg)
 		
 		printXY("  SCREEN SETTING", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		y += FONT_HEIGHT / 2;
+		
+		if(setting->resetIOP)
+			sprintf(c, "  RESET IOP: ON");
+		else
+			sprintf(c, "  RESET IOP: OFF");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		
 		printXY("  OK", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		printXY("  CANCEL", x, y/2, setting->color[3], TRUE);
@@ -626,14 +645,13 @@ void config(char *mainMsg)
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*3+12+LINE_THICKNESS;
 		if(s>=TIMEOUT)
 			y += FONT_HEIGHT + FONT_HEIGHT / 2;
-		if(s>=OK)
-			y += FONT_HEIGHT / 2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
 		if (s < TIMEOUT) sprintf(c, "○:Edit ×:Clear");
-		else if(s==TIMEOUT) sprintf(c, "○:Add ×:Away");
+		else if(s==TIMEOUT) sprintf(c, "○:Add ×:Subtract");
 		else if(s==FILENAME) sprintf(c, "○:Change");
 		else if(s==DISCCONTROL) sprintf(c, "○:Change");
+		else if(s==RESETIOP) sprintf(c, "○:Change");
 		else sprintf(c, "○:OK");
 		
 		setScrTmp("", c);

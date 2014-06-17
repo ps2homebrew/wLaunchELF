@@ -48,7 +48,7 @@ enum
 
 typedef struct
 {
-	char dirElf[13][MAX_PATH];
+	char dirElf[15][MAX_PATH];
 	int timeout;
 	int filename;
 	uint64 color[4];
@@ -56,6 +56,7 @@ typedef struct
 	int screen_y;
 	int discControl;
 	int interlace;
+	int resetIOP;
 } SETTING;
 
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
@@ -87,8 +88,8 @@ void waitPadReady(int port, int slot);
 
 /* config.c */
 extern SETTING *setting;
-void loadConfig(char *);
-void config(char *);
+void loadConfig(char *, char *);
+void config(char *, char *);
 
 /* filer.c */
 unsigned char *elisaFnt;

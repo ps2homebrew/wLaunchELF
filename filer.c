@@ -1146,6 +1146,7 @@ void getFilePath(char *out, int cnfmode)
 					if(checkELFheader(out)<0){
 						pushed=FALSE;
 						sprintf(msg0, "This file isn't ELF.");
+						out[0] = 0;
 					}else{
 						strcpy(LastDir, path);
 						break;

@@ -1,0 +1,22 @@
+Unofficial LaunchELF by EP
+
+LaunchELF v3.41a
+-Added reset IOP on start as a toggle (Note: off by default).
+-Added dlanor's fix for the elf launching bug.
+-Changed text info from "away" to "subtract" in the menus because it's more proper to say add or subtract than add or away.
+-Changed text for setting "INIT" to "INITIAL SCREEN SETTINGS".
+-Added support for two total configs press d-pad left or right to switch between configs. (Note: the two configs are LAUNCHELF.CNF and LAUNCHELF1.CNF).
+-Added two menus below the Select config item - left and right to load configs via menu.
+
+I have included two binaries: BOOT.ELF - the normal binary and BOOTc.ELF - a compressed binary. The compressed binary, BOOT.ELF, was packed using pixel's ps2-packer 0.4.5.
+
+I release my changes to parts of the source in the hopes that the author of LaunchELF may add some or all of my modifications. I have included all the files that I made changes to in the src folder. Also diff's are included as well in the src\diff folder just apply against the source of v3.41 or just use my already modified src files.
+
+I used some other peoples code so if anyone should get credit they should. I also used some other people’s ideas, which I'm thankful for.
+
+Special Thanks to the following:
+Mr. Mirakich the author of LaunchELF?
+Hermes for reset IOP (BOOT.c cogswaploader)
+dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file.
+pixel for ps2-packer that made the small BOOTc.ELF
+all those who like LaunchELF
