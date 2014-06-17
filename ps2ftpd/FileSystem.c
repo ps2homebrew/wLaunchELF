@@ -68,6 +68,7 @@ int FileSystem_OpenFile( FSContext* pContext, const char* pFile, FileMode eMode,
 {
 	int flags;
 	int fileMode = 0;
+	int iOpened = 0;
 
 	FileSystem_Close(pContext);
 	FileSystem_BuildPath( buffer, pContext->m_Path, pFile );
@@ -96,8 +97,6 @@ int FileSystem_OpenFile( FSContext* pContext, const char* pFile, FileMode eMode,
 		{
 			if( iContinue )
 			{
-				int iOpened = 0;
-
 				if( flags & O_WRONLY )
 				{
 					pContext->m_kFile.mode = O_WRONLY;
@@ -780,23 +779,22 @@ int FileSystem_ChangeDir( FSContext* pContext, const char* pPath )
 	// auto-mounting partitions: mount partition, then change target
 	else if( !strncmp(pContext->m_Path, "/hdd/0/", 7) )
 	{
-		int i = 4;
+		int i;
 		char mount[512] = "hdd:";
 		char target[512] = "/pfs/0/";
 
-		strcat( mount, pContext->m_Path+7 );
-		while( mount[i] != '/' )
-			i++;
-		mount[i] = '\0';
+		for( i = 7; pContext->m_Path[i] != '/'; i++ )
+			mount[i-3] = pContext->m_Path[i];
 
-		strcat( target, pContext->m_Path+i+4 );
-
-		// issue unmount command to be on the safe side
-		FileSystem_UnmountDevice( pContext, "/pfs/0/" );
+		// issue unmount command
+		FileSystem_UnmountDevice( pContext, target );
 
 		// issue mount command to the selected partition, then change target
-		if( FileSystem_MountDevice( pContext, "/pfs/0/", mount ) == 0 )
+		if( FileSystem_MountDevice( pContext, target, mount ) == 0 )
+		{
+			strcat( target, pContext->m_Path+i+1 );
 			strcpy( pContext->m_Path, target );
+		}
 
 		// failed to mount partition, change target back to hdd/0
 		else

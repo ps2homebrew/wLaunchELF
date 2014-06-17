@@ -1,5 +1,17 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.41s (01/13/2006)
+-Modified a comment in fat_write.c to fix an IOP 3.2.2 compiler issue for the usb mass driver.
+-Added a new line to the end of imports.lst to eliminate an IOP 3.2.2 compiler warning for host.
+-Rebuilt everything with the IOP 3.2.2 compiler. (Note: includes cdvd, ps2ftpd, and usb_mass modules).
+-Modified the makefile to use the ps2dev9.irx module from the PS2SDK instead of the older one from the original LaunchELF source package. (Note: Are there still reliability problems?)
+-Updated "Development related issues.txt" removing both the ps2dev9.irx reliability issue that now appears fine and the ps2ftpd.irx issue that is now fixed.
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Fixed a bug with the IOP 3.2.2 compiler by moving "int iOpened = 0" variable declaration in function FileSystem_OpenFile to the top with the other variable declarations. (Note: this fixes the crashing issue that occurred when transferring a new file to the memory card).
+-Rewrote some of the auto-mount partitions code to also work with the IOP 3.2.2 compiler.
+-Updated issues.txt removing the issue with the IOP 3.2.2 compiler.
+-Altered files: draw.c=version_id, fat_write.c=comment fix, imports.lst=IOP warning fix, makefile=use sdk's ps2dev9 module, FileSystem.c=ps2ftpd changes
+
 LaunchELF v3.41r (12/25/2005)
 ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
 -Fixed an issue with auto-mounting hdd partitions for those using Internet Explorer as their ftp client.
@@ -158,20 +170,20 @@ LaunchELF v3.41a (05/30/2005)
 -Added support for two total configs press d-pad left or right to switch between configs. (Note: the two configs are LAUNCHELF.CNF and LAUNCHELF1.CNF).
 -Added two menus below the Select config item - left and right to load configs via menu.
 
-I have included two binaries: BOOT.ELF - the normal binary and BOOTc.ELF - a compressed binary. The compressed binary, BOOT.ELF, was packed using pixel's ps2-packer 0.4.5.
+Two binaries are included: BOOT.ELF - the normal binary and BOOTc.ELF - a compressed binary. The compressed binary, BOOT.ELF, was packed using pixel's ps2-packer 1.0.
 
-I release my changes to parts of the source in the hopes that the author of LaunchELF may add some or all of my modifications. I have included all the files that I made changes to in the src folder. Also diff's are included as well in the src\diff folder just apply against the source of v3.41 or just use my already modified src files.
+The source changes to all the files that have been modified are also included. This makes it possible for the author of LaunchELF to add any or all of the current changes to the official LaunchELF project. It also helps those who may want to contribute to the uLaunchELF project. All the files that have been modified from the LaunchELF v3.41 source package are in the src folder.
 
-I used some other peoples code so if anyone should get credit they should. I also used some other people's ideas, which I'm thankful for.
+Code from others was used so if anyone should get credit they should. Ideas from other people were also used, which has been helpful.
 
 Special Thanks to the following:
 Mr. Mirakichi the author of LaunchELF.
-Hermes for early reset IOP source (BOOT.c cogswaploader).
+Hermes for the early reset IOP source (BOOT.c cogswaploader).
 dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new additons, fixes, and help.
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
 Slam-Tilt for the NETWORK SETTINGS option source changes.
 chip for ps2ftpd, of which a few modifications were made to.
-pixel for ps2-packer that made the small BOOTc.ELF.
+pixel for ps2-packer that made the small BOOTc.ELF binary.
 mrbrown for the independence exploit.
 The ps2dev community for the tools and assistance.
 all those who like LaunchELF.

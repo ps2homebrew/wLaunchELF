@@ -32,8 +32,7 @@ filexio.s:
 	bin2s $(PS2SDK)/iop/irx/fileXio.irx filexio.s filexio_irx
 
 ps2dev9.s:
-#	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
-	bin2s modules/ps2dev9.irx ps2dev9.s ps2dev9_irx
+	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
 
 ps2ip.s:
 	bin2s $(PS2SDK)/iop/irx/ps2ip.irx ps2ip.s ps2ip_irx

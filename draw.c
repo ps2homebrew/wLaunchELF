@@ -74,7 +74,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	// バージョン表記
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
-	printXY(" ■ LaunchELF v3.41r■",
+	printXY(" ■ LaunchELF v3.41s■",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	

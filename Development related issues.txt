@@ -1,12 +1,7 @@
 Issues with uLaunchELF
 
-1. ps2dev9.irx reliability issues with host, etc.
---- Temporarily resolved this issue by using the pre-existing ps2dev9.irx from the official launchELF 3.41 source package.
-
-2. ps2ftpd.irx memory card crashing issue do to optimization with newer IOP compiler.
---- Temporarily resolved this issue by compiling ps2ftpd with the older 2.8.1 IOP compiler. (Note: Compiled module included in the uLaunchELF source package)
-
 Compiler Warnings:
 106 compiler warnings related to libito 0.2.1
 14 compiler warnings do to reordering the includes in launchelf.h for use of the newer string.h in the ps2sdk
 1 compiler warning for ps2host in net_fsys.c
+1 more compiler warning for ps2host if compiling with IOP 3.2.2

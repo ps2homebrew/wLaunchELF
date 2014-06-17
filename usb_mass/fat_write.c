@@ -1941,7 +1941,7 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 	}
 	XPRINTF("I: SFN info: sector=%d (%d)  offset=%d (%d) startCluster=%d\n", *sfnSector, *sfnSector * bpb->sectorSize, *sfnOffset, *sfnOffset + (*sfnSector * bpb->sectorSize), startCluster);
 	*cluster = startCluster;
-	//The test below was bugged and caused problems for LaunchELFearlier
+	//The test below was bugged and caused problems for LaunchELF earlier
 	if (startCluster != directoryCluster) {
 	//The test below replaced the one above, to make LaunchELF work right
 	//if (ret == 0) {
