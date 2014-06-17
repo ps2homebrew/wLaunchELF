@@ -307,11 +307,17 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 	return 0;
 #else
-	// setup some default values for fileinfo-structure
+	ps2time tm;
+	getPs2Time(&tm);
+
+	// set default values off the clock of the ps2
 	memset( pInfo, 0, sizeof(FSFileInfo) );
-	pInfo->m_TS.m_iYear = 1970;
-	pInfo->m_TS.m_iMonth = 1;
-	pInfo->m_TS.m_iDay = 1;
+	pInfo->m_TS.m_iYear = tm.year;
+	pInfo->m_TS.m_iMonth = tm.month;
+	pInfo->m_TS.m_iDay = tm.day;
+	pInfo->m_TS.m_iHour = tm.hour;
+	pInfo->m_TS.m_iMinute = tm.min;
+	pInfo->m_TS.m_iSecond = tm.sec;
 
 	switch( pContext->m_eType )
 	{
@@ -330,7 +336,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 				{
 					strcpy(pInfo->m_Name,ent.name);
 
-					pInfo->m_iSize = ent.stat.size;
+					pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
 
 					// fix for mc copy protected attribute, mode 47 is a directory
 					pInfo->m_eType = FIO_SO_ISDIR(ent.stat.mode) || (47 == ent.stat.mode) ? FT_DIRECTORY : FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
@@ -341,6 +347,9 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					pInfo->m_TS.m_iHour = ent.stat.mtime[3];
 					pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
+					pInfo->m_TS.m_iSecond = ent.stat.mtime[1];
+
+					pInfo->m_iDaysBetween = getDaysBetween(pInfo->m_TS.m_iMonth, pInfo->m_TS.m_iDay, pInfo->m_TS.m_iYear, tm.month, tm.day, tm.year);
 
 					pInfo->m_iProtection = ent.stat.mode & (FIO_SO_IROTH|FIO_SO_IWOTH|FIO_SO_IXOTH);
 					pInfo->m_iProtection = pInfo->m_iProtection|(pInfo->m_iProtection << 3)|(pInfo->m_iProtection << 6);
@@ -348,6 +357,25 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					// fix for mass file/directory protection attributes
 					if( (ent.stat.mode == 16) || (ent.stat.mode == 32) )
 						pInfo->m_iProtection = 511;
+
+					/* debug info
+					printf( "Name:          \t%s\n", ent.name );
+					printf( "Size:          \t%li\n", (u32)ent.stat.size );
+					printf( "Mode:          \t%i\n", ent.stat.mode );
+					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
+					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
+					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );
+					printf( "%02i:%02i:%02i\n", ent.stat.mtime[3], ent.stat.mtime[2], ent.stat.mtime[1] );
+					if( !strcmp(pContext->m_kFile.device->name, "mass") )
+						printf( "Accessed:      \t%02i/%02i/%i\n", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+					else if( strcmp(pContext->m_kFile.device->name, "mc") )
+					{
+						printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+						printf( "%02i:%02i:%02i\n", ent.stat.atime[3], ent.stat.atime[2], ent.stat.atime[1] );
+					}
+					printf( "System time:   \t%02i/%02i/%i \t", tm.month, tm.day, tm.year );
+					printf( "%02i:%02i:%02i  (%i days between)\n\n", tm.hour, tm.min, tm.sec, pInfo->m_iDaysBetween );
+					*/
 
 					return 0;					
 				}
@@ -360,7 +388,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 				if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) > 0 )
 				{
-					// hide hdl and other special ps2 partitions from view
+					// skip over certain ps2 hdd partitions therefore keeping them out of the listing
 					while( !strcmp(pContext->m_kFile.device->name, "hdd") && 
 						(!strncmp(ent.name, "PP.HDL.", 7) || (!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot"))) )
 					{
@@ -376,8 +404,13 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					strcpy(pInfo->m_Name,ent.name);
 
-					pInfo->m_iSize = ent.stat.size;
-					pInfo->m_eType = FIO_S_ISDIR(ent.stat.mode) ? FT_DIRECTORY : FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
+					pInfo->m_iSize = ((u64)ent.stat.hisize << 32) | (u32)ent.stat.size;
+
+					// auto-mounting partitions: changed hdd partitions to directories
+					if( !strcmp(pContext->m_kFile.device->name, "hdd") )
+						pInfo->m_eType = FT_DIRECTORY;
+					else
+						pInfo->m_eType = FIO_S_ISDIR(ent.stat.mode) ? FT_DIRECTORY : FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 
 					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
 					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
@@ -385,8 +418,27 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					pInfo->m_TS.m_iHour = ent.stat.mtime[3];
 					pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
+					pInfo->m_TS.m_iSecond = ent.stat.mtime[1];
+
+					pInfo->m_iDaysBetween = getDaysBetween(pInfo->m_TS.m_iMonth, pInfo->m_TS.m_iDay, pInfo->m_TS.m_iYear, tm.month, tm.day, tm.year);
 
 					pInfo->m_iProtection = ent.stat.mode & (FIO_S_IRWXU|FIO_S_IRWXG|FIO_S_IRWXO);
+
+					/* debug info
+					printf( "Name:          \t%s\n", ent.name );
+					printf( "Size:          \t%i\n", ent.stat.size );
+					printf( "Mode:          \t%li\n", (u32)ent.stat.mode );
+					if( !strcmp(pContext->m_kFile.device->name, "pfs") )
+						printf( "Attr:          \t%i\n", ent.stat.attr );
+					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
+					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
+					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );
+					printf( "%02i:%02i:%02i\n", ent.stat.mtime[3], ent.stat.mtime[2], ent.stat.mtime[1] );
+					printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+					printf( "%02i:%02i:%02i\n", ent.stat.atime[3], ent.stat.atime[2], ent.stat.atime[1] );
+					printf( "System time:   \t%02i/%02i/%i \t", tm.month, tm.day, tm.year );
+					printf( "%02i:%02i:%02i  (%i days between)\n\n", tm.hour, tm.min, tm.sec, pInfo->m_iDaysBetween );
+					*/
 
 					return 0;					
 				}
@@ -721,6 +773,35 @@ int FileSystem_ChangeDir( FSContext* pContext, const char* pPath )
 		}
 	}
 
+	// auto-mounting partitions: issue unmount command before listing hdd partitions
+	if( !strcmp(pContext->m_Path, "/hdd/0/") )
+		FileSystem_UnmountDevice( pContext, "/pfs/0/" );
+
+	// auto-mounting partitions: mount partition, then change target
+	else if( !strncmp(pContext->m_Path, "/hdd/0/", 7) )
+	{
+		int i = 4;
+		char mount[512] = "hdd:";
+		char target[512] = "/pfs/0/";
+
+		strcat( mount, pContext->m_Path+7 );
+		while( mount[i] != '/' )
+			i++;
+		mount[i] = '\0';
+
+		strcat( target, pContext->m_Path+i+4 );
+
+		// issue unmount command to be on the safe side
+		FileSystem_UnmountDevice( pContext, "/pfs/0/" );
+
+		// issue mount command to the selected partition, then change target
+		if( FileSystem_MountDevice( pContext, "/pfs/0/", mount ) == 0 )
+			strcpy( pContext->m_Path, target );
+
+		// failed to mount partition, change target back to hdd/0
+		else
+			strcpy( pContext->m_Path, "/hdd/0/" );
+	}
 	return 0;
 }
 
@@ -1018,6 +1099,62 @@ int FileSystem_SyncDevice( FSContext* pContext, const char* devname )
 
 	pContext->m_eType = FS_INVALID;
 	return 0;
+}
+
+int getPs2Time( ps2time *tm )
+{
+	cd_clock_t cdtime;
+	s32 tmp;
+	// used if can not get time...
+	ps2time timeBuf={0, 0, 0, 0, 1, 1, 1970};
+
+	if( CdReadClock(&cdtime) !=0 && cdtime.stat==0 )
+	{
+		tmp=cdtime.second>>4;
+		timeBuf.sec=(int)(((tmp<<2)+tmp)<<1)+(cdtime.second&0x0F);
+		tmp=cdtime.minute>>4;
+		timeBuf.min=(((tmp<<2)+tmp)<<1)+(cdtime.minute&0x0F);
+		tmp=cdtime.hour>>4;
+		timeBuf.hour=(((tmp<<2)+tmp)<<1)+(cdtime.hour&0x0F);
+		tmp=cdtime.day>>4;
+		timeBuf.day=(((tmp<<2)+tmp)<<1)+(cdtime.day&0x0F);
+		tmp=cdtime.month>>4;
+		timeBuf.month=(((tmp<<2)+tmp)<<1)+(cdtime.month&0x0F);
+		tmp=cdtime.year>>4;
+		timeBuf.year=(((tmp<<2)+tmp)<<1)+(cdtime.year&0xF)+2000;
+	}
+	memcpy( tm, &timeBuf, sizeof(ps2time) );
+	return 0;
+}
+
+int getDaysBetween( int month1, int day1, int year1, int month2, int day2, int year2 )
+{
+	int num_days = 0;
+	int reverse;
+	int i;
+
+	if( (reverse = year1 > year2) || ((year1 == year2) && ((month1 > month2) || ((month1 == month2) && (day1 > day2)))) )
+	{
+		i = year1;		year1  = year2;		year2  = i;
+		i = month1;		month1 = month2;	month2 = i;
+		i = day1;		day1   = day2;		day2   = i;
+	}
+
+	// do a gross total of the span of years, then adjust
+	for( i = year1; i <= year2; i++ )
+		num_days += ( 365 + ((i)%4==0 && ((i)%100!=0 || (i)%400==0)) );
+
+	// adjust first year
+	for( i = 1; i < month1; i++ )
+		num_days -= ( (i)==2 ? 28 + ((year1)%4==0 && ((year1)%100!=0 || (year1)%400==0)) : 30 + ((i)+((i)>=8))%2 );
+
+	// adjust last year
+	for( i = month2; i <= 12; i++ )
+		num_days -= ( (i)==2 ? 28 + ((year2)%4==0 && ((year2)%100!=0 || (year2)%400==0)) : 30 + ((i)+((i)>=8))%2 );
+
+	num_days += day2 - day1;
+
+	return( reverse ? -num_days : num_days );
 }
 
 #endif

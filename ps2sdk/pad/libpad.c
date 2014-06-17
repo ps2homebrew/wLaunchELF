@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libpad.c,v 1.3 2004/09/14 14:41:27 pixel Exp $
+# $Id: libpad.c 577 2004-09-14 14:41:46Z pixel $
 # Pad library functions
 # Quite easy rev engineered from util demos..
 # Find any bugs? Mail me: pukko@home.se

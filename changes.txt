@@ -1,4 +1,38 @@
-Unofficial LaunchELF by EP + dlanor
+Unofficial LaunchELF releases by EP + dlanor
+
+LaunchELF v3.41r (12/25/2005)
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Fixed an issue with auto-mounting hdd partitions for those using Internet Explorer as their ftp client.
+-Altered files: draw.c=version_id, FileSystem.c=ps2ftpd changes
+
+LaunchELF v3.41q (12/24/2005)
+-Updated host and all its source files with EEUG's changes to fix a possible issue with host.
+-Made a couple of changes to radad's latest changes to hdd_fio.c in the ps2sdk. (Note: Included hdd_fio.c, which compiles with the older iop-2.8.1 and gives accurate sizes for hdd partitions).
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Changed hdd partitions to show up as directories instead of files.
+-Added the ability to auto-mount hdd partitions to pfs/0. (Notes: Once a partition's directory is opened, the partition is auto-mounted to pfs/0. The directory is then also changed to pfs/0. Partitions are un-mounted at hdd/0 and also just prior to being auto-mounted).
+-Cleaned up the source code a bit to fix an unused variable compiler warning.
+-Finished the UNIX-style LIST format after many other changes were made. (Note: Now the LIST format does either "MMM DD  YYYY" or "MMM DD hh:mm" based on the days between calculation).
+-Made some slight changes to read the ps2's system clock.
+-Added the ability to read the ps2's system clock so now root and device dirs use this instead of "1/1/1970".
+-Added a days between dates calculator in order to complete the UNIX-style LIST format. (Note: Now if the modified date of a file/dir is within the last 182 days the "hh:mm" format will appear in place of the "YYYY" format as it's suppose to).
+-Commented out all the extra debug printf's as they are currently no longer needed.
+-Added a new uitoa function that can deal with larger sizes.
+-Fixed an issue with size so now hdd partitions and files can accurately display size in bytes.
+-Added issues.txt that lists the only issues left to be resolved with ps2ftpd.
+-Altered files: draw.c=version_id, hostlink.h + imports.lst + irx_imports.h + Makefile + net_fio.c + net_fio.h + net_fsys.c + ps2host.c + Rules.make=updated host source files also now diff compatible, FileSystem.c + FileSystem.h + FtpClient.c + imports.lst + irx_imports.h=ps2ftpd changes
+
+LaunchELF v3.41p (11/19/2005)
+-Updated "Development related issues.txt" removing the iomanX.irx issue as it has now been fixed at the sdk level.
+-Updated the source package removing iomanX things as radad's changes made it into the ps2sdk.
+-Updated the makefile to use the iomanX.irx from the sdk.
+-Updated the rest of dlanor's ps2sdk source files so they're more diff compatible.
+-Updated the source package that fixes an inconsistency with created files/dirs hour timestamp for hdd and usb mass devices.
+-Changed usb_mass driver slightly to allow the reading of Date/Time Created, Date Accessed, and Date/Time Modified.
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Reverted back to the UNIX-style LIST format as it appears to be the most compatible overall.
+-Placed printf's in the driver to show timestamps and other attributes for possible future debugging purposes that will hopefully only be temporary.
+-Altered files: draw.c=version_id, fat.h + fat_driver.c=support for reading more of usb mass timestamp attributes, fat_write.c + misc.c + misc.c=fixes for hour timestamp issue, makefile + libmc.h + libpad.c + libpad.h + libpad.h + libpadx.c=updates, FileSystem.c + FtpClient.c + FtpCommands.c=ps2ftpd changes
 
 LaunchELF v3.41O (11/13/2005)
 ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
@@ -131,10 +165,13 @@ I release my changes to parts of the source in the hopes that the author of Laun
 I used some other peoples code so if anyone should get credit they should. I also used some other people's ideas, which I'm thankful for.
 
 Special Thanks to the following:
-Mr. Mirakich the author of LaunchELF?
-Hermes for reset IOP (BOOT.c cogswaploader)
-dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new fixes.
+Mr. Mirakichi the author of LaunchELF.
+Hermes for early reset IOP source (BOOT.c cogswaploader).
+dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new additons, fixes, and help.
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
 Slam-Tilt for the NETWORK SETTINGS option source changes.
-pixel for ps2-packer that made the small BOOTc.ELF
-all those who like LaunchELF
+chip for ps2ftpd, of which a few modifications were made to.
+pixel for ps2-packer that made the small BOOTc.ELF.
+mrbrown for the independence exploit.
+The ps2dev community for the tools and assistance.
+all those who like LaunchELF.

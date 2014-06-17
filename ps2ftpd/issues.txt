@@ -1,0 +1,38 @@
+2 issues that need to be addressed with ps2ftpd:
+
+1. Fix an IOP v3.2.2 compiler "-O2" optimization issue that causes a crash when transferring new files to the memory card (Note: overwriting an existing file works fine). The problem appears to occur in FileSystem.c's FileSystem_OpenFile function and the flags. Maybe the issue is with 'O_CREAT'? More on this issue can be found here: http://forums.ps2dev.org/viewtopic.php?t=2198&start=0&postdays=0&postorder=asc&highlight=
+
+Currently there are two ways around the issue:
+A. Compile the module with the older v2.8.1 IOP compiler IOP compiler.
+B. Remove the "-O2" optimization, although this bloats the module somewhat.
+
+The exception error that occurs when using the newer IOP compiler defaults is...
+
+IOP Exception handler: Address load/inst fetch exception
+
+Module Name "mcman" Relative EPC 0000fee8
+
+Cause 30000010 BadVAddr 00000602 Status 00000404 EPC 0004df18
+
+zero: 00000000  t0: 00000021  t8: 00000001  s6: 00000000
+  at: 00000000  t1: 77631C43  t9: 00000602  s7: 00000000
+  v0: 00000762  t2: 7F777F7F  s0: 00067CD0  k0: 00070D90
+  v1: 00055C90  t3: 7F7F777F  s1: 00068060  k1: 00032A0D
+  a0: 00000802  t4: 00000000  s2: 00000602  gp: 00081890
+  a1: 0000002F  t5: 00000000  s3: 00000602  sp: 001ECB18
+  a2: 000798A6  t6: 00000000  s4: 00000002  fp: 00000000
+  a3: 0000000A  t7: 00000000  s5: 00000000  ra: 0004DEFC
+
+2. Fix FileSystem_GetFileSize function in FileSystem.c. It's currently disabled for the pfs driver otherwise it results in:
+
+For SIZE command:
+ps2fs: Error: Unused cache returned
+
+When transferring a file to a mounted hdd partition:
+ps2fs: Warning: NULL buffer returned
+
+It wasn't really a problem before but it prevents rename from working properly if the function is allowed to call getstat. It's directly do to this system call in FileSystem.c that pfs apparently doesn't like:
+
+if( pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), pFile, (io_stat_t*)&stat ) < 0 )
+
+Currently it's disabled for pfs although calling the SIZE command did actually work. Of course, the size command never worked when trying to get the size of a file that was being transferred from the pc side.

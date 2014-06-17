@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libmc.h,v 1.3 2004/09/14 14:41:26 pixel Exp $
+# $Id: libmc.h 577 2004-09-14 14:41:46Z pixel $
 # Macro's, structures & function prototypes for mclib.
 */
 

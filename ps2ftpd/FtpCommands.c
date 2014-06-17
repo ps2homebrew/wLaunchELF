@@ -213,12 +213,12 @@ void FtpClient_OnCmdSyst( FtpClient* pClient )
 
 	// TODO: is this proper?
 
-	/* MS-style LIST format */
-	FtpClient_Send( pClient, 215, "Windows_NT version 5.0" );
-
-	/* UNIX-style LIST format: To use uncomment this format after commenting out MS-style LIST format 
-		and making changes in FtpClient.c's FtpClient_OnDataWrite
+	/* UNIX-style LIST format */
 	FtpClient_Send( pClient, 215, "UNIX Type: L8" );
+
+	/* MS-style LIST format: To use uncomment this format after commenting out UNIX-style LIST format 
+		and making changes in FtpClient.c's FtpClient_OnDataWrite
+	FtpClient_Send( pClient, 215, "Windows_NT version 5.0" );
 	*/
 }
 

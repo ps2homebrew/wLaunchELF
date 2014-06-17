@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libpadx.c,v 1.2 2004/09/14 14:41:27 pixel Exp $
+# $Id: libpadx.c 577 2004-09-14 14:41:46Z pixel $
 # Pad library functions
 */
 

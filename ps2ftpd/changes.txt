@@ -9,6 +9,10 @@ FtpClient.c
 -Made slight changes to the previously used UNIX-style LIST format.
 -Added the possibility to change within the included sources the option for going back to the UNIX-style LIST format.
 -Changed MS-style list format slightly to show 12:00AM instead of 00:00AM, which was wrong earlier. (Note: some ftp clients will get this wrong and show 12:00PM instead so be aware).
+-Reverted back to the UNIX-style LIST format, as it appears to be the most compatible overall.
+-Cleaned up the source code a bit to fix an unused variable compiler warning.
+-Finished the UNIX-style LIST format after many other changes were made. (Note: Now the LIST format does either "MMM DD  YYYY" or "MMM DD hh:mm" based on the days between calculation).
+-Added a new uitoa function that can deal with larger sizes.
 
 FileSystem.c
 -Added a check in the scan filesystem devices function that hides all except "mc" and "pfs" directories from the ftp clients. (Note: Now modified to fix bug with some ftp clients)
@@ -24,14 +28,26 @@ FileSystem.c
 -Removed workaround for "mass" and timestamp issues since it's no longer needed do to changes to usb_mass driver.
 -Fixed attributes of newly created files/dirs on hdd that matches LaunchELF's implementation.
 -Made a workaround for "ps2fs: Warning: NULL buffer returned" issue that occurred when writing files to the hdd.
--Added the ability to rename files/folders for mounted hdd partitons.
+-Added the ability to rename files/folders for mounted hdd partitions.
+-Placed printf's in the driver to show timestamps and other attributes for possible future debugging purposes that will hopefully only be temporary.
+-Changed hdd partitions to show up as directories instead of files.
+-Added the ability to auto-mount hdd partitions to pfs/0. (Notes: Once a partition's directory is opened, the partition is auto-mounted to pfs/0. The directory is then also changed to pfs/0. Partitions are un-mounted at hdd/0 and also just prior to being auto-mounted).
+-Added the ability to read the ps2's system clock so now root and device dirs use this instead of "1/1/1970".
+-Added a days between dates calculator in order to complete the UNIX-style LIST format. (Note: Now if the modified date of a file/dir is within the last 182 days the "hh:mm" format will appear in place of the "YYYY" format as it's suppose to).
+-Commented out all the extra debug printf's as they are currently no longer needed.
+-Fixed an issue with size so now hdd partitions and files can accurately display size in bytes.
+-Fixed an issue with auto-mounting hdd partitions for those using Internet Explorer as their ftp client.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.
 
+FileSystem.h, imports.lst, and irx_imports.h
+-Made some slight changes to read the ps2's system clock.
+
 I have included a binary of ps2ftpd in the modules directory for the unofficial LaunchELF with all the changes noted above.
 
-I release my changes to parts of the source in the hopes that the author of ps2ftpd may add my changes to FtpClient.c and some of those from FileSystem.c.
+I release my changes to parts of the source in the hopes that the author of ps2ftpd may add some or all of my changes. I have included all the files that I made changes to in this folder.
 
 Special Thanks to the following:
-Chip for all the hard work on ps2ftpd, which I made minor changes to.
+Jesper Svennevid (chip) for all the hard work on ps2ftpd, which I made changes to.
+Daniel E. Singer for date_calc, which I used some code in ps2ftpd.

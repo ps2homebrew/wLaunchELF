@@ -59,6 +59,38 @@ char* itoa(char* in, int val)
 	return in;
 }
 
+// cheap mans larger uitoa
+char* uitoa(char* in, u64 val)
+{
+	char* p = in;
+	int bool = 0;
+	int i = 19;
+	char c;
+	int j;
+	u64 tmp;
+
+	do
+	{
+		i--;
+		tmp = 10;
+		for( j = i; j > 0; j-- )
+			tmp *= 10;
+
+		for( c = '0'; val >= tmp; c++ )
+		{
+			val -= tmp;
+			bool = 1;
+		}
+
+		if( bool == 1 )
+			*p++ = c;
+	} while(i);
+
+	*p++ = val + '0';
+
+	return in;
+}
+
 // this shared buffer is used for everything the clients do
 static char buffer[8192];
 #define BUFFER_OFFSET 4096	// use this if you need to use buffer & push it to FtpClient_Send()
@@ -589,65 +621,9 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 				if( DATAACTION_LIST == pClient->m_eDataAction )
 				{
 					int i;
-					int digits;
-					int number = pInfo->m_iSize;
-					char year[4];
+					char size[21] = " ";
 
-					/* MS-style LIST format */
-					i = pInfo->m_TS.m_iMonth;
-					if( i > 12 )
-						i = 1;
-					if( i < 10 )
-						strcat( buffer, "0" );
-					itoa( buffer + strlen(buffer), i );
-
-					strcat( buffer, "-" );
-					if( pInfo->m_TS.m_iDay < 10 )
-						strcat( buffer, "0" );
-					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iDay );
-
-					strcat(buffer, "-" );
-					itoa( year, pInfo->m_TS.m_iYear );
-					strcat( buffer, year+2 );
-
-					strcat( buffer, "  " );
-					i = pInfo->m_TS.m_iHour;
-					if( i > 12 )
-						i -= 12;
-					if( i == 0 )
-						i = 12;
-					if( i < 10 )
-						strcat( buffer, "0" );
-					itoa( buffer + strlen(buffer), i );
-
-					strcat( buffer, ":" );
-					if( pInfo->m_TS.m_iMinute < 10 )
-						strcat( buffer, "0" );
-					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iMinute );
-					if( pInfo->m_TS.m_iHour < 12 )
-						strcat( buffer, "AM       " );
-					else
-						strcat( buffer, "PM       " );
-
-					if( FT_DIRECTORY == pInfo->m_eType )
-						strcat( buffer, "<DIR>         " );
-					else
-					{
-						// determine number of digits of m_iSize
-						for( digits = 0; number >= 10; digits++ )
-							number /= 10;
-						// pad the string by 13 - number of digits
-						for( i = 0; i < 13 - digits; i++ )
-							strcat( buffer, " " );
-						itoa( buffer + strlen(buffer), pInfo->m_iSize );
-					}
-					strcat( buffer, " " );
-					// end of MS-style LIST format
-
-					// this one needs a rewrite
-
-					/* UNIX-style LIST format: To use uncomment this format after commenting out MS-style LIST format 
-						and making changes to FtpCommands.c's method FtpClient_OnCmdSyst
+					/* UNIX-style LIST format */
 					strcat( buffer, (FT_DIRECTORY == pInfo->m_eType) ? "d" : (FT_LINK == pInfo->m_eType) ? "l" : "-" );
 					for( i = 0; i < 9; i++ )
 					{
@@ -665,15 +641,10 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 					}
 					strcat( buffer, "   1 ps2      ps2 " );
 
-					// determine number of digits of m_iSize
-					for( digits = 0; number >= 10; digits++ )
-						number /= 10;
-
-					// pad the string by 12 - number of digits
-					for( i = 0; i < 12 - digits; i++ )
+					uitoa( size, pInfo->m_iSize );
+					for( i = 0; (i < 13 - strlen(size)) && (strlen(size) < 14); i++ )
 						strcat( buffer, " " );
-
-					itoa( buffer + strlen(buffer), pInfo->m_iSize );
+					strcat( buffer, size );
 					strcat( buffer, " " );
 
 					// month: changed for proper "MMM DD  YYYY" format
@@ -700,23 +671,77 @@ void FtpClient_OnDataWrite( FtpClient* pClient )
 					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iDay );
 					strcat( buffer, " " );
 
-					// year: used for "MMM DD  YYYY" format //
-					strcat( buffer, " " );
-					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iYear );
-					strcat( buffer, " " );
-					*/
+					if( (pInfo->m_iDaysBetween >= 0) && (pInfo->m_iDaysBetween <= 182) )
+					{
+						// time: used for "MMM DD hh:mm" format
+						if( pInfo->m_TS.m_iHour < 10 )
+							strcat( buffer, "0" );
+						itoa( buffer + strlen(buffer), pInfo->m_TS.m_iHour );
+						strcat( buffer, ":" );
+						if( pInfo->m_TS.m_iMinute < 10 )
+							strcat( buffer, "0" );
+						itoa( buffer + strlen(buffer), pInfo->m_TS.m_iMinute );
+						strcat( buffer, " " );
+					}
+					else
+					{
+						// year: used for "MMM DD  YYYY" format
+						strcat( buffer, " " );
+						itoa( buffer + strlen(buffer), pInfo->m_TS.m_iYear );
+						strcat( buffer, " " );
+					}
+					// end of UNIX-style LIST format
 
-					/* time: uncomment for "MMM DD hh:mm" format after commenting out year
-					if( pInfo->m_TS.m_iHour < 10 )
+					/* MS-style LIST format: To use uncomment this format after commenting out UNIX-style LIST format 
+						and making changes to FtpCommands.c's method FtpClient_OnCmdSyst
+					i = pInfo->m_TS.m_iMonth;
+					if( i > 12 )
+						i = 1;
+					if( i < 10 )
 						strcat( buffer, "0" );
-					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iHour );
+					itoa( buffer + strlen(buffer), i );
+
+					strcat( buffer, "-" );
+					if( pInfo->m_TS.m_iDay < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iDay );
+
+					strcat( buffer, "-" );
+					if( pInfo->m_TS.m_iYear%100 < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iYear%100 );
+
+					strcat( buffer, "  " );
+					i = pInfo->m_TS.m_iHour;
+					if( i > 12 )
+						i -= 12;
+					if( i == 0 )
+						i = 12;
+					if( i < 10 )
+						strcat( buffer, "0" );
+					itoa( buffer + strlen(buffer), i );
+
 					strcat( buffer, ":" );
 					if( pInfo->m_TS.m_iMinute < 10 )
 						strcat( buffer, "0" );
 					itoa( buffer + strlen(buffer), pInfo->m_TS.m_iMinute );
+					if( pInfo->m_TS.m_iHour < 12 )
+						strcat( buffer, "AM       " );
+					else
+						strcat( buffer, "PM       " );
+
+					if( FT_DIRECTORY == pInfo->m_eType )
+						strcat( buffer, "<DIR>         " );
+					else
+					{
+						uitoa( size, pInfo->m_iSize );
+						for( i = 0; (i < 14 - strlen(size)) && (strlen(size) < 15); i++ )
+							strcat( buffer, " " );
+						strcat( buffer, size );
+					}
 					strcat( buffer, " " );
 					*/
-					// end of UNIX-style LIST format
+					// end of MS-style LIST format
 				}
 				strcat( buffer, pInfo->m_Name );
 				strcat( buffer, "\r\n" );

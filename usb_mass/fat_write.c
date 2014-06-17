@@ -741,7 +741,7 @@ void setSfnDate(fat_direntry_sfn* dsfn, int mode) {
 
 		tmp=cdtime.hour>>4;
 		hour=(((tmp<<2)+tmp)<<1)+(cdtime.hour&0x0F);
-		hour= (hour + 4 + 12) % 24; // TEMP FIX (need to deal with timezones?)
+		//hour= (hour + 4 + 12) % 24; // TEMP FIX (need to deal with timezones?)
 		
 		tmp=cdtime.day>>4;
 		day=(((tmp<<2)+tmp)<<1)+(cdtime.day&0x0F);

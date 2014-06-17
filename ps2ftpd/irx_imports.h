@@ -11,19 +11,23 @@
 
 #include "irx.h"
 
-
 /* Please keep these in alphabetical order!  */
-#if 0  /* EEUG: WHY ? */
 #include "cdvdman.h"
-#endif
 #include "intrman.h"
-#include "ioman.h"
-#include "loadcore.h"
+#include "iomanX.h"
 #include "ps2ip.h"
 #include "sifcmd.h"
+#include "sifman.h"
 #include "stdio.h"
 #include "sysclib.h"
+#include "sysmem.h"
 #include "thbase.h"
-#include "thsemap.h"
+#include "dns.h"
+#include "ioman_mod.h"
+#include "iopmgr.h"
+
+#define getsockopt lwip_getsockopt
+#define setsockopt lwip_setsockopt
+#define getsockname lwip_getsockname
 
 #endif /* IOP_IRX_IMPORTS_H */

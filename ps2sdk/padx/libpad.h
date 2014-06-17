@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libpad.h,v 1.4 2004/12/20 23:19:11 radad Exp $
+# $Id: libpad.h 695 2004-12-20 23:19:11Z radad $
 # Pad externals 
 */
 

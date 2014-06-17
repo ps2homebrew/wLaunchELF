@@ -11,7 +11,9 @@
 #include <intrman.h>
 #include <types.h>
 #include <sifrpc.h>
+#if 0 /* EEUG: WHY ? */
 #include <cdvdman.h>
+#endif
 
 // Entry points
 extern int fsysMount(void);
@@ -23,10 +25,10 @@ _start( int argc, char **argv)
 {
     FlushDcache();
     CpuEnableIntr(0);
-
+#if 0  /* EEUG: what the hell these two are doing here ? */
     sceCdInit(1);
     sceCdStop();
-
+#endif
     SifInitRpc(0);
 
     fsysMount();

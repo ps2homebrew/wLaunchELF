@@ -638,17 +638,36 @@ void fat_setFatDir(fat_bpb* bpb, fat_dir* fatDir, fat_direntry_sfn* dsfn, fat_di
 	fatDir->attr = dsfn->attr;
 	fatDir->size = dir->size;
 
-	//Date: Day, Month, Year-low, Year-high
-	fatDir->date[0] = (dsfn->dateWrite[0] & 0x1F);
-	fatDir->date[1] = (dsfn->dateWrite[0] >> 5) + ((dsfn->dateWrite[1] & 0x01) << 3 );
-	i = 1980 + (dsfn->dateWrite[1] >> 1);
-	fatDir->date[2] = (i & 0xFF);
-	fatDir->date[3] = ((i & 0xFF00)>> 8);
+	//created Date: Day, Month, Year-low, Year-high
+	fatDir->cdate[0] = (dsfn->dateCreate[0] & 0x1F);
+	fatDir->cdate[1] = (dsfn->dateCreate[0] >> 5) + ((dsfn->dateCreate[1] & 0x01) << 3 );
+	i = 1980 + (dsfn->dateCreate[1] >> 1);
+	fatDir->cdate[2] = (i & 0xFF);
+	fatDir->cdate[3] = ((i & 0xFF00)>> 8);
 
-	//Time: Hours, Minutes, Seconds
-	fatDir->time[0] = ((dsfn->timeWrite[1] & 0xF8) >> 3);
-	fatDir->time[1] = ((dsfn->timeWrite[1] & 0x07) << 3) + ((dsfn->timeWrite[0] & 0xE0) >> 5);
-	fatDir->time[2] = ((dsfn->timeWrite[0] & 0x1F) << 1);
+	//created Time: Hours, Minutes, Seconds
+	fatDir->ctime[0] = ((dsfn->timeCreate[1] & 0xF8) >> 3);
+	fatDir->ctime[1] = ((dsfn->timeCreate[1] & 0x07) << 3) + ((dsfn->timeCreate[0] & 0xE0) >> 5);
+	fatDir->ctime[6] = ((dsfn->timeCreate[0] & 0x1F) << 1);
+
+	//accessed Date: Day, Month, Year-low, Year-high
+	fatDir->adate[0] = (dsfn->dateAccess[0] & 0x1F);
+	fatDir->adate[1] = (dsfn->dateAccess[0] >> 5) + ((dsfn->dateAccess[1] & 0x01) << 3 );
+	i = 1980 + (dsfn->dateAccess[1] >> 1);
+	fatDir->adate[2] = (i & 0xFF);
+	fatDir->adate[3] = ((i & 0xFF00)>> 8);
+
+	//modified Date: Day, Month, Year-low, Year-high
+	fatDir->mdate[0] = (dsfn->dateWrite[0] & 0x1F);
+	fatDir->mdate[1] = (dsfn->dateWrite[0] >> 5) + ((dsfn->dateWrite[1] & 0x01) << 3 );
+	i = 1980 + (dsfn->dateWrite[1] >> 1);
+	fatDir->mdate[2] = (i & 0xFF);
+	fatDir->mdate[3] = ((i & 0xFF00)>> 8);
+
+	//modified Time: Hours, Minutes, Seconds
+	fatDir->mtime[0] = ((dsfn->timeWrite[1] & 0xF8) >> 3);
+	fatDir->mtime[1] = ((dsfn->timeWrite[1] & 0x07) << 3) + ((dsfn->timeWrite[0] & 0xE0) >> 5);
+	fatDir->mtime[2] = ((dsfn->timeWrite[0] & 0x1F) << 1);
 
 	fatDir->chain[0].cluster = dir->cluster;
 	fatDir->chain[0].index  = 0;
@@ -1526,16 +1545,31 @@ int fs_dread  (iop_file_t *fd, void* data) {
 		buffer->stat.size = (((D_PRIVATE*)fd->privdata)->fatdir).size;
  
 		strcpy(buffer->name, (const char*)(((D_PRIVATE*)fd->privdata)->fatdir).name);
+
+		//set created Date: Day, Month, Year
+		buffer->stat.ctime[4] = (((D_PRIVATE*)fd->privdata)->fatdir).cdate[0];
+		buffer->stat.ctime[5] = (((D_PRIVATE*)fd->privdata)->fatdir).cdate[1];
+		buffer->stat.ctime[6] = (((D_PRIVATE*)fd->privdata)->fatdir).cdate[2];
+
+		//set created Time: Hours, Minutes, Seconds
+		buffer->stat.ctime[3] = (((D_PRIVATE*)fd->privdata)->fatdir).ctime[0];
+		buffer->stat.ctime[2] = (((D_PRIVATE*)fd->privdata)->fatdir).ctime[1];
+		buffer->stat.ctime[1] = (((D_PRIVATE*)fd->privdata)->fatdir).ctime[2];
+
+ 		//set accessed Date: Day, Month, Year
+		buffer->stat.atime[4] = (((D_PRIVATE*)fd->privdata)->fatdir).adate[0];
+		buffer->stat.atime[5] = (((D_PRIVATE*)fd->privdata)->fatdir).adate[1];
+		buffer->stat.atime[6] = (((D_PRIVATE*)fd->privdata)->fatdir).adate[2];
+
+		//set modified Date: Day, Month, Year
+		buffer->stat.mtime[4] = (((D_PRIVATE*)fd->privdata)->fatdir).mdate[0];
+		buffer->stat.mtime[5] = (((D_PRIVATE*)fd->privdata)->fatdir).mdate[1];
+		buffer->stat.mtime[6] = (((D_PRIVATE*)fd->privdata)->fatdir).mdate[2];
  
-		//set Date: Day, Month, Year
-		buffer->stat.mtime[4] = (((D_PRIVATE*)fd->privdata)->fatdir).date[0];
-		buffer->stat.mtime[5] = (((D_PRIVATE*)fd->privdata)->fatdir).date[1];
-		buffer->stat.mtime[6] = (((D_PRIVATE*)fd->privdata)->fatdir).date[2];
- 
-		//set Time: Hours, Minutes, Seconds
-		buffer->stat.mtime[3] = (((D_PRIVATE*)fd->privdata)->fatdir).time[0];
-		buffer->stat.mtime[2] = (((D_PRIVATE*)fd->privdata)->fatdir).time[1];
-		buffer->stat.mtime[1] = (((D_PRIVATE*)fd->privdata)->fatdir).time[2];
+		//set modified Time: Hours, Minutes, Seconds
+		buffer->stat.mtime[3] = (((D_PRIVATE*)fd->privdata)->fatdir).mtime[0];
+		buffer->stat.mtime[2] = (((D_PRIVATE*)fd->privdata)->fatdir).mtime[1];
+		buffer->stat.mtime[1] = (((D_PRIVATE*)fd->privdata)->fatdir).mtime[2];
 
 		if (fat_getNextDirentry(&(((D_PRIVATE*)fd->privdata)->fatdir))<1)
 			((D_PRIVATE*)fd->privdata)->status = 1;	/* no more entries */

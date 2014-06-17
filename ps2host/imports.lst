@@ -48,8 +48,9 @@ intrman_IMPORTS_end
 loadcore_IMPORTS_start
 I_FlushDcache
 loadcore_IMPORTS_end
-
+#if 0  /* EEUG: WHY ? */
 cdvdman_IMPORTS_start
 I_sceCdInit
 I_sceCdStop
 cdvdman_IMPORTS_end
+#endif

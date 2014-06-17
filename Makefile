@@ -26,8 +26,7 @@ poweroff.s:
 	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
 
 iomanx.s:
-#	bin2s $(PS2SDK)/iop/irx/iomanX.irx iomanx.s iomanx_irx
-	bin2s modules/iomanX.irx iomanx.s iomanx_irx
+	bin2s $(PS2SDK)/iop/irx/iomanX.irx iomanx.s iomanx_irx
 
 filexio.s:
 	bin2s $(PS2SDK)/iop/irx/fileXio.irx filexio.s filexio_irx

@@ -1,12 +1,9 @@
 Issues with uLaunchELF
 
-1. iomanX.irx issue that displays garbage when trying to show ps2 hard drive partitions.
---- Temporarily resolved this issue by using radad's changes to iomanX.irx. (Note: Compiled module included along with original source file in the uLaunchELF source package)
-
-2. ps2dev9.irx reliability issues with host, etc.
+1. ps2dev9.irx reliability issues with host, etc.
 --- Temporarily resolved this issue by using the pre-existing ps2dev9.irx from the official launchELF 3.41 source package.
 
-3. ps2ftpd.irx memory card crashing issue do to optimization with newer IOP compiler.
+2. ps2ftpd.irx memory card crashing issue do to optimization with newer IOP compiler.
 --- Temporarily resolved this issue by compiling ps2ftpd with the older 2.8.1 IOP compiler. (Note: Compiled module included in the uLaunchELF source package)
 
 Compiler Warnings:
