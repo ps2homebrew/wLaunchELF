@@ -74,6 +74,7 @@ typedef struct
 	char CNF_Path[MAX_PATH];
 	char LK_Path[15][MAX_PATH];
 	char LK_Title[15][MAX_ELF_TITLE];
+	int  LK_Flag[15];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
 	char kbdmap_file[MAX_PATH];
@@ -107,6 +108,10 @@ typedef struct
 } data_ip_struct;
 
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
+
+/* main.c */
+extern int TV_mode;
+extern int swapKeys;
 
 void	load_ps2host(void);
 void loadCdModules(void);
@@ -175,7 +180,6 @@ void loadConfig(char *, char *);
 void config(char *, char *);
 
 /* filer.c */
-extern char mountedParty[2][MAX_NAME]; //NB: Must be cleared if you force unmounting
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
@@ -194,10 +198,7 @@ int genClose(int fd);
 int genDopen(char *path);
 int genDclose(int fd);
 int mountParty(const char *party);
-
-/* main.c */
-extern int TV_mode;
-extern int swapKeys;
+void unmountParty(int party_ix);
 
 /* hdd.c */
 void hddManager(void);

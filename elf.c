@@ -1,16 +1,7 @@
 //--------------------------------------------------------------
 //File name:    elf.c
 //--------------------------------------------------------------
-#include <stdio.h>
-#include <tamtypes.h>
-#include <loadfile.h>
-#include <kernel.h>
-#include <sifrpc.h>
-#include <string.h>
-#include <fileio.h>
-#include <sys/stat.h>
-#include <fileXio_rpc.h>
-#include <sys/fcntl.h>
+#include "launchelf.h"
 
 #define MAX_PATH 1025
 
@@ -78,19 +69,19 @@ int checkELFheader(const char *path)
 		*p = 0;
 		ret = fileXioMount("pfs0:", tmp, FIO_MT_RDONLY);
 		if ((fd = fileXioOpen(fullpath, O_RDONLY, FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH)) < 0){
-			fileXioUmount("pfs0:");
+			unmountParty(0);
 			goto error;
 		}
 		size = fileXioLseek(fd, 0, SEEK_END);
 		if (!size){
 			fileXioClose(fd);
-			fileXioUmount("pfs0:");
+			unmountParty(0);
 			goto error;
 		}
 		fileXioLseek(fd, 0, SEEK_SET);
 		fileXioRead(fd, boot_elf, sizeof(elf_header_t));
 		fileXioClose(fd);
-		fileXioUmount("pfs0:");
+		unmountParty(0);
 	}else if(!strncmp(fullpath, "mc", 2) ||
 		!strncmp(fullpath, "mass", 4) ||
 		!strncmp(fullpath, "host", 4)){
@@ -136,7 +127,7 @@ void RunLoaderElf(char *filename, char *party)
 		char fakepath[128], *p;
 		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)){
 			//Some error occurred, it could be due to something else having used pfs0
-			fileXioUmount("pfs0:");  //So we try unmounting pfs0, to try again
+			unmountParty(0);  //So we try unmounting pfs0, to try again
 			if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
 				return;  //If it still fails, we have to give up...
 		}

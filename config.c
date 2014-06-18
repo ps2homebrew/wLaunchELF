@@ -136,14 +136,16 @@ void saveConfig(char *mainMsg, char *CNF)
 
 	sprintf(tmp, "CNF_version = 2.0\r\n%n", &CNF_size); //Start CNF with version header
 
-	for(i=0; i<12; i++){	//Loop to save the ELF paths for each launch key
-		sprintf(tmp+CNF_size,
-			"LK_%s_E1 = %s\r\n"
-			"%n",           // %n causes NO output, but only a measurement
-			LK_ID[i], setting->LK_Path[i],
-			&CNF_step       // This variable measures the size of sprintf data
-	  );
-		CNF_size += CNF_step;
+	for(i=0; i<15; i++){	//Loop to save the ELF paths for launch keys
+		if((i<12) || (setting->LK_Flag[i]!=0)){
+			sprintf(tmp+CNF_size,
+				"LK_%s_E1 = %s\r\n"
+				"%n",           // %n causes NO output, but only a measurement
+				LK_ID[i], setting->LK_Path[i],
+				&CNF_step       // This variable measures the size of sprintf data
+	  	);
+			CNF_size += CNF_step;
+		}
 	}//ends for
 
 	sprintf(tmp+CNF_size,
@@ -303,8 +305,9 @@ unsigned long hextoul(char *string)
 //---------------------------------------------------------------------------
 void loadConfig(char *mainMsg, char *CNF)
 {
-	int i, fd, tst, mcport, var_cnt, CNF_version;
+	int i, fd, tst, len, mcport, var_cnt, CNF_version;
 	size_t CNF_size;
+	char tsts[20];
 	char path[MAX_PATH];
 	char cnf_path[MAX_PATH];
 	unsigned char *RAM_p, *CNF_p, *name, *value;
@@ -313,11 +316,15 @@ void loadConfig(char *mainMsg, char *CNF)
 		free(setting);
 	setting = (SETTING*)malloc(sizeof(SETTING));
 
-	for(i=0; i<12; i++) setting->LK_Path[i][0] = 0;
-	for(i=0; i<15; i++) setting->LK_Title[i][0] = 0;
+	for(i=0; i<15; i++){
+		setting->LK_Path[i][0]  = 0;
+		setting->LK_Title[i][0] = 0;
+		setting->LK_Flag[i]    = 0;
+	}
 	for(i=0; i<30; i++) PathPad[i][0] = 0;
 
 	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
+	setting->LK_Flag[1] = 1;
 	setting->usbd_file[0] = '\0';
 	setting->usbkbd_file[0] = '\0';
 	setting->kbdmap_file[0] = '\0';
@@ -410,20 +417,21 @@ failed_load:
   CNF_version = 0;  // The CNF version is still unidentified
 	for(var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
 	{	// A variable was found, now we dispose of its value.
-		if(!strcmp(name,"CNF_version")) CNF_version = atoi(value);
-		else if(CNF_version == 0) goto failed_load;  // Refuse unidentified CNF
-		else if(!strncmp(name,"LK_auto_E",9))      strcpy(setting->LK_Path[0], value);
-		else if(!strncmp(name,"LK_Circle_E",11))   strcpy(setting->LK_Path[1], value);
-		else if(!strncmp(name,"LK_Cross_E",10))    strcpy(setting->LK_Path[2], value);
-		else if(!strncmp(name,"LK_Square_E",11))   strcpy(setting->LK_Path[3], value);
-		else if(!strncmp(name,"LK_Triangle_E",13)) strcpy(setting->LK_Path[4], value);
-		else if(!strncmp(name,"LK_L1_E",7))        strcpy(setting->LK_Path[5], value);
-		else if(!strncmp(name,"LK_R1_E",7))        strcpy(setting->LK_Path[6], value);
-		else if(!strncmp(name,"LK_L2_E",7))        strcpy(setting->LK_Path[7], value);
-		else if(!strncmp(name,"LK_R2_E",7))        strcpy(setting->LK_Path[8], value);
-		else if(!strncmp(name,"LK_L3_E",7))        strcpy(setting->LK_Path[9], value);
-		else if(!strncmp(name,"LK_R3_E",7))        strcpy(setting->LK_Path[10],value);
-		else if(!strncmp(name,"LK_Start_E",10))    strcpy(setting->LK_Path[11],value);
+		if(!strcmp(name,"CNF_version")){
+			CNF_version = atoi(value);
+			continue;
+		} else if(CNF_version == 0)
+			goto failed_load;  // Refuse unidentified CNF
+
+		for(i=0; i<15; i++){
+			sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
+			if(!strncmp(name, tsts, len)) {
+				strcpy(setting->LK_Path[i], value);
+				setting->LK_Flag[i] = 1;
+				break;
+			}
+		}
+		if(i<15) continue;
 		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
 		else if(!strcmp(name,"Menu_Hide_Paths")) setting->Hide_Paths = atoi(value);
 		else if(!strcmp(name,"GUI_Col_1_ABGR")) setting->color[0] = hextoul(value);
@@ -458,29 +466,24 @@ failed_load:
 		else if(!strcmp(name,"KBDMAP_FILE")) strcpy(setting->kbdmap_file,value);
 		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
 		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
-		else if(!strcmp(name,"LK_auto_Title"))     strncpy(setting->LK_Title[0], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Circle_Title"))   strncpy(setting->LK_Title[1], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Cross_Title"))    strncpy(setting->LK_Title[2], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Square_Title"))   strncpy(setting->LK_Title[3], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Triangle_Title")) strncpy(setting->LK_Title[4], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_L1_Title"))       strncpy(setting->LK_Title[5], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_R1_Title"))       strncpy(setting->LK_Title[6], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_L2_Title"))       strncpy(setting->LK_Title[7], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_R2_Title"))       strncpy(setting->LK_Title[8], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_L3_Title"))       strncpy(setting->LK_Title[9], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_R3_Title"))       strncpy(setting->LK_Title[10], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Start_Title"))    strncpy(setting->LK_Title[11], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Select_Title"))   strncpy(setting->LK_Title[12], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Left_Title"))     strncpy(setting->LK_Title[13], value, MAX_ELF_TITLE-1);
-		else if(!strcmp(name,"LK_Right_Title"))    strncpy(setting->LK_Title[14], value, MAX_ELF_TITLE-1);
-		else if(!strncmp(name,"PathPad[",8)){
-			i = atoi(name+8);
-			if(i < 30){
-				strncpy(PathPad[i], value, MAX_PATH-1);
-				PathPad[i][MAX_PATH-1] = '\0';
+		else {
+			for(i=0; i<15; i++){
+				sprintf(tsts, "LK_%s_Title", LK_ID[i]);
+				if(!strcmp(name, tsts)) {
+					strncpy(setting->LK_Title[i], value, MAX_ELF_TITLE-1);
+					break;
+				}
+			}
+			if(i<15) continue;
+			else if(!strncmp(name,"PathPad[",8)){
+				i = atoi(name+8);
+				if(i < 30){
+					strncpy(PathPad[i], value, MAX_PATH-1);
+					PathPad[i][MAX_PATH-1] = '\0';
+				}
 			}
 		}
-	}
+	} //ends for
 	for(i=0; i<15; i++) setting->LK_Title[i][MAX_ELF_TITLE-1] = 0;
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);
@@ -1755,6 +1758,8 @@ cancel_exit:
 		event = 0;
 
 	}//ends while
+	if(setting->discControl)
+		loadCdModules();
 }//ends config
 //---------------------------------------------------------------------------
 // End of file: config.c

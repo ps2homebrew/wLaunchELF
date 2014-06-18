@@ -5,6 +5,20 @@
 
 enum
 {
+	COL_NORM_BG    = ITO_RGBA(160,160,160,0),
+	COL_NORM_TEXT  = ITO_RGBA(0,0,0,0),
+	COL_MARK_BG    = ITO_RGBA(0,40,160,0),
+	COL_MARK_TEXT  = ITO_RGBA(160,160,160,0),
+	COL_CUR_INSERT = ITO_RGBA(0,160,0,0),
+	COL_CUR_OVERWR = ITO_RGBA(160,0,0,0),
+	COL_LINE_END   = ITO_RGBA(160,80,0,0),
+	COL_TAB        = ITO_RGBA(0,0,160,0),
+	COL_TEXT_END   = ITO_RGBA(0,160,160,0),
+	COL_dummy
+};
+
+enum
+{
 	NEW,
 	OPEN,
 	CLOSE,
@@ -150,7 +164,7 @@ int MenuEditor(void)
 		if(event||post_event){ //NB: We need to update two frame buffers per event.
 
 			//Display section.
-			drawSprite(ITO_RGBA(255,255,255,0),
+			drawPopSprite(setting->color[0],
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
@@ -204,6 +218,7 @@ void Virt_KeyBoard_Entry(void)
 			if((KeyBoard_Cur-=WFONTS)<0)
 				KeyBoard_Cur=0;
 		}
+		//ends Virtual KeyBoard move up.
 	}else if(new_pad & PAD_DOWN){ // Virtual KeyBoard move down.
 		if(KeyBoard_Cur==WFONTS*HFONTS-1)
 			KeyBoard_Cur=WFONTS-1;
@@ -213,23 +228,26 @@ void Virt_KeyBoard_Entry(void)
 			if((KeyBoard_Cur+=WFONTS)>WFONTS*HFONTS-1)
 				KeyBoard_Cur=WFONTS*HFONTS-1;
 		}
+		//ends Virtual KeyBoard move down.
 	}else if(new_pad & PAD_LEFT){ // Virtual KeyBoard move left.
 		if(!KeyBoard_Cur)
 			KeyBoard_Cur=WFONTS*HFONTS-1;
 		else
 			KeyBoard_Cur--;
+		//ends Virtual KeyBoard move left.
 	}else if(new_pad & PAD_RIGHT){ // Virtual KeyBoard move right.
 		if(KeyBoard_Cur==WFONTS*HFONTS-1)
 			KeyBoard_Cur=0;
 		else
 			KeyBoard_Cur++;
+		//ends Virtual KeyBoard move right.
 	}else if(new_pad & PAD_L2){ // Text move left.
 		if(Editor_Cur>0)
 			Editor_Cur--;
 	}else if(new_pad & PAD_R2){ // Text move right.
 		if(Editor_Cur<Editor_nChar && TextBuffer[Active_Window][Editor_Cur]!='\0')
 			Editor_Cur++;
-	}else if(new_pad & PAD_START){ // Virtual KeyBoard Exit.
+	}else if(new_pad & PAD_SELECT){ // Virtual KeyBoard Exit.
 		Rows_Num += 6;
 		KeyBoard_Active = 0;
 	}else if((!swapKeys && new_pad & PAD_CROSS)
@@ -257,6 +275,7 @@ void Virt_KeyBoard_Entry(void)
 			}
 			Operation=-1;
 		}
+		//ends Virtual KeyBoard Suppr.
 	}else if((swapKeys && new_pad & PAD_CROSS)
 	      || (!swapKeys && new_pad & PAD_CIRCLE) ){ // Virtual KeyBoard Select.
 		if(!KeyBoard_Cur){ // Virtual KeyBoard MARK.
@@ -272,6 +291,7 @@ void Virt_KeyBoard_Entry(void)
 					Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur-1;
 			}
 			Mark[MARK_START]=1;
+			//ends Virtual KeyBoard MARK.
 		}else if(KeyBoard_Cur == WFONTS){ // Virtual KeyBoard COPY.
 			if(Mark[MARK_ON]){
 				Mark[MARK_OUT]=Editor_Cur;
@@ -291,6 +311,7 @@ void Virt_KeyBoard_Entry(void)
 					TextBuffer[EDIT][i]=TextBuffer[Active_Window][i+Mark[MARK_IN]];
 				Mark[MARK_COPY]=1, Mark[MARK_CUT]=0, Mark[MARK_ON]=0;
 			}
+			//ends Virtual KeyBoard COPY.
 		}else if(KeyBoard_Cur == 2*WFONTS){ // Virtual KeyBoard CUT.
 			if(Mark[MARK_ON]){
 				Mark[MARK_OUT]=Editor_Cur;
@@ -314,6 +335,7 @@ void Virt_KeyBoard_Entry(void)
 			}
 abort:
 			Mark[MARK_TMP]=0; // just for compiler warning.
+			//ends Virtual KeyBoard CUT.
 		}else if(KeyBoard_Cur == 3*WFONTS){ // Virtual KeyBoard PASTE.
 			if( Mark[MARK_COPY] || Mark[MARK_CUT]){
 				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
@@ -323,6 +345,7 @@ abort:
 				ins1=Mark[MARK_SIZE], ins2=Mark[MARK_SIZE], ins3=Mark[MARK_SIZE], ins4=0, ins5=Mark[MARK_SIZE];
 				Operation=1;
 			}
+			//ends Virtual KeyBoard PASTE.
 		}else if(KeyBoard_Cur == 4*WFONTS){ // Virtual KeyBoard HOME.
 			Editor_Home=1;
 		}else if(KeyBoard_Cur == 1){ // Virtual KeyBoard LINE UP.
@@ -371,10 +394,11 @@ abort:
 				ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
 			}
 			Operation=2;
+			//ends Virtual KeyBoard RETURN.
 		}else{  // Virtual KeyBoard Any other char + Space + Tabulation.
 			if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
 				ins1=0, ins2=-1, ins3=0, ins4= 1, ins5= 0;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n'){
+			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' && !Editor_Insert){
 				ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1;
 			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' && Editor_Insert){
 				ins1=1, ins2=-1, ins3=0, ins4=-1, ins5=-1;
@@ -390,6 +414,7 @@ abort:
 			else // Any other char.
 				Operation=5;
 		}
+		//ends Virtual KeyBoard Select.
 	}
 	if(Operation>0){ // Perform Add Char / Paste. Can Be Simplify???
 		TextBuffer[TMP] = malloc(TextSize[Active_Window]+ins1+256); // 256 To Avoid Crash 256???
@@ -439,6 +464,8 @@ abort:
 	}
 	Operation=0;
 }
+//------------------------------
+//endfunc Virt_KeyBoard_Entry
 //--------------------------------------------------------------
 int KeyBoard_Entry(void)
 {
@@ -521,6 +548,7 @@ int KeyBoard_Entry(void)
 						Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur-1;
 				}
 				Mark[MARK_START]=1;
+				//ends Key Ctrl+b MARK.
 			}else if(KeyPress == 0x03){ // Key Ctrl+c COPY.
 				if(Mark[MARK_ON]){
 					Mark[MARK_OUT]=Editor_Cur;
@@ -540,6 +568,7 @@ int KeyBoard_Entry(void)
 						TextBuffer[EDIT][i]=TextBuffer[Active_Window][i+Mark[MARK_IN]];
 					Mark[MARK_COPY]=1, Mark[MARK_CUT]=0, Mark[MARK_ON]=0, Mark[MARK_TMP]=0;
 				}
+				//ends Key Ctrl+c COPY.
 			}else if(KeyPress == 0x18){ // Key Ctrl+x CUT.
 				if(Mark[MARK_ON]){
 					Mark[MARK_OUT]=Editor_Cur;
@@ -561,6 +590,7 @@ int KeyBoard_Entry(void)
 					Mark[MARK_CUT]=1, Mark[MARK_COPY]=0, Mark[MARK_ON]=0, Mark[MARK_TMP]=0;
 					Operation=-2;
 				}
+				//ends Key Ctrl+x CUT.
 			}else if(KeyPress == 0x16){ // Key Ctrl+v PASTE.
 				if( Mark[MARK_COPY] || Mark[MARK_CUT]){
 					if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
@@ -570,6 +600,7 @@ int KeyBoard_Entry(void)
 					ins1=Mark[MARK_SIZE], ins2=Mark[MARK_SIZE], ins3=Mark[MARK_SIZE], ins4=0, ins5=Mark[MARK_SIZE];
 					Operation=1;
 				}
+				//ends Key Ctrl+v PASTE.
 			}else if(KeyPress == 0x07){ // Key BackSpace.
 				if(Editor_Cur>0){
 					if(Mark[MARK_ON]){
@@ -592,6 +623,7 @@ int KeyBoard_Entry(void)
 					}
 					Operation=-3;
 				}
+				//ends Key BackSpace.
 			}else if(KeyPress == 0x0A){ // Key Return.
 				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
 				 Editor_Insert && Editor_RetMode==OTHER){
@@ -619,10 +651,11 @@ int KeyBoard_Entry(void)
 					ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
 				}
 				Operation=2;
+				//ends Key Return.
 			}else{ // All Other Keys.
 				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
 					ins1=0, ins2=-1, ins3=0, ins4= 1, ins5= 0;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n'){
+				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' && !Editor_Insert){
 					ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1;
 				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' && Editor_Insert){
 					ins1=1, ins2=-1, ins3=0, ins4=-1, ins5=-1;
@@ -683,6 +716,8 @@ abort:
 	
 	return ret;
 }
+//------------------------------
+//endfunc KeyBoard_Entry
 //--------------------------------------------------------------
 void Editor_Rules(void)
 {
@@ -845,7 +880,7 @@ int Windows_Selector(void)
 		if(event||post_event){ //NB: We need to update two frame buffers per event.
 
 			//Display section.
-			drawSprite(ITO_RGBA(255,255,255,0),
+			drawPopSprite(setting->color[0],
 				wSprite_X1, wSprite_Y1,
 				wSprite_X2, wSprite_Y2);
 			drawFrame(wFrame_X1, wFrame_Y1, wFrame_X2, wFrame_Y2, setting->color[1]);
@@ -1394,7 +1429,7 @@ abort:
 			if(TextSize[Active_Window]==0)
 				goto end;
 
-			itoSprite(ITO_RGBA(255,255,255,0),
+			itoSprite(COL_NORM_BG,
 				SCREEN_MARGIN, Frame_start_y/2,
 				SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2,
 				0);
@@ -1502,13 +1537,13 @@ abort:
 					if(Mark[MARK_ON] && Mark[MARK_PRINT]>0){ //Mark Text.
 						if(Mark[MARK_SIZE]>0){
 							if(Top_Width+tmpLen+j == (Editor_Cur-Mark[MARK_PRINT])){
-								itoSprite(ITO_RGBA(0,64,255,0), x,y/2,x+8,y/2+8, 0);
+								itoSprite(COL_MARK_BG, x,y/2,x+8,y/2+8, 0);
 								Mark[MARK_COLOR]=1;
 								Mark[MARK_PRINT]--;
 							}
 						}else if(Mark[MARK_SIZE]<0){
 							if(Top_Width+tmpLen+j == (Editor_Cur+Mark[MARK_PRINT]-1)){
-								itoSprite(ITO_RGBA(0,64,255,0), x,y/2,x+8,y/2+8, 0);
+								itoSprite(COL_MARK_BG, x,y/2,x+8,y/2+8, 0);
 								Mark[MARK_COLOR]=1;
 								if((Mark[MARK_PRINT]++) == (-Mark[MARK_SIZE]))
 									Mark[MARK_PRINT]=0;
@@ -1518,32 +1553,32 @@ abort:
 
 					if(Top_Width+tmpLen+j == Editor_Cur){ //Text Cursor.
 						if(Editor_Insert)
-							color = ITO_RGBA(0,255,0,0);
+							color = COL_CUR_INSERT;
 						else
-							color = ITO_RGBA(255,0,0,0);
+							color = COL_CUR_OVERWR;
 						if(((event|post_event)&4) && (t & 0x10))
 							printXY("|", x-4, y/2, color, TRUE);
 					}
 
 					if(TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\n'){ // Line Feed.
 						c[0]='';
-						color = ITO_RGBA(255,128,0,0);
+						color = COL_LINE_END;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\r'){ // Carriage Return.
 						c[0]='ž';
-						color = ITO_RGBA(255,128,0,0);
+						color = COL_LINE_END;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\t'){ // Tabulation.
 						c[0]='Ÿ';
-						color = ITO_RGBA(0,0,255,0);
+						color = COL_TAB;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\0'){ // Text End.
 						c[0]='ˆ';
-						color = ITO_RGBA(0,255,255,0);
+						color = COL_TEXT_END;
 						Editor_TextEnd=1;
 					}else{
 						c[0]=TextBuffer[Active_Window][Top_Width+tmpLen+j];
 						if(Mark[MARK_ON] && Mark[MARK_COLOR]) //Text Color Black / White If Mark.
-							color = ITO_RGBA(255,255,255,0);
+							color = COL_MARK_TEXT;
 						else
-							color = ITO_RGBA(0,0,0,0);
+							color = COL_NORM_TEXT;
 					}
 
 					c[1]='\0';
@@ -1592,9 +1627,9 @@ end:
 			tmp[0]='\0', tmp1[0]='\0';
 			if(KeyBoard_Active){ //Display Virtual KeyBoard Tooltip.
 				if(swapKeys) 
-					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ1:Sel ÿ0:BackSpace ÿ3:Exit L2:Left R2:Right START:Close KB");
+					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ1:Sel ÿ0:BackSpace L2:Left R2:Right SEL:Close KB");
 				else
-					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ0:Sel ÿ1:BackSpace ÿ3:Exit L2:Left R2:Right START:Close KB");
+					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ0:Sel ÿ1:BackSpace L2:Left R2:Right SEL:Close KB");
 			}else if(setting->usbkbd_used){ //Display KeyBoard Tooltip.
 				if(Window[Active_Window][OPENED]){
 					if(Mark[MARK_ON])

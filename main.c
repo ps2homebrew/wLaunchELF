@@ -237,19 +237,21 @@ static void getIpConfig(void)
 int drawMainScreen(void)
 {
 	int nElfs=0;
-	int nItems=13;
 	int i;
 	int x, y;
 	uint64 color;
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
-	
-	strcpy(setting->LK_Path[12], "CONFIG");
-	strcpy(setting->LK_Path[13], "LOAD CONFIG--");
-	strcpy(setting->LK_Path[14], "LOAD CONFIG++");
-	
+
+	if(!setting->LK_Flag[12])
+		strcpy(setting->LK_Path[12], "MISC/Configurator");
+	if((maxCNF>1) && !setting->LK_Flag[13])
+		strcpy(setting->LK_Path[13], "MISC/Load CNF--");
+	if((maxCNF>1) && !setting->LK_Flag[14])
+		strcpy(setting->LK_Path[14], "MISC/Load CNF++");
+
 	clrScr(setting->color[0]);
-	
+
 	x = Menu_start_x;
 	y = Menu_start_y;
 	c[0] = 0;
@@ -262,9 +264,7 @@ int drawMainScreen(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
-	if(maxCNF>1)
-		nItems=15;
-	for(i=0; i<nItems; i++){
+	for(i=0; i<15; i++){
 		if(setting->LK_Path[i][0]){
 			switch(i){
 			case 0:
@@ -1087,6 +1087,15 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/TextEditor")){
 		TextEditor();
 		return;
+	}else if(!stricmp(path, "MISC/Configurator")){
+		config(mainMsg, CNF);
+		return;
+	}else if(!stricmp(path, "MISC/Load CNF--")){
+		decConfig();
+		return;
+	}else if(!stricmp(path, "MISC/Load CNF++")){
+		incConfig();
+		return;
 	}else if(!stricmp(path, "MISC/Set CNF_Path")){
 		Set_CNF_Path();
 		return;
@@ -1390,18 +1399,10 @@ int main(int argc, char *argv[])
 				else if(new_pad & PAD_L3)       RunELF_index = 9;
 				else if(new_pad & PAD_R3)       RunELF_index = 10;
 				else if(new_pad & PAD_START)    RunELF_index = 11;
-				else if(new_pad & PAD_SELECT){
-					user_acted = 1;
-					config(mainMsg, CNF);
-					if(setting->discControl)
-						loadCdModules();
-				}else if(maxCNF > 1 && new_pad & PAD_LEFT){
-					user_acted = 1;
-					decConfig();
-				}else if(maxCNF > 1 && new_pad & PAD_RIGHT){
-					user_acted = 1;
-					incConfig();
-				}else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
+				else if(new_pad & PAD_SELECT)   RunELF_index = 12;
+				else if(maxCNF > 1 && new_pad & PAD_LEFT)  RunELF_index = 13;
+				else if(maxCNF > 1 && new_pad & PAD_RIGHT) RunELF_index = 14;
+				else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
 					user_acted = 1;
 					selected=0;
 					mode=DPAD;
@@ -1435,8 +1436,6 @@ int main(int argc, char *argv[])
 					}else if((maxCNF > 1 && selected==nElfs-3) || (selected==nElfs-1)){
 						mode=BUTTON;
 						config(mainMsg, CNF);
-						if(setting->discControl)
-							loadCdModules();
 					}else
 						RunSelectedElf();
 				}

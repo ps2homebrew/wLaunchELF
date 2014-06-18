@@ -61,7 +61,8 @@ int browser_cut;
 int nclipFiles, nmarks, nparties;
 int title_show;
 int title_sort;
-char mountedParty[2][MAX_NAME];
+#define DIM_mountedParty 2
+char mountedParty[DIM_mountedParty][MAX_NAME];
 char parties[MAX_PARTITIONS][MAX_NAME];
 char clipPath[MAX_PATH], LastDir[MAX_NAME], marks[MAX_ENTRY];
 FILEINFO clipFiles[MAX_ENTRY];
@@ -152,10 +153,23 @@ int mountParty(const char *party)
 	else if(!strcmp(party, mountedParty[1]))
 		return 1;
 	
-	fileXioUmount("pfs0:"); mountedParty[0][0]=0;
-	if(fileXioMount("pfs0:", party, FIO_MT_RDWR) < 0) return -1;
+	fileXioUmount("pfs0:");
+	mountedParty[0][0]=0;
+	if(fileXioMount("pfs0:", party, FIO_MT_RDWR) < 0)
+		return -1;
 	strcpy(mountedParty[0], party);
 	return 0;
+}
+//--------------------------------------------------------------
+void unmountParty(int party_ix)
+{
+	char party_str[6];
+
+	strcpy(party_str, "pfs0:");
+	party_str[3] += party_ix;
+	fileXioUmount(party_str);
+	if(party_ix < DIM_mountedParty)
+		mountedParty[party_ix][0] = 0;
 }
 //--------------------------------------------------------------
 int ynDialog(const char *message)
@@ -1422,8 +1436,10 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			if(pfsout==0) pfsin=1;
 			else		  pfsin=0;
 			sprintf(tmp, "pfs%d:", pfsin);
-			if(mountedParty[pfsin][0]!=0)
-				fileXioUmount(tmp); mountedParty[pfsin][0]=0;
+			if(mountedParty[pfsin][0]!=0){
+				fileXioUmount(tmp);
+				mountedParty[pfsin][0]=0;
+			}
 			printf("%s mounting\n", inParty);
 			if(fileXioMount(tmp, inParty, FIO_MT_RDWR) < 0) return -1;
 			strcpy(mountedParty[pfsin], inParty);
@@ -1436,8 +1452,10 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			if(pfsin==0) pfsout=1;
 			else		 pfsout=0;
 			sprintf(tmp, "pfs%d:", pfsout);
-			if(mountedParty[pfsout][0]!=0)
-				fileXioUmount(tmp); mountedParty[pfsout][0]=0;
+			if(mountedParty[pfsout][0]!=0){
+				fileXioUmount(tmp);
+				mountedParty[pfsout][0]=0;
+			}
 			if(fileXioMount(tmp, outParty, FIO_MT_RDWR) < 0) return -1;
 			printf("%s mounting\n", outParty);
 			strcpy(mountedParty[pfsout], outParty);
@@ -2157,6 +2175,12 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "TextEditor");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Configurator");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Load CNF--");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Load CNF++");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Set CNF_Path");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Load CNF");
@@ -2309,7 +2333,7 @@ void getFilePath(char *out, int cnfmode)
 						&&(cnfmode!=TEXT_CNF)
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
-						sprintf(msg0, "This file isn't ELF.");
+						sprintf(msg0, "This file isn't an ELF.");
 						out[0] = 0;
 					}else{
 						strcpy(LastDir, path);
@@ -2337,7 +2361,10 @@ void getFilePath(char *out, int cnfmode)
 					browser_cd=TRUE;
 				}else if((!swapKeys && new_pad & PAD_CROSS)
 				      || (swapKeys && new_pad & PAD_CIRCLE) ){
-					if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
+					if(mountedParty[0][0]!=0){
+						fileXioUmount("pfs0:");
+						mountedParty[0][0]=0;
+					}
 					return;
 				}
 			}else{ //cnfmode == FALSE
@@ -2477,8 +2504,14 @@ void getFilePath(char *out, int cnfmode)
 					}
 					browser_cd=TRUE;
 				} else if(new_pad & PAD_SELECT){
-					if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
-					if(mountedParty[1][0]!=0) fileXioUmount("pfs1:");
+					if(mountedParty[0][0]!=0){
+						fileXioUmount("pfs0:");
+						mountedParty[0][0]=0;
+					}
+					if(mountedParty[1][0]!=0){
+						fileXioUmount("pfs1:");
+						mountedParty[1][0]=0;
+					}
 					return;
 				}
 			}
@@ -2668,8 +2701,14 @@ void getFilePath(char *out, int cnfmode)
 		event = 0;
 	}//ends while
 	
-	if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
-	if(mountedParty[1][0]!=0) fileXioUmount("pfs1:");
+	if(mountedParty[0][0]!=0){
+		fileXioUmount("pfs0:");
+		mountedParty[0][0]=0;
+	}
+	if(mountedParty[1][0]!=0){
+		fileXioUmount("pfs1:");
+		mountedParty[1][0]=0;
+	}
 	return;
 }
 //------------------------------
@@ -2791,15 +2830,16 @@ void subfunc_Paste(char *mess, char *path)
 			if(ret<0) break;
 		}
 	}
-	
+
 	if(mountedParty[0][0]!=0){
-		fileXioUmount("pfs0:"); mountedParty[0][0]=0;
+		fileXioUmount("pfs0:");
+		mountedParty[0][0]=0;
 	}
-	
 	if(mountedParty[1][0]!=0){
-		fileXioUmount("pfs1:"); mountedParty[1][0]=0;
+		fileXioUmount("pfs1:");
+		mountedParty[1][0]=0;
 	}
-	
+
 finished:
 	if(ret < 0){
 		strcpy(mess, "Paste Failed");

@@ -189,8 +189,7 @@ void GetHddInfo(void)
 			numParty++;
 		} //Ends clause for finding brand new name for PartyInfo[numParty]
 	} //ends main while loop
-	fileXioUmount("pfs0:");
-	mountedParty[0][0]=0;
+	unmountParty(0);
 	fileXioDclose(hddFd);
 	hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
 	hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
@@ -602,8 +601,7 @@ int RenameGame(PARTYINFO Info, char *newName)
 					ret=0;
 			}
 		}
-		fileXioUmount("pfs0:");
-		mountedParty[0][0]=0;
+		unmountParty(0);
 	}else{
 		sprintf(DbgMsg,"HdlRenameGame(\"%s\",\n  \"%s\")\n=> %d",Info.Game.Name, newName,ret);
 		DebugDisp(DbgMsg);
@@ -737,10 +735,8 @@ void hddManager(void)
 			else if(new_pad & PAD_RIGHT)
 				browser_sel+=rows/2;
 			else if((new_pad & PAD_SELECT) || (new_pad & PAD_TRIANGLE)){
-				fileXioUmount("pfs0:");
-				mountedParty[0][0]=0;
-				fileXioUmount("pfs1:");
-				mountedParty[1][0]=0;
+				unmountParty(0);
+				unmountParty(1);
 				return;
 			}else if(new_pad & PAD_SQUARE){
 				if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){

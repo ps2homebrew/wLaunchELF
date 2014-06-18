@@ -45,6 +45,18 @@ LK_L3_E1       =
 LK_R3_E1       =
 LK_Start_E1    =
 # ----------------------------------------------------------------------
+# v3.78 adds three new launch key definitions, but they will never be
+# created automatically. If added by a user they will however be kept in
+# the CNF as saved in the future, and those settings will then override
+# the built-in defaults for the buttons 'Select', 'Left', and 'Right'.
+# The values shown below will map those buttons identically to defaults,
+# though that is not the way it's handled for real defaulting. Use empty
+# strings to disable the keys entirely (for 'child safe' installations)
+# ----------------------------------------------------------------------
+LK_Select_E1 = MISC/Configurator
+LK_Left_E1   = MISC/Load Prev CNF
+LK_Right_E1  = MISC/Load Next CNF
+# ----------------------------------------------------------------------
 # After the launch key definitions we have the variables for diverse
 # settings, most of which use obvious naming schemes and have their
 # traditional default values. Some exceptions are the variables for

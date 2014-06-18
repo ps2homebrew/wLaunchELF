@@ -402,7 +402,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.77 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.78 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -584,7 +584,8 @@ void loadSkin(int Picture)
 		fclose( File );
 	} /* end if( File != NULL ) */
 	if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
-	if(!strncmp(setting->skin, "hdd0:/", 6)) fileXioUmount("pfs0:");
+	if(!strncmp(setting->skin, "hdd0:/", 6))
+		unmountParty(0);
 }
 
 //--------------------------------------------------------------
