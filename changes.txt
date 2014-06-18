@@ -1,5 +1,16 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.22 (2008.08.14)
+-Fixed various bugs that could crash the RunELF function when called with improper device names or paths to non-ELF files. From now on on real launch attempts are made only after accessing the file and checking its ELF header.
+-Fixed a bug dealing with SYSTEM.CNF files for the "MISC/PS2Disc" subprogram (string termination for a file buffer from malloc was made one byte beyond the allocated area)
+-The above changes also fix the inability of the previous beta to launch ELFs from virtual memory cards.
+-Made a new revision of 'ps2client_for_uLE'. This rev8 fixes a problem with file open modes that prevented the new VMC driver from mounting VMC files over network.
+
+NB: Mounting VMC files over network is not recommended at this stage, since it is very slow. The VMC driver will need a new caching strategy to make network use practical.
+
+LaunchELF v4.21a beta (2008.07.21)
+-Embedded virtual memory card driver by Polo35 and ubergeek42, and implemented its use in FileBrowser. Note that vmc0: and vmc1: will not be shown in FileBrowser until some VMC file has been mounted, using new commands in the R1 menu of FileBrowser.
+
 LaunchELF v4.21 (2008.07.20)
 -Changed FileBrowser icon colour assignment to use Color5, Colour6, and Color7 for folders, ELF files, and generic files, respectively
 -Changed default colour values for FileBrowser icons to be yellow, green, white, used for folders, ELF files, and generic files, respectively. This change also affects HddManager pie charts as they use two of the same colour definitions

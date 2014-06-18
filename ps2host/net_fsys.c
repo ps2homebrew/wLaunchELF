@@ -27,7 +27,7 @@
 
 static char fsname[] = "host";
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 
 /* File desc struct is probably larger than this, but we only
  * need to access the word @ offset 0x0C (in which we put our identifier)
@@ -46,14 +46,14 @@ struct filedesc_info
 //dlanor: a simple "int" instead of a pointer will work fine.
 
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 /* We need(?) to protect the net access, so the server doesn't get
  * confused if two processes calls a fsys func at the same time
  */
 static int fsys_sema;
 static int fsys_pid = 0;
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 //dlanor: We need variables to remember a file/folder descriptor used
 //dlanor: with the Ioctl Rename function, so that we can avoid passing
 //dlanor: the following fioClose call to PC, where it's already closed.
@@ -67,7 +67,7 @@ int remove_result; //Set in fsysRemove, so fsysMkdir can use it for bug
 
 typedef void (*th_func_p)(void *); //dlanor: added to suppress warnings
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static void fsysInit(iop_device_t *driver)
 {
     struct _iop_thread mythread;
@@ -100,7 +100,7 @@ static void fsysInit(iop_device_t *driver)
     fsys_pid = pid;
     dbgprintf("Thread id: %x\n", pid);
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysDestroy(void)
 {
 		remove_flag = 0;
@@ -114,7 +114,7 @@ static int fsysDestroy(void)
 }
 
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int dummyFormat()
 {
 		remove_flag = 0;
@@ -122,7 +122,7 @@ static int dummyFormat()
     printf("dummy Format function called\n");
     return -5;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysOpen( int fd, char *name, int mode)
 {
     struct filedesc_info *fd_info;
@@ -144,7 +144,7 @@ static int fsysOpen( int fd, char *name, int mode)
 
     return fsys_fd;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysClose( int fd)
 {
     int remote_fd = ((struct filedesc_info *)fd)->own_fd;
@@ -164,7 +164,7 @@ static int fsysClose( int fd)
 
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysRead( int fd, char *buf, int size)
 {
     struct filedesc_info *fd_info;
@@ -186,7 +186,7 @@ static int fsysRead( int fd, char *buf, int size)
 
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysWrite( int fd, char *buf, int size)
 {
     struct filedesc_info *fd_info;
@@ -203,7 +203,7 @@ static int fsysWrite( int fd, char *buf, int size)
     SignalSema(fsys_sema);
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysLseek( int fd, unsigned int offset, int whence)
 {
     struct filedesc_info *fd_info;
@@ -222,7 +222,7 @@ static int fsysLseek( int fd, unsigned int offset, int whence)
     SignalSema(fsys_sema);
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysIoctl(iop_file_t* file, unsigned long request, void *data)
 {
     int remote_fd = ((struct filedesc_info *) file)->own_fd;
@@ -252,7 +252,7 @@ static int fsysIoctl(iop_file_t* file, unsigned long request, void *data)
     }
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysRemove(iop_file_t* file, char *name)
 {
     int ret;
@@ -268,7 +268,7 @@ static int fsysRemove(iop_file_t* file, char *name)
 		remove_result = ret;
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysMkdir(iop_file_t* file, char *name, int mode)
 {
     int ret;
@@ -286,7 +286,7 @@ static int fsysMkdir(iop_file_t* file, char *name, int mode)
 
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysRmdir(iop_file_t* file, char *name)
 {
     int ret;
@@ -301,7 +301,7 @@ static int fsysRmdir(iop_file_t* file, char *name)
 
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysDopen(int fd, char *name)
 {
     struct filedesc_info *fd_info;
@@ -323,7 +323,7 @@ static int fsysDopen(int fd, char *name)
 
     return fsys_fd;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysDclose(int fd)
 {
     int remote_fd = ((struct filedesc_info *)fd)->own_fd;
@@ -343,7 +343,7 @@ static int fsysDclose(int fd)
 
     return ret;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int fsysDread(int fd, void *buf)
 {
     struct filedesc_info *fd_info;
@@ -365,7 +365,7 @@ static int fsysDread(int fd, void *buf)
     return ret;
 
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int dummyGetstat()
 {
 		remove_flag = 0;
@@ -373,7 +373,7 @@ static int dummyGetstat()
     printf("dummy Getstat function called\n");
     return -5;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 static int dummyChstat()
 {
 		remove_flag = 0;
@@ -381,18 +381,29 @@ static int dummyChstat()
     printf("dummy Chstat function called\n");
     return -5;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 iop_device_ops_t fsys_functarray =
-{ (void *)fsysInit, (void *)fsysDestroy, (void *)dummyFormat, //init, deinit, format
-	(void *)fsysOpen, (void *)fsysClose, (void *)fsysRead,      //open, close, read,
-	(void *)fsysWrite, (void *)fsysLseek, (void *)fsysIoctl,       //write, lseek, ioctl
-	(void *)fsysRemove, (void *)fsysMkdir, (void *)fsysRmdir,   //remove, mkdir, rmdir
-	(void *)fsysDopen, (void *)fsysDclose, (void *)fsysDread,   //dopen, dclose, dread
-	(void *)dummyGetstat,  (void *)dummyChstat };               //getstat, chstat
+{	(void *)fsysInit,
+	(void *)fsysDestroy,
+	(void *)dummyFormat,   //init, deinit, format
+	(void *)fsysOpen,
+	(void *)fsysClose,
+	(void *)fsysRead,      //open, close, read,
+	(void *)fsysWrite,
+	(void *)fsysLseek,
+	(void *)fsysIoctl,     //write, lseek, ioctl
+	(void *)fsysRemove,
+	(void *)fsysMkdir,
+	(void *)fsysRmdir,     //remove, mkdir, rmdir
+	(void *)fsysDopen,
+	(void *)fsysDclose,
+	(void *)fsysDread,     //dopen, dclose, dread
+	(void *)dummyGetstat,
+	(void *)dummyChstat }; //getstat, chstat
 
 iop_device_t fsys_driver = { fsname, 16, 1, "fsys driver", 
 							&fsys_functarray };
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 // Entry point for mounting the file system
 int fsysMount(void)
 {
@@ -410,12 +421,12 @@ int fsysMount(void)
     return 0;
 }
 
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 int fsysUnmount(void)
 {
     DelDrv(fsname);
     return 0;
 }
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------
 //End of file:  net_fsys.c
-////////////////////////////////////////////////////////////////////////
+//----------------------------------------------------------------------------

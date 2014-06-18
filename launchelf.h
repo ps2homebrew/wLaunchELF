@@ -149,7 +149,8 @@ extern int TV_mode;
 extern int swapKeys;
 extern int GUI_active;// Skin and Main Skin switch
 
-void	load_ps2host(void);
+void load_vmcfs(void);
+void load_ps2host(void);
 void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
@@ -255,6 +256,7 @@ typedef struct{
 #define MOUNT_LIMIT 2
 extern char mountedParty[MOUNT_LIMIT][MAX_NAME];
 extern int latestMount;
+extern int vmcMounted[2];
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
 char *PathPad_menu(const char *path);
@@ -348,5 +350,21 @@ enum {
 /* makeicon.c */
 int make_icon(char* icontext,char* filename);
 int make_iconsys(char* title,char* iconname, char* filename);
+
+
+//vmcfs definitions
+
+//  The devctl commands: 0x56 == V, 0x4D == M, 0x43 == C, 0x01, 0x02, ... == command number.
+#define DEVCTL_VMCFS_CLEAN   0x564D4301 //  Set as free all fat cluster corresponding to a none existing object. ( Object are just marked as none existing but not removed from fat table when rmdir or remove fonctions are call. This allow to recover a deleted file. )
+#define DEVCTL_VMCFS_CKFREE  0x564D4302 //  Check free space available on vmc. 
+
+//  The ioctl commands: 0x56 == V, 0x4D == M, 0x43 == C, 0x01, 0x02, ... == command number.
+#define IOCTL_VMCFS_RECOVER  0x564D4303 //  Recover an object marked as none existing. ( data must be a valid path to an object in vmc file ) 
+
+//  Vmc format enum
+typedef enum {
+   FORMAT_FULL, 
+   FORMAT_FAST
+} Vmc_Format_Enum;
 
 #endif

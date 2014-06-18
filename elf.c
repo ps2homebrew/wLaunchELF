@@ -62,7 +62,13 @@ int checkELFheader(char *path)
 	char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
 	strcpy(fullpath,path);
-	if(!strncmp(fullpath, "hdd0:", 5)) {
+	if(	!strncmp(fullpath, "mc", 2)
+		||!strncmp(fullpath, "vmc", 3)
+		||!strncmp(fullpath, "rom", 3)
+		||!strncmp(fullpath, "cdrom", 5)
+		||!strncmp(fullpath, "cdfs", 4)
+		){; //fullpath is already correct
+	}else if(!strncmp(fullpath, "hdd0:", 5)) {
 		p = &path[5];
 		if(*p == '/')
 			p++;
@@ -76,7 +82,6 @@ int checkELFheader(char *path)
 	}else if(!strncmp(fullpath, "mass:", 5) || !strncmp(fullpath, "host:", 5)){
 		if(path[5] == '/')
 			strcpy(fullpath+5, path+6);
-	}else if(!strncmp(fullpath, "mc", 2)){; //fullpath is already correct
 	} else {
 		return 0;  //return 0 for unrecognized device
 	}

@@ -361,5 +361,8 @@ lang(319, Show_Menu, "Show Menu")
 lang(320, Load_Skin_CNF, "Load Skin CNF")
 lang(321, Save_Skin_CNF, "Save Skin CNF")
 //---------------------------------------------------------------------------
+// New FileBrowser command for virtual memory cards
+lang(322, Mount, "Mount")
+//---------------------------------------------------------------------------
 //End of file:  lang.h
 //---------------------------------------------------------------------------

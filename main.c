@@ -20,6 +20,8 @@ extern void smsutils_irx;
 extern int  size_smsutils_irx;
 extern void ps2host_irx;
 extern int  size_ps2host_irx;
+extern void vmcfs_irx;
+extern int  size_vmcfs_irx;
 extern void ps2ftpd_irx;
 extern int  size_ps2ftpd_irx;
 extern void ps2atad_irx;
@@ -117,6 +119,7 @@ int	have_usbd     = 0;
 int	have_usb_mass = 0;
 int	have_ps2smap  = 0;
 int	have_ps2host  = 0;
+int have_vmcfs    = 0; //vmcfs may be checkable. (must ask Polo)
 int	have_ps2ftpd  = 0;
 int	have_ps2kbd   = 0;
 int	have_hdl_info = 0;
@@ -639,6 +642,20 @@ void	load_ps2host(void)
 //------------------------------
 //endfunc load_ps2host
 //--------------------------------------------------------------
+void	load_vmcfs(void)
+{
+	int ret;
+
+	load_iomanx();
+	load_filexio();
+	if	(!have_vmcfs)
+	{	SifExecModuleBuffer(&vmcfs_irx, size_vmcfs_irx, 0, NULL, &ret);
+		have_vmcfs = 1;
+	}
+}
+//------------------------------
+//endfunc load_vmcfs
+//--------------------------------------------------------------
 void	load_ps2ftpd(void)
 {
 	int 	ret;
@@ -973,17 +990,21 @@ int ReadCNF(char *LK_Path)
 		fioLseek(fd,0,SEEK_SET);
 		systemcnf = (char*)malloc(size+1);
 		fioRead(fd, systemcnf, size);
-		systemcnf[size+1]=0;
+		systemcnf[size]=0; //RA NB: [size] means the first byte after file bytes
+		//RA NB: An old error used systemcnf[size+1] above
+		//RA NB: which zeroes one byte beyond the allocated buffer
+		//RA NB: leaving an unknown byte to be accepted at buffer end
+		//RA NB: That byte may be zeroed by malloc, but we shouldn't rely on it
 		for(n=0; systemcnf[n]!=0; n++){
 			if(!strncmp(&systemcnf[n], "BOOT2", 5)) {
 				n+=5;
 				break;
 			}
 		}
-		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++;
-		if(systemcnf[n]!=0 ) n++; // salta '='
-		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++;
-		if(systemcnf[n]==0){
+		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++; //skip spaces
+		if(systemcnf[n]!=0 ) n++;                        //skip '='
+		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++; //skip spaces
+		if(systemcnf[n]==0){ //termination without any pathname
 			free(systemcnf);
 			return 0;
 		}
@@ -1285,41 +1306,41 @@ void RunElf(char *pathin)
 	static char fullpath[MAX_PATH];
 	static char party[40];
 	char *p;
-	
+	int x, t=0;
+
 	if(pathin[0]==0) return;
 	
 	if( !uLE_related(path, pathin) ) //1==uLE_rel 0==missing, -1==other dev
 		return;
+
 	if(!strncmp(path, "mc", 2)){
 		party[0] = 0;
-		if(path[2]==':'){
-			strcpy(fullpath, "mc0:");
-			strcat(fullpath, path+3);
-			if(checkELFheader(fullpath)<=0){
-				fullpath[2]='1';
-				if(checkELFheader(fullpath)<=0){
-ELFnotFound:
-					sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
-				}
-			} //coming here means the ELF on unspecified MC is fine
-		} else {
-			strcpy(fullpath, path);
-			if(checkELFheader(fullpath)<=0)
-				goto ELFnotFound;
-			//coming here means the ELF on specified MC is fine
-		} //coming here means the ELF on  MC is fine
+		if(path[2]!=':')
+			goto CheckELF_path;
+		strcpy(fullpath, "mc0:");
+		strcat(fullpath, path+3);
+		if(checkELFheader(fullpath)>0)
+			goto ELFchecked;
+		fullpath[2]='1';
+		goto CheckELF_fullpath;
+	}else if(!strncmp(path, "vmc", 3)){
+		x = path[3] - '0';
+		if((x<0)||(x>1)||!vmcMounted[x])
+			goto ELFnotFound;
+		goto CheckELF_path;
 	}else if(!strncmp(path, "hdd0:/", 6)){
 		loadHddModules();
-		if(checkELFheader(path)<=0)
+		if((t=checkELFheader(path))<=0)
 			goto ELFnotFound;
 		//coming here means the ELF is fine
 		sprintf(party, "hdd0:%s", path+6);
 		p = strchr(party, '/');
 		sprintf(fullpath, "pfs0:%s", p);
 		*p = 0;
+		goto ELFchecked;
 	}else if(!strncmp(path, "mass:", 5)){
 		loadUsbModules();
-		if(checkELFheader(path)<=0)
+		if((t=checkELFheader(path))<=0)
 			goto ELFnotFound;
 		//coming here means the ELF is fine
 		party[0] = 0;
@@ -1328,6 +1349,7 @@ ELFnotFound:
 			strcat(fullpath, path+6);
 		else
 			strcat(fullpath, path+5);
+		goto ELFchecked;
 	}else if(!strncmp(path, "host:", 5)){
 		initHOST();
 		party[0] = 0;
@@ -1337,16 +1359,15 @@ ELFnotFound:
 		else
 			strcat(fullpath, path+5);
 		makeHostPath(fullpath, fullpath);
-		if(checkELFheader(fullpath)<=0)
-				goto ELFnotFound;
-		//coming here means the ELF is fine
+		goto CheckELF_fullpath;
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		strcpy(mainMsg, LNG(Failed));
 		party[0]=0;
 		trayopen=FALSE;
-		if(!ReadCNF(fullpath)) return;
-		//strcpy(mainMsg, "Success!"); return;
+		if(!ReadCNF(fullpath))
+			return;  //This should be extended with a fitting error message
+		goto CheckELF_fullpath;
 	}else if(!stricmp(path, setting->Misc_FileBrowser)){
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
@@ -1437,12 +1458,25 @@ ELFnotFound:
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
 		party[0] = 0;
-		strcpy(fullpath, path);
+		goto CheckELF_path;
 	}else if(!strncmp(path, "rom", 3)){
 		party[0] = 0;
+CheckELF_path:
 		strcpy(fullpath, path);
+CheckELF_fullpath:
+		if((t=checkELFheader(fullpath))<=0)
+			goto ELFnotFound;
+	}else{ //Invalid path
+		t = 0;
+ELFnotFound:
+		if(t==0)
+			sprintf(mainMsg, "%s %s.", fullpath, LNG(is_Not_Found));
+		else
+			sprintf(mainMsg, "%s: %s.", LNG(This_file_isnt_an_ELF), fullpath);
+		return;
 	}
-	
+
+ELFchecked:
 	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
 	drawScr();
 	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));

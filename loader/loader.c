@@ -198,6 +198,7 @@ static int pkoLoadElf(char *path)
 	else if(!strncmp(path, "cdrom", 5)) ret = SifLoadElf(path, &elfdata);
 	else if(!strncmp(path, "cdfs", 4)) ret = SifLoadElf(path, &elfdata);
 	else if(!strncmp(path, "pfs0", 4)) ret = tLoadElf(path);
+	else if(!strncmp(path, "vmc", 3)) ret = tLoadElf(path);
 	else ret = SifLoadElf(path, &elfdata);
 
 	FlushCache(0);

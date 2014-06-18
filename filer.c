@@ -33,9 +33,11 @@ enum
 	RENAME,
 	NEWDIR,
 	NEWICON,
+	MOUNTVMC0,
+	MOUNTVMC1,
 	GETSIZE,
 	NUM_MENU
-};
+} R1_menu_enum;
 
 #define PM_NORMAL     0  //PasteMode value for normal copies
 #define PM_MC_BACKUP  1  //PasteMode value for gamesave backup from MC
@@ -52,6 +54,7 @@ int PM_file[MAX_RECURSE]; //PasteMode attribute file descriptors
 
 char mountedParty[MOUNT_LIMIT][MAX_NAME];
 int	latestMount = 0;
+int vmcMounted[2] = {0, 0};
 unsigned char *elisaFnt=NULL;
 int elisa_failed = FALSE; //Set at failure to load font, cleared at browser entry
 s64 freeSpace;
@@ -710,8 +713,10 @@ int genRmdir(char *path)
 	int ret;
 
 	genLimObjName(path, 0);
-	if(!strncmp(path, "pfs", 3)){
+	if(!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)){
 		ret = fileXioRmdir(path);
+		if(!strncmp(path, "vmc", 3))
+			(void) fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 	}else{
 		ret = fioRmdir(path);
 	}
@@ -725,8 +730,10 @@ int genRemove(char *path)
 	int ret;
 
 	genLimObjName(path, 0);
-	if(!strncmp(path, "pfs", 3)){
+	if(!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)){
 		ret = fileXioRemove(path);
+		if(!strncmp(path, "vmc", 3))
+			(void) fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 	}else{
 		ret = fioRemove(path);
 		if(!strncmp("mc", path, 2)) //exception for MCMAN, which has its own fix
@@ -748,7 +755,7 @@ int genOpen(char *path, int mode)
 	if(i > 255)
 		return -1;
 
-	if(!strncmp(path, "pfs", 3)){
+	if(!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)){
 		fd = fileXioOpen(path, mode, fileMode);
 		io = 1;
 	}else{
@@ -777,7 +784,7 @@ int genDopen(char *path)
 		return -1;
 	}
 
-	if(!strncmp(path, "pfs", 3)){
+	if(!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)){
 		char tmp[MAX_PATH];
 
 		strcpy(tmp, path);
@@ -878,6 +885,56 @@ int genDclose(int fd)
 }
 //------------------------------
 //endfunc genDclose
+//--------------------------------------------------------------
+int readVMC(const char *path, FILEINFO *info, int max)
+{
+	iox_dirent_t dirbuf;
+	char dir[MAX_PATH];
+	int i=0, fd;
+	
+	strcpy(dir, path);
+	if((fd=fileXioDopen(dir)) < 0) return 0;
+	
+	while(fileXioDread(fd, &dirbuf) > 0){
+//		if(dirbuf.stat.mode & FIO_S_IFDIR &&  //NB: normal usage (non-vmcfs)
+		if(dirbuf.stat.mode & MC_ATTR_SUBDIR &&  //NB: nonstandard usage of vmcfs
+		(!strcmp(dirbuf.name,".") || !strcmp(dirbuf.name,"..")))
+			continue;  //Skip pseudopaths "." and ".."
+		
+		strcpy(info[i].name, dirbuf.name);
+		clear_mcTable(&info[i].stats);
+//		if(dirbuf.stat.mode & FIO_S_IFDIR){  //NB: normal usage (non-vmcfs)
+//			info[i].stats.attrFile = MC_ATTR_norm_folder;
+//		}
+		if(dirbuf.stat.mode & MC_ATTR_SUBDIR){  //NB: vmcfs usage
+			info[i].stats.attrFile = dirbuf.stat.mode;
+		}
+//		else if(dirbuf.stat.mode & FIO_S_IFREG){  //NB: normal usage (non-vmcfs)
+//			info[i].stats.attrFile = MC_ATTR_norm_file;
+//			info[i].stats.fileSizeByte = dirbuf.stat.size;
+//		}
+		else if(dirbuf.stat.mode & MC_ATTR_FILE){  //NB: vmcfs usage
+			info[i].stats.attrFile = dirbuf.stat.mode;
+			info[i].stats.fileSizeByte = dirbuf.stat.size;
+		}
+		else
+			continue; //Skip entry which is neither a file nor a folder
+		strncpy(info[i].stats.name, info[i].name, 32);
+		memcpy((void *) &info[i].stats._create, dirbuf.stat.ctime, 8);
+		memcpy((void *) &info[i].stats._modify, dirbuf.stat.mtime, 8);
+		i++;
+		if(i==max) break;
+	}
+	
+	fileXioDclose(fd);
+
+	size_valid = 1;
+	time_valid = 1;
+
+	return i;
+}
+//------------------------------
+//endfunc readVMC
 //--------------------------------------------------------------
 int readHDD(const char *path, FILEINFO *info, int max)
 {
@@ -1132,6 +1189,7 @@ int getDir(const char *path, FILEINFO *info)
 	else if(!strncmp(path, "mass", 4))	n=readMASS(path, info, max);
 	else if(!strncmp(path, "cdfs", 4))	n=readCD(path, info, max);
 	else if(!strncmp(path, "host", 4))	n=readHOST(path, info, max);
+	else if(!strncmp(path, "vmc", 3))	n=readVMC(path, info, max);
 	else return 0;
 	
 	return n;
@@ -1235,7 +1293,7 @@ finish:
 	return ret;
 }
 //--------------------------------------------------------------
-int menu(const char *path, const char *file)
+int menu(const char *path, FILEINFO *file)
 {
 	u64 color;
 	char enable[NUM_MENU], tmp[80];
@@ -1253,6 +1311,7 @@ int menu(const char *path, const char *file)
 	menu_len=strlen(LNG(Get_Size))>menu_len? strlen(LNG(Get_Size)):menu_len;
 	menu_len=strlen(LNG(mcPaste))>menu_len? strlen(LNG(mcPaste)):menu_len;
 	menu_len=strlen(LNG(psuPaste))>menu_len? strlen(LNG(psuPaste)):menu_len;
+	menu_len=(strlen(LNG(Mount))+6)>menu_len? (strlen(LNG(Mount))+6):menu_len;
 
 	int menu_ch_w = menu_len+1;    //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
@@ -1275,6 +1334,8 @@ int menu(const char *path, const char *file)
 	
 	if(menu_disabled) {
 		enable[COPY] = FALSE;
+		enable[MOUNTVMC0]=FALSE;
+		enable[MOUNTVMC1]=FALSE;
 		enable[GETSIZE] = FALSE;
 	}
 
@@ -1301,7 +1362,7 @@ int menu(const char *path, const char *file)
 	}
 
 	if(nmarks==0){
-		if(!strcmp(file, "..")){
+		if(!strcmp(file->name, "..")){
 			enable[COPY] = FALSE;
 			enable[CUT] = FALSE;
 			enable[DELETE] = FALSE;
@@ -1311,6 +1372,14 @@ int menu(const char *path, const char *file)
 	}else
 		enable[RENAME] = FALSE;
 
+	if((file->stats.attrFile & MC_ATTR_SUBDIR)
+		|| !strncmp(path, "vmc", 3)
+		|| !strncmp(path, "mc", 2)
+		){
+			enable[MOUNTVMC0]=FALSE; //forbid insane VMC mounting
+			enable[MOUNTVMC1]=FALSE; //forbid insane VMC mounting
+		}
+
 	if(nclipFiles==0){
 		//Nothing in clipboard
 		enable[PASTE] = FALSE;
@@ -1318,13 +1387,13 @@ int menu(const char *path, const char *file)
 		enable[PSUPASTE] = FALSE;
 	} else {
 		//Something in clipboard
-		if(!strncmp(path, "mc", 2)){
-			if(!strncmp(clipPath, "mc", 2)){
+		if(!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)){
+			if(!strncmp(clipPath, "mc", 2) || !strncmp(clipPath, "vmc", 3)){
 				enable[MCPASTE] = FALSE;  //No mcPaste if both src and dest are MC
 				enable[PSUPASTE] = FALSE;
 			}
 		}	else
-			if(strncmp(clipPath, "mc", 2)){
+			if(strncmp(clipPath, "mc", 2) && strncmp(clipPath, "vmc", 3)){
 				enable[MCPASTE] = FALSE;  //No mcPaste if both src and dest non-MC
 				enable[PSUPASTE] = FALSE;
 			}
@@ -1382,6 +1451,8 @@ int menu(const char *path, const char *file)
 				else if(i==RENAME)	strcpy(tmp, LNG(Rename));
 				else if(i==NEWDIR)	strcpy(tmp, LNG(New_Dir));
 				else if(i==NEWICON)	strcpy(tmp, LNG(New_Icon));
+				else if(i==MOUNTVMC0) sprintf(tmp, "%s vmc0:", LNG(Mount));
+				else if(i==MOUNTVMC1) sprintf(tmp, "%s vmc1:", LNG(Mount));
 				else if(i==GETSIZE) strcpy(tmp, LNG(Get_Size));
 
 				if(enable[i])	color = setting->color[3];
@@ -1537,15 +1608,15 @@ s64 getFileSize(const char *path, const FILEINFO *file)
 	char dir[MAX_PATH], party[MAX_NAME];
 	int nfiles, i, ret, fd;
 	
-	if(file->stats.attrFile & MC_ATTR_SUBDIR){
+	if(file->stats.attrFile & MC_ATTR_SUBDIR){ //Folder object to size up
 		sprintf(dir, "%s%s/", path, file->name);
 		nfiles = getDir(dir, files);
 		for(i=size=0; i<nfiles; i++){
-			filesize=getFileSize(dir, &files[i]);
+			filesize=getFileSize(dir, &files[i]); //recurse for each object in folder
 			if(filesize < 0) return -1;
 			else		size += filesize;
 		}
-	} else {
+	} else {                                   //File object to size up
 		if(!strncmp(path, "hdd", 3)){
 			getHddParty(path,file,party,dir);
 			ret = mountParty(party);
@@ -1555,7 +1626,7 @@ s64 getFileSize(const char *path, const FILEINFO *file)
 			sprintf(dir, "%s%s", path, file->name);
 		if	(!strncmp(dir, "host:/", 6))
 			makeHostPath(dir+5, dir+6);
-		if(!strncmp(path, "hdd", 3)){
+		if(!strncmp(path, "hdd", 3) || !strncmp(path, "vmc", 3)){
 			fd = fileXioOpen(dir, O_RDONLY, fileMode);
 			size = fileXioLseek(fd,0,SEEK_END);
 			fileXioClose(fd);
@@ -1600,6 +1671,9 @@ int delete(const char *path, const FILEINFO *file)
 			mcSync(0, NULL, &ret);
 		}else if(!strncmp(path, "hdd", 3)){
 			ret = fileXioRmdir(hdddir);
+		}else if(!strncmp(path, "vmc", 3)){
+			ret = fileXioRmdir(dir);
+			(void) fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 		}else if(!strncmp(path, "mass", 4)){
 			sprintf(dir, "mass0:%s%s", &path[5], file->name);
 			ret = fioRmdir(dir);
@@ -1618,6 +1692,9 @@ int delete(const char *path, const FILEINFO *file)
 			mcSync(0, NULL, &ret);
 		}else if(!strncmp(path, "hdd", 3)){
 			ret = fileXioRemove(hdddir);
+		}else if(!strncmp(path, "vmc", 3)){
+			ret = fileXioRemove(dir);
+			(void) fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 		}else if((!strncmp(path, "mass", 4)) || (!strncmp(path, "host", 4))){
 			ret = fioRemove(dir);
 		}
@@ -1641,6 +1718,10 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		if(ret<0) return -1;
 		oldPath[3] = newPath[3] = ret+'0';
 		
+		ret=fileXioRename(oldPath, newPath);
+	}else if(!strncmp(path, "vmc", 3)){
+		sprintf(oldPath, "%s%s", path, file->name);
+		sprintf(newPath, "%s%s", path, name);
 		ret=fileXioRename(oldPath, newPath);
 	}else if(!strncmp(path, "mc", 2)){
 		sprintf(oldPath, "%s%s", path, file->name);
@@ -1708,6 +1789,16 @@ int newdir(const char *path, const char *name)
 		strcat(dir, name);
 		genLimObjName(dir, 0);
 		ret = fileXioMkdir(dir, fileMode);
+	}else if(!strncmp(path, "vmc", 3)){
+		strcpy(dir, path);
+		strcat(dir, name);
+		genLimObjName(dir, 0);
+		if((ret = fileXioDopen(dir)) >= 0){
+			fileXioDclose(ret);
+			ret = -17;					//return fileXio error code for pre-existing folder
+		} else {
+			ret = fileXioMkdir(dir, fileMode);
+		}
 	}else if(!strncmp(path, "mc", 2)){
 		sprintf(dir, "%s%s", path+4, name);
 		genLimObjName(dir, 0);
@@ -2197,8 +2288,9 @@ non_PSU_RESTORE_init:
 //Here the output file has been opened, indicated by 'out_fd'
 
 	buffSize = 0x100000;       //First assume buffer size = 1MB (good for HDD)
-	if(!strncmp(out, "mass", 4))
-		buffSize =  50000;       //Use  50000 if writing to USB (flash memory writes SLOW)
+	if(!strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3))
+		buffSize =  50000;       //Use  50000 if writing to USB (Flash RAM writes)
+//VMC contents should use the same size, as VMCs will often be stored on USB
 	else if(!strncmp(out, "mc", 2))
 		buffSize = 125000;       //Use 125000 if writing to MC (pretty slow too)
 	else if(!strncmp(in, "mc",2))
@@ -2823,8 +2915,17 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		}
 		if	(!cnfmode || JPG_CNF) {
 			//This condition blocks selecting any CONFIG items on PC
+			//or in a virtual memory card
 			strcpy(files[nfiles].name, "host:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+			if(vmcMounted[0]){
+				strcpy(files[nfiles].name, "vmc0:");
+				files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+			}
+			if(vmcMounted[1]){
+				strcpy(files[nfiles].name, "vmc1:");
+				files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+			}
 		}
 		if(cnfmode<2) {
 			//This condition blocks use of MISC pseudo-device for drivers and skins
@@ -3082,7 +3183,7 @@ void getFilePath(char *out, int cnfmode)
 {
 	char path[MAX_PATH], cursorEntry[MAX_PATH],
 		msg0[MAX_PATH], msg1[MAX_PATH],
-		tmp[MAX_PATH], tmp1[MAX_PATH], ext[8], *p;
+		tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH], ext[8], *p;
 	u64 color;
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
@@ -3226,7 +3327,7 @@ void getFilePath(char *out, int cnfmode)
 				}
 			}else{ //cnfmode == FALSE
 				if(new_pad & PAD_R1) {
-					ret = menu(path, files[browser_sel].name);
+					ret = menu(path, &files[browser_sel]);
 					if(ret==COPY || ret==CUT){
 						strcpy(clipPath, path);
 						if(nmarks>0){
@@ -3241,7 +3342,8 @@ void getFilePath(char *out, int cnfmode)
 						browser_pushed=FALSE;
 						if(ret==CUT)	browser_cut=TRUE;
 						else			browser_cut=FALSE;
-					} else if(ret==DELETE){
+					} //ends COPY and CUT
+					else if(ret==DELETE){
 						if(nmarks==0){	//dlanor: using title was inappropriate here (filesystem op)
 							sprintf(tmp,"%s",files[browser_sel].name);
 							if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
@@ -3289,7 +3391,8 @@ void getFilePath(char *out, int cnfmode)
 							browser_cd=TRUE;
 							browser_repos=TRUE;
 						}
-					} else if(ret==RENAME){
+					} //ends DELETE
+					else if(ret==RENAME){
 						strcpy(tmp, files[browser_sel].name);
 						if(keyboard(tmp, 36)>0){
 							if(Rename(path, &files[browser_sel], tmp)<0){
@@ -3356,7 +3459,37 @@ void getFilePath(char *out, int cnfmode)
 					DoneIcon:
 						strcpy(tmp, tmp1); //Dummy code to make 'goto DoneIcon' legal for gcc
 					} //ends NEWICON
-					else if(ret==GETSIZE) submenu_func_GetSize(msg0, path, files);
+					else if((ret==MOUNTVMC0) || (ret==MOUNTVMC1)){
+						i = ret-MOUNTVMC0;
+						load_vmcfs();
+						sprintf(tmp, "vmc%d:", i);
+						if(vmcMounted[i]){
+							fileXioUmount(tmp);
+							vmcMounted[i] = 0;
+						}
+						genFixPath(path, tmp1);
+						strcpy(tmp2, tmp1);
+						if	(!strncmp(path, "host:", 5)){
+							makeHostPath(tmp2, tmp1);
+						}
+						strcat(tmp2, files[browser_sel].name);
+						if( (x = fileXioMount(tmp, tmp2, FIO_MT_RDWR)) >= 0){
+							vmcMounted[i] = 1;
+							sprintf(path, "%s/", tmp);
+							browser_cd = TRUE;
+							cnfmode = NON_CNF;
+							strcpy(ext, cnfmode_extL[cnfmode]);
+						}
+						else{
+							sprintf(msg1, "\n'%s vmc%d:' for \"%s\"\nResult=%d",
+								LNG(Mount), i, tmp2, x);
+							(void) ynDialog(msg1);
+						}
+					} //ends MOUNTVMCx
+					else if(ret==GETSIZE){
+						submenu_func_GetSize(msg0, path, files);
+					} //ends GETSIZE
+					//R1 menu handling is completed above
 				}else if((!swapKeys && new_pad & PAD_CROSS)
 				      || (swapKeys && new_pad & PAD_CIRCLE) ){
 					if(browser_sel!=0 && path[0]!=0 && strcmp(path,"hdd0:/")){
@@ -3415,6 +3548,11 @@ void getFilePath(char *out, int cnfmode)
 					mcGetInfo(path[2]-'0', 0, &mctype_PSx, &mcfreeSpace, NULL);
 					mcSync(0, NULL, &ret);
 					freeSpace = mcfreeSpace*((mctype_PSx==1) ? 8192 : 1024);
+					vfreeSpace=TRUE;
+				}else if(!strncmp(path,"vmc",3)){
+					strncpy(tmp, path, 5);
+					tmp[5]='\0';
+					freeSpace = fileXioDevctl(tmp, DEVCTL_VMCFS_CKFREE, NULL, 0, NULL, 0);
 					vfreeSpace=TRUE;
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
 					s64 ZoneFree, ZoneSize;

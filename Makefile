@@ -1,7 +1,7 @@
 EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o ps2smap.o ps2hdd.o\
-	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
+	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o vmcfs.o fakehost.o  \
 	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o
 
@@ -75,6 +75,10 @@ ps2host.s:
 	$(MAKE) -C ps2host
 	bin2s ps2host/ps2host.irx ps2host.s ps2host_irx
 
+vmcfs.s:
+	$(MAKE) -C vmcfs
+	bin2s vmcfs/bin/vmcfs.irx vmcfs.s vmcfs_irx
+
 loader.s:
 	$(MAKE) -C loader
 	bin2s loader/loader.elf loader.s loader_elf
@@ -86,6 +90,7 @@ clean:
 	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
+	$(MAKE) -C vmcfs clean
 	rm -f *.o *.a *.s BOOT.ELF
 
 include $(PS2SDK)/samples/Makefile.pref
