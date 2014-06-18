@@ -1842,10 +1842,12 @@ int Vmc_Sync ( iop_file_t* f, const char* device, int flag )
 //----------------------------------------------------------------------------
 int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag, void *arg, unsigned int arg_len )
 {
+	int errcode;
 
 	DEBUGPRINT ( 2, "vmcfs: Mount %s at mount point: %d\n", devname, f->unit );
 
-	if ( g_Vmc_Image[ f->unit ].fd >= 0 ) return VMCFS_ERR_MOUNT_BUSY;
+	if ( g_Vmc_Image[ f->unit ].fd >= 0 )
+		return VMCFS_ERR_MOUNT_BUSY;
 
 	g_Vmc_Image[ f->unit ].fd = open ( devname, O_RDWR, 0x666 );
 
@@ -1865,9 +1867,12 @@ int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag
 		DEBUGPRINT ( 1, "vmcfs: Error reading vmc file %s\n", devname );
 		DEBUGPRINT ( 1, "vmcfs: fd: %d, error code:%d\n", g_Vmc_Image[ f->unit ].fd, r );
 
+		errcode = VMCFS_ERR_VMC_READ;
+
+mountAbort:
 		close ( g_Vmc_Image[ f->unit ].fd );
 		g_Vmc_Image[ f->unit ].fd = VMCFS_ERR_NOT_MOUNT;
-		return VMCFS_ERR_VMC_READ;
+		return errcode;
 	}
 
 	g_Vmc_Image[ f->unit ].card_size = lseek ( g_Vmc_Image[ f->unit ].fd, 0, SEEK_END );
@@ -1907,11 +1912,10 @@ int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag
 		if ( !setDefaultSpec ( f->unit )  ) 
 		{
 			//  Card size error
-			close ( g_Vmc_Image[ f->unit ].fd );
-			g_Vmc_Image[ f->unit ].fd = VMCFS_ERR_NOT_MOUNT;
 			DEBUGPRINT ( 1, "vmcfs: Error size of vmc file %s is incompatible\n", devname );
 
-			return VMCFS_ERR_VMC_SIZE;
+			errcode = VMCFS_ERR_VMC_SIZE;
+			goto mountAbort;
 		}
 		g_Vmc_Image[ f->unit ].formated = FALSE;
 	}else{
@@ -1939,9 +1943,8 @@ int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag
 			//  Card is not a PS2 one
 			DEBUGPRINT ( 1, "vmcfs: Error vmc file %s is not a valid PS2 image\n", devname );
 
-			close ( g_Vmc_Image[ f->unit ].fd );
-			g_Vmc_Image[ f->unit ].fd = VMCFS_ERR_NOT_MOUNT;
-			return VMCFS_ERR_CARD_TYPE;
+			errcode = VMCFS_ERR_CARD_TYPE;
+			goto mountAbort;
 		}
 
 		//Reaching this point means we have a valid PS2 image
@@ -1968,10 +1971,9 @@ int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag
 		else
 		{
 			//  Card size error
-			close ( g_Vmc_Image[ f->unit ].fd );
-			g_Vmc_Image[ f->unit ].fd = VMCFS_ERR_NOT_MOUNT;
 			DEBUGPRINT ( 1, "vmcfs: Error size of vmc file %s is incompatible\n", devname );
-			return VMCFS_ERR_VMC_SIZE;
+			errcode = VMCFS_ERR_VMC_SIZE;
+			goto mountAbort;
 		}
 
 		DEBUGPRINT ( 4, "vmcfs: Image file Info: Number of pages       : %d\n", g_Vmc_Image[ f->unit ].total_pages );
@@ -1979,8 +1981,10 @@ int Vmc_Mount ( iop_file_t* f, const char* fsname, const char* devname, int flag
 		DEBUGPRINT ( 4, "vmcfs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[ f->unit ].ecc_flag ? "YES" : "NO" );
 	}
 
-	if ( g_Vmc_Image[ f->unit ].formated == FALSE ) 
-		return VMCFS_ERR_NOT_FORMATED;
+	if ( g_Vmc_Image[ f->unit ].formated == FALSE ){
+		errcode = VMCFS_ERR_NOT_FORMATED;
+		goto mountAbort;
+	}
 
 	return 0;
 }

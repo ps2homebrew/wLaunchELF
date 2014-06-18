@@ -53,8 +53,10 @@ int PM_flag[MAX_RECURSE]; //PasteMode flag for each 'copy' recursion level
 int PM_file[MAX_RECURSE]; //PasteMode attribute file descriptors
 
 char mountedParty[MOUNT_LIMIT][MAX_NAME];
-int	latestMount = 0;
-int vmcMounted[2] = {0, 0};
+int	latestMount = -1;
+int vmcMounted[2] = {0, 0}; //flags true for mounted VMC false for unmounted
+int vmc_PartyIndex[2] = {-1, -1};         //PFS index for each VMC, unless -1
+int Party_vmcIndex[MOUNT_LIMIT] = {-1,-1,-1,-1}; //VMC for each PFS, unless -1
 unsigned char *elisaFnt=NULL;
 int elisa_failed = FALSE; //Set at failure to load font, cleared at browser entry
 s64 freeSpace;
@@ -211,19 +213,31 @@ int mountParty(const char *party)
 	int i, j;
 	char pfs_str[6];
 
-	for(i=0, j=-1; i<MOUNT_LIMIT; i++){
+	for(i=0; i<MOUNT_LIMIT; i++){ //Here we check already mounted PFS indexes
 		if(!strcmp(party, mountedParty[i]))
 			goto return_i;
-		if((j==-1) && (mountedParty[i][0] == 0))
-			j=i;
 	}
 
-	if(j == -1){
-		j = latestMount + 1;
-		if(j >= MOUNT_LIMIT)
-			j = 0;
+	for(i=0, j=-1; i<MOUNT_LIMIT; i++){ //Here we search for a free PFS index
+		if(mountedParty[i][0] == 0){
+			j=i;
+			break;
+		}
+	}
+
+	if(j == -1){ //Here we search for a suitable PFS index to unmount
+		for(i=0; i<MOUNT_LIMIT; i++){
+			if((i!=latestMount) && (Party_vmcIndex[i]<0)){
+				j=i;
+				break;
+			}
+		}
 		unmountParty(j);
 	}
+	//Here j is the index of a free PFS mountpoint
+	//But 'free' only means that the main uLE program isn't using it
+	//If the ftp server is running, that may have used 4 mountpoints !!!
+
 	i = j;
 	strcpy(pfs_str, "pfs0:");
 	pfs_str[3] += i;
@@ -231,13 +245,14 @@ int mountParty(const char *party)
 		if(fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
 			break; //break from the loop on successful mount
 		//Here mount has failed, which may mean that FTP server stole the partition
+
 		//j is the index for the next mountpoint to kill in trying to release it
 		i=0;  //as we'll kill at least PFS0, we may as well use that for mounting
-		if(j<4)	            //if j<4, then we try to kill that mountpoint
+		if((j<4) && (Party_vmcIndex[j]<0))	//if non-VMC j<4, we try to kill it
 			unmountParty(j);  //unmount partition
 	} //ends for loop to kill FTP partition mounts, to release partitions
 	//Here j indicates what happened above with the following meanings:
-	//0..4==Success after killing j mountpoints,  5==Failure
+	//0..4==Success after trying j mountpoints,  5==Failure
 	if(j>4)
 		return -1;
 	strcpy(mountedParty[i], party);
@@ -252,9 +267,11 @@ void unmountParty(int party_ix)
 
 	strcpy(pfs_str, "pfs0:");
 	pfs_str[3] += party_ix;
-	fileXioUmount(pfs_str);
-	if(party_ix < MOUNT_LIMIT)
+	if(fileXioUmount(pfs_str) < 0)
+		return; //leave variables unchanged if unmount failed (remember true state)
+	if(party_ix < MOUNT_LIMIT){
 		mountedParty[party_ix][0] = 0;
+	}
 	if(latestMount==party_ix)
 		latestMount=-1;
 }
@@ -267,18 +284,27 @@ void unmountParty(int party_ix)
 void unmountAll(void)
 {
 	char pfs_str[6];
-	int i;
+	char vmc_str[6];
+	int i, j;
 
 	strcpy(pfs_str, "pfs0:");
+	strcpy(vmc_str, "vmc0:");
 	for(i=0; i<MOUNT_LIMIT; i++){
 		if(mountedParty[i][0]!=0){
+			if((j=Party_vmcIndex[i])>=0){
+				vmc_str[3] = '0'+i;
+				fileXioUmount(vmc_str);
+				vmcMounted[j] = 0;
+				vmc_PartyIndex[j]=-1;
+				Party_vmcIndex[i]=-1;
+			}
 			pfs_str[3] = '0'+i;
 			fileXioUmount(pfs_str);
 			mountedParty[i][0] = 0;
 		}
 	}
 	latestMount = -1;
-}
+} //ends unmountAll
 //--------------------------------------------------------------
 int ynDialog(const char *message)
 {
@@ -634,7 +660,7 @@ void genLimObjName(char *uLE_path, int reserve)
 	int	folder_flag = (uLE_path[strlen(uLE_path)-1] == '/'); //flag folder object
 	int overflow;
 
-	if(!strncmp(uLE_path, "mc", 2))
+	if(!strncmp(uLE_path, "mc", 2) || !strncmp(uLE_path, "vmc", 3))
 		limit = 32;    //enforce MC limit of 32 characters
 
 	if(folder_flag)                  //if path ends with path separator
@@ -703,7 +729,8 @@ int genFixPath(char *inp_path, char *gen_path)
 	//end of clause for using an HDD path
 	}
 	genLimObjName(gen_path, 0);
-	return part_ix;  //non-HDD Path => 99, Good HDD Path => 0/1, Bad HDD Path => negative
+	return part_ix;
+	//non-HDD Path => 99, Good HDD Path => 0-3, Bad Path => negative
 }
 //------------------------------
 //endfunc genFixPath
@@ -2913,7 +2940,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			strcpy(files[nfiles].name, "mass:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		}
-		if	(!cnfmode || JPG_CNF) {
+		if	(!cnfmode || (cnfmode==JPG_CNF)) {
 			//This condition blocks selecting any CONFIG items on PC
 			//or in a virtual memory card
 			strcpy(files[nfiles].name, "host:");
@@ -3188,7 +3215,7 @@ void getFilePath(char *out, int cnfmode)
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
 	int x, y, y0, y1;
-	int i, ret;
+	int i, j, ret;
 	int event, post_event=0;
 	int font_height;
 	int iconbase, iconcolr;
@@ -3212,8 +3239,9 @@ void getFilePath(char *out, int cnfmode)
 	else
 		strcpy(path, LastDir);	//If reasonable, start in recent folder
 
-	mountedParty[0][0]=0;
-	mountedParty[1][0]=0;
+	for(i=0; i<MOUNT_LIMIT; i++)
+		mountedParty[i][0] = 0;
+
 	clipPath[0] = 0;
 	nclipFiles = 0;
 	browser_cut = 0;
@@ -3464,16 +3492,25 @@ void getFilePath(char *out, int cnfmode)
 						load_vmcfs();
 						sprintf(tmp, "vmc%d:", i);
 						if(vmcMounted[i]){
+							if((j=vmc_PartyIndex[i]) >= 0){
+								vmc_PartyIndex[i] = -1;
+								if(j != vmc_PartyIndex[1^i])
+									Party_vmcIndex[j] = -1;
+							}
 							fileXioUmount(tmp);
 							vmcMounted[i] = 0;
 						}
-						genFixPath(path, tmp1);
+						j = genFixPath(path, tmp1);
 						strcpy(tmp2, tmp1);
 						if	(!strncmp(path, "host:", 5)){
 							makeHostPath(tmp2, tmp1);
 						}
 						strcat(tmp2, files[browser_sel].name);
 						if( (x = fileXioMount(tmp, tmp2, FIO_MT_RDWR)) >= 0){
+							if((j>=0) && (j<MOUNT_LIMIT)){
+								vmc_PartyIndex[i] = j;
+								Party_vmcIndex[j] = i;
+							}
 							vmcMounted[i] = 1;
 							sprintf(path, "%s/", tmp);
 							browser_cd = TRUE;
@@ -3911,7 +3948,7 @@ void subfunc_Paste(char *mess, char *path)
 		}
 	}
 
-	unmountAll();
+//	unmountAll(); //disabled to avoid interference with VMC implementation
 
 finished:
 	if(ret < 0){
@@ -3937,7 +3974,7 @@ void submenu_func_Paste(char *mess, char *path)
 //--------------------------------------------------------------
 void submenu_func_mcPaste(char *mess, char *path)
 {
-	if(!strncmp(path, "mc", 2)){
+	if(!strncmp(path, "mc", 2)||!strncmp(path, "vmc", 3)){
 		PasteMode = PM_MC_RESTORE;
 	} else {
 		PasteMode = PM_MC_BACKUP;
@@ -3949,7 +3986,7 @@ void submenu_func_mcPaste(char *mess, char *path)
 //--------------------------------------------------------------
 void submenu_func_psuPaste(char *mess, char *path)
 {
-	if(!strncmp(path, "mc", 2)){
+	if(!strncmp(path, "mc", 2)||!strncmp(path, "vmc", 3)){
 		PasteMode = PM_PSU_RESTORE;
 	} else {
 		PasteMode = PM_PSU_BACKUP;
