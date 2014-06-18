@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.40d (2010.01.24)
+-Updated ps2sdk and existing source files to SVN rev 1663 after resolving a long-standing issue with the poweroff handler.
+-Fixed an issue that would have caused problems with ps2netFS and ps2ftpd network devices using newer ps2sdk versions.
+-Reorganized parts of the setup to build LaunchELF with newer versions of the ps2sdk.
+
+LaunchELF v4.40c (2009.10.13)
+-Special test version, reverting to MC drivers from bios instead of the new ones
+NB: This is only intended for temporary debug testing, not for wide distribution
+
 LaunchELF v4.40b (2009.09.14)
 ps2ftpd new additions and changes:
 -Forced memory card items to two, mc/0 and mc/1, in order to prevent the possible trigger of a buffer overflow noted by jimmikaelkaele for use with the new mc drivers.

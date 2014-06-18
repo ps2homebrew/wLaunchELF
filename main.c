@@ -1075,7 +1075,8 @@ void loadHdlInfoModule(void)
 //---------------------------------------------------------------------------
 void poweroffHandler(int i)
 {
-	hddPowerOff();
+	//hddPowerOff(); //deprecated
+	poweroffShutdown();
 }
 //------------------------------
 //endfunc poweroffHandler
@@ -1084,12 +1085,14 @@ void setupPowerOff(void) {
 	int ret;
 
 	if(!done_setupPowerOff) {
-		hddPreparePoweroff();
-		hddSetUserPoweroffCallback((void *)poweroffHandler, NULL);
+		//hddPreparePoweroff(); //deprecated
+		//hddSetUserPoweroffCallback((void *)poweroffHandler, NULL); //deprecated
 		if	(!have_poweroff) {
 			SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
 			have_poweroff = 1;
 		}
+		poweroffInit();
+		poweroffSetCallback((void *)poweroffHandler, NULL);
 		load_iomanx();
 		load_filexio();
 		load_ps2dev9();
@@ -1722,7 +1725,8 @@ Done_PS2Disc:
 		mainMsg[0] = 0;
 		drawMsg(LNG(Powering_Off_Console));
 		setupPowerOff();
-		hddPowerOff();
+		//hddPowerOff(); //deprecated
+		poweroffShutdown();
 		poweroff_delay = 250; //trigger delay for those without net adapter
 		poweroff_start = Timer();
 		return;

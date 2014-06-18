@@ -59,9 +59,8 @@ fi
 ####################
 if [ $DOWNLOAD -eq 1 ]; then
   cd $BUP_DIR
-	svn co svn://svn.ps2dev.org/ps2/trunk/ps2sdk --revision 1420 ps2sdksrc
+	svn co svn://svn.ps2dev.org/ps2/trunk/ps2sdk --revision 1663 ps2sdksrc
 	svn co svn://svn.ps2dev.org/ps2/trunk/gsKit --revision 1470 gsKit
-	svn co svn://svn.ps2dev.org/ps2/trunk/ps2sdk/iop/usb/usbd/ --revision 1494 usbd_irx
 	svn co svn://svn.ps2dev.org/ps2/trunk/usbhdfsd --revision 1534 usbhdfsd
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/ps2ftpd --revision 371 ps2ftpd
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/myPS2/lib/libjpg --revision 520 libjpg
@@ -97,9 +96,6 @@ rm -fr gsKit/.svn
 rm -fr gsKit/.cdtproject
 rm -fr gsKit/.project
 rmdir gsKit
-rm -fr usbd_irx/*
-rm -fr usbd_irx/.svn
-rmdir usbd_irx
 rm -fr usbhdfsd/*
 rm -fr usbhdfsd/.svn
 rmdir usbhdfsd
@@ -121,7 +117,6 @@ echo starting to copy lib work copies from $BUP_DIR
 cd $PS2DEV
 cp -r uLE_BUP/ps2sdksrc ps2sdksrc
 cp -r uLE_BUP/gsKit gsKit
-cp -r uLE_BUP/usbd_irx usbd_irx
 cp -r uLE_BUP/usbhdfsd usbhdfsd
 cp -r uLE_BUP/ps2ftpd ps2ftpd
 cp -r uLE_BUP/libjpg libjpg
@@ -148,8 +143,6 @@ cd $PS2DEV/libjpg && make clean && make
 echo now we fix header compatibility to all progs that use libjpg
 cd $PS2DEV/libjpg && mkdir include && cp *.h include
 cd $PS2DEV/gsKit && make clean && make all && make install
-cd $PS2DEV/usbd_irx && make clean && make
-cp $PS2DEV/usbd_irx/bin/usbd.irx $PS2DEV/ps2sdk/iop/irx
 cd $PS2DEV/usbhdfsd && make clean && make
 cd $PS2DEV/ps2ftpd && make clean && make
 cd $PS2DEV/SMS/drv/SMSUTILS && make clean && make

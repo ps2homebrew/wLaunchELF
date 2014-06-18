@@ -2,7 +2,7 @@
 
 EE_CFLAGS  := -mips3 -ffreestanding -fno-builtin -G0 \
 		-fshort-double -mlong64 -mhard-float -mno-abicalls -O2 -EL -Wall \
-		-c $(EE_INCS) $(EE_CFLAGS)
+		$(EE_INCS) $(EE_CFLAGS)
 
 EE_ASFLAGS := -EL -G0 $(EE_ASFLAGS)
 
