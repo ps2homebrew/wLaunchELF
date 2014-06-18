@@ -79,7 +79,7 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"*",   // cnfmode TEXT_CNF
 	"",    // cnfmode DIR_CNF
 	"JPG", // cnfmode JPG_CNF
-	"IRX",  // cnfmode USBMASS_IRX_CNF
+	"IRX", // cnfmode USBMASS_IRX_CNF
 	"LNG", // cnfmode LANG_CNF
 	"FNT"  // cnfmode FONT_CNF
 };
@@ -95,7 +95,7 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"*",   // cnfmode TEXT_CNF
 	"",    // cnfmode DIR_CNF
 	"jpg", // cnfmode JPG_CNF
-	"irx",  // cnfmode USBMASS_IRX_CNF
+	"irx", // cnfmode USBMASS_IRX_CNF
 	"lng", // cnfmode LANG_CNF
 	"fnt"  // cnfmode FONT_CNF
 };
@@ -984,7 +984,7 @@ void	initHOST(void)
 int	readHOST(const char *path, FILEINFO *info, int max)
 {
 	fio_dirent_t hostcontent;
-	int hfd, tfd, rv, size, contentptr, hostcount = 0;
+	int hfd, rv, size, contentptr, hostcount = 0;
 	char *elflisttxt, elflistchar;
 	char	host_path[MAX_PATH], host_next[MAX_PATH];
 	char	Win_path[MAX_PATH];
@@ -1031,31 +1031,32 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 		}
 		free(elflisttxt);
 		return hostcount-1;
-	}	//This point is only reached if elflist.txt is NOT to be used
+	}
+	//This point is only reached if elflist.txt is NOT to be used
+
 	if ((hfd = fioDopen(makeHostPath(Win_path, host_path))) < 0)
 		return 0;
 	strcpy(host_path, Win_path);
 	while ((rv = fioDread(hfd, &hostcontent)))
 	{	if (strcmp(hostcontent.name, ".")&&strcmp(hostcontent.name, ".."))
 		{
+			size_valid = 1;
+			time_valid = 1;
 			snprintf(Win_path, MAX_PATH-1, "%s%s", host_path, hostcontent.name);
 			strcpy(info[hostcount].name, hostcontent.name);
 			clear_mcTable(&info[hostcount].stats);
-			if	((tfd = fioOpen(Win_path, O_RDONLY)) >= 0)
-			{	fioClose(tfd);
+
+			if(!(hostcontent.stat.mode & FIO_SO_IFDIR)) //if not a directory
 				info[hostcount].stats.attrFile = MC_ATTR_norm_file;
-				info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
-				memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
-				memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
-				hostcount++;
-			} else if ((tfd = fioDopen(Win_path)) >= 0)
-			{	fioDclose(tfd);
+			else
 				info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
-				info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
-				memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
-				memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
-				hostcount++;
-			}
+
+			info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
+			memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
+			info[hostcount].stats._create.year += 1900;
+			memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
+			info[hostcount].stats._modify.year += 1900;
+			hostcount++;
 			if (hostcount >= max)
 				break;
 		}
@@ -3328,24 +3329,37 @@ void getFilePath(char *out, int cnfmode)
 			}
 			rows = (Menu_end_y-Menu_start_y)/font_height;
 
-			for(i=0; i<rows; i++)
+			for(i=0; i<rows; i++) //Repeat loop for each browser text row
 			{
-				int	title_flag;
+				int	title_flag = 0; //Assume that normal file/folder names are wanted
+				int name_limit = 0; //Assume that no name length problems exist
 
 				if(top+i >= browser_nfiles) break;
 				if(top+i == browser_sel) color = setting->color[2];  //Highlight cursor line
 				else			 color = setting->color[3];
 				
-				title_flag = 0;
 				if(!strcmp(files[top+i].name,".."))
 					strcpy(tmp,"..");
 				else if((file_show==2) && files[top+i].title[0]!=0) {
 					strcpy(tmp,files[top+i].title);
 					title_flag = 1;
-				}else{
+				}else{ //Show normal file/folder names
 					strcpy(tmp,files[top+i].name);
-					if(file_show > 0)
-						tmp[40]=0;
+					if(file_show > 0){  //Does display mode include file details ?
+						name_limit = 43*8;
+					} else {  //Filenames are shown without file details
+						name_limit = 71*8;
+					}
+				}
+				if(name_limit){ //Do we need to check name length ?
+					int name_end = name_limit/7; //Max string length for acceptable spacing
+
+					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
+						name_end -= 1;  //For folders, reserve one character for final '/'
+					if(strlen(tmp) > name_end){  //Is name too long for clean display ?
+						tmp[name_end-1] = '~';  //indicate filename abbreviation
+						tmp[name_end] = 0;    //abbreviate name length to make room for details
+					}
 				}
 
 				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
@@ -3353,11 +3367,11 @@ void getFilePath(char *out, int cnfmode)
 				if(title_flag)
 					printXY_sjis(tmp, x+4, y, color, TRUE);
 				else
-					printXY(tmp, x+4, y, color, TRUE, 0);
+					printXY(tmp, x+4, y, color, TRUE, name_limit);
 				if(file_show > 0){
 					unsigned int size = files[top+i].stats.fileSizeByte;
 					int scale = 0; //0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-					char scale_s[4] = " KMG";
+					char scale_s[5] = " KMGT";
 					PS2TIME timestamp = *(PS2TIME *) &files[top+i].stats._modify;
 
 					if(!size_valid) size = 0;

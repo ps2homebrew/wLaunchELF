@@ -1388,6 +1388,7 @@ int main(int argc, char *argv[])
 			)	p=strrchr(LaunchElfDir, ':');
 	if	(p!=NULL)
 		*(p+1)=0;
+	//The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
 
 	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
 		//Patch DMS4 Dev2 booting here, when we learn more about how it works

@@ -43,10 +43,10 @@ ps2dev9.s:
 	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
 
 ps2ip.s:
-	bin2s $(PS2SDK)/iop/irx/ps2ip.irx ps2ip.s ps2ip_irx
+	bin2s modules/EEUG_drivers/ps2ip.irx ps2ip.s ps2ip_irx
 
 ps2smap.s:
-	bin2s $(PS2ETH)/bin/ps2smap.irx ps2smap.s ps2smap_irx
+	bin2s modules/EEUG_drivers/ps2smap.irx ps2smap.s ps2smap_irx
 
 ps2ftpd.s:
 	bin2s modules/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx

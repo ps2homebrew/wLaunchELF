@@ -1,5 +1,19 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.08c Beta (2007.01.03)
+-Modified Host interface to adapt to some changes in 'ps2client_for_uLE_rev3'.
+-One such change now allows browser display of file sizes and modification times for 'host:', except for an 'elflist' root, since that is just a pseudo-device
+-There's also an improved method for testing object types. This was made possible by the elimination of an old bug from ps2client (cured by others at ps2dev.org), so that uLE no longer has to trial-open every single object like we had to do in earlier versions
+-All beta features from the last beta version are also included, unchanged
+
+LaunchELF v4.08b Beta (2006.12.19)
+-Changed networking to use IRX modules by EEUG, for 40% speed increase of host:
+-Changed browser to use dynamic spacing to allow more characters to be displayed for long file and folder names. Filenames can now be displayed with 49 characters in 'details' mode and with 81 characters in 'filename only' mode. Filenames longer than that are shown with 80 correct characters and a final '~' character to indicate the abbreviation. Folder names are treated the same way, except with one character less, to ensure that the final '/' character will be visible, even for an abbreviated name
+-Changed browser of JpgViewer to use dynamic spacing in list mode, as described above
+-Changed browser of JpgViewer to only use L2 for switching transition effects
+-Changed browser of JpgViewer such that R2 opens the PathPad popup for path selection
+NB: Some info shown in the JpgViewer help screen is now incorrect for browser, though it remains correct while viewing a picture/slideshow, as R2 retains its old meaning in this mode. IMO this is not a bug, since that help screen can only be seen in picture viewing mode, which also has different tooltips from browsing mode
+
 LaunchELF v4.08 (2006.12.07)
 -Modified use of BrowserModePopup, to make it usable also for config browsing.
 -Fixed a bug in font loading of ELISA100.FNT

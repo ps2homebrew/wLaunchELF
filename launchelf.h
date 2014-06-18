@@ -251,6 +251,7 @@ extern char mountedParty[MOUNT_LIMIT][MAX_NAME];
 extern int latestMount;
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
+char *PathPad_menu(const char *path);
 void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);

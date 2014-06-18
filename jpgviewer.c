@@ -464,7 +464,7 @@ void JpgViewer( void )
 	int event, post_event=0;
 	int i, t=0;
 	int CountJpg=0;
-	
+
 	jpg_browser_cd=TRUE;
 	jpg_browser_up=FALSE;
 	jpg_browser_repos=FALSE;
@@ -541,7 +541,13 @@ void JpgViewer( void )
 			}else if(new_pad & PAD_L1){
 				if(--SlideShowTime<=1) SlideShowTime=1;
 			}else if(new_pad & PAD_R2){
-				if(++SlideShowTrans>4) SlideShowTrans=1;
+				char *temp = PathPad_menu(path);
+
+				if(temp != NULL){
+					strcpy(path, temp);
+					jpg_browser_cd=TRUE;
+					thumb_load=TRUE;
+				}
 			}else if(new_pad & PAD_L2){
 				if(--SlideShowTrans<1) SlideShowTrans=4;
 			}else if((swapKeys && new_pad & PAD_CROSS)
@@ -757,23 +763,37 @@ down:
 list:
 			for(i=0; i<rows; i++)
 			{   
+				int name_limit = 0; //Assume that no name length problems exist
+
 				if(top+i >= jpg_browser_nfiles) break;
 				if(top+i == jpg_browser_sel) color = setting->color[2];  //Highlight cursor line
 				else			 color = setting->color[3];
 				
 				if(!strcmp(files[top+i].name,".."))
 					strcpy(tmp,"..");
-				else
+				else {
 					strcpy(tmp,files[top+i].name);
+					name_limit = 71*8;
+				}
 
-				if(jpg_browser_mode==LIST){
+				if(jpg_browser_mode==LIST){  //List mode
 
+					if(name_limit){ //Do we need to check name length ?
+						int name_end = name_limit/7; //Max string length for acceptable spacing
+
+						if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
+							name_end -= 1;  //For folders, reserve one character for final '/'
+						if(strlen(tmp) > name_end){  //Is name too long for clean display ?
+							tmp[name_end-1] = '~';  //indicate filename abbreviation
+							tmp[name_end] = 0;    //abbreviate name length to make room for details
+						}
+					}
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 						strcat(tmp, "/");
-					printXY(tmp, x+4, y, color, TRUE, 0);
+					printXY(tmp, x+4, y, color, TRUE, name_limit);
 					y += FONT_HEIGHT;
 
-				}else{
+				}else{  //Thumbnail mode
 
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
 						strcat(tmp, "/");
@@ -865,7 +885,7 @@ frame:
 			else
 				sprintf(tmp, " ÿ3:%s ÿ2:%s", LNG(Up), LNG(List));
 			strcat(msg1, tmp);
-			sprintf(tmp, " Sel:%s Start:%s L1/R1:%dsec L2/R2:",
+			sprintf(tmp, " Sel:%s Start:%s L1/R1:%dsec L2:",
 				LNG(Exit), LNG(SlideShow), SlideShowTime);
 			strcat(msg1, tmp);
 			if(SlideShowTrans==OFF)
@@ -876,6 +896,8 @@ frame:
 				strcat(msg1, LNG(Fade));
 			else if(SlideShowTrans==ZOOM_FADE)
 				strcat(msg1, LNG(ZoomFade));
+			sprintf(tmp, " R2:%s", LNG(PathPad));
+			strcat(msg1, tmp);
 			setScrTmp(msg0, msg1);
 		}//ends if(event||post_event)
 		drawScr();
