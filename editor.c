@@ -1465,7 +1465,7 @@ abort:
 					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
 				printXY(LNG(SPACE), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*3+6,
 					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
-				printXY(LNG(RETURN), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*4+8,
+				printXY(LNG(KB_RETURN), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*4+8,
 					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
 
 				for(i=0; i<KEY_LEN; i++){

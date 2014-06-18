@@ -347,5 +347,7 @@ lang(310, file_alredy_exists, "file already exists")
 lang(311, Icon_Title, "Icon Title")
 lang(312, IconText, "IconText")
 //--------------------------------------------------------------
+lang(313, KB_RETURN, "RETURN")
+//--------------------------------------------------------------
 //End of file:  lang.h
 //--------------------------------------------------------------

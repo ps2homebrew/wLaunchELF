@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.08e Beta (2007.01.27)
+-Upgraded to a newer version of EEUG's networking module "SMSTCPIP.irx". This upgrade should eliminate some data corruption seen with the previous beta
+-Added a new LNG definition, LNG(KB_RETURN), to be used only to designate such keyboard keys (virtual or physical), as it seems that some languages need this term separate from other uses of similar words. The english version of this term in "lang.h" is just "RETURN"
+-Fixed a bug in generating SJIS-encoded title strings for "icon.sys" files created by the new browser command "New Icon". Note that this bug was not inside the source of uLE, but in the source for a string function of PS2SDK, so if you want to compile this correctly you'll need a very recent update from the SVN repository for PS2SDK
+
 LaunchELF v4.08d Beta (2007.01.07)
 -Added some newer network drivers from SMS by EEUG, raising host: speed to 1450 KByte/s
 -Removed usbhdfsd both from the modules folder and from the 'Changed source...' folder, as the standard PS2DEV version now has adopted all our modifications for it (SVN 1366)
