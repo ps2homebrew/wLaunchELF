@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.96 (2006.08.27)
+-Increased font size to 256 characters, but still with '_' appearanc for many of them
+-Implemented 'extra' vowels of german and swedish for font. This covers "Â‰ˆ¸≈ƒ÷‹". Note that this implementation is still rather ugly, due to the low resolution of our font.
+-Corrected an old bug made visible by the new characters, using top pixel row of font
+-Added error diagnostic dialog box for LNG loader, to help in debugging LNG files
+-Merged improved FTP server by EP, for better handling of mountpoints and MCs
+-Improved partition filter to reject all non-PFS partitions and CodeBreaker partitions
+-Added CNF variable for fullscreen mode of JpgViewer
+
 LaunchELF v3.95 (2006.08.26)
 -Merged multi-language support contributed by Polo (but not ready for public release)
 -Rewrote large parts of the Multi-language support for better coding efficiency etc.

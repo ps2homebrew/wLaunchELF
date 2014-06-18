@@ -31,6 +31,7 @@ enum
 	DEF_PATHPAD_LOCK = 0,
 	DEF_JPGVIEW_TIMER = 5,
 	DEF_JPGVIEW_TRANS = 2,
+	DEF_JPGVIEW_FULL = 0,
 	DEF_PSU_HUGENAMES = 0,
 	DEF_PSU_DATENAMES = 0,
 	DEF_PSU_NOOVERWRITE = 0,
@@ -229,6 +230,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"LANG_FILE = %s\r\n"
 		"JpgView_Timer = %d\r\n"
 		"JpgView_Trans = %d\r\n"
+		"JpgView_Full = %d\r\n"
 		"PSU_HugeNames = %d\r\n"
 		"PSU_DateNames = %d\r\n"
 		"PSU_NoOverwrite = %d\r\n"
@@ -269,6 +271,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->lang_file,     //LANG_FILE
 		setting->JpgView_Timer, //JpgView_Timer
 		setting->JpgView_Trans, //JpgView_Trans
+		setting->JpgView_Full,  //JpgView_Full
 		setting->PSU_HugeNames, //PSU_HugeNames
 		setting->PSU_DateNames, //PSU_DateNames
 		setting->PSU_NoOverwrite, //PSU_NoOverwrite
@@ -446,6 +449,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->PathPad_Lock = DEF_PATHPAD_LOCK;
 	setting->JpgView_Timer = -1; //only used to detect missing variable
 	setting->JpgView_Trans = -1; //only used to detect missing variable
+	setting->JpgView_Full = DEF_JPGVIEW_FULL;
 	setting->PSU_HugeNames = DEF_PSU_HUGENAMES;
 	setting->PSU_DateNames = DEF_PSU_DATENAMES;
 	setting->PSU_NoOverwrite = DEF_PSU_NOOVERWRITE;
@@ -609,6 +613,7 @@ failed_load:
 		//----------
 		else if(!strcmp(name,"JpgView_Timer")) setting->JpgView_Timer = atoi(value);
 		else if(!strcmp(name,"JpgView_Trans")) setting->JpgView_Trans = atoi(value);
+		else if(!strcmp(name,"JpgView_Full")) setting->JpgView_Full = atoi(value);
 		//----------
 		else if(!strcmp(name,"PSU_HugeNames")) setting->PSU_HugeNames = atoi(value);
 		else if(!strcmp(name,"PSU_DateNames")) setting->PSU_DateNames = atoi(value);

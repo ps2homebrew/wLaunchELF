@@ -288,7 +288,7 @@ int sizeSelector(int size)
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y,
+				0, y-2,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
 				sprintf(c, "ÿ1:%s ÿ0:%s ÿ3:%s %s:+128%s Left:-128%s R1:+1024%s L1:-1024%s",
@@ -407,7 +407,7 @@ int MenuParty(PARTYINFO Info)
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y,
+				0, y-2,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
 				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));

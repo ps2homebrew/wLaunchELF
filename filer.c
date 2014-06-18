@@ -535,12 +535,14 @@ void setPartyList(void)
 	{
 		if(nparties >= MAX_PARTITIONS)
 			break;
-		if((dirEnt.stat.attr & ATTR_SUB_PARTITION) 
-				|| (dirEnt.stat.mode == FS_TYPE_EMPTY))
+		if((dirEnt.stat.attr != ATTR_MAIN_PARTITION) 
+				|| (dirEnt.stat.mode != FS_TYPE_PFS))
 			continue;
-//		if(!strncmp(dirEnt.name, "PP.HDL.", 7))  //Old test of partition type by 'name'
-		if(dirEnt.stat.mode == 0x1337)  //New test of partition type by 'mode'
-			continue;
+		if(!strncmp(dirEnt.name, "PP.",3)){
+			int len = strlen(dirEnt.name);
+			if(!strcmp(dirEnt.name+len-4, ".PCB"))
+				continue;
+		}
 		if(!strncmp(dirEnt.name, "__", 2) &&
 			strcmp(dirEnt.name, "__boot") &&
 			strcmp(dirEnt.name, "__common"))
@@ -1264,7 +1266,7 @@ int menu(const char *path, const char *file)
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y,
+				0, y-2,
 				SCREEN_WIDTH, y+FONT_HEIGHT);
 			if (swapKeys)
 				sprintf(tmp, "ÿ1:%s ÿ0:%s", LNG(OK), LNG(Cancel));
@@ -1352,7 +1354,7 @@ char *PathPad_menu(const char *path)
 
 			//Display section
 			drawSprite(setting->color[0],
-				0, (Menu_message_y),
+				0, (Menu_message_y-2),
 				SCREEN_WIDTH, (Frame_start_y));
 			drawPopSprite(setting->color[0],
 				dx, dy,
@@ -1372,7 +1374,7 @@ char *PathPad_menu(const char *path)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, (y), SCREEN_WIDTH, y+FONT_HEIGHT);
+			drawSprite(setting->color[0], 0, y-2, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if(swapKeys) {
 				sprintf(textrow, "ÿ1:%s ", LNG(Use));
@@ -2418,7 +2420,7 @@ int keyboard(char *out, int max)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+FONT_HEIGHT);
+			drawSprite(setting->color[0], 0, y-2, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys){
 				sprintf(tmp, "ÿ1:%s ÿ0:%s L1:%s R1:%s START:%s",
@@ -2589,7 +2591,7 @@ int keyboard2(char *out, int max)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+FONT_HEIGHT);
+			drawSprite(setting->color[0], 0, y-2, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
@@ -3188,7 +3190,7 @@ void getFilePath(char *out, int cnfmode)
 					sprintf(tmp, "[%dB %s]", (int) freeSpace, LNG(free));
 				ret=strlen(tmp);
 				drawSprite(setting->color[0],
-					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y),
+					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y-2),
 					SCREEN_WIDTH-SCREEN_MARGIN, (Menu_message_y+FONT_HEIGHT));
 				printXY(tmp,
 					SCREEN_WIDTH-SCREEN_MARGIN-ret*FONT_WIDTH,

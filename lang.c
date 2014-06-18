@@ -137,6 +137,10 @@ void Load_External_Language(void)
 {
 	int error_id = -1;
 	int test = 0;
+	u32 index = 0;
+	u8 *file_bp, *file_tp, *lang_bp, *lang_tp, *oldf_tp=NULL;
+	u8 *id_p, *value_p;
+	int lang_size = 0;
 
 	if(External_Lang_Buffer!=NULL){  //if an external buffer was allocated before
 		free(External_Lang_Buffer);    //release that buffer before the new attempt
@@ -149,43 +153,42 @@ void Load_External_Language(void)
 	if(strlen(setting->lang_file)!=0){ //if language file string set
 		char filePath[MAX_PATH];
 
+		error_id = -2;
 		genFixPath(setting->lang_file, filePath);
 		int fd = genOpen(filePath, O_RDONLY);
 		if(fd >= 0){                         //if file opened OK
     	int file_size = genLseek(fd, 0, SEEK_END);
 
-			error_id = -2;
+			error_id = -3;
     	if (file_size > 0) {               //if file size OK
-				u32 index = 0;
-				u8 *file_bp, *file_tp, *lang_bp, *lang_tp, *oldf_tp;;
-				u8 *id_p, *value_p;
-				int lang_size = 0;
-
-				error_id = -3;
+				error_id = -4;
  	 			file_bp = (u8*) malloc(file_size + 1);
  	 			if(file_bp == NULL)
  	 				goto aborted_1;
 
-				error_id = -4;
+				error_id = -5;
 				genLseek(fd, 0, SEEK_SET);
 				if(genRead(fd, file_bp, file_size) != file_size)
 					goto release_1;
 				file_bp[file_size] = '\0'; //enforce termination at buffer end
 
-				error_id = -5;
+				error_id = -6;
 				file_tp = file_bp;
 				while(1){
 					oldf_tp = file_tp;
 					test = get_LANG_string(&file_tp, &id_p, &value_p);
 					if(test==-1)                   //if EOF reached without other error
-						break;                       //break from the loop normally
-					if(test<0 || atoi(id_p)>=LANG_COUNT)  //At any fatal error result
-						goto release_1;                     //go release file buffer
+						break;                         //break from the loop normally
+					if(test<0)                     //At any fatal error result
+						goto release_1;                //go release file buffer
+					index = atoi(id_p);            //get the string index
+					if(index>=LANG_COUNT)          //At any fatal error result
+						goto release_1;                //go release file buffer
 					lang_size += test + 1;         //Include terminator space for total size
 				}
 				//Here lang_size is the space needed for real language buffer,
 
-				error_id = -6;
+				error_id = -7;
  	 			lang_bp = (u8*) malloc(lang_size + 1); //allocate real language buffer
  	 			if(lang_bp == NULL)
  	 				goto release_1;
@@ -209,6 +212,33 @@ aborted_1:
 			genClose( fd );
 		}  // end if clause for file opened OK
 	} // end if language file string set
+
+	if(lang_initialized_f && (error_id < -1)){
+		u8 tmp_s[80*8], t1_s[102], t2_s[102];
+		int pos=0, stp=0;
+		sprintf(tmp_s,
+			"LNG loading failed with error_id==%d and test==%d\n"
+			"The latest string index (possibly invalid) was %d\n"
+			"%n"
+			, error_id, test, index, &stp
+		);
+		pos += stp;
+		if(error_id==-6) {//if parsing error
+			strncpy(t1_s, oldf_tp, 100);
+			t1_s[100] = '\0';
+			strncpy(t2_s, file_tp, 100);
+			t2_s[100] = '\0';
+			sprintf(tmp_s+pos,
+				"This was a parsing error when trying to parse the text:\n"
+				"\"%s\"\n"
+				"That attempt failed somehow, after reaching this point:\n"
+				"\"%s\"\n"
+				, t1_s, t2_s
+			);
+		}
+		strcat(tmp_s, "Use either OK or CANCEL to continue (no diff)");
+		ynDialog(tmp_s);
+	}
 
 	memcpy(Lang_String, Lang, sizeof(Lang_String));
 

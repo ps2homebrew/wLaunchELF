@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ˇ4 LaunchELF v3.95 ˇ4",
+	printXY(" ˇ4 LaunchELF v3.96 ˇ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -505,7 +505,7 @@ void drawMsg(const char *msg)
 {
 	strncpy(LastMessage, msg, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';
-	drawSprite(setting->color[0], 0, Menu_message_y,
+	drawSprite(setting->color[0], 0, Menu_message_y-2,
 		SCREEN_WIDTH, Frame_start_y);
 	printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
@@ -513,7 +513,7 @@ void drawMsg(const char *msg)
 //--------------------------------------------------------------
 void drawLastMsg(void)
 {
-	drawSprite(setting->color[0], 0, Menu_message_y,
+	drawSprite(setting->color[0], 0, Menu_message_y-2,
 		SCREEN_WIDTH, Frame_start_y);
 	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
@@ -929,7 +929,7 @@ void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 
 //--------------------------------------------------------------
 // draw a char using the system font (16x16)
-void drawChar(unsigned char c, int x, int y, u64 colour)
+void drawChar(unsigned int c, int x, int y, u64 colour)
 {
 	unsigned int i, j, ix;
 	unsigned char cc;
@@ -940,9 +940,8 @@ void drawChar(unsigned char c, int x, int y, u64 colour)
 		y = y & -2;
 	}
 
-	if(c < 0x20)       ix=(0x5F-0x20)*8;
-	else if(c >= 0xAA) ix=(0x5F-0x20)*8;
-	else               ix=(c-0x20)*8;
+	if(c >= 0x10A) ix='_'*8;
+	else          ix=c*8;
 	for(i=0; i<8; i++)
 	{
 		cc = font5200[ix++];
@@ -988,7 +987,7 @@ void drawChar2(int n, int x, int y, u64 colour)
 // draw a string of characters, without shift-JIS support
 int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space)
 {
-	unsigned char c1, c2;
+	unsigned int c1, c2;
 	int i;
 	int text_spacing=8;
 	
@@ -1016,7 +1015,7 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 			break;
 		if((c2 < '0') || (c2 > '4'))
 			continue;
-		c1=(c2-'0')*2+0xA0;
+		c1=(c2-'0')*2+0x100;
 		if(draw) {
 			//expand sequence ˇ0=Circle  ˇ1=Cross  ˇ2=Square  ˇ3=Triangle  ˇ4=FilledBox
 			drawChar(c1, x, y, colour);
@@ -1053,40 +1052,40 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 			// Circle == "Åõ"
 			case 0x819B:
 				if(draw){
-					drawChar(160, x, y, colour);
-					drawChar(161, x+8, y, colour);
+					drawChar(0x100, x, y, colour);
+					drawChar(0x101, x+8, y, colour);
 				}
 				x+=16;
 				break;
 			// Cross == "Å~"
 			case 0x817E:
 				if(draw){
-					drawChar(162, x, y, colour);
-					drawChar(163, x+8, y, colour);
+					drawChar(0x102, x, y, colour);
+					drawChar(0x103, x+8, y, colour);
 				}
 				x+=16;
 				break;
 			// Square == "Å†"
 			case 0x81A0:
 				if(draw){
-					drawChar(164, x, y, colour);
-					drawChar(165, x+8, y, colour);
+					drawChar(0x104, x, y, colour);
+					drawChar(0x105, x+8, y, colour);
 				}
 				x+=16;
 				break;
 			// Triangle == "Å¢"
 			case 0x81A2:
 				if(draw){
-					drawChar(166, x, y, colour);
-					drawChar(167, x+8, y, colour);
+					drawChar(0x106, x, y, colour);
+					drawChar(0x107, x+8, y, colour);
 				}
 				x+=16;
 				break;
 			// FilledBox == "Å°"
 			case 0x81A1:
 				if(draw){
-					drawChar(168, x, y, colour);
-					drawChar(169, x+8, y, colour);
+					drawChar(0x108, x, y, colour);
+					drawChar(0x109, x+8, y, colour);
 				}
 				x+=16;
 				break;

@@ -122,6 +122,7 @@ typedef struct
 	int PathPad_Lock;
 	int JpgView_Timer;
 	int JpgView_Trans;
+	int JpgView_Full;
 	int PSU_HugeNames;
 	int PSU_DateNames;
 	int PSU_NoOverwrite;
@@ -195,7 +196,7 @@ void setBrightness(int Brightness);
 void loadSkin(int Picture, char *Path, int ThumbNum);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, u64 color);
-void drawChar(unsigned char c, int x, int y, u64 colour);
+void drawChar(unsigned int c, int x, int y, u64 colour);
 int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space);
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 u8 *transcpy_sjis(u8 *d, u8 *s);

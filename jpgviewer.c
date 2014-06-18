@@ -473,11 +473,12 @@ void JpgViewer( void )
 	jpg_browser_sel=0;
 	jpg_browser_nfiles=0;
 	old_jpg_browser_sel=0;
-	
+
 	SlideShowTime = setting->JpgView_Timer;
 	SlideShowTrans = setting->JpgView_Trans;
+	FullScreen = setting->JpgView_Full;
 	SlideShowBegin=SlideShowStart=SlideShowStop=SlideShowSkip=0;
-	FullScreen=PicRotate=PrintLen=0;
+	PicRotate=PrintLen=0;
 
 	for(i=0;i<MAX_ENTRY;++i)
 		thumb_test[i]=NOTLOADED;
@@ -622,6 +623,7 @@ end:
 				}
 				setting->JpgView_Timer = SlideShowTime;
 				setting->JpgView_Trans = SlideShowTrans;
+				setting->JpgView_Full = FullScreen;
 				return;
 			} else if(new_pad & PAD_START){
 				if(path[0]!=0){
