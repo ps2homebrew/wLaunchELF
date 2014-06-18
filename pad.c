@@ -56,21 +56,21 @@ int readpad_no_KB(void)
 				paddata_t[port] = 0xffff ^ buttons_t[port].btns;
 				if(++test_joy==2) test_joy=0;
 				if(test_joy){
-					if(buttons_t[port].rjoy_h == 0xff)
+					if(buttons_t[port].rjoy_h >= 0xf0)
 						paddata_t[port]=PAD_R3_H1;
-					else if(buttons_t[port].rjoy_h == 0x00)
+					else if(buttons_t[port].rjoy_h <= 0x0f)
 						paddata_t[port]=PAD_R3_H0;
-					else if(buttons_t[port].rjoy_v == 0x00)
+					else if(buttons_t[port].rjoy_v <= 0x0f)
 						paddata_t[port]=PAD_R3_V0;
-					else if(buttons_t[port].rjoy_v == 0xff)
+					else if(buttons_t[port].rjoy_v >= 0xf0)
 						paddata_t[port]=PAD_R3_V1;
-					else if(buttons_t[port].ljoy_h == 0xff)
+					else if(buttons_t[port].ljoy_h >= 0xf0)
 						paddata_t[port]=PAD_L3_H1;
-					else if(buttons_t[port].ljoy_h == 0x00)
+					else if(buttons_t[port].ljoy_h <= 0x0f)
 						paddata_t[port]=PAD_L3_H0;
-					else if(buttons_t[port].ljoy_v == 0x00)
+					else if(buttons_t[port].ljoy_v <= 0x0f)
 						paddata_t[port]=PAD_L3_V0;
-					else if(buttons_t[port].ljoy_v == 0xff)
+					else if(buttons_t[port].ljoy_v >= 0xf0)
 						paddata_t[port]=PAD_L3_V1;
 				}
 				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];

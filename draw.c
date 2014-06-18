@@ -14,6 +14,10 @@ int				SCREEN_Y			= 50;
 u64       BrightColor;
 //dlanor: values shown above are defaults for NTSC mode
 
+int updateScr_1;     //dlanor: flags screen updates for drawScr()
+int updateScr_2;     //dlanor: used for anti-flicker delay in drawScr()
+int updateScr_t = 0; //dlanor: exit time of last drawScr()
+
 char LastMessage[MAX_TEXT_LINE+2];
 
 int Menu_start_x   = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
@@ -440,7 +444,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.81 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.82 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -502,6 +506,7 @@ void setupGS(int gs_vmode)
 	gsGlobal->StartY = setting->screen_y;
 
 	// Buffer Init
+	gsGlobal->PrimAAEnable = GS_SETTING_ON;
 	gsGlobal->DoubleBuffering = GS_SETTING_OFF;
 	gsGlobal->ZBuffering      = GS_SETTING_OFF;
 
@@ -813,13 +818,19 @@ void clrScr(u64 color)
 //--------------------------------------------------------------
 void drawScr(void)
 {
-	gsKit_sync_flip(gsGlobal);
-	gsKit_queue_exec(gsGlobal);
-}
-
+	if(updateScr_2){            //Did we render anything last time
+		while(Timer() < updateScr_t+5);  //if so, delay to complete rendering
+	}
+	gsKit_sync_flip(gsGlobal);  //Await sync and flip buffers
+	gsKit_queue_exec(gsGlobal); //Start rendering recent transfers for NEXT time
+	updateScr_t = Timer();      //Note the time when the rendering started
+	updateScr_2 = updateScr_1;  //Note if this rendering had expected updates
+	updateScr_1 = 0;            //Note that we've nothing expected for next time
+} //NB: Apparently the GS keeps rendering while we continue with other work
 //--------------------------------------------------------------
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
+	updateScr_1 = 1;
 	gsKit_prim_line(gsGlobal, x1, y1, x2, y1, 1, color);
 	gsKit_prim_line(gsGlobal, x1, y1+1, x2, y1+1, 1, color);
 	
@@ -840,6 +851,7 @@ void drawChar(unsigned char c, int x, int y, u64 colour)
 	unsigned int i, j, ix;
 	unsigned char cc;
 
+	updateScr_1 = 1;
 	if(c < 0x20)       ix=(0x5F-0x20)*8;
 	else if(c >= 0xAA) ix=(0x5F-0x20)*8;
 	else               ix=(c-0x20)*8;
@@ -865,6 +877,7 @@ void drawChar2(int n, int x, int y, u64 colour)
 	unsigned int i, j;
 	u8 b;
 	
+	updateScr_1 = 1;
 	for(i=0; i<8; i++)
 	{
 		b = elisaFnt[n+i];

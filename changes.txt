@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.82 (2006.08.01)
+-Added anti-aliasing flag for gsKit setup (improves all picture quality)
+-Modified screen update methods to eliminate interactive flickering
+-Modified joystick reading to work with 'worn-out' gamepads
+
 LaunchELF v3.81 (2006.07.31)
 -Merged gsKit adaption contributed by Polo
 -Replaced some remnant libito defaults with ones appropriate for gsKit
