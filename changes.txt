@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.39z beta (2009.04.09)
+-Fixed a bug from previous beta v4.39y preventing access to MC folders having a 'hidden' attribute bit set.
+
 LaunchELF v4.39y beta (2009.04.06)
 -Merged in new MCMAN and MCSERV modules by jimmikaelkael
 -Modified FileBrowser to allow renaming of all MC file/folder objects

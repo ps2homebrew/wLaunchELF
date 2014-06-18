@@ -1875,8 +1875,8 @@ int mcman_getdirinfo(int port, int slot, McFsEntry *pfse, char *filename, McCach
 			pfsee += 16;
 		} while (pfsentry < pfseend);
 			
-		ret = 1;
 		if ((fse->mode & sceMcFileAttrHidden) != 0) {
+			ret = 1;
 			if (!PS1CardFlag) {
 				ret = 2;
 				if ((pcd == NULL) || (pcd->maxent < 0))
@@ -1899,8 +1899,8 @@ int mcman_getdirinfo(int port, int slot, McFsEntry *pfse, char *filename, McCach
 				pcd->fsindex = fse->dir_entry;
 			}
 			
-			ret = 1;				
 			if ((fse->mode & sceMcFileAttrHidden) != 0) {
+				ret = 1;
 				if (!PS1CardFlag) {
 					ret = 2;
 					if ((pcd == NULL) || (pcd->maxent < 0))
@@ -1912,6 +1912,7 @@ int mcman_getdirinfo(int port, int slot, McFsEntry *pfse, char *filename, McCach
 				}
 			}
 			else {
+				ret = 1;
 				if ((pcd == NULL) || (pcd->maxent < 0))
 					return sceMcResSucceed;				
 			}	
@@ -1964,8 +1965,10 @@ int mcman_getdirinfo(int port, int slot, McFsEntry *pfse, char *filename, McCach
 continue_check:
 			ret = 1;
 			
-			if ((fse->mode & sceMcFileAttrHidden) != 0)
-				ret = 2;
+			if ((fse->mode & sceMcFileAttrHidden) != 0) {
+				if (!PS1CardFlag)
+					ret = 2;
+			}
 
 			if (pcd == NULL)
 				break;	
@@ -2924,6 +2927,8 @@ int mcman_cachePS1dirs(int port, int slot)
 		r = mcman_readdirentryPS1(port, slot, i, &fs_t[i]);		
 		if (r != sceMcResSucceed)
 			return r;	
+		
+		fs_t[i]->field_38 = fs_t[i]->length; /// <-- Special fix for saves from a real PS1		
 			
 		if (i == 0) {
 			mce[0] = mcman_get1stcacheEntp();
