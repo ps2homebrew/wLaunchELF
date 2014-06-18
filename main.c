@@ -856,11 +856,14 @@ void	ShowFont(void)
 {
 	int	i, j, event, post_event=0;
 	char Hex[18] = "0123456789ABCDEF";
-	int	mat_w = (3+16*2)*FONT_WIDTH+LINE_THICKNESS;
-	int mat_h = (2+9*2)*FONT_HEIGHT+LINE_THICKNESS;
+	int ch_x_stp = 1+FONT_WIDTH+1+LINE_THICKNESS;
+	int ch_y_stp = 2+FONT_HEIGHT+1+LINE_THICKNESS;
+	int	mat_w = LINE_THICKNESS+17*ch_x_stp;
+	int mat_h = LINE_THICKNESS+17*ch_y_stp;
 	int mat_x = (SCREEN_WIDTH-mat_w)/2;
 	int mat_y = (SCREEN_HEIGHT-mat_h)/2;
-	int ch_x  = mat_x+FONT_WIDTH/2+1,   ch_y  = mat_y+FONT_HEIGHT/2+1;
+	int ch_x  = mat_x+LINE_THICKNESS+1;
+	int	ch_y  = mat_y+LINE_THICKNESS+2;
 	int px, ly, cy;
 	u64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
 
@@ -873,39 +876,38 @@ void	ShowFont(void)
 		//Display section
 		if(event||post_event) { //NB: We need to update two frame buffers per event
 			drawOpSprite(col_0, mat_x, mat_y, mat_x+mat_w-1, mat_y+mat_h-1);
-			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w-1, mat_y+LINE_THICKNESS-1);
-			drawOpSprite(col_1, mat_x, mat_y, mat_x+LINE_THICKNESS-1, mat_y+mat_h-1);
-			px=mat_x+3*FONT_WIDTH;
+			//Here the background rectangle has been prepared
+			//Now we start to draw all vertical frame lines
+			px=mat_x;
 			drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);
-			for(j=0; j<16; j++) {
-				px += 2*FONT_WIDTH;
+			for(j=0; j<17; j++) { //for each font column, plus the row_index column
+				px += ch_x_stp;
 				drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);
-			}
+			} //ends for each font column, plus the row_index column
+			//Here all the vertical frame lines have been drawn
+			//Next we draw the top horizontal line
+			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w-1, mat_y+LINE_THICKNESS-1);
 			cy=ch_y;
 			ly=mat_y;
-			for(i=0; i<10; i++) {
+			for(i=0; i<17; i++) { //for each font row
 				px=ch_x;
-				if(!i) {
-					drawChar('-', px, cy, col_3);
-					px += FONT_WIDTH;
-					drawChar('-', px, cy, col_3);
-				} else {
-					drawChar(Hex[i+1], px, cy, col_3);
-					px += FONT_WIDTH;
-					drawChar('0', px, cy, col_3);
+				if(!i) { //if top row (which holds the column indexes)
+					drawChar('\\', px, cy, col_3);     //Display '\' at index crosspoint
+				} else { //else a real font row
+					drawChar(Hex[i-1], px, cy, col_3); //Display row index
 				}
-				for(j=0; j<16; j++) {
-					px += FONT_WIDTH*2;
-					if(!i) {
-						drawChar(Hex[j], px, cy, col_3);
+				for(j=0; j<16; j++) { //for each font column
+					px += ch_x_stp;
+					if(!i) { //if top row (which holds the column indexes)
+						drawChar(Hex[j], px, cy, col_3); //Display Column index
 					} else {
-						drawChar((i+1)*16+j, px, cy, col_3);
+						drawChar((i-1)*16+j, px, cy, col_3); //Display font character
 					}
-				}
-				ly += FONT_HEIGHT*2;
+				} //ends for each font column
+				ly += ch_y_stp;
 				drawOpSprite(col_1, mat_x, ly, mat_x+mat_w-1, ly+LINE_THICKNESS-1);
-				cy += FONT_HEIGHT*2;
-			}
+				cy += ch_y_stp;
+			} //ends for each font row
 		}
 		drawScr();
 		post_event = event;

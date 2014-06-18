@@ -248,7 +248,7 @@ aborted_1:
 	if(strlen(setting->Misc)>0){
 		for(i=0; i<15; i++){	//Loop to rename the ELF paths with new language for launch keys
 			if((i<12) || (setting->LK_Flag[i]!=0)){
-				if(!strncmp(setting->LK_Path[i], setting->Misc, 5)){
+				if(!strncmp(setting->LK_Path[i], setting->Misc, strlen(setting->Misc))){
 					tmp  = strrchr(setting->LK_Path[i], '/');
 					if(!strcmp(tmp+1, setting->Misc_PS2Disc+strlen(setting->Misc)))
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2Disc));

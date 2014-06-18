@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.98 (2006.08.29)
+-Merged additional font characters contributed by Polo. The font now has most national characters for languages using Latin-style alphabets.
+-Modified the 'ShowFont' subprogram to display 256 font characters
+-Fixed a bug that caused LNG switch to be incomplete if the old LNG used a name shorter than 4 characters for the "MISC" pseudo-device
+
 LaunchELF v3.97 (2006.08.28)
 -Increased font resolution from 8x8 to 8x16 (replaced font5200.c with font_uLE.c)
 -Used the new font resolution to improve the symmetry of some characters. As yet this includes "ABEFHPRSUÄÅÖ"
