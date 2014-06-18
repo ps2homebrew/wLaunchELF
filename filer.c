@@ -2988,9 +2988,12 @@ int BrowserModePopup(void)
 				if((file_show==2) && (elisaFnt==NULL) && (elisa_failed==FALSE)){
 					int fd;
 
-					sprintf(tmp, "%s%s", LaunchElfDir, "ELISA100.FNT");
+					fd = uLE_related(tmp, "uLE:/ELISA100.FNT");
 					if(!strncmp(tmp, "cdrom", 5)) strcat(tmp, ";1");
-					fd = genOpen(tmp, O_RDONLY);
+					if(fd==1)
+						fd = genOpen(tmp, O_RDONLY);
+					else
+						fd = -1;
 					if(fd>=0){
 						test = genLseek(fd,0,SEEK_END);
 						if(test==55016){

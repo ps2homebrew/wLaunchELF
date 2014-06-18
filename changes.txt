@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.17 (2008.07.05)
+-Fixed a bug that made some launch links malfunction for 'childsafe' setups
+-Modified loading of ELISA100.FNT to use "uLE:/" (so also found in SYS-CONF/)
+
 LaunchELF v4.16 (2008.06.16)
 -Fixed missing driver inits for cases where uLE is launched from host: with IOP reset ON
 -Fixed a bug causing launch to crash if an elf was launched through a "uLE:/" path when stored in the same folder as the uLE elf on mass: or host:.

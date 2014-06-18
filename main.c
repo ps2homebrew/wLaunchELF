@@ -1781,8 +1781,8 @@ int main(int argc, char *argv[])
 		if(event||post_event){  //NB: We need to update two frame buffers per event
 			if (!(setting->GUI_skin[0]))
 				nElfs = drawMainScreen(); //Display pure text GUI on generic background
-			else if (!setting->Show_Menu) {
-				setLaunchKeys(); //Display only GUI jpg
+			else if (!setting->Show_Menu) { //Display only GUI jpg
+				setLaunchKeys();
 				clrScr(setting->color[0]);
 			}
 			else {
@@ -1846,13 +1846,14 @@ int main(int argc, char *argv[])
 					mode=BUTTON;
 				}else if((swapKeys && new_pad & PAD_CROSS)
 				      || (!swapKeys && new_pad & PAD_CIRCLE) ){
-					if(maxCNF > 1 && selected==nElfs-1){
+					i=nElfs-1;
+					if(!setting->LK_Flag[14] && maxCNF > 1 && selected==i--){
 						mode=BUTTON;
 						incConfig();
-					}else if(maxCNF > 1 && selected==nElfs-2){
+					}else if(!setting->LK_Flag[13] && maxCNF > 1 && selected==i--){
 						mode=BUTTON;
 						decConfig();
-					}else if((maxCNF > 1 && selected==nElfs-3) || (selected==nElfs-1)){
+					}else if(!setting->LK_Flag[12] && maxCNF > 1 && selected==i){
 						mode=BUTTON;
 						if (setting->GUI_skin[0]) {
 							GUI_active = 0;
