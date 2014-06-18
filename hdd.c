@@ -441,9 +441,9 @@ int MenuParty(PARTYINFO Info)
 int CreateParty(char *party, int size)
 {
 	int  i, num=1, ret=0;
-	int  remSize = size-2048;
+//	int  remSize = size-2048;
 	char tmpName[MAX_ENTRY];	
-	t_hddFilesystem hddFs[MAX_PARTITIONS];
+//	t_hddFilesystem hddFs[MAX_PARTITIONS];
 
 	drawMsg(LNG(Creating_New_Partition));
 
@@ -456,16 +456,16 @@ int CreateParty(char *party, int size)
 		}
 	}
 	strcpy(party, tmpName);
-	if(remSize <= 0)
+/*	if(remSize <= 0)*/
 		ret = hddMakeFilesystem(size, party, O_RDWR | O_CREAT);
-	else{
+/*	else{
 		ret = hddMakeFilesystem(2048, party, O_RDWR | O_CREAT);
 		hddGetFilesystemList(hddFs, MAX_PARTITIONS);
 		for(i=0; i<MAX_PARTITIONS; i++){
-			if(!strcmp(hddFs[i].name, party))
+			if(!strcmp(hddFs[i].filename+5, party))
 				ret = hddExpandFilesystem(&hddFs[i], remSize);
 		}
-	}
+	}*/
 
 	if(ret>0){
 		GetHddInfo();
@@ -627,18 +627,20 @@ end1:
 int ExpandParty(PARTYINFO Info, int size)
 {
 	int i, ret=0;
-	char tmpName[MAX_ENTRY];
+	char tmpName[MAX_ENTRY+5];
+	char tmpName2[MAX_ENTRY+5];
 	t_hddFilesystem hddFs[MAX_PARTITIONS];
 	
 	drawMsg(LNG(Expanding_Current_Partition));
 	//printf("Expand Partition: %d\n", Info.Count);
 
-	strcpy(tmpName, Info.Name);
+	sprintf(tmpName, "hdd0:%s", Info.Name);
 
 	hddGetFilesystemList(hddFs, MAX_PARTITIONS);
 	for(i=0; i<MAX_PARTITIONS; i++){
-		if(!strcmp(hddFs[i].name, tmpName))
+		if(!strcmp(hddFs[i].filename, tmpName)){
 			ret = hddExpandFilesystem(&hddFs[i], size);
+		}
 	}
 
 	if(ret>0){
