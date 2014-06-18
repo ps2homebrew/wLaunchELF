@@ -33,6 +33,7 @@ enum
 	CANCEL
 };
 
+char PathPad[30][MAX_PATH];
 SETTING *setting = NULL;
 SETTING *tmpsetting;
 //---------------------------------------------------------------------------
@@ -104,8 +105,8 @@ int CheckMC(void)
 //---------------------------------------------------------------------------
 void saveConfig(char *mainMsg, char *CNF)
 {
-	int ret, fd;
-	char c[MAX_PATH], tmp[26*MAX_PATH];
+	int i, ret, fd;
+	char c[MAX_PATH], tmp[26*MAX_PATH + 30*MAX_PATH];
 	size_t CNF_size, CNF_step;
 
 	CNF_size = 0;
@@ -188,6 +189,18 @@ void saveConfig(char *mainMsg, char *CNF)
   );
 	CNF_size += CNF_step;
 
+	for(i=0; i<30; i++){
+		if(PathPad[i][0]!=0){
+			sprintf(tmp+CNF_size,
+				"PathPad[%02d] = %s\r\n"
+				"%n",           // %n causes NO output, but only a measurement
+				i, PathPad[i],
+				&CNF_step       // This variable measure the size of sprintf data
+		  );
+			CNF_size += CNF_step;
+		}//ends if
+	}//ends for
+
 	strcpy(c, LaunchElfDir);
 	strcat(c, CNF);
 	if((fd=fioOpen(c, O_RDONLY)) >= 0)
@@ -248,6 +261,8 @@ void loadConfig(char *mainMsg, char *CNF)
 
 	for(i=0; i<12; i++)
 		setting->dirElf[i][0] = '\0';
+	for(i=0; i<30; i++)
+		PathPad[i][0] = '\0';
 	strcpy(setting->dirElf[1], "MISC/FileBrowser");
 	setting->usbd[0] = '\0';
 	setting->skin[0] = '\0';
@@ -354,6 +369,13 @@ failed_load:
 		else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
 		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
 		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
+		else if(!strncmp(name,"PathPad[",8)){
+			i = atoi(name+8);
+			if(i < 30){
+				strncpy(PathPad[i], value, MAX_PATH-1);
+				PathPad[i][MAX_PATH-1] = '\0';
+			}
+		}
 	}
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);

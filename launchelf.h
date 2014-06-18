@@ -144,6 +144,7 @@ void waitPadReady(int port, int slot);
 #define TV_mode_NTSC 1
 #define TV_mode_PAL  2
 
+extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;
 void loadConfig(char *, char *);
 void config(char *, char *);

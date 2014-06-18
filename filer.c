@@ -759,7 +759,8 @@ int menu(const char *path, const char *file)
 					sel++;
 					if(sel==NUM_MENU) sel=0;
 				}while(!enable[sel]);
-			}else if((!swapKeys && new_pad & PAD_CROSS)
+			}else if((new_pad & PAD_TRIANGLE)
+						|| (!swapKeys && new_pad & PAD_CROSS)
 			      || (swapKeys && new_pad & PAD_CIRCLE) ){
 				return -1;
 			}else if((swapKeys && new_pad & PAD_CROSS)
@@ -803,9 +804,9 @@ int menu(const char *path, const char *file)
 				0, (y/2),
 				SCREEN_WIDTH, y/2+10);
 			if (swapKeys)
-				printXY("Å~:OK Åõ:Cancel", x, y/2, setting->color[2], TRUE);
+				printXY("Å~:OK Åõ:Cancel Å¢:Back", x, y/2, setting->color[2], TRUE);
 			else
-				printXY("Åõ:OK Å~:Cancel", x, y/2, setting->color[2], TRUE);
+				printXY("Åõ:OK Å~:Cancel Å¢:Back", x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -813,6 +814,107 @@ int menu(const char *path, const char *file)
 	}//ends while
 	return sel;
 }//ends menu
+//--------------------------------------------------------------
+char *PathPad_menu(const char *path)
+{
+	uint64 color;
+	int x, y, dx, dy, dw, dh;
+	int a=6, b=4, c=2, tw, th;
+	int i, sel_x, sel_y;
+	int event, post_event=0;
+	char textrow[80];
+
+	th = 10*FONT_HEIGHT; //Height in pixels of text area
+	tw = 68*FONT_WIDTH;  //Width in pixels of max text row
+	dh = th+2*2+a+b+c; //Height in pixels of entire frame
+	dw = tw+2*2+a*2;     //Width in pixels of entire frame
+	dx = (SCREEN_WIDTH-dw)/2;  //X position of frame (centred)
+	dy = (SCREEN_HEIGHT-dh)/2; //Y position of frame (centred)
+	
+	sel_x=0; sel_y=0;
+	event = 1;  //event = initial entry
+	while(1){
+		//Pad response section
+		waitPadReady(0, 0);
+		if(readpad()){
+			if(new_pad){
+				event |= 2;  //event |= valid pad command
+				if(new_pad & PAD_UP){
+					sel_y--;
+					if(sel_y<0)
+						sel_y=9;
+				}else if(new_pad & PAD_DOWN){
+					sel_y++;
+					if(sel_y>9)
+						sel_y=0;
+				}else if(new_pad & PAD_LEFT){
+					sel_y -= 5;
+					if(sel_y<0)
+						sel_y=0;
+				}else if(new_pad & PAD_RIGHT){
+					sel_y += 5;
+					if(sel_y>9)
+						sel_y=9;
+				}else if(new_pad & PAD_L1){
+					sel_x--;
+					if(sel_x<0)
+						sel_x=2;
+				}else if(new_pad & PAD_R1){
+					sel_x++;
+					if(sel_x>2)
+						sel_x=0;
+				}else if(new_pad & PAD_TRIANGLE){ //Pushed 'Back'
+					return NULL;
+				}else if((!swapKeys && new_pad & PAD_CROSS)
+				      || (swapKeys && new_pad & PAD_CIRCLE) ){//Pushed 'Clear'
+					PathPad[sel_x*10+sel_y][0] = '\0';
+				}else if((swapKeys && new_pad & PAD_CROSS)
+				      || (!swapKeys && new_pad & PAD_CIRCLE) ){//Pushed 'Use'
+					return PathPad[sel_x*10+sel_y];
+				}else if(new_pad & PAD_SQUARE){//Pushed 'Store'
+					strncpy(PathPad[sel_x*10+sel_y], path, MAX_PATH-1);
+					PathPad[sel_x*10+sel_y][MAX_PATH-1]='\0';
+				}
+			}//ends 'if(new_pad)'
+		}//ends 'if(readpad())'
+
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawSprite(setting->color[0],
+				0, (Menu_message_y)/2,
+				SCREEN_WIDTH, (Frame_start_y)/2);
+			drawPopSprite(setting->color[0],
+				dx, dy/2,
+				dx+dw, (dy+dh)/2);
+			drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+			for(i=0; i<10; i++){
+				if(i==sel_y)
+					color=setting->color[2];
+				else
+					color=setting->color[3];
+				sprintf(textrow, "%02d=", (sel_x*10+i));
+				strncat(textrow, PathPad[sel_x*10+i], 64);
+				textrow[67] = '\0';
+				printXY(textrow, dx+2+a,(dy+a+2+i*FONT_HEIGHT)/2, color,TRUE);
+			}
+
+			//Tooltip section
+			x = SCREEN_MARGIN;
+			y = Menu_tooltip_y;
+			drawSprite(setting->color[0],
+				0, (y/2),
+				SCREEN_WIDTH, y/2+10);
+			if (swapKeys)
+				printXY("Å~:Use Åõ:Clear Å†:Set Å¢:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
+			else
+				printXY("Åõ:Use Å~:Clear Å†:Set Å¢:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	}//ends while
+}//ends PathPad_menu
 //--------------------------------------------------------------
 size_t getFileSize(const char *path, const FILEINFO *file)
 {
@@ -1628,7 +1730,7 @@ void getFilePath(char *out, int cnfmode)
 			else if(new_pad & PAD_TRIANGLE)
 				browser_up=TRUE;
 			else if((swapKeys && new_pad & PAD_CROSS)
-			     || (!swapKeys && new_pad & PAD_CIRCLE) ){
+			     || (!swapKeys && new_pad & PAD_CIRCLE) ){ //Pushed OK
 				if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
 					//pushed OK for a folder
 					if(!strcmp(files[browser_sel].name,".."))
@@ -1651,6 +1753,13 @@ void getFilePath(char *out, int cnfmode)
 						break;
 					}
 				}
+			}else if(new_pad & PAD_R2){
+				char *temp = PathPad_menu(path);
+
+				if(temp != NULL){
+					strcpy(path, temp);
+					browser_cd=TRUE;
+				}
 			}
 			if(cnfmode){
 				if(new_pad & PAD_SQUARE) {
@@ -1670,7 +1779,7 @@ void getFilePath(char *out, int cnfmode)
 					if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
 					return;
 				}
-			}else{
+			}else{ //cnfmode == FALSE
 				if(new_pad & PAD_R1) {
 					ret = menu(path, files[browser_sel].name);
 					if(ret==COPY || ret==CUT){
@@ -1818,7 +1927,7 @@ void getFilePath(char *out, int cnfmode)
 				path[0] = 0;
 			}
 			browser_cd=TRUE;
-		}
+		}//ends 'if(browser_up)'
 		//----- Process newly entered directory here (incl initial entry)
 		if(browser_cd){
 			browser_nfiles = setFileList(path, ext, files, cnfmode);
@@ -1909,50 +2018,50 @@ void getFilePath(char *out, int cnfmode)
 			if(cnfmode==TRUE){
 				if(!strcmp(ext, "*")) {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->ELF");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->ELF R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->ELF");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->ELF R2:PathPad");
 				} else {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:ELF->*");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:ELF->* R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:ELF->*");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:ELF->* R2:PathPad");
 				}
 			}else if(cnfmode==USBD_IRX_CNF){
 				if(!strcmp(ext, "*")) {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->IRX");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->IRX R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->IRX");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->IRX R2:PathPad");
 				} else {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:IRX->*");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:IRX->* R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:IRX->*");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:IRX->* R2:PathPad");
 				}
 			}else if(cnfmode==SKIN_CNF){
 				if(!strcmp(ext, "*")) {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->JPG");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->JPG R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->JPG");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->JPG R2:PathPad");
 				} else {
 					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:JPG->*");
+						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:JPG->* R2:PathPad");
 					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:JPG->*");
+						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:JPG->* R2:PathPad");
 				}
 	 		}else{
 				if(title_show) {
 					if (swapKeys) 
-						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu");
+						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
 					else
-						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu");
+						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
 				} else {
 					if (swapKeys) 
-						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleON  R1:Menu");
+						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
 					else
-						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleON  R1:Menu");
+						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
 				}
 			}
 			setScrTmp(msg0, msg1);

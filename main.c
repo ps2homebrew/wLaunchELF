@@ -594,8 +594,8 @@ int ReadCNF(char *direlf)
 	int n;
 	int i;
 	
-	/*
 	loadCdModules();
+	/*
 	CDVD_FlushCache();
 	CDVD_DiskReady(0);
 	*/
@@ -709,8 +709,15 @@ void RunElf(const char *path)
 		if(tmp[0]) RunElf(tmp);
 		else return;
 	}else if(!stricmp(path, "MISC/PS2Browser")){
-		party[0]=0;
-		strcpy(fullpath,"rom0:OSDSYS");
+		__asm__ __volatile__(
+			"	li $3, 0x04;"
+			"	syscall;"
+			"	nop;"
+		);
+		//The method above is borrowed from PS2MP3. It's independent of ELF loader
+		//The method below was used earlier, but causes reset with new ELF loader
+		//party[0]=0;
+		//strcpy(fullpath,"rom0:OSDSYS");
 	}else if(!stricmp(path, "MISC/PS2Net")){
 		mainMsg[0] = 0;
 		loadNetModules();
