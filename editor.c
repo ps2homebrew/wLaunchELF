@@ -1220,7 +1220,8 @@ void Save_As(int Win)
 		strcpy(oldPath, Path[Win]);
 		Path[Win][0]='\0';
 		p=strrchr(oldPath, '/');
-		strcpy(tmp, p+1);
+		if(p)
+			strcpy(tmp, p+1);
 	}
 
 	getFilePath(Path[Win], DIR_CNF);
@@ -1231,10 +1232,12 @@ void Save_As(int Win)
 
 	drawMsg(LNG(Enter_File_Name));
 
-	if(keyboard(tmp, 36)>0)
-		strcat(Path[Win], tmp);
-	else
-		goto abort;
+	if(keyboard(tmp, 36)>0){
+		//strcat(Path[Win], tmp); //This is what we want, but malfunctions for MC!
+		//sprintf(&Path[Win][strlen(Path[Win])], "%s", tmp); //This always works
+		strcpy(&Path[Win][strlen(Path[Win])], tmp); //And this one works too
+		//Note that the strcat call SHOULD have done the same thing, but won't.
+	} else goto abort;
 
 	genFixPath(Path[Win], filePath);
 
@@ -1247,23 +1250,25 @@ void Save_As(int Win)
 			genWrite(fd, TextBuffer[Win], TextSize[Win]);
 		Window[Win][CREATED]=0, Window[Win][OPENED]=1, Window[Win][SAVED]=1;
 		ret=1;
+		genClose( fd );
 	}
-	
-	genClose( fd );
+
 	if(!strncmp(filePath, "pfs", 3))
 		unmountParty(filePath[3]-'0');
 
 	if(ret){
 		drawMsg(LNG(File_Saved));
-	}else{
-abort:
-		if(oldPath[0]!='\0')
-			strcpy(Path[Win], oldPath);
-		drawMsg(LNG(Failed_Saving_File));
+		goto result_delay;
 	}
 
+abort:
+	if(oldPath[0]!='\0')
+		strcpy(Path[Win], oldPath);
+	drawMsg(LNG(Failed_Saving_File));
+
+result_delay:
 	WaitTime=Timer();
-	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
+	while(Timer()<WaitTime+1500); // display operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
 void TextEditor(void)

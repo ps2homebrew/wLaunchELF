@@ -3810,7 +3810,7 @@ int getFilePath(char *out, int cnfmode)
 					if(!size_valid) size = 0;
 					if(!time_valid) memset((void *) &timestamp, 0, sizeof(timestamp));
 
-					if(!size_valid)
+					if(!size_valid || !(top+i))
 						strcpy(tmp, "----- B");
 					else {
 						while(size > 99999){
@@ -3820,7 +3820,7 @@ int getFilePath(char *out, int cnfmode)
 						sprintf(tmp, "%5u%cB", size, scale_s[scale]);
 					}
 
-					if(!time_valid)
+					if(!time_valid || !(top+i))
 						strcat(tmp, " ----.--.-- --:--:--");
 					else {
 						sprintf(tmp+strlen(tmp), " %04d.%02d.%02d %02d:%02d:%02d", 

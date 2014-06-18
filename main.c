@@ -2013,12 +2013,14 @@ int main(int argc, char *argv[])
 	}
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
 	getIpConfig();
-	setupPad(); //Comment out this line when using early setupPad above
 	initsbv_patches();
 
 	if(setting->discControl)
 		loadCdModules();
 
+	TimerInit();
+	WaitTime=Timer();
+	setupPad(); //Comment out this line when using early setupPad above
 	startKbd();
 	TimerInit();
 	WaitTime=Timer();

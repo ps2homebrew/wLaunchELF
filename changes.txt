@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.39aa beta (2009.08.24)
+-Fixed a weird 'strcat' bug that used to break TextEditor 'Save As...' pathname
+-Suppressed FileBrowser display of garbage filesize + timestamps for ".." links
+-Rearranged init of pad & CDVD modules to avoid problem detecting pad mode
+-NB: The above fixes an old problem with pad running amok with disc-control ON
+
 LaunchELF v4.39z beta (2009.04.09)
 -Fixed a bug from previous beta v4.39y preventing access to MC folders having a 'hidden' attribute bit set.
 

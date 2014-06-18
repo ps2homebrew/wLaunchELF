@@ -103,8 +103,9 @@ int readpad_no_KB(void)
 			}
 		}else{
 			//Deal with cases where pad state is not valid for padRead
+			//NB: This should NOT clear KB repeat test variables
 			new_pad_t[port]=0;
-			old_pad_t[port]=0;
+			//old_pad_t[port]=0; //Clearing this could cause hasty repeats
 		}  //ends 'if' testing for state valid for padRead
 	}  //ends for
 	new_pad = new_pad_t[0]|new_pad_t[1];
