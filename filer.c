@@ -222,13 +222,36 @@ return_i:
 //--------------------------------------------------------------
 void unmountParty(int party_ix)
 {
-	char party_str[6];
+	char pfs_str[6];
 
-	strcpy(party_str, "pfs0:");
-	party_str[3] += party_ix;
-	fileXioUmount(party_str);
+	strcpy(pfs_str, "pfs0:");
+	pfs_str[3] += party_ix;
+	fileXioUmount(pfs_str);
 	if(party_ix < MOUNT_LIMIT)
 		mountedParty[party_ix][0] = 0;
+	if(latestMount==party_ix)
+		latestMount=-1;
+}
+//--------------------------------------------------------------
+// unmountAll can unmount all mountpoints from 0 to MOUNT_LIMIT,
+// but unlike the individual unmountParty, it will only do so
+// for mountpoints indicated as used by the matching string in
+// the string array 'mountedParty'.
+//------------------------------
+void unmountAll(void)
+{
+	char pfs_str[6];
+	int i;
+
+	strcpy(pfs_str, "pfs0:");
+	for(i=0; i<MOUNT_LIMIT; i++){
+		if(mountedParty[i][0]!=0){
+			pfs_str[3] = '0'+i;
+			fileXioUmount(pfs_str);
+			mountedParty[i][0] = 0;
+		}
+	}
+	latestMount = -1;
 }
 //--------------------------------------------------------------
 int ynDialog(const char *message)
@@ -962,7 +985,7 @@ int getDir(const char *path, FILEINFO *info)
 // on a PS1 MC, or similar saves backed up to a PS2 MC. Two new
 // methods need to be used to extract such titles correctly, and
 // these were added in v3.62, by me (dlanor).
-// From v3.91 This routine also extracts titles for PSU files.
+// From v3.91 This routine also extracts titles from PSU files.
 //--------------------------------------------------------------
 int getGameTitle(const char *path, const FILEINFO *file, char *out)
 {
@@ -1549,9 +1572,8 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	psu_header PSU_head;
 	mcT_header *mcT_head_p = (mcT_header *) &file.stats;
 	mcT_header *mcT_files_p = (mcT_header *) &files[0].stats;
-	int psu_pad_size = 0;
-	int PSU_restart_f = 0;
-	char *cp;
+	int psu_pad_size = 0, PSU_restart_f = 0;
+	char *cp, *np;
 
 	PM_flag[recurses+1] = PM_NORMAL;  //at first assume normal mode for next level
 	PM_file[recurses+1] = -1;         //also assume that no special file is needed
@@ -1589,17 +1611,42 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 			if(out[i]=='/')
 				out[i] = 0;
 			strcpy(tmp, out);
-			cp = tmp+strlen(tmp)-strlen(file.name); //set cp pointing to the pure filename
+			np = tmp+strlen(tmp)-strlen(file.name); //np = start of the pure filename
+			cp = tmp+strlen(tmp);                   //cp = end of the pure filename
+			if(!setting->PSU_HugeNames)
+				cp = np;                              //cp = start of the pure filename
 
-			if(title_show && file.title[0])
+			if(title_show || setting->PSU_HugeNames){ //at request, use game title
+				ret = getGameTitle(inPath, &file, file.title);
+				if((ret == 0) && file.title[0] && setting->PSU_HugeNames){
+					*cp++ = '_';
+					*cp = '\0';
+				}
 				transcpy_sjis(cp, file.title);
-
-			for(i=0; cp[i];) {
-				i = strcspn(cp, "\"\\/:*?<>|");	//Filter out illegal name characters
-				if(cp[i])
-					cp[i] = '_';
 			}
-			strcat(tmp, ".psu");
+			//Here game title has been used for the name if requested, either alone
+			//or combined with the original folder name (for PSU_HugeNames)
+
+			if(np[0] == 0)						//If name is now empty (bad gamesave title)
+				strcpy(np, file.name);  //revert to normal folder name
+
+			for(i=0; np[i];) {
+				i = strcspn(np, "\"\\/:*?<>|");	//Filter out illegal name characters
+				if(np[i])
+					np[i] = '_';
+			}
+			//Here illegal characters, from either title or original folder name
+			//have been filtered out (replaced by underscore) to ensure compatibility
+
+			cp = tmp+strlen(tmp); //set cp pointing to the end of the filename
+			if(setting->PSU_DateNames){ //at request, append modification timestamp string
+				sprintf(cp, "_%04d-%02d-%02d_%02d-%02d-%02d",
+					mcT_head_p->mTime.year, mcT_head_p->mTime.month, mcT_head_p->mTime.day,
+					mcT_head_p->mTime.hour, mcT_head_p->mTime.min, mcT_head_p->mTime.sec);
+			}
+			//Here a timestamp has been added to the name if requested by PSU_DateNames
+
+			strcat(tmp, ".psu");	//add the PSU file extension
 
 			if	(!strncmp(tmp, "host:/", 6))
 				makeHostPath(tmp+5, tmp+6);
@@ -1637,12 +1684,29 @@ PSU_error:
 		} else { //any other PasteMode than PM_PSU_BACKUP
 			ret = newdir(outPath, file.name);
 			if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
-				ret=-1;
 				//if(title_show) ret=getGameTitle(outPath, &file, tmp);
 				//if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
-				sprintf(tmp, "%s%s/", outPath, file.name);
-				strcat(tmp, "\nOverwrite?");
-				if(ynDialog(tmp)<0) return -1;
+				ret = getGameTitle(outPath, &file, file.title);
+				transcpy_sjis(tmp, file.title);
+				sprintf(progress,
+					"Name conflict for this folder:\n"
+					"%s%s/\n"
+					"\n"
+					"With gamesave title:\n", outPath, file.name);
+				if(tmp[0])
+					strcat(progress, tmp);
+				else
+					strcat(progress, "Undefined (Not a gamesave)");
+				strcat(progress, "\n\nDo you wish to overwrite it ?");
+				if(ynDialog(progress)<0) return -1;
+				if(	(PasteMode == PM_MC_BACKUP)
+				||	(PasteMode == PM_MC_RESTORE)
+				||	(PasteMode == PM_PSU_RESTORE)
+				) {
+					ret = delete(outPath, &file);  //Attempt recursive delete
+					if(ret < 0) return -1;
+					if(newdir(outPath, file.name) < 0) return -1;
+				}
 				drawMsg("Pasting...");
 			} else if(ret < 0){
 				return -1;  //return error for failure to create destination folder
@@ -2700,11 +2764,8 @@ void getFilePath(char *out, int cnfmode)
 					else				 strcpy(ext, "*");
 					browser_cd=TRUE;
 				}else if((!swapKeys && new_pad & PAD_CROSS)
-				      || (swapKeys && new_pad & PAD_CIRCLE) ){
-					if(mountedParty[0][0]!=0){
-						fileXioUmount("pfs0:");
-						mountedParty[0][0]=0;
-					}
+				      || (swapKeys && new_pad & PAD_CIRCLE) ){ //Cancel command given ?
+					unmountAll();
 					return;
 				}
 			}else{ //cnfmode == FALSE
@@ -2844,15 +2905,8 @@ void getFilePath(char *out, int cnfmode)
 							nofnt = TRUE;
 					}
 					browser_cd=TRUE;
-				} else if(new_pad & PAD_SELECT){
-					if(mountedParty[0][0]!=0){
-						fileXioUmount("pfs0:");
-						mountedParty[0][0]=0;
-					}
-					if(mountedParty[1][0]!=0){
-						fileXioUmount("pfs1:");
-						mountedParty[1][0]=0;
-					}
+				} else if(new_pad & PAD_SELECT){  //Leaving the browser ?
+					unmountAll();
 					return;
 				}
 			}
@@ -2884,8 +2938,12 @@ void getFilePath(char *out, int cnfmode)
 					vfreeSpace=TRUE;
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
 					s64 ZoneFree, ZoneSize;
-					ZoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
-					ZoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+					char pfs_str[6];
+
+					strcpy(pfs_str, "pfs0:");
+					pfs_str[3] += latestMount;
+					ZoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+					ZoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
 					//printf("ZoneFree==%d  ZoneSize==%d\r\n", ZoneFree, ZoneSize);
 					freeSpace = ZoneFree*ZoneSize;
 					vfreeSpace=TRUE;
@@ -3039,14 +3097,8 @@ void getFilePath(char *out, int cnfmode)
 		event = 0;
 	}//ends while
 	
-	if(mountedParty[0][0]!=0){
-		fileXioUmount("pfs0:");
-		mountedParty[0][0]=0;
-	}
-	if(mountedParty[1][0]!=0){
-		fileXioUmount("pfs1:");
-		mountedParty[1][0]=0;
-	}
+	//Leaving the browser
+	unmountAll();
 	return;
 }
 //------------------------------
@@ -3172,14 +3224,7 @@ void subfunc_Paste(char *mess, char *path)
 		}
 	}
 
-	if(mountedParty[0][0]!=0){
-		fileXioUmount("pfs0:");
-		mountedParty[0][0]=0;
-	}
-	if(mountedParty[1][0]!=0){
-		fileXioUmount("pfs1:");
-		mountedParty[1][0]=0;
-	}
+	unmountAll();
 
 finished:
 	if(ret < 0){

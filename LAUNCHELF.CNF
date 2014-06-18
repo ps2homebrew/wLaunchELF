@@ -247,6 +247,18 @@ USBMASS_FILE =
 JpgView_Timer = 5
 JpgView_Trans = 2
 # ----------------------------------------------------------------------
+# From v3.92 Two options for PSU gamesave files are saved here.
+# Set PSU_HugeNames non-zero to make PSU names contain both original
+# gamesave folder names and the gamesave titles (from icon.sys).
+# Set PSU_DateNames non-zero to make PSU names contain a timestamp from
+# the original save data, appended to the normal name.
+# Both options can be set simultaneously, for very detailed names, like:
+# "BESLES-5245800_Disgaea(1) Ep.1 LV1_2006-07-23_14-46-33.psu"
+# As yet they are not available in config menus. Use TextEditor instead.
+# ----------------------------------------------------------------------
+PSU_HugeNames = 0
+PSU_DateNames = 0
+# ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them
 # to define your own titles that will be used instead of ELF names in

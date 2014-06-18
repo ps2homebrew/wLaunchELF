@@ -95,7 +95,9 @@ void GetHddInfo(void)
 	char tmp[MAX_PATH];
 	char dbgtmp[MAX_PATH];
 	s64  zoneFree, zoneSize;
+	char pfs_str[6];
 
+	strcpy(pfs_str, "pfs0:");
 	hddSize=0, hddFree=0, hddFreeSpace=0, hddUsed=0;
 	hddConnected=0, hddFormated=0;
 	numParty=0;
@@ -179,8 +181,9 @@ void GetHddInfo(void)
 				fileXioClose(partitionFd);
 	
 				mountParty(tmp);
-				zoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
-				zoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+				pfs_str[3] = '0'+latestMount;
+				zoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+				zoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
 				PartyInfo[numParty].FreeSize  = zoneFree*zoneSize / MB;
 				PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
 		
@@ -559,6 +562,7 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	int  i, fd, num=1, ret=0;
 	char tmpName[MAX_ENTRY];
+	char tmpPath[MAX_PATH];
 
 	drawMsg("Renaming Game...");
 
@@ -581,10 +585,12 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	if(ret==0){
 		strcpy(PartyInfo[Info.Count].Game.Name, newName);
-		if(mountParty("hdd0:HDLoader Settings")==0){
-			if((fd=genOpen("pfs0:/gamelist.log", O_RDONLY)) >= 0){
+		if(mountParty("hdd0:HDLoader Settings")>=0){
+			strcpy(tmpPath, "pfs0:/gamelist.log");
+			tmpPath[3] += latestMount;
+			if((fd=genOpen(tmpPath, O_RDONLY)) >= 0){
 				genClose(fd);
-				if(fileXioRemove("pfs0:/gamelist.log")!=0)
+				if(fileXioRemove(tmpPath)!=0)
 					ret=0;
 			}
 		}

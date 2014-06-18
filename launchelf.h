@@ -105,6 +105,8 @@ typedef struct
 	int PathPad_Lock;
 	int JpgView_Timer;
 	int JpgView_Trans;
+	int PSU_HugeNames;
+	int PSU_DateNames;
 } SETTING;
 
 typedef struct

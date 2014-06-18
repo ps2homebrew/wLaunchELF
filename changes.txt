@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.92 (2006.08.15)
+-Fixed a new bug (v3.88) that interfered with free space calculations for HDD
+-Improved PSU title naming, so it works even if title mode was activated after 'Copy'
+-Improved confirmation dialog for folder overwrite, to include gamesave title (if any)
+-Modified folder overwrite for 'mcPaste' and 'psuPaste', to remove old folder before pasting. This is to avoid combining contents of differing gamesaves with identical names. Normal 'Paste' does not delete old folders at overwrite, so such pasting will combine files. This means that any file unique to either source or destination will exist in the destination after pasting. For normal folders that is appropriate, though it's not for gamesaves
+-Added CNF option PSU_HugeNames to make PSU names combining original folder name with the gamesave title, like in this example: "BESLES-5245800_Disgaea(1) Ep.1 LV1.psu"
+-Added CNF option PSU_DateNames to make PSU names with an appended timestamp, taken from the original gamesave data as in this example: "Disgaea(1) Ep.1 LV1_2006-07-23_14-46-33.psu". Naturally the two new options can be used in combination as well.
+NB: As yet these two new options are not in any config menu. Use TextEditor instead.
+
 LaunchELF v3.91 (2006.08.14)
 -Corrected PSU name filter which was incorrect for HDD destinations
 -Implemented title display mode for PSU files (using icon.sys stored in each file)
