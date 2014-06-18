@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.42a (2010.07.11)
+-Added subprogram MISC/OSDSYS to launch MC-based OSDSYS kelf (as used for FMCB). For most cases the default path should work with standard FMCB installations, but it is also possible to configure a user-defined path for it, so as to experiment with multiple such kelf files on the same MC.
+
 LaunchELF v4.42 (2010.06.12)
 -Added kernel patcher and kernel patch as designed by jimmikaelkael to make v0 japanese consoles compatible with newer models in use of homebrews. This cures v0 problems for many other applications too (including ESR) as the kernel remains patched for the duration of a session (until next hard reset/power on). This patching is compatible with that to be added into new versions of "Open PS2 Loader" too, and includes conflict protection when multiple patchers are used. This change has no effect at all on newer consoles, but was required to make it possible to keep the homebrew MC modules in future versions of uLE, and still retain uLE compatibility to all PS2 models.
 

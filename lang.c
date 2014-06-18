@@ -299,6 +299,8 @@ aborted_1:
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Debug_Info));
 					else if(!strcmp(tmp+1, setting->Misc_About_uLE+strlen(setting->Misc)))
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(About_uLE));
+					else if(!strcmp(tmp+1, setting->Misc_OSDSYS+strlen(setting->Misc)))
+						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(OSDSYS));
 				} // end if Misc
 			} // end if LK assigned
 		} // end for
@@ -321,6 +323,7 @@ aborted_1:
 	sprintf(setting->Misc_ShowFont     , "%s/%s", LNG(MISC), LNG(ShowFont));
 	sprintf(setting->Misc_Debug_Info   , "%s/%s", LNG(MISC), LNG(Debug_Info));
 	sprintf(setting->Misc_About_uLE    , "%s/%s", LNG(MISC), LNG(About_uLE));
+	sprintf(setting->Misc_OSDSYS    , "%s/%s", LNG(MISC), LNG(OSDSYS));
 
 }
 //Ends Load_External_Language

@@ -3109,6 +3109,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, LNG(About_uLE));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, LNG(OSDSYS));
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		for(i=0; i<nfiles; i++)
 			files[i].title[0]=0;
 		//-- End case for MISC command pseudo folder with function links --

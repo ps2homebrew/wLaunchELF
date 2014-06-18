@@ -182,8 +182,11 @@ char SystemCnf_VER[10];   //Arbitrary. Real value should always be shorter
 char SystemCnf_VMODE[10]; //Arbitrary, same deal. As yet unused
 
 char default_ESR_path[] = "mc:/BOOT/ESR.ELF";
+char default_OSDSYS_path[] = "mc:/B?EXEC-SYSTEM/osdmain.elf";
 
 char ROMVER_data[20]; 	//16 byte file read from rom0:ROMVER at init
+char rough_region;			//E==Europe, A==US,  I==Japan
+
 CdvdDiscType_t cdmode;      //Last detected disc type
 CdvdDiscType_t old_cdmode;  //used for disc change detection
 CdvdDiscType_t uLE_cdmode;  //used for smart disc detection
@@ -1691,6 +1694,40 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 		makeHostPath(fullpath, fullpath);
 		goto CheckELF_fullpath;
 
+	}else if(!stricmp(path, setting->Misc_OSDSYS)){
+		char arg0[20], arg1[20], arg2[20], arg3[40];
+		char *args[4] = {arg0, arg1, arg2, arg3};
+		char kelf_loader[40];
+		int fd, argc;
+
+		if(setting->LK_Flag[16] && setting->LK_Path[16][0])
+			strcpy(path, setting->LK_Path[16]);
+		else
+			strcpy(path, default_OSDSYS_path);
+
+
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		if(strncmp(path, "mc:", 3) != 0) goto ELFnotFound;
+		strcpy(fullpath, path);
+		path[2] = '0';
+		strcpy(path+3, fullpath+2);
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		path[2] = '1';
+		fd =genOpen(path, O_RDONLY);
+		if(fd < 0) goto ELFnotFound;
+close_fd_and_launch_OSDSYS:
+		genClose(fd);
+		strcpy(arg0, "-m rom0:SIO2MAN");
+		strcpy(arg1, "-m rom0:MCMAN");
+		strcpy(arg2, "-m rom0:MCSERV");
+		sprintf(arg3, "-x %s", path);
+		argc = 4;
+		strcpy(kelf_loader, "moduleload");
+		CleanUp();
+		LoadExecPS2(kelf_loader, argc, args);
+		
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		party[0]=0;
@@ -2075,6 +2112,11 @@ int main(int argc, char *argv[])
 		SCREEN_X			= 632;
 		SCREEN_Y			= 50;
 	}
+
+	if(ROMVER_data[4] == 'J') rough_region = 'I';
+	else if(ROMVER_data[4] == 'E') rough_region = 'E';
+	else rough_region = 'A';
+	default_OSDSYS_path[5] = rough_region;
 
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));

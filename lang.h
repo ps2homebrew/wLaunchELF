@@ -367,5 +367,8 @@ lang(322, Mount, "Mount")
 // New MISC entry for "About uLE" screen display
 lang(323, About_uLE, "About uLE")
 //---------------------------------------------------------------------------
+// New MISC entry for "OSDSYS(MC)" launch (for FMCB on incompatible consoles)
+lang(324, OSDSYS, "OSDSYS")
+//---------------------------------------------------------------------------
 //End of file:  lang.h
 //---------------------------------------------------------------------------

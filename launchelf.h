@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.42"
-#define ULE_VERDATE "2010.06.12"
+#define ULE_VERSION "v4.42a"
+#define ULE_VERDATE "2010.07.11"
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 
@@ -92,9 +92,13 @@ enum
 typedef struct
 {
 	char CNF_Path[MAX_PATH];
-	char LK_Path[16][MAX_PATH];
-	char LK_Title[16][MAX_ELF_TITLE];
-	int  LK_Flag[16];
+	char LK_Path[17][MAX_PATH];
+// 0 == Auto,    1 == Circle,    2 == Cross,     3 == Square,    4 == Triangle
+// 5 == L1,      6 == R1,        7 == L2,        8 == R2,        9 == L3
+//10 == R3,     11 == Start,    12 == Select,   13 == DP_Left,  14 == DP_Right
+//15 == ESR,    16 == OSDSYS
+	char LK_Title[17][MAX_ELF_TITLE];
+	int  LK_Flag[17];
 	char Misc[64];
 	char Misc_PS2Disc[64];
 	char Misc_FileBrowser[64];
@@ -112,6 +116,7 @@ typedef struct
 	char Misc_ShowFont[64];
 	char Misc_Debug_Info[64];
 	char Misc_About_uLE[64];
+	char Misc_OSDSYS[64];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
 	char usbmass_file[MAX_PATH];

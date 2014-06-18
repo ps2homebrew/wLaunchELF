@@ -49,7 +49,7 @@ enum
 	CANCEL
 };
 
-char LK_ID[16][10]={
+char LK_ID[17][10]={
 	"auto",
 	"Circle",
 	"Cross",
@@ -65,8 +65,10 @@ char LK_ID[16][10]={
 	"Select",  //Predefined for "CONFIG"
 	"Left",    //Predefined for "LOAD CONFIG--"
 	"Right",   //Predefined for "LOAD CONFIG++"
-	"ESR"
+	"ESR",
+	"OSDSYS"
 };
+
 char PathPad[30][MAX_PATH];
 char tmp[MAX_PATH];
 SETTING *setting = NULL;
@@ -394,7 +396,7 @@ void saveConfig(char *mainMsg, char *CNF)
 
 	sprintf(tmp, "CNF_version = 3\r\n%n", &CNF_size); //Start CNF with version header
 
-	for(i=0; i<16; i++){	//Loop to save the ELF paths for launch keys
+	for(i=0; i<17; i++){	//Loop to save the ELF paths for launch keys
 		if((i<12) || (setting->LK_Flag[i]!=0)){
 			sprintf(tmp+CNF_size,
 				"LK_%s_E1 = %s\r\n"
@@ -425,6 +427,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Misc_ShowFont = %s\r\n"
 		"Misc_Debug_Info = %s\r\n"
 		"Misc_About_uLE = %s\r\n"
+		"Misc_OSDSYS = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->Misc,
 		setting->Misc_PS2Disc+i,
@@ -443,6 +446,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Misc_ShowFont+i,
 		setting->Misc_Debug_Info+i,
 		setting->Misc_About_uLE+i,
+		setting->Misc_OSDSYS+i,
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -612,8 +616,9 @@ void initConfig(void)
 	sprintf(setting->Misc_ShowFont, "%s/%s", LNG_DEF(MISC), LNG_DEF(ShowFont));
 	sprintf(setting->Misc_Debug_Info, "%s/%s", LNG_DEF(MISC), LNG_DEF(Debug_Info));
 	sprintf(setting->Misc_About_uLE, "%s/%s", LNG_DEF(MISC), LNG_DEF(About_uLE));
+	sprintf(setting->Misc_OSDSYS, "%s/%s", LNG_DEF(MISC), LNG_DEF(OSDSYS));
 
-	for(i=0; i<16; i++){
+	for(i=0; i<17; i++){
 		setting->LK_Path[i][0]  = 0;
 		setting->LK_Title[i][0] = 0;
 		setting->LK_Flag[i]    = 0;
@@ -751,7 +756,7 @@ failed_load:
 		if( scanSkinCNF(name, value) )
 			continue;
 
-		for(i=0; i<16; i++){
+		for(i=0; i<17; i++){
 			sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
 			if(!strncmp(name, tsts, len)) {
 				strcpy(setting->LK_Path[i], value);
@@ -759,7 +764,7 @@ failed_load:
 				break;
 			}
 		}
-		if(i<16) continue;
+		if(i<17) continue;
 		//----------
 		//In the next group, the Misc device must be defined before its subprograms
 		//----------
@@ -796,6 +801,8 @@ failed_load:
 			sprintf(setting->Misc_Debug_Info, "%s%s", setting->Misc, value);
 		else if(!strcmp(name,"Misc_About_uLE"))
 			sprintf(setting->Misc_About_uLE, "%s%s", setting->Misc, value);
+		else if(!strcmp(name,"Misc_OSDSYS"))
+			sprintf(setting->Misc_OSDSYS, "%s%s", setting->Misc, value);
 		//----------
 		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
 		else if(!strcmp(name,"Menu_Hide_Paths")) setting->Hide_Paths = atoi(value);
@@ -1427,7 +1434,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=15;		//define cursor index and its max value
+	int s, max_s=16;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -1482,9 +1489,12 @@ void Config_Startup(void)
 				else if(s==13){
 					setting->font_file[0] = '\0';
 					loadFont("");
-				}else if(s==14){
+				}else if(s==14){ //clear ESR file choice
 					setting->LK_Path[15][0] = 0;
 					setting->LK_Flag[15] = 0;
+				}else if(s==15){ //clear OSDSYS file choice
+					setting->LK_Path[16][0] = 0;
+					setting->LK_Flag[16] = 0;
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
@@ -1524,8 +1534,8 @@ void Config_Startup(void)
 					getFilePath(setting->font_file, FONT_CNF);
 					if(loadFont(setting->font_file)==0)
 						setting->font_file[0] = '\0';
-				}else if(s==14){
-					getFilePath(setting->LK_Path[15], TRUE);
+				}else if(s==14){ //Make ESR file choice
+					getFilePath(setting->LK_Path[15], LK_ELF_CNF);
 					if(!strncmp(setting->LK_Path[15], "mc0", 3) ||
 						!strncmp(setting->LK_Path[15], "mc1", 3)){
 						sprintf(c, "mc%s", &setting->LK_Path[15][3]);
@@ -1533,6 +1543,15 @@ void Config_Startup(void)
 					}
 					if(setting->LK_Path[15][0])
 						setting->LK_Flag[15] = 1;
+				}else if(s==15){ //Make OSDSYS file choice
+					getFilePath(setting->LK_Path[16], TEXT_CNF);
+					if(!strncmp(setting->LK_Path[16], "mc0", 3) ||
+						!strncmp(setting->LK_Path[16], "mc1", 3)){
+						sprintf(c, "mc%s", &setting->LK_Path[16][3]);
+						strcpy(setting->LK_Path[16], c);
+					}
+					if(setting->LK_Path[16][0])
+						setting->LK_Flag[16] = 1;
 				}else if(s==max_s)
 					return;
 			}
@@ -1641,6 +1660,13 @@ void Config_Startup(void)
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
 
+			if(strlen(setting->LK_Path[16])==0)
+				sprintf(c, "  OSDSYS kelf: %s", LNG(DEFAULT));
+			else
+				sprintf(c, "  OSDSYS kelf: %s", setting->LK_Path[16]);
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			sprintf(c, "  %s", LNG(RETURN));
 			printXY(c, x, y, setting->color[3], TRUE, 0);
@@ -1663,9 +1689,10 @@ void Config_Startup(void)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
 				else
 					sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
-			} else if((s==4)||(s==8)||(s==9)||(s==10)
-			||(s==11)||(s==12)||(s==13)||(s==14)) {
-			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
+			} else if((s==4)||(s==8)||(s==9)||(s==10)||(s==11)
+				//usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
+				//Language||Fontfile||ESR_elf||OSDSYS_kelf
+				||(s==12)||(s==13)||(s==14)||(s==15)) {
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Browse), LNG(Clear));
 				else
