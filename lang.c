@@ -146,6 +146,7 @@ void Load_External_Language(void)
 	u8 *file_bp, *file_tp, *lang_bp, *lang_tp, *oldf_tp=NULL;
 	u8 *id_p, *value_p;
 	int lang_size = 0;
+	int fd;
 
 	if(External_Lang_Buffer!=NULL){  //if an external buffer was allocated before
 		free(External_Lang_Buffer);    //release that buffer before the new attempt
@@ -160,7 +161,7 @@ void Load_External_Language(void)
 
 		error_id = -2;
 		genFixPath(setting->lang_file, filePath);
-		int fd = genOpen(filePath, O_RDONLY);
+		fd = genOpen(filePath, O_RDONLY);
 		if(fd >= 0){                         //if file opened OK
     	int file_size = genLseek(fd, 0, SEEK_END);
 

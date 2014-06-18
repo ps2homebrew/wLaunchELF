@@ -12,6 +12,8 @@
 #include <usbd_macro.h>
 #include "mass_stor.h"
 
+//#define DEBUG  //comment out this line when not debugging
+
 #include "mass_debug.h"
 #include "usbhd_common.h"
 

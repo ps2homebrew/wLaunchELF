@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.04 (2006.09.23)
+-Reverted one of my changes in usbhdfsd, because it seems to have broken dir caching. Unfortunately this means that we're back to the original super-slow dir reading, where time delay increases proportional to the square of the object count. So this version is very slow for large directories, but at least they work right...
+
+LaunchELF v4.03 (2006.09.23)
+-Fixed a bug that would freeze bootup if loading a font from HDD
+-Fixed a bug that could corrupt HDD, mainly observed when making PSU backups. This was due to some problem with changing timestamps via fileXioChStat. (HDD driver bugs ?) That timestamping code has now been removed, which is no loss, as it never worked right. Note also that timestamps are still preserved inside PSU backups, which is where it matters.
+-Replaced embedded mass: driver with a revised version of Herben's usbhdfsd (as in uLE v4.02a Beta). The revisions eliminate some serious bugs that would occur when writing directories containing many objects. I want to emphasize that the bugs now eliminated exist in *all* older mass: implementations, not just Herben's (he merely inherited them).
+
 LaunchELF v4.02 (2006.09.16)
 -Merged loadable font system contributed by Polo
 -Fixed memory leak for ELF launching (LNG buffer was not released)

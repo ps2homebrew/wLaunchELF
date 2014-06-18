@@ -1453,7 +1453,7 @@ s64 getFileSize(const char *path, const FILEINFO *file)
 		}else{
 			fd = fioOpen(dir, O_RDONLY);
 			size = fioLseek(fd,0,SEEK_END);
-			fioClose(fd);;
+			fioClose(fd);
 		}
 	}
 	return size;
@@ -1966,7 +1966,7 @@ PSU_error:
 					if(!strncmp(in, "host", 4)){  //Handle folder copied from host:
 						ret = 0;                               //Request NO stat change
 					}
-					dummy = fileXioChStat(out, &iox_stat, ret);
+////					dummy = fileXioChStat(out, &iox_stat, ret); //disabled due to bugs
 				} else if(!strncmp(out, "host", 4)) { //for files copied to host: we skip Chstat
 				} else if(!strncmp(out, "mass", 4)) { //for files copied to mass: we skip Chstat
 				} else { //for other devices we use fio_ stuff
@@ -1977,7 +1977,7 @@ PSU_error:
 					if(!strncmp(in, "host", 4)){  //Handle folder copied from host:
 						ret = 0;                               //Request NO stat change
 					}
-					dummy = fioChstat(out, &fio_stat, ret);
+					dummy = fioChstat(out, &fio_stat, ret); //(no such devices yet)
 				}
 			}
 		}
@@ -2228,7 +2228,7 @@ non_PSU_RESTORE_init:
 			if(!strncmp(in, "host", 4)){  //Handle file copied from host:
 				ret = 0;                               //Request NO stat change
 			}
-			dummy = fileXioChStat(out, &iox_stat, ret);
+////			dummy = fileXioChStat(out, &iox_stat, ret); //disabled due to bugs
 		} else if(!strncmp(out, "host", 4)) { //for files copied to host: we skip Chstat
 		} else if(!strncmp(out, "mass", 4)) { //for files copied to mass: we skip Chstat
 		} else { //for other devices we use fio_ stuff
@@ -2239,7 +2239,7 @@ non_PSU_RESTORE_init:
 			if(!strncmp(in, "host", 4)){  //Handle file copied from host:
 				ret = 0;                               //Request NO stat change
 			}
-			dummy = fioChstat(out, &fio_stat, ret);
+			dummy = fioChstat(out, &fio_stat, ret); //(no such devices yet)
 		}
 	}
 	if(PM_flag[recurses]==PM_PSU_BACKUP){
@@ -3299,68 +3299,68 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 	printf("size result = %ld\r\n", size);
 	if(size<0){
 		strcpy(mess, LNG(Size_test_Failed));
+		text_pos = strlen(mess);
 	}else{
 		text_pos = 0;
-
 		if(size >= 1024*1024)
 			sprintf(mess, "%s = %.1fMB%n", LNG(SIZE), (double)size/1024/1024, &text_inc);
 		else if(size >= 1024)
 			sprintf(mess, "%s = %.1fKB%n", LNG(SIZE), (double)size/1024, &text_inc);
 		else
 			sprintf(mess, "%s = %ldB%n", LNG(SIZE), size, &text_inc);
-
 		text_pos += text_inc;
+	}
+
 //----- Comment out this section to skip attributes entirely -----
-		if((nmarks<2) && (sel>=0)){
-			sprintf(filepath, "%s%s", path, files[sel].name);
+	if((nmarks<2) && (sel>=0)){
+		sprintf(filepath, "%s%s", path, files[sel].name);
 //----- Start of section for debug display of attributes -----
 /*
-			printf("path =\"%s\"\r\n", path);
-			printf("file =\"%s\"\r\n", files[sel].name);
-			if	(!strncmp(filepath, "host:/", 6))
-				makeHostPath(filepath+5, filepath+6);
-			if(!strncmp(filepath, "hdd", 3))
-				test = fileXioGetStat(filepath, &stats);
-			else
-				test = fioGetstat(filepath, (fio_stat_t *) &stats);
-			printf("test = %d\r\n", test);
-			printf("mode = %08X\r\n", stats.mode);
-			printf("attr = %08X\r\n", stats.attr);
-			printf("size = %08X\r\n", stats.size);
-			time = (PS2TIME *) stats.ctime;
-			printf("ctime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
-				time->year,time->month,time->day,
-				time->hour,time->min,time->sec,time->unknown);
-			time = (PS2TIME *) stats.atime;
-			printf("atime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
-				time->year,time->month,time->day,
-				time->hour,time->min,time->sec,time->unknown);
-			time = (PS2TIME *) stats.mtime;
-			printf("mtime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
-				time->year,time->month,time->day,
-				time->hour,time->min,time->sec,time->unknown);
+		printf("path =\"%s\"\r\n", path);
+		printf("file =\"%s\"\r\n", files[sel].name);
+		if	(!strncmp(filepath, "host:/", 6))
+			makeHostPath(filepath+5, filepath+6);
+		if(!strncmp(filepath, "hdd", 3))
+			test = fileXioGetStat(filepath, &stats);
+		else
+			test = fioGetstat(filepath, (fio_stat_t *) &stats);
+		printf("test = %d\r\n", test);
+		printf("mode = %08X\r\n", stats.mode);
+		printf("attr = %08X\r\n", stats.attr);
+		printf("size = %08X\r\n", stats.size);
+		time = (PS2TIME *) stats.ctime;
+		printf("ctime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
+			time->year,time->month,time->day,
+			time->hour,time->min,time->sec,time->unknown);
+		time = (PS2TIME *) stats.atime;
+		printf("atime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
+			time->year,time->month,time->day,
+			time->hour,time->min,time->sec,time->unknown);
+		time = (PS2TIME *) stats.mtime;
+		printf("mtime = %04d.%02d.%02d %02d:%02d:%02d.%02d\r\n",
+			time->year,time->month,time->day,
+			time->hour,time->min,time->sec,time->unknown);
 */
 //----- End of section for debug display of attributes -----
-			sprintf(mess+text_pos, " m=%04X %04d.%02d.%02d %02d:%02d:%02d%n",
-				files[sel].stats.attrFile,
-				files[sel].stats._modify.year,
-				files[sel].stats._modify.month,
-				files[sel].stats._modify.day,
-				files[sel].stats._modify.hour,
-				files[sel].stats._modify.min,
-				files[sel].stats._modify.sec,
-				&text_inc
-			);
+		sprintf(mess+text_pos, " m=%04X %04d.%02d.%02d %02d:%02d:%02d%n",
+			files[sel].stats.attrFile,
+			files[sel].stats._modify.year,
+			files[sel].stats._modify.month,
+			files[sel].stats._modify.day,
+			files[sel].stats._modify.hour,
+			files[sel].stats._modify.min,
+			files[sel].stats._modify.sec,
+			&text_inc
+		);
+		text_pos += text_inc;
+		if(!strncmp(path, "mc", 2)){
+			mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
+			mcSync(0, NULL, &ret);
+			sprintf(mess+text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
 			text_pos += text_inc;
-			if(!strncmp(path, "mc", 2)){
-				mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
-				mcSync(0, NULL, &ret);
-				sprintf(mess+text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
-				text_pos += text_inc;
-			}
 		}
-//----- End of sections that show attributes -----
 	}
+//----- End of sections that show attributes -----
 	browser_pushed = FALSE;
 }
 //------------------------------

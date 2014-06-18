@@ -1,3 +1,6 @@
+//---------------------------------------------------------------------------
+//File name:    fat_write.c
+//---------------------------------------------------------------------------
 /*
  * fat_driver.c - USB Mass storage driver for PS2
  *
@@ -7,7 +10,7 @@
  *
  * See the file LICENSE included with this distribution for licensing terms.
  */
-
+//---------------------------------------------------------------------------
 #include <tamtypes.h>
 #include <cdvdman.h>
 #include <sysclib.h>
@@ -20,6 +23,8 @@
 #include "scache.h"
 #include "usbhd_common.h"
 
+//#define DEBUG  //comment out this line when not debugging
+
 #include "mass_debug.h"
 
 #define DATE_CREATE 1
@@ -30,7 +35,6 @@
 #define WRITE_SECTOR(a)		scache_writeSector((a))
 #define FLUSH_SECTORS		scache_flushSectors
 
-#define DIRENTRY_COUNT 1024
 #define MAX_CLUSTER_STACK 128
 
 #define MEMCPY(a,b,c) memcpy((a),(b),(c))
@@ -48,11 +52,16 @@ unsigned int deSec[MAX_DE_STACK]; //direntry sector
 int          deOfs[MAX_DE_STACK]; //direntry offset
 int          deIdx = 0; //direntry index
 
+#define SEQ_MASK_SIZE 2048         //Allow 2K files per directory
+u8 seq_mask[SEQ_MASK_SIZE/8];      //bitmask for consumed seq numbers
+#define DIR_MASK_SIZE 2048*11      //Allow 2K maxed fullnames per directory
+u8 dir_used_mask[DIR_MASK_SIZE/8]; //bitmask for used directory entries
 
 unsigned int clStack[MAX_CLUSTER_STACK]; //cluster allocation stack
 int clStackIndex = 0;
 unsigned int clStackLast = 0; // last free cluster of the fat table
 
+//---------------------------------------------------------------------------
 /*
  reorder (swap) the cluster stack records
 */
@@ -77,6 +86,7 @@ void swapClStack(int startIndex, int endIndex) {
 	}
 }
 
+//---------------------------------------------------------------------------
 /*
  scan FAT12 for free clusters and store them to the cluster stack
 */
@@ -151,6 +161,7 @@ int fat_readEmptyClusters12(fat_bpb* bpb) {
 }
 
 
+//---------------------------------------------------------------------------
 /*
  scan FAT32 for free clusters and store them to the cluster stack
 */
@@ -202,6 +213,7 @@ int fat_readEmptyClusters32(fat_bpb* bpb) {
 	return clStackIndex;
 }
 
+//---------------------------------------------------------------------------
 /*
  scan FAT16 for free clusters and store them to the cluster stack
 */
@@ -253,7 +265,7 @@ int fat_readEmptyClusters16(fat_bpb* bpb) {
 	return clStackIndex;
 }
 
-
+//---------------------------------------------------------------------------
 /*
  scan FAT for free clusters and store them to the cluster stack
 */
@@ -269,7 +281,7 @@ int fat_readEmptyClusters(fat_bpb* bpb) {
 }
 
 
-
+//---------------------------------------------------------------------------
 /*
    set sinlge cluster record (FAT12)into buffer
 
@@ -293,6 +305,7 @@ void fat_setClusterRecord12(unsigned char* buf, unsigned int cluster, int type) 
 
 }
 
+//---------------------------------------------------------------------------
 void fat_setClusterRecord12part1(unsigned char* buf, unsigned int cluster, int type) {
 	if (type) { //type 1
 		buf[0] = (buf[0] & 0x0F) + ((cluster & 0x0F)<<4);
@@ -301,6 +314,7 @@ void fat_setClusterRecord12part1(unsigned char* buf, unsigned int cluster, int t
 	}
 }
 
+//---------------------------------------------------------------------------
 void fat_setClusterRecord12part2(unsigned char* buf, unsigned int cluster, int type) {
 	if (type) { //type 1
 		buf[0] = (cluster & 0xFF0) >> 4;
@@ -309,6 +323,7 @@ void fat_setClusterRecord12part2(unsigned char* buf, unsigned int cluster, int t
 	}
 }
 
+//---------------------------------------------------------------------------
 /*
    save value at the cluster record in FAT 12
 */
@@ -377,6 +392,7 @@ int fat_saveClusterRecord12(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 	return ret;
 }
 
+//---------------------------------------------------------------------------
 /*
    save value at the cluster record in FAT 32
 */
@@ -414,6 +430,7 @@ int fat_saveClusterRecord16(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 	return ret;
 }
 
+//---------------------------------------------------------------------------
 /*
    save value at the cluster record in FAT 16
 */
@@ -455,6 +472,7 @@ int fat_saveClusterRecord32(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 }
 
 
+//---------------------------------------------------------------------------
 /*
   Append (and write) cluster chain to the FAT table.
 
@@ -481,7 +499,7 @@ int fat_saveClusterRecord32(fat_bpb* bpb, unsigned int currentCluster, unsigned 
         +-----+-----+-----+-----+
 
 */
-
+//---------------------------------------------------------------------------
 int fat_appendClusterChain(fat_bpb* bpb, unsigned int currentCluster, unsigned int endCluster) {
 	int ret;
 	ret = -1;
@@ -508,6 +526,7 @@ int fat_appendClusterChain(fat_bpb* bpb, unsigned int currentCluster, unsigned i
 	return ret;
 }
 
+//---------------------------------------------------------------------------
 /*
  create new cluster chain (of size 1 cluster) at the cluster index
 */
@@ -520,7 +539,7 @@ int fat_createClusterChain(fat_bpb* bpb, unsigned int cluster) {
 	return -EFAULT;
 }
 
-
+//---------------------------------------------------------------------------
 /*
  modify the cluster (in FAT table) at the cluster index
 */
@@ -533,8 +552,7 @@ int fat_modifyClusterChain(fat_bpb* bpb, unsigned int cluster, unsigned int valu
 	return -EFAULT;
 }
 
-
-
+//---------------------------------------------------------------------------
 /*
   delete cluster chain starting at cluster
 */
@@ -582,6 +600,7 @@ int fat_deleteClusterChain(fat_bpb* bpb, unsigned int cluster) {
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 /*
   Get single empty cluster from the clusterStack (cS is small cache of free clusters)
   Passed currentCluster is updated in the FAT and the new returned cluster index is
@@ -613,7 +632,7 @@ unsigned int fat_getFreeCluster(fat_bpb* bpb, unsigned int currentCluster) {
 	return result;
 }
 
-
+//---------------------------------------------------------------------------
 /*
  simple conversion of the char from lower case to upper case
 */
@@ -624,8 +643,10 @@ inline unsigned char toUpperChar(unsigned char c) {
 	return c;
 }
 
+//---------------------------------------------------------------------------
 /*
 returns number of direntry positions that the name takes
+//dlanor: Note that this only includes the long_name entries
 */
 int getDirentrySize(unsigned char* lname) {
 	int len;
@@ -636,6 +657,7 @@ int getDirentrySize(unsigned char* lname) {
 	return result;
 }
 
+//---------------------------------------------------------------------------
 /*
 compute checksum of the short filename
 */
@@ -651,7 +673,7 @@ unsigned char computeNameChecksum(unsigned char* sname) {
 	return result;
 }
 
-
+//---------------------------------------------------------------------------
 /*
   fill the LFN (long filename) direntry
 */
@@ -707,6 +729,7 @@ void setLfnEntry(unsigned char* lname, int nameSize, unsigned char chsum, unsign
 	dlfn->reserved2[1] = 0;
 }
 
+//---------------------------------------------------------------------------
 /*
   update the SFN (long filename) direntry - DATE and TIME
 */
@@ -777,6 +800,7 @@ void setSfnDate(fat_direntry_sfn* dsfn, int mode) {
 	}
 }
 
+//---------------------------------------------------------------------------
 /*
   fill the SFN (short filename) direntry
 */
@@ -806,9 +830,7 @@ void setSfnEntry(unsigned char* shortName, char directory, unsigned char *buffer
 	setSfnDate(dsfn, DATE_CREATE + DATE_MODIFY);
 }
 
-
-
-
+//---------------------------------------------------------------------------
 /*
  Create short name by squeezing long name into the 8.3 name boundaries
  lname - existing long name
@@ -888,6 +910,7 @@ int createShortNameMask(unsigned char* lname, unsigned char* sname) {
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 /*
   separate path and filename
   fname - the source (merged) string (input)
@@ -912,6 +935,7 @@ int separatePathAndName(const char* fname, unsigned char* path, unsigned char* n
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 /*
  get the sequence number from existing direntry name
 */
@@ -947,53 +971,34 @@ int getShortNameSequence(unsigned char* name, unsigned char* ext, unsigned char*
 	return strtol((const char*)buf, NULL, 10);
 }
 
+//---------------------------------------------------------------------------
 /*
   set the short name sequence number
 */
-int setShortNameSequence(unsigned char* entry, int maxEntry, unsigned char* sname) {
+int setShortNameSequence(unsigned char* sname) {
 	char number[8];
 	unsigned char *buf;
 	int i,j;
-	int maxSeq;
-	int hit;
 	int seq;
-	int cont;
+	unsigned char mask;
 
-	seq = 0;
-	maxSeq = 0;
-	hit = 0;
-	//search the entries for sequence number
-	for (i = 0; i < maxEntry; i++) {
-		seq = (entry[i] & 0xFC) >> 2;
-		if (seq && i && (entry[i-1] & 0x03) == 2) { // seq != 0 && i != 0 && prceeding entry is long name
-			seq += (entry[i-1] & 0xFC) << 4;
-		}
+	//dlanor: The code below was bugged in several ways, as it treated the high seq
+	//values stored in long_name records as separate seqs, and also failed to accept
+	//any valid seq value whose low part (stored in short_name record) was zero.
+  //I'm now replacing this garbage with a bit-mask oriented scheme
 
-		if (seq > maxSeq) maxSeq = seq; //find max sequence number
-		if (seq) hit++; //find any sequence number
-	}
-
-	//check how many sequence numbers we have found and the highest sequence number.
-	//if we get: hit==3 and maxSeq==120 then try to find unassigned sequence number
-	if (hit < maxSeq) {
-		cont = 1;
-		for (j = 0; j < maxSeq && cont; j++) {
-			//search the entries for sequence number
-			for (i = 0; i < maxEntry && cont; i++) {
-				seq = (entry[i] & 0xFC) >> 2;
-				if (seq && i && (entry[i-1] & 0x03) == 2) { // seq != 0 && i != 0 && prceeding entry is long name
-					seq += (entry[i-1] & 0xFC) << 4;
-				}
-				if (seq==j) cont = 0; //we found the sequence nuber - do not continue
-			}
-			if (cont == 1) { //the sequence number was missing in the entries
-				seq = j;
-			}
-			cont = 1-cont; //set continue flag according the search result;
-		}
-	} else {
-		seq = maxSeq + 1;
-	}
+	seq = SEQ_MASK_SIZE;
+	for(i=0; (i < (SEQ_MASK_SIZE>>3)); i++) { //for each mask byte
+		if((mask = seq_mask[i]) != 0xFF) {        //if mask byte has any bit free
+			for(j=0; j<8; j++, mask>>=1) {            //for each bit in byte
+				if((mask & 1)==0) {                       //if free bit found
+					seq = (i<<3)+j;                          //set seq value
+					break;                                   //break bit loop
+				}//ends "if free bit found"
+			}//ends "for each bit in byte"
+			break;                                      //break byte loop
+		}//ends "if mask byte has any bit free"
+	}//ends "for each mask byte"
 
 	memset(number, 0, 8);
 	sprintf(number, "%d",seq);
@@ -1007,10 +1012,11 @@ int setShortNameSequence(unsigned char* entry, int maxEntry, unsigned char* snam
 	return 0;
 }
 
+//---------------------------------------------------------------------------
 /*
   find space where to put the direntry
 */
-int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* lname, int* direntrySize ) {
+int getDirentryStoreOffset(int entryCount, unsigned char* lname, int* direntrySize ) {
 	int i;
 	int size;
 	int tightIndex;
@@ -1019,6 +1025,7 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 	int id;
 	int slotStart;
 	int slotSize;
+	int mask_ix, mask_sh;
 
 
 	//direntry size for long name + 1 additional direntry for short name
@@ -1026,7 +1033,7 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 	XPRINTF("Direntry size=%d\n", size);
 	*direntrySize = size;
 
-	//we search for sequence of deleted or empty entries (entry id = 0)
+	//we search for sequence of deleted or empty entries (cleared bits in dir_used_mask)
 	//1) search the tight slot (that fits completely. ex: size = 3, and slot space is 3 )
 	//2) search the suitable (loose) slot (ex: size = 3, slot space is 5)
 
@@ -1037,7 +1044,9 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 	cont = 1;
 	//search the entries for entry types
 	for (i = 0; i < entryCount && cont; i++) {
-		id = (entry[i] & 0x03);
+		mask_ix = i>>3;
+		mask_sh = i&7;
+		id = dir_used_mask[mask_ix] & (1<<mask_sh);
 		if (id == 0) { //empty entry
 			if (slotStart >= 0) {
 				slotSize++;
@@ -1080,8 +1089,11 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 	if (looseIndex >=0) {
 		return looseIndex;
 	}
-	//last entry is (most likely) empty - use it
-	if ( (entry[entryCount-1]&0x03) == 0) {
+	//last entry is (most likely) empty - and if so, use it
+	mask_ix = (entryCount-1)>>3;
+	mask_sh = (entryCount-1)&7;
+	id = dir_used_mask[mask_ix] & (1<<mask_sh);
+	if (id == 0) {
 		return entryCount - 1;
 	}
 
@@ -1089,24 +1101,23 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 
 }
 
-
-
+//---------------------------------------------------------------------------
 /*
   scans current directory entries and fills the info records
 
   lname        - long filename (to test wether existing entry match the long name) (input)
-  sname        - short filename ( dtto ^^ ) (input)
+  sname        - short filename ( ditto ^^ ) (input)
   startCluster - valid start cluster of the directory or 0 if we scan the root directory (input)
-  record       - info buffer (output)
-  maxRecord    - size of the info buffer to avoid overflow
 
   if file/directory already exist (return code 0) then:
   retSector    - contains sector number of the direntry (output)
   retOffset    - contains byte offse of the SFN direntry from start of the sector (output)
   the reason is to speed up modification of the SFN (size of the file)
-
+//dlanor: This function has been rewritten to use global bitmask arrays for output
 */
-int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* sname, char directory, unsigned int* startCluster, unsigned char* record, int maxRecord, unsigned int* retSector, int* retOffset) {
+int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* sname,
+			char directory, unsigned int* startCluster,
+			unsigned int* retSector, int* retOffset) {
 	fat_direntry_sfn* dsfn;
 	fat_direntry_lfn* dlfn;
 	fat_direntry dir;
@@ -1117,11 +1128,13 @@ int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* snam
 	int cont;
 	int ret;
 	int dirPos;
-	int clusterMod;
 	int seq;
+	int mask_ix, mask_sh;
+
+	memset(dir_used_mask, 0, DIR_MASK_SIZE/8);
+	memset(seq_mask, 0, SEQ_MASK_SIZE/8);
 
 	cont = 1;
-	clusterMod = bpb->clusterSize - 1;
 	//clear name strings
 	dir.sname[0] = 0;
 	dir.name[0] = 0;
@@ -1136,6 +1149,10 @@ int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* snam
 	//go through first directory sector till the max number of directory sectors
 	//or stop when no more direntries detected
 	for (i = 0; i < dirSector && cont; i++) {
+		//At cluster borders, get correct sector from cluster chain buffer
+		if ((*startCluster != 0) && (i % bpb->clusterSize == 0)) {
+			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize)]) -i;
+		}
 		theSector = startSector + i;
 		ret = READ_SECTOR(theSector, sbuf);
 		if (ret < 0) {
@@ -1143,29 +1160,26 @@ int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* snam
 			return -EIO;
 		}
 		XPRINTF("read sector ok, scanning sector for direntries...\n");
-
-		//get correct sector from cluster chain buffer
-		if ((*startCluster != 0) && (i % bpb->clusterSize == clusterMod)) {
-			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize) +  1]);
-			startSector -= (i+1);
-		}
 		dirPos = 0;
 
 		// go through start of the sector till the end of sector
-		while (cont &&  dirPos < bpb->sectorSize && j< maxRecord) {
+		while (cont &&  (dirPos < bpb->sectorSize) && (j < DIR_MASK_SIZE)) {
 			dsfn = (fat_direntry_sfn*) (sbuf + dirPos);
 			dlfn = (fat_direntry_lfn*) (sbuf + dirPos);
 			cont = fat_getDirentry(dsfn, dlfn, &dir); //get single directory entry from sector buffer
+			mask_ix = j>>3;
+			mask_sh = j&7;
 			switch (cont) {
 				case 1: //short name
+					dir_used_mask[mask_ix] |= (1<<mask_sh);
 					if (!(dir.attr & 0x08)) { //not volume label
-						//file we want to create already exist - return the cluster of the file
 						if ((strEqual(dir.sname, lname) == 0) || (strEqual(dir.name, lname) == 0) ) {
-							//found directory but requested is file (and vice veresa)
+							//file we want to create already exist - return the cluster of the file
 							if ((dir.attr & 0x10) != directory) {
+								//found directory but requested is file (and vice veresa)
 								if (directory) return -ENOTDIR;
 								return -EISDIR;
-							}
+							}//ends "if" clause for mismatched file/folder state
 							XPRINTF("I: entry found! %s, %s = %s\n", dir.name, dir.sname, lname);
 							*retSector = theSector;
 							*retOffset = dirPos;
@@ -1174,46 +1188,41 @@ int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* snam
 							deOfs[deIdx] = dirPos;
 							deIdx++;
 							return 0;
-						}
-						record[j] = 1;
+						}//ends "if" clause for matching name
 						seq = getShortNameSequence(dsfn->name, dsfn->ext, sname);
-						record[j] += ((seq & 0x3F) << 2);
-						if (seq > 63) {   //we need to store seq number in the preceding record
-							if (j>0 && (record[j-1] & 0x03) == 2) {
-								record[j-1] += ((seq & 0x0FC0) >> 4);
-							} else {
-								return -EFAULT;
-							}
-						}
+						if(seq < SEQ_MASK_SIZE)
+							seq_mask[seq>>3] |= (1<<(seq & 7));
 						deIdx = 0;
 						//clear name strings
 						dir.sname[0] = 0;
 						dir.name[0] = 0;
-					} else {
-						record[j] = 3;
+					}//ends "if(!(dir.attr & 0x08))"
+					else { //dlanor: Volume label
 						deIdx = 0;
 					}
 					break;
-				case 2: record[j] = 2; //long name
+				case 2: //long name
+					dir_used_mask[mask_ix] |= (1<<mask_sh);
 					deSec[deIdx] = theSector;
 					deOfs[deIdx] = dirPos;
 					deIdx++;
 					break;
-				case 3: record[j] = 0; //empty
+				case 3: //empty
 					deIdx = 0;
 					break;
-			}
+			}//ends "switch"
 			dirPos += 32; //directory entry of size 32 bytes
 			j++;
 		}
 	}
 	//indicate inconsistency
-	if (j>= maxRecord) {
+	if (j >= DIR_MASK_SIZE) {
 		j++;
 	}
 	return j;
 }
 
+//---------------------------------------------------------------------------
 /*
   check wether the new direntries (note: one file have at least 2 direntries for 1 SFN and 1..n LFN)
   fit into the current directory space.
@@ -1285,7 +1294,7 @@ int enlargeDirentryClusterSpace(fat_bpb* bpb, unsigned int startCluster, int ent
 	return 1; // 1 cluster allocated
 }
 
-
+//---------------------------------------------------------------------------
 /*
   Create direntries of the long and short filename to the supplied buffer.
 
@@ -1307,7 +1316,6 @@ int createDirentry(unsigned char* lname, unsigned char* sname, char directory, u
 	lsize = getDirentrySize(lname) - 1;
 	chsum = computeNameChecksum(sname);
 	nameSize = strlen((const char*) lname);
-	//if the long name is longer than 8.3 chars then more than 1 lfn direntry have to be made
 	for (i = 0; i <= lsize; i++) {
 		setLfnEntry(lname, nameSize, chsum, buffer, lsize-i, lsize);
 	}
@@ -1317,6 +1325,7 @@ int createDirentry(unsigned char* lname, unsigned char* sname, char directory, u
 	return lsize + 1;
 }
 
+//---------------------------------------------------------------------------
 /*
   Create empty directory space with two SFN direntries:
   1) current directory "."
@@ -1367,6 +1376,7 @@ int createDirectorySpace(fat_bpb* bpb, unsigned int dirCluster, unsigned int par
 }
 
 
+//---------------------------------------------------------------------------
 /*
   save direntries stored in dbuf to the directory space on the disk
 
@@ -1388,12 +1398,10 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 	int cont;
 	int ret;
 	int dirPos;
-	int clusterMod;
 	int entryEndIndex;
 	int writeFlag;
 
 	cont = 1;
-	clusterMod = bpb->clusterSize - 1;
 	//clear name strings
 	entryEndIndex = entryIndex + entrySize;
 
@@ -1406,6 +1414,10 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 	//go through first directory sector till the max number of directory sectors
 	//or stop when no more direntries detected
 	for (i = 0; i < dirSector && cont; i++) {
+		//At cluster borders, get correct sector from cluster chain buffer
+		if ((startCluster != 0) && (i % bpb->clusterSize == 0)) {
+			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize)]) -i;
+		}
 		theSector = startSector + i;
 		ret = READ_SECTOR(theSector, sbuf);
 		if (ret < 0) {
@@ -1413,12 +1425,6 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 			return -EIO;
 		}
 		XPRINTF("read sector ok, scanning sector for direntries...\n");
-
-		//prepare next sector: get correct sector from cluster chain buffer
-		if ((startCluster != 0) && (i % bpb->clusterSize == clusterMod)) {
-			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize) +  1]);
-			startSector -= (i+1);
-		}
 		dirPos = 0;
 		writeFlag = 0;
 		// go through start of the sector till the end of sector
@@ -1435,7 +1441,7 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 			//sbuf + dirPos
 			dirPos += 32; //directory entry of size 32 bytes
 			j++;
-		}
+		}//ends "while"
 		//store modified sector
 		if (writeFlag) {
 			ret = WRITE_SECTOR(theSector);
@@ -1451,7 +1457,7 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 	return j;
 }
 
-
+//---------------------------------------------------------------------------
 /*
   - create/convert long name to short name
   - analyse directory space
@@ -1475,12 +1481,15 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	int entryIndex;
 	int direntrySize;
 
+	//dlanor: Since each filename may need up to 11 directory entries (MAX_FAT_NAME==128)
+	//dlanor: I've rewritten the methods of this function to use global bitmasks as this
+	//dlanor: allows more effective entry handling than most other methods
+	//
 	//memo buffer for each direntry - up to 1024 entries in directory
 	// 7 6 5 4 3 2 | 1 0
-        // ------------+-----
-        // SEQ HI/LO   | ID
+	// ------------+-----
+	// SEQ HI/LO   | ID
  	// ------------------
-
 	// ID : 0 - entry is empty or deleted
 	//      1 - sfn entry
 	//      2 - lfn entry
@@ -1502,8 +1511,6 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	// (in some rare occasions) correct directory structure).
 
 
-	unsigned char entry[DIRENTRY_COUNT];
-	memset(entry, 0, DIRENTRY_COUNT);
 	sname[11] = 0;
 
 	//create short name from long name
@@ -1515,8 +1522,9 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	compressShortName = ret;
 
 	//get information about existing direntries (palcement of the empty/reusable direntries)
-	//and sequence nubers of the short filenames
-	ret = fat_fillDirentryInfo(bpb, lname, sname, directory, startCluster, entry, DIRENTRY_COUNT, retSector, retOffset);
+	//and sequence numbers of the short filenames
+	ret = fat_fillDirentryInfo(bpb, lname, sname, directory,
+		startCluster, retSector, retOffset);
 	if (ret < 0) {
 		XPRINTF("E: direntry data invalid!\n");
 		return ret;
@@ -1532,21 +1540,21 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	}
 
 
-	if (ret > DIRENTRY_COUNT) {
+	if (ret > DIR_MASK_SIZE) {
 		XPRINTF("W: Direntry count is larger than number of records!\n");
-		ret = DIRENTRY_COUNT;
+		ret = DIR_MASK_SIZE;
 	}
 	entryCount = ret;
 	XPRINTF("I: direntry count=%d\n", entryCount);
 
 	if (compressShortName) {
-		setShortNameSequence(entry, entryCount, sname);
+		setShortNameSequence(sname);
 	}
 	XPRINTF("I: new short name='%s' \n", sname);
 
 
 	//find the offset (index) of the direntry space where to put this direntry
-	entryIndex = getDirentryStoreOffset(entry, entryCount, lname, &direntrySize);
+	entryIndex = getDirentryStoreOffset(entryCount, lname, &direntrySize);
 	XPRINTF("I: direntry store offset=%d\n", entryIndex);
 
 	//if the direntry offset excede current space of directory clusters
@@ -1592,9 +1600,9 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 
 }
 
-
+//---------------------------------------------------------------------------
 /*
-   Check wether directory space contain any file or directory
+   Check whether directory space contain any file or directory
 
    startCluster - start cluster of the directory space
 
@@ -1602,7 +1610,7 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
             1 - true  - directory space is empty or contains deleted entries
            -X - error
 */
-int checkDirspaceEmpty(fat_bpb* bpb, unsigned int startCluster, unsigned char* entry) {
+int checkDirspaceEmpty(fat_bpb* bpb, unsigned int startCluster) {
 	int ret;
 	int i;
 	unsigned char sname[12]; //short name 8+3 + terminator
@@ -1616,27 +1624,31 @@ int checkDirspaceEmpty(fat_bpb* bpb, unsigned int startCluster, unsigned char* e
 		return -EFAULT;
 	}
 
-	memset(entry, 0, DIRENTRY_COUNT);
 	sname[0] = 0;
 
 
-	ret = fat_fillDirentryInfo(bpb, sname, sname, 1, &startCluster, entry, DIRENTRY_COUNT, &retSector, &retOffset);
-	if (ret > DIRENTRY_COUNT) {
-		XPRINTF("W: Direntry count is larger than number of records! directory space cluster =%d maxRecords=%d\n", startCluster, DIRENTRY_COUNT);
-		ret = DIRENTRY_COUNT;
+	ret = fat_fillDirentryInfo(bpb, sname, sname, 1,
+		&startCluster, &retSector, &retOffset);
+	if (ret > DIR_MASK_SIZE) {
+		XPRINTF("W: Direntry count is larger than number of records! directory space cluster =%d maxRecords=%d\n", startCluster, DIR_MASK_SIZE);
+		ret = DIR_MASK_SIZE;
 	}
 	entryCount = ret;
-
-	for (i= 2; i < entryCount; i++) {  //first two records should be '.' & '..'
-		if ((entry[i] & 0x03) != 0) {
+  //first two records should be '.' & '..', which don't count as real content
+	if((dir_used_mask[0] & 0xFC) != 0)
+		goto non_empty;
+	for (i=1; i < (entryCount/8); i++) {
+		if(dir_used_mask[i] != 0) {
+non_empty:
 			XPRINTF("I: directory not empty!\n");
 			return 0;
-		}
-	}
+		}//ends "if"
+	}//ends "for"
 	XPRINTF("I: directory is empty.\n");
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 /*
    Remove the name (direntries of the file or directory) from the directory space.
 
@@ -1653,9 +1665,7 @@ int fat_clearDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, unsign
 	unsigned int theSector;
 	unsigned int sfnSector;
 	int sfnOffset;
-	unsigned char entry[DIRENTRY_COUNT];
 
-	memset(entry, 0, DIRENTRY_COUNT);
 	sname[0] = 0;
 
 
@@ -1663,7 +1673,8 @@ int fat_clearDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, unsign
 	//get information about existing direntries (palcement of the empty/reusable direntries)
 	//and find the lname in the directory
 	//also fill up the dsSec and dsOfs information
-	ret = fat_fillDirentryInfo(bpb, lname, sname, directory, startCluster, entry, DIRENTRY_COUNT, &sfnSector, &sfnOffset);
+	ret = fat_fillDirentryInfo(bpb, lname, sname, directory,
+		startCluster, &sfnSector, &sfnOffset);
 	if (ret != 0) {
 		XPRINTF("E: direntry not found!\n");
 		return -ENOENT;
@@ -1677,15 +1688,15 @@ int fat_clearDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, unsign
 	if (directory) {
 		//check wether sub-directory is empty
 		//startCluster now points to subdirectory start cluster
-		ret = checkDirspaceEmpty(bpb, *startCluster, entry);
+		ret = checkDirspaceEmpty(bpb, *startCluster);
 		if (ret == 0) { //directorty contains some files
 			return -ENOTEMPTY;
 		}
 		//read the direntry info again, because we lost it during subdir check
 		*startCluster = dirCluster;
-		memset(entry, 0, DIRENTRY_COUNT);
 
-		ret = fat_fillDirentryInfo(bpb, lname, sname, directory, startCluster, entry, DIRENTRY_COUNT, &sfnSector, &sfnOffset);
+		ret = fat_fillDirentryInfo(bpb, lname, sname, directory,
+			startCluster, &sfnSector, &sfnOffset);
 		if (ret != 0) {
 			XPRINTF("E: direntry not found!\n");
 			return -ENOENT;
@@ -1783,6 +1794,7 @@ int fat_truncateFile(fat_bpb* bpb, unsigned int cluster, unsigned int sfnSector,
 }
 
 
+//---------------------------------------------------------------------------
 /*
   Update size of the SFN entry
 
@@ -1822,6 +1834,7 @@ int fat_updateSfn(int size, unsigned int sfnSector, int sfnOffset ) {
 }
 
 
+//---------------------------------------------------------------------------
 /*
  create file or directory
 
@@ -1848,6 +1861,7 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 		return -ENOENT;
 	}
 
+	XPRINTF("Calling fat_getFileStartCluster from fat_createFile\n");
 	//get start cluster of the last sub-directory of the path
 	startCluster = 0;
 	ret = fat_getFileStartCluster(bpb, (const char*)path, &startCluster, NULL);
@@ -1889,6 +1903,7 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 }
 
 
+//---------------------------------------------------------------------------
 int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 	int ret;
 	unsigned int startCluster;
@@ -1903,6 +1918,7 @@ int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 		return -ENOENT;
 	}
 
+	XPRINTF("Calling fat_getFileStartCluster from fat_deleteFile\n");
 	//get start cluster of the last sub-directory of the path
 	startCluster = 0;
 	ret = fat_getFileStartCluster(bpb, (const char*)path, &startCluster, NULL);
@@ -1927,6 +1943,7 @@ int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 }
 
 
+//---------------------------------------------------------------------------
 int fat_writeFile(fat_bpb* bpb, fat_dir* fatDir, int* updateClusterIndices, unsigned int filePos, unsigned char* buffer, int size) {
 	int ret;
 	int i,j;
@@ -2067,6 +2084,7 @@ int fat_writeFile(fat_bpb* bpb, fat_dir* fatDir, int* updateClusterIndices, unsi
 }
 
 
+//---------------------------------------------------------------------------
 int fat_allocSector(unsigned int sector, unsigned char** buf) {
 	int ret;
 
@@ -2079,6 +2097,7 @@ int fat_allocSector(unsigned int sector, unsigned char** buf) {
 	return Size_Sector;
 }
 
+//---------------------------------------------------------------------------
 int fat_writeSector(unsigned int sector) {
 	int ret;
 
@@ -2090,8 +2109,12 @@ int fat_writeSector(unsigned int sector) {
 	return Size_Sector;
 }
 
+//---------------------------------------------------------------------------
 int fat_flushSectors(void)
 {
 	FLUSH_SECTORS();
 	return(0);
 }
+//---------------------------------------------------------------------------
+//End of file:  fat_write.c
+//---------------------------------------------------------------------------

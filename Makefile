@@ -13,6 +13,7 @@ EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 EE_LIBS = -lpad -lgsKit -ldmaKit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
+#	rm usbhdfsd.s #Comment out this line when not experimenting with usbhdfsd
 
 run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF

@@ -1219,7 +1219,7 @@ void Config_Startup(void)
 				}
 				else if(s==13){
 					setting->font_file[0] = '\0';
-					loadFont();
+					loadFont("");
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
@@ -1257,7 +1257,7 @@ void Config_Startup(void)
 					Load_External_Language();
 				}else if(s==13){
 					getFilePath(setting->font_file, FONT_CNF);
-					if(loadFont()==0)
+					if(loadFont(setting->font_file)==0)
 						setting->font_file[0] = '\0';
 				}else if(s==max_s)
 					return;
@@ -1842,7 +1842,7 @@ cancel_exit:
 				strcpy(setting->skin, skinSave);
 				loadSkin(BACKGROUND_PIC, 0, 0);
 				Load_External_Language();
-				loadFont();
+				loadFont(setting->font_file);
 				mainMsg[0] = 0;
 				break;
 			}

@@ -204,7 +204,7 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 u8 *transcpy_sjis(u8 *d, u8 *s);
 void loadIcon(void);
-int loadFont(void);
+int loadFont(char *path_arg);
 //Comment out WriteFont_C when not used (also requires patch in draw.c)
 //int	WriteFont_C(char *pathname);
 

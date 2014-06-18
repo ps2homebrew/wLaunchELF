@@ -1029,6 +1029,7 @@ void reloadConfig()
 		strcpy(tmp, mainMsg+strlen(LNG(Loaded_Config)));
 
 	Load_External_Language();
+	loadFont(setting->font_file);
 
 	if(CNF_error<0)
 		sprintf(mainMsg, "%s%s", LNG(Failed_To_Load), tmp);
@@ -1423,11 +1424,13 @@ int main(int argc, char *argv[])
 
 	startKbd();
 	TimerInit();
-	WaitTime=0LL;
+	WaitTime=Timer();
 
+	loadFont("");  //Some font must be loaded before loading some device modules
 	Load_External_Language();
-	loadFont();
+	loadFont(setting->font_file);
 	loadSkin(BACKGROUND_PIC, 0, 0);
+
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	if(CNF_error<0)

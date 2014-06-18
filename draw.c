@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.02 ÿ4",
+	printXY(" ÿ4 LaunchELF v4.04 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -840,12 +840,14 @@ void loadIcon(void)
 	free(TexIcon[1].Mem);
 }
 //--------------------------------------------------------------
-int loadFont(void)
+int loadFont(char *path_arg)
 {
-	if(strlen(setting->font_file) != 0 ){
+	int fd;
+
+	if(strlen(path_arg) != 0 ){
 	char FntPath[MAX_PATH];
-	genFixPath(setting->font_file, FntPath);
-	int fd = genOpen( FntPath, O_RDONLY );
+	genFixPath(path_arg, FntPath);
+	fd = genOpen( FntPath, O_RDONLY );
 		if(fd < 0){
 			genClose( fd );
 			goto use_default;
