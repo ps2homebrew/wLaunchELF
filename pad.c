@@ -1,3 +1,6 @@
+//---------------------------------------------------------------------------
+// File name:   pad.c
+//---------------------------------------------------------------------------
 #include "launchelf.h"
 
 static char padBuf[256] __attribute__((aligned(64)));
@@ -6,16 +9,15 @@ u32 paddata;
 u32 old_pad = 0;
 u32 new_pad;
 
-//////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------
 // read PAD
 int readpad(void)
 {
 	static int n=0, nn=0;
 	int ret;
-	
+
 	ret = padRead(0, 0, &buttons);
 	if (ret != 0){
-		//paddata = 0xffff ^ ((buttons.btns[0] << 8) | buttons.btns[1]);
 		paddata = 0xffff ^ buttons.btns;
 		new_pad = paddata & ~old_pad;
 		if(old_pad==paddata){
@@ -42,8 +44,25 @@ int readpad(void)
 	}
 	return 0;
 }
+//---------------------------------------------------------------------------
+// read PAD without allowing auto_repeat
+int readpad_norepeat(void)
+{
+	int ret;
+	
+	ret = padRead(0, 0, &buttons);
+	if (ret != 0){
+		paddata = 0xffff ^ buttons.btns;
+		new_pad = paddata & ~old_pad;
+		if(old_pad!=paddata){
+			old_pad = paddata;
+		}
+		return 1;
+	}
+	return 0;
+}
 
-//////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------
 // Wait PAD
 void waitPadReady(int port, int slot)
 {
@@ -59,13 +78,12 @@ void waitPadReady(int port, int slot)
 		state=padGetState(port, slot);
 	}
 }
-
-//////////////////////////////////////////////////////////////////////
+//---------------------------------------------------------------------------
 // setup PAD
 int setupPad(void)
 {
 	int ret, i, modes;
-	
+
 	padInit(0);
 	if((ret = padPortOpen(0, 0, padBuf)) == 0)
 		return 0;
@@ -83,3 +101,6 @@ int setupPad(void)
 	}
 	return 1;
 }
+//---------------------------------------------------------------------------
+// End of file: pad.c
+//---------------------------------------------------------------------------

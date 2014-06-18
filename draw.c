@@ -379,25 +379,22 @@ void setScrTmp(const char *msg0, const char *msg1)
 {
 	int x, y;
 	
-	// バージョン表記
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ■ LaunchELF v3.55 ■",
+	printXY(" ■ LaunchELF v3.57 ■",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	
-	// メッセージ
 	printXY(msg0, x, y/2, setting->color[2], TRUE);
 	y += FONT_HEIGHT;
 	
-	// 枠
-	drawFrame(SCREEN_MARGIN, y/2,
-		SCREEN_WIDTH-SCREEN_MARGIN-1,
-		(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT-2)/2,
-		setting->color[1]);
-	
-	// 操作説明
+	if(setting->Menu_Frame)
+		drawFrame(SCREEN_MARGIN, y/2,
+			SCREEN_WIDTH-SCREEN_MARGIN-1,
+			(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT-2)/2,
+			setting->color[1]);
+
 	x = SCREEN_MARGIN;
 	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
 	printXY(msg1, x, y/2, setting->color[2], TRUE);
@@ -514,11 +511,13 @@ void loadSkin(int skinNum)
 						 	if( skinNum == 0 ){
 						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, 240 ) ) != 0 ){
 						 			itoLoadTexture ( ResData, 0, SCREEN_WIDTH, ITO_RGB24, 0, 0, SCREEN_WIDTH, 240 );
+									itoGsFinish();
 									testskin = 1;
 								} /* end if */
 						 	} else {
 						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, 256, 120 ) ) != 0 ){
 						 			itoLoadTexture ( ResData, SCREEN_WIDTH*256*4, 256, ITO_RGB24, 0, 0, 256, 120 );
+									itoGsFinish();
 									testsetskin = 1;
 								} /* end if */
 						 	} /* end else */

@@ -120,9 +120,10 @@ int ynDialog(const char *message)
 	int dh, dw, dx, dy;
 	int sel=0, a=6, b=4, c=2, n, tw;
 	int i, x, len, ret;
-	
+	int event, post_event=0;
+
 	strcpy(msg, message);
-	
+
 	for(i=0,n=1; msg[i]!=0; i++){ //start with one string at pos zero
 		if(msg[i]=='\n'){           //line separator at current pos ?
 			msg[i]=0;                 //split old line to separate string
@@ -142,12 +143,16 @@ int ynDialog(const char *message)
 	dy = (432-dh)/2;
 	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 	
+	event = 1;  //event = initial entry
 	while(1){
+		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
 			if(new_pad & PAD_LEFT){
+				event |= 2;  //event |= valid pad command
 				sel=0;
 			}else if(new_pad & PAD_RIGHT){
+				event |= 2;  //event |= valid pad command
 				sel=1;
 			}else if((!swapKeys && new_pad & PAD_CROSS)
 			      || (swapKeys && new_pad & PAD_CIRCLE) ){
@@ -160,29 +165,34 @@ int ynDialog(const char *message)
 				break;
 			}
 		}
-		
-		drawSprite(setting->color[0],
-			0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
-		drawSprite(setting->color[0],
-			dx-2, (dy-2)/2,
-			dx+dw+2, (dy+dh+4)/2);
-		drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
-		for(i=len=0; i<n; i++){
-			printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
-			len+=strlen(&msg[len])+1;
-		}
-		x=(tw-96)/2;
-		printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16)/2, setting->color[3],TRUE);
-		if(sel==0)
-			drawChar(127, dx+a+x,(dy+a+b+2+n*16)/2, setting->color[3]);
-		else
-			drawChar(127,dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
+
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawSprite(setting->color[0],
+				0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
+			drawSprite(setting->color[0],
+				dx-2, (dy-2)/2,
+				dx+dw+2, (dy+dh+4)/2);
+			drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+			for(i=len=0; i<n; i++){
+				printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
+				len+=strlen(&msg[len])+1;
+			}
+
+			//Cursor positioning section
+			x=(tw-96)/2;
+			printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16)/2, setting->color[3],TRUE);
+			if(sel==0)
+				drawChar(127, dx+a+x,(dy+a+b+2+n*16)/2, setting->color[3]);
+			else
+				drawChar(127,dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
+		}//ends if(event||post_event)
 		drawScr();
-	}
-	x=(tw-96)/2;
-	drawChar(' ', dx+a+x,(dy+a+b+2+n*16)/2, setting->color[3]);
-	drawChar(' ',dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
+		post_event = event;
+		event = 0;
+	}//ends while
 	return ret;
 }
 //--------------------------------------------------------------
@@ -656,6 +666,7 @@ int menu(const char *path, const char *file)
 	uint64 color;
 	char enable[NUM_MENU], tmp[64];
 	int x, y, i, sel;
+	int event, post_event=0;
 
 	int menu_ch_w = 8;             //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
@@ -731,15 +742,19 @@ int menu(const char *path, const char *file)
 	for(sel=0; sel<NUM_MENU; sel++)
 		if(enable[sel]==TRUE) break;
 	
+	event = 1;  //event = initial entry
 	while(1){
+		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
 			if(new_pad & PAD_UP && sel<NUM_MENU){
+				event |= 2;  //event |= valid pad command
 				do{
 					sel--;
 					if(sel<0) sel=NUM_MENU-1;
 				}while(!enable[sel]);
 			}else if(new_pad & PAD_DOWN && sel<NUM_MENU){
+				event |= 2;  //event |= valid pad command
 				do{
 					sel++;
 					if(sel==NUM_MENU) sel=0;
@@ -749,48 +764,55 @@ int menu(const char *path, const char *file)
 				return -1;
 			}else if((swapKeys && new_pad & PAD_CROSS)
 			      || (!swapKeys && new_pad & PAD_CIRCLE) ){
+				event |= 2;  //event |= valid pad command
 				break;
 			}
 		}
 
-		drawSprite(setting->color[0],
-			mSprite_X1, mSprite_Y1,
-			mSprite_X2, mSprite_Y2);
-		drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
-		
-		for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
-			if(i==COPY)			strcpy(tmp, "Copy");
-			else if(i==CUT)		strcpy(tmp, "Cut");
-			else if(i==PASTE)	strcpy(tmp, "Paste");
-			else if(i==DELETE)	strcpy(tmp, "Delete");
-			else if(i==RENAME)	strcpy(tmp, "Rename");
-			else if(i==NEWDIR)	strcpy(tmp, "New Dir");
-			else if(i==GETSIZE) strcpy(tmp, "Get Size");
-			else if(i==MCPASTE)	strcpy(tmp, "mcPaste");
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawSprite(setting->color[0],
+				mSprite_X1, mSprite_Y1,
+				mSprite_X2, mSprite_Y2);
+			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
 			
-			if(enable[i])	color = setting->color[3];
-			else			color = setting->color[1];
+			for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
+				if(i==COPY)			strcpy(tmp, "Copy");
+				else if(i==CUT)		strcpy(tmp, "Cut");
+				else if(i==PASTE)	strcpy(tmp, "Paste");
+				else if(i==DELETE)	strcpy(tmp, "Delete");
+				else if(i==RENAME)	strcpy(tmp, "Rename");
+				else if(i==NEWDIR)	strcpy(tmp, "New Dir");
+				else if(i==GETSIZE) strcpy(tmp, "Get Size");
+				else if(i==MCPASTE)	strcpy(tmp, "mcPaste");
+				
+				if(enable[i])	color = setting->color[3];
+				else			color = setting->color[1];
+				
+				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y/2, color, TRUE);
+				y+=FONT_HEIGHT;
+			}
+			if(sel<NUM_MENU)
+				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT)/2, setting->color[3]);
 			
-			printXY(tmp, mFrame_X1+2*FONT_WIDTH, y/2, color, TRUE);
-			y+=FONT_HEIGHT;
-		}
-		if(sel<NUM_MENU)
-			drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT)/2, setting->color[3]);
-		
-		x = SCREEN_MARGIN;
-		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		drawSprite(setting->color[0],
-			0, y/2,
-			SCREEN_WIDTH, y/2+8);
-		if (swapKeys)
-			printXY("~:OK ›:Cancel", x, y/2, setting->color[2], TRUE);
-		else
-			printXY("›:OK ~:Cancel", x, y/2, setting->color[2], TRUE);
+			//Tooltip section
+			x = SCREEN_MARGIN;
+			y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
+			drawSprite(setting->color[0],
+				0, y/2,
+				SCREEN_WIDTH, y/2+8);
+			if (swapKeys)
+				printXY("~:OK ›:Cancel", x, y/2, setting->color[2], TRUE);
+			else
+				printXY("›:OK ~:Cancel", x, y/2, setting->color[2], TRUE);
+		}//ends if(event||post_event)
 		drawScr();
-	}
-	
+		post_event = event;
+		event = 0;
+	}//ends while
 	return sel;
-}
+}//ends menu
 //--------------------------------------------------------------
 size_t getFileSize(const char *path, const FILEINFO *file)
 {
@@ -1313,6 +1335,7 @@ error:
 //--------------------------------------------------------------
 int keyboard(char *out, int max)
 {
+	int event, post_event=0;
 	const int	KEY_W=276,
 				KEY_H=84,
 				KEY_X=130,
@@ -1334,9 +1357,14 @@ int keyboard(char *out, int max)
 	if(p==NULL)	cur=strlen(out);
 	else		cur=(int)(p-out);
 	KEY_LEN = strlen(KEY);
+
+	event = 1;  //event = initial entry
 	while(1){
+		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
+			if(new_pad)
+				event |= 2;  //event |= pad command
 			if(new_pad & PAD_UP){
 				if(sel<=WFONTS*HFONTS){
 					if(sel>=WFONTS) sel-=WFONTS;
@@ -1388,48 +1416,58 @@ int keyboard(char *out, int max)
 					return -1;
 			}
 		}
-		drawSprite(setting->color[0],
-			KEY_X-2, KEY_Y-1,
-			KEY_X+KEY_W+3, KEY_Y+KEY_H+2);
-		drawFrame(
-			KEY_X, KEY_Y,
-			KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-		itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
-			setting->color[1], KEY_X+KEY_W, KEY_Y+11, 0);
-		printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
-		t++;
-		if(t<SCANRATE/2){
-			printXY("|",
-				KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
-		}else{
-			if(t==SCANRATE) t=0;
-		}
-		for(i=0; i<KEY_LEN; i++)
-			drawChar(KEY[i],
-				KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
-				KEY_Y+16 + (i/WFONTS)*8,
-				setting->color[3]);
-		printXY("OK                       CANCEL",
-			KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
-		if(sel<=WFONTS*HFONTS)
-			x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
-		else
-			x = KEY_X+2+4 + 25*8;
-		y = KEY_Y+16 + (sel/WFONTS)*8;
-		drawChar(127, x, y, setting->color[3]);
-		
-		x = SCREEN_MARGIN;
-		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+8);
 
-		if (swapKeys) 
-			printXY("~:OK ›:Back L1:Left R1:Right START:Enter",
-				x, y/2, setting->color[2], TRUE);
-		else
-			printXY("›:OK ~:Back L1:Left R1:Right START:Enter",
-				x, y/2, setting->color[2], TRUE);
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawSprite(setting->color[0],
+				KEY_X-2, KEY_Y-1,
+				KEY_X+KEY_W+3, KEY_Y+KEY_H+2);
+			drawFrame(
+				KEY_X, KEY_Y,
+				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
+			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
+				setting->color[1], KEY_X+KEY_W, KEY_Y+11, 0);
+			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
+			t++;
+			if(t<SCANRATE/2){
+				printXY("|",
+					KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
+			}else{
+				if(t==SCANRATE) t=0;
+			}
+			for(i=0; i<KEY_LEN; i++)
+				drawChar(KEY[i],
+					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
+					KEY_Y+16 + (i/WFONTS)*8,
+					setting->color[3]);
+			printXY("OK                       CANCEL",
+				KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
+	
+			//Cursor positioning section
+			if(sel<=WFONTS*HFONTS)
+				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
+			else
+				x = KEY_X+2+4 + 25*8;
+			y = KEY_Y+16 + (sel/WFONTS)*8;
+			drawChar(127, x, y, setting->color[3]);
+			
+			//Tooltip section
+			x = SCREEN_MARGIN;
+			y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
+			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+8);
+	
+			if (swapKeys) 
+				printXY("~:OK ›:Back L1:Left R1:Right START:Enter",
+					x, y/2, setting->color[2], TRUE);
+			else
+				printXY("›:OK ~:Back L1:Left R1:Right START:Enter",
+					x, y/2, setting->color[2], TRUE);
+		}//ends if(event||post_event)
 		drawScr();
-	}
+		post_event = event;
+		event = 0;
+	}//ends while
 	return 0;
 }
 //--------------------------------------------------------------
@@ -1542,7 +1580,8 @@ void getFilePath(char *out, int cnfmode)
 	int nofnt=FALSE;
 	int x, y, y0, y1;
 	int i, ret, fd;
-	
+	int event, post_event=0;
+
 	browser_cd=TRUE;
 	browser_up=FALSE;
 	browser_pushed=TRUE;
@@ -1561,10 +1600,15 @@ void getFilePath(char *out, int cnfmode)
 	nclipFiles = 0;
 	browser_cut = 0;
 	title_show=FALSE;
+	event = 1;  //event = initial entry
 	while(1){
+		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
-			if(new_pad) browser_pushed=TRUE;
+			if(new_pad){
+				browser_pushed=TRUE;
+				event |= 2;  //event |= pad command
+			}
 			if(new_pad & PAD_UP)
 				browser_sel--;
 			else if(new_pad & PAD_DOWN)
@@ -1578,6 +1622,7 @@ void getFilePath(char *out, int cnfmode)
 			else if((swapKeys && new_pad & PAD_CROSS)
 			     || (!swapKeys && new_pad & PAD_CIRCLE) ){
 				if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
+					//pushed OK for a folder
 					if(!strcmp(files[browser_sel].name,".."))
 						browser_up=TRUE;
 					else {
@@ -1586,6 +1631,7 @@ void getFilePath(char *out, int cnfmode)
 						browser_cd=TRUE;
 					}
 				}else{
+					//pushed OK for a file
 					sprintf(out, "%s%s", path, files[browser_sel].name);
 					// Must to include a function for check IRX Header 
 					if((cnfmode!=USBD_IRX_CNF)&&(cnfmode!=SKIN_CNF)&&(checkELFheader(out)<0)){
@@ -1753,7 +1799,9 @@ void getFilePath(char *out, int cnfmode)
 					return;
 				}
 			}
-		}
+		}//ends pad response section
+
+		//browser path adjustment section
 		if(browser_up){
 			if((p=strrchr(path, '/'))!=NULL)
 				*p = 0;
@@ -1805,125 +1853,133 @@ void getFilePath(char *out, int cnfmode)
 		if(browser_sel >= top+rows)		top=browser_sel-rows+1;
 		if(browser_sel < top)			top=browser_sel;
 		
-		clrScr(setting->color[0]);
+		if(event||post_event){ //NB: We need to update two frame buffers per event
 
-		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
-		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
-		if(title_show && elisaFnt!=NULL) y-=2;
-		for(i=0; i<rows; i++)
-		{
-			if(top+i >= browser_nfiles) break;
-			if(top+i == browser_sel) color = setting->color[2];
-			else			 color = setting->color[3];
-			if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
-				if(!strcmp(files[top+i].name,".."))
-					strcpy(tmp,"..");
-				else if(title_show && files[top+i].title[0]!=0)
-					strcpy(tmp,files[top+i].title);
-				else
-					sprintf(tmp, "%s/", files[top+i].name);
-			}else
-				strcpy(tmp,files[top+i].name);
-			printXY(tmp, x+4, y/2, color, TRUE);
-			if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
-			y += FONT_HEIGHT;
-			if(title_show && elisaFnt!=NULL) y+=2;
-		}
-		if(browser_nfiles > rows)
-		{
-			itoSprite(setting->color[1],
-				SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-14,
-				(SCREEN_MARGIN+FONT_HEIGHT*2+4)/2,
-				SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-12,
-				(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT)/2,
-				0);
-			y0=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
-				* ((double)top/browser_nfiles);
-			y1=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
-				* ((double)(top+rows)/browser_nfiles);
-			itoSprite(setting->color[1],
-				SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-				(y0+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
-				SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-				(y1+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
-				0);
-		}
-		if(browser_pushed)
-			sprintf(msg0, "Path: %s", path);
-		if(cnfmode==TRUE){
-			if(!strcmp(ext, "*")) {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->ELF");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->ELF");
-			} else {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :ELF->*");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :ELF->*");
+			//Display section
+			clrScr(setting->color[0]);
+	
+			x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+			y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+			if(title_show && elisaFnt!=NULL) y-=2;
+			for(i=0; i<rows; i++)
+			{
+				if(top+i >= browser_nfiles) break;
+				if(top+i == browser_sel) color = setting->color[2];  //Highlight cursor line
+				else			 color = setting->color[3];
+				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
+					if(!strcmp(files[top+i].name,".."))
+						strcpy(tmp,"..");
+					else if(title_show && files[top+i].title[0]!=0)
+						strcpy(tmp,files[top+i].title);
+					else
+						sprintf(tmp, "%s/", files[top+i].name);
+				}else
+					strcpy(tmp,files[top+i].name);
+				printXY(tmp, x+4, y/2, color, TRUE);
+				if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
+				y += FONT_HEIGHT;
+				if(title_show && elisaFnt!=NULL) y+=2;
 			}
-		}else if(cnfmode==USBD_IRX_CNF){
-			if(!strcmp(ext, "*")) {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->IRX");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->IRX");
-			} else {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :IRX->*");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :IRX->*");
+			if(browser_nfiles > rows)
+			{
+				itoSprite(setting->color[1],
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-14,
+					(SCREEN_MARGIN+FONT_HEIGHT*2+4)/2,
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-12,
+					(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT)/2,
+					0);
+				y0=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
+					* ((double)top/browser_nfiles);
+				y1=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
+					* ((double)(top+rows)/browser_nfiles);
+				itoSprite(setting->color[1],
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
+					(y0+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
+					(y1+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
+					0);
 			}
-		}else if(cnfmode==SKIN_CNF){
-			if(!strcmp(ext, "*")) {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->JPG");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->JPG");
-			} else {
-				if (swapKeys)
-					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :JPG->*");
-				else
-					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :JPG->*");
+			if(browser_pushed)
+				sprintf(msg0, "Path: %s", path);
+	
+			//Tooltip section
+			if(cnfmode==TRUE){
+				if(!strcmp(ext, "*")) {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->ELF");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->ELF");
+				} else {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :ELF->*");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :ELF->*");
+				}
+			}else if(cnfmode==USBD_IRX_CNF){
+				if(!strcmp(ext, "*")) {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->IRX");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->IRX");
+				} else {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :IRX->*");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :IRX->*");
+				}
+			}else if(cnfmode==SKIN_CNF){
+				if(!strcmp(ext, "*")) {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->JPG");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->JPG");
+				} else {
+					if (swapKeys)
+						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :JPG->*");
+					else
+						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :JPG->*");
+				}
+	 		}else{
+				if(title_show) {
+					if (swapKeys) 
+						sprintf(msg1, "~:OK ¢:Up ›:Mark  :RevMark L1/L2:TitleOFF R1:Menu");
+					else
+						sprintf(msg1, "›:OK ¢:Up ~:Mark  :RevMark L1/L2:TitleOFF R1:Menu");
+				} else {
+					if (swapKeys) 
+						sprintf(msg1, "~:OK ¢:Up ›:Mark  :RevMark L1/L2:TitleON  R1:Menu");
+					else
+						sprintf(msg1, "›:OK ¢:Up ~:Mark  :RevMark L1/L2:TitleON  R1:Menu");
+				}
 			}
- 		}else{
-			if(title_show) {
-				if (swapKeys) 
-					sprintf(msg1, "~:OK ¢:Up ›:Mark  :RevMark L1/L2:TitleOFF R1:Menu");
-				else
-					sprintf(msg1, "›:OK ¢:Up ~:Mark  :RevMark L1/L2:TitleOFF R1:Menu");
-			} else {
-				if (swapKeys) 
-					sprintf(msg1, "~:OK ¢:Up ›:Mark  :RevMark L1/L2:TitleON  R1:Menu");
-				else
-					sprintf(msg1, "›:OK ¢:Up ~:Mark  :RevMark L1/L2:TitleON  R1:Menu");
+			setScrTmp(msg0, msg1);
+			if(!strncmp(path, "mc", 2) && !vfreeSpace && !cnfmode){
+				if(mcSync(1,NULL,NULL)!=0){
+					freeSpace = mcfreeSpace*1024;
+					vfreeSpace=TRUE;
+				}
 			}
-		}
-		setScrTmp(msg0, msg1);
-		if(!strncmp(path, "mc", 2) && !vfreeSpace && !cnfmode){
-			if(mcSync(1,NULL,NULL)!=0){
-				freeSpace = mcfreeSpace*1024;
-				vfreeSpace=TRUE;
+			if(vfreeSpace){
+				if(freeSpace >= 1024*1024)
+					sprintf(tmp, "[%.1fMB free]", (double)freeSpace/1024/1024);
+				else if(freeSpace >= 1024)
+					sprintf(tmp, "[%.1fKB free]", (double)freeSpace/1024);
+				else
+					sprintf(tmp, "[%dB free]", freeSpace);
+				ret=strlen(tmp);
+				drawSprite(setting->color[0],
+					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+					SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2);
+				printXY(tmp,
+					SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
+					(SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+					setting->color[2], TRUE);
 			}
-		}
-		if(vfreeSpace){
-			if(freeSpace >= 1024*1024)
-				sprintf(tmp, "[%.1fMB free]", (double)freeSpace/1024/1024);
-			else if(freeSpace >= 1024)
-				sprintf(tmp, "[%.1fKB free]", (double)freeSpace/1024);
-			else
-				sprintf(tmp, "[%dB free]", freeSpace);
-			ret=strlen(tmp);
-			drawSprite(setting->color[0],
-				SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2);
-			printXY(tmp,
-				SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
-				(SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				setting->color[2], TRUE);
-		}
+		}//ends if(event||post_event)
 		drawScr();
-	}
+		post_event = event;
+		event = 0;
+	}//ends while
 	
 	if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
 	if(mountedParty[1][0]!=0) fileXioUmount("pfs1:");

@@ -62,6 +62,7 @@ typedef struct
 	char usbd[MAX_PATH];
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_TITLE+1];
+	int  Menu_Frame;
 	int timeout;
 	int filename;
 	uint64 color[4];
@@ -113,6 +114,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
 extern u32 new_pad;
 int setupPad(void);
 int readpad(void);
+int readpad_norepeat(void);
 void waitPadReady(int port, int slot);
 
 /* config.c */

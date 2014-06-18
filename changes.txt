@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.57  (2006.04.02)
+-Fixed a bug that interfered with timeout for default ELF launching
+
+LaunchELF v3.56  (2006.04.02)
+-Added CONFIG option 'Menu Frame:'. Default is ON, stored in CNF as "Menu_Frame = 1"
+-Modified all menus/submenus to minimize redundant display calls (offload GS). The purpose of this change is mainly to reduce the risk of screen flicker, but another side effect is that the program may be more responsive, as it no longer wastes time on unneded work
+-Fixed a skin problem by adding 'itoGsFinish()' calls after skin texture load calls
+
 LaunchELF v3.55  (2006.03.30)
 -dlanor: Rearranged colour configuration in 'SCREEN SETTINGS' to make more room
 -dlanor: Moved menu title configuration to 'SCREEN SETTINGS'

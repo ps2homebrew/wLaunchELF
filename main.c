@@ -327,7 +327,6 @@ int drawMainScreen(void)
 	}
 	
 	setScrTmp(mainMsg, c);
-	drawScr();
 	
 	return nElfs;
 }
@@ -852,8 +851,9 @@ void Reset()
 int main(int argc, char *argv[])
 {
 	char *p;
-	int nElfs;
-	CdvdDiscType_t cdmode;
+	int event, post_event=0;
+	int nElfs=0;
+	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
 	int host_or_hdd_booted = 0;
 	int mass_booted = 0;
@@ -936,10 +936,16 @@ int main(int argc, char *argv[])
 	loadSkin(0);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
+	cdmode = -1; //flag unchecked cdmode state
+	event = 1;   //event = initial entry
 	while(1){
+		//Background event section
 		if(setting->discControl){
 			CDVD_Stop();
+			old_cdmode = cdmode;
 			cdmode = cdGetDiscType();
+			if(cdmode!=old_cdmode)
+				event |= 4;  //event |= disc change detection
 			if(cdmode==CDVD_TYPE_NODISK){
 				trayopen = TRUE;
 				strcpy(mainMsg, "No Disc");
@@ -951,16 +957,28 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if(!user_acted)
+		if(!user_acted){
 			timeout--;
-		nElfs = drawMainScreen();
-		
+			if(timeout%SCANRATE==SCANRATE-1)
+				event |= 8;  //event |= visible timeout change
+		}
+
+		//Display section
+		if(event||post_event)  //NB: We need to update two frame buffers per event
+			nElfs = drawMainScreen();
+		drawScr();
+		post_event = event;
+		event = 0;
+
+		//Pad response section
 		waitPadReady(0,0);
 		if(readpad()){
+			if(new_pad){
+				user_acted = 1;
+				event |= 2;  //event |= pad command
+			}
 			switch(mode){
 			case BUTTON:
-				if(new_pad)
-					user_acted = 1;
 				if(new_pad & PAD_CIRCLE){
 					RunElf(setting->dirElf[1]);
 				}else if(new_pad & PAD_CROSS) 
@@ -985,7 +1003,6 @@ int main(int argc, char *argv[])
 					RunElf(setting->dirElf[11]);
 				else if(new_pad & PAD_SELECT){
 					config(mainMsg, CNF);
-					timeout = (setting->timeout+1)*SCANRATE;
 					if(setting->discControl)
 						loadCdModules();
 				}else if(maxCNF > 1 && new_pad & PAD_LEFT){
@@ -1010,7 +1027,6 @@ int main(int argc, char *argv[])
 				}else if((!swapKeys && new_pad & PAD_CROSS)
 				      || (swapKeys && new_pad & PAD_CIRCLE) ){
 					mode=BUTTON;
-					timeout = (setting->timeout+1)*SCANRATE;
 				}else if((swapKeys && new_pad & PAD_CROSS)
 				      || (!swapKeys && new_pad & PAD_CIRCLE) ){
 					if(maxCNF > 1 && selected==nElfs-1){
@@ -1022,7 +1038,6 @@ int main(int argc, char *argv[])
 					}else if((maxCNF > 1 && selected==nElfs-3) || (selected==nElfs-1)){
 						mode=BUTTON;
 						config(mainMsg, CNF);
-						timeout = (setting->timeout+1)*SCANRATE;
 						if(setting->discControl)
 							loadCdModules();
 					}else
@@ -1030,11 +1045,12 @@ int main(int argc, char *argv[])
 				}
 				break;
 			}
-		}
+		}//ends Pad response section
+
 		if(timeout/SCANRATE==0 && setting->dirElf[0][0] && mode==BUTTON && !user_acted){
 			RunElf(setting->dirElf[0]);
 			user_acted = 1; //Halt timeout after default action, just as for user action
-			timeout = (setting->timeout+1)*SCANRATE;
+			event |= 8;  //event |= visible timeout change
 		}
 	}
 }
