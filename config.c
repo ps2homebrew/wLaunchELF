@@ -36,6 +36,7 @@ enum
 	DEF_PSU_HUGENAMES = 0,
 	DEF_PSU_DATENAMES = 0,
 	DEF_PSU_NOOVERWRITE = 0,
+	DEF_FB_NOICONS = 0,
 	
 	DEFAULT=0,
 	SHOW_TITLES=12,
@@ -460,6 +461,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"PSU_HugeNames = %d\r\n"
 		"PSU_DateNames = %d\r\n"
 		"PSU_NoOverwrite = %d\r\n"
+		"FB_NoIcons = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
@@ -486,6 +488,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->PSU_HugeNames, //PSU_HugeNames
 		setting->PSU_DateNames, //PSU_DateNames
 		setting->PSU_NoOverwrite, //PSU_NoOverwrite
+		setting->FB_NoIcons, //FB_NoIcons
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -647,6 +650,7 @@ void initConfig(void)
 	setting->PSU_HugeNames = DEF_PSU_HUGENAMES;
 	setting->PSU_DateNames = DEF_PSU_DATENAMES;
 	setting->PSU_NoOverwrite = DEF_PSU_NOOVERWRITE;
+	setting->FB_NoIcons = DEF_FB_NOICONS;
 }
 //------------------------------
 //endfunc initConfig
@@ -805,6 +809,7 @@ failed_load:
 		else if(!strcmp(name,"PSU_HugeNames")) setting->PSU_HugeNames = atoi(value);
 		else if(!strcmp(name,"PSU_DateNames")) setting->PSU_DateNames = atoi(value);
 		else if(!strcmp(name,"PSU_NoOverwrite")) setting->PSU_NoOverwrite = atoi(value);
+		else if(!strcmp(name,"FB_NoIcons")) setting->FB_NoIcons = atoi(value);
 		//----------
 		else {
 			for(i=0; i<15; i++){

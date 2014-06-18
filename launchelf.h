@@ -132,6 +132,7 @@ typedef struct
 	int PSU_HugeNames;
 	int PSU_DateNames;
 	int PSU_NoOverwrite;
+	int FB_NoIcons;
 } SETTING;
 
 typedef struct
@@ -336,7 +337,12 @@ enum {
 	BL_SPLIT  = 0x113, //Splits rectangle from TL to BR with BL portion filled
 //0x114-0x11B are 4 double width characters for D-Pad buttons, which are accessed as:
 //"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
-	FONT_COUNT= 0x11C  //Total number of characters in font
+//0x11C-0x123 are 4 doubled characters used as normal/marked folder/file icons
+	ICON_FOLDER = 0x11C,
+	ICON_M_FOLDER = 0x11E,
+	ICON_FILE = 0x120,
+	ICON_M_FILE = 0x122,
+	FONT_COUNT= 0x124  //Total number of characters in font
 };
 
 /* makeicon.c */

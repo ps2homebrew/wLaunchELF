@@ -326,6 +326,21 @@ PSU_DateNames = 0
 # ----------------------------------------------------------------------
 PSU_NoOverwrite = 0
 # ----------------------------------------------------------------------
+# FB_NoIcons can be used to disable the new icon display mode of the
+# uLE FileBrowser. By default this is enabled, with this variable zero.
+# In icon mode the FileBrowser will display a small icon in front of
+# every file or folder name, with different shapes for folder vs file.
+# The icons will reuse colours already defined as follows:
+# Folders use Color5=='Graph2', ELFs use Color4=='Graph1', and other
+# files will all use Color3=='Normal', just like normal text display.
+# In this mode objects marked for operations are displayed differently
+# by switching to a slightly different icon definition (with a 'hole').
+# But if FB_NoIcons is set non-zero then the FileBrowser will revert
+# to the traditional form, using no icons at all, and marking selected
+# objects with an asterisk to the left of the file name.
+# ----------------------------------------------------------------------
+FB_NoIcons = 0
+# ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them
 # to define your own titles that will be used instead of ELF names in

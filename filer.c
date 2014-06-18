@@ -3090,6 +3090,7 @@ void getFilePath(char *out, int cnfmode)
 	int i, ret;
 	int event, post_event=0;
 	int font_height;
+	int iconbase, iconcolr;
 
   elisa_failed = FALSE; //set at failure to load font, cleared at each browser entry
 
@@ -3541,7 +3542,26 @@ void getFilePath(char *out, int cnfmode)
 
 					printXY(tmp, x+4+44*FONT_WIDTH, y, color, TRUE, 0);
 				}
-				if(marks[top+i]) drawChar('*', x-6, y, setting->color[3]);
+				if(setting->FB_NoIcons){ //if FileBrowser should not use icons
+					if(marks[top+i])
+						drawChar('*', x-6, y, setting->color[3]);
+				} else { //if Icons must be used in front of file/folder names
+					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
+						iconbase = ICON_FOLDER;
+						iconcolr = 5;
+					} else {
+						iconbase = ICON_FILE;
+						p = strrchr(files[top+i].name, '.');
+						if(p!=NULL && !stricmp(p+1, "ELF"))
+							iconcolr = 4;
+						else
+							iconcolr = 3;
+					}
+					if(marks[top+i])
+						iconbase += 2;
+					drawChar(iconbase, x-3-FONT_WIDTH, y, setting->color[iconcolr]);
+					drawChar(iconbase+1, x-3, y, setting->color[iconcolr]);
+				}
 				y += font_height;
 			} //ends for, so all browser rows were fixed above
 			if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
