@@ -26,6 +26,8 @@ typedef struct
 #define MC_ATTR_norm_file   0x8497  //file (PS2/PS1) on PS2 MC
 #define MC_ATTR_PS1_file    0x9417  //PS1 save file on PS1 MC
 
+#define IOCTL_RENAME 0xFEEDC0DE  //Ioctl request code for Rename function
+
 enum
 {
 	COPY,
@@ -617,12 +619,14 @@ int menu(const char *path, const char *file)
 
 	memset(enable, TRUE, NUM_MENU);
 	if(!strncmp(path,"host",4)){
-		enable[CUT] = FALSE;
-		enable[PASTE] = FALSE;
-		enable[DELETE] = FALSE;
-		enable[RENAME] = FALSE;
-		enable[NEWDIR] = FALSE;
-		enable[MCPASTE] = FALSE;
+		if(!setting->HOSTwrite){
+			enable[PASTE] = FALSE;
+			enable[MCPASTE] = FALSE;
+			enable[NEWDIR] = FALSE;
+			enable[CUT] = FALSE;
+			enable[DELETE] = FALSE;
+			enable[RENAME] = FALSE;
+		}
 	}
 	if(!strcmp(path,"hdd0:/") || path[0]==0){
 		enable[COPY] = FALSE;
@@ -788,12 +792,14 @@ int delete(const char *path, const FILEINFO *file)
 		hdddir[3] = ret+'0';
 	}
 	sprintf(dir, "%s%s", path, file->name);
+	if	(!strncmp(dir, "host:/", 6))
+		makeHostPath(dir+5, dir+6);
 	
-	if(file->stats.attrFile & MC_ATTR_SUBDIR){
+	if(file->stats.attrFile & MC_ATTR_SUBDIR){ //Is the object to delete a folder ?
 		strcat(dir,"/");
 		nfiles = getDir(dir, files);
 		for(i=0; i<nfiles; i++){
-			ret=delete(dir, &files[i]);
+			ret=delete(dir, &files[i]);            //recursively delete contents of folder
 			if(ret < 0) return -1;
 		}
 		if(!strncmp(dir, "mc", 2)){
@@ -809,15 +815,18 @@ int delete(const char *path, const FILEINFO *file)
 				dir[4] = 1 + '0';
 				ret = fioRmdir(dir);
 			}
+		}else if(!strncmp(path, "host", 4)){
+			sprintf(dir, "%s%s", path, file->name);
+			ret = fioRmdir(dir);
 		}
-	} else {
+	} else {                                   //The object to delete is a file
 		if(!strncmp(path, "mc", 2)){
 			mcSync(0,NULL,NULL);
 			mcDelete(dir[2]-'0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);
 		}else if(!strncmp(path, "hdd", 3)){
 			ret = fileXioRemove(hdddir);
-		}else if(!strncmp(path, "mass", 4)){
+		}else if((!strncmp(path, "mass", 4)) || (!strncmp(path, "host", 4))){
 			ret = fioRemove(dir);
 		}
 	}
@@ -844,12 +853,36 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 	}else if(!strncmp(path, "mc", 2)){
 		sprintf(oldPath, "%s%s", path+2, file->name);
 		sprintf(newPath, "%s%s", path+2, name);
-		mcSync(0,NULL,NULL);
+		mcGetInfo(path[2]-'0', 0, &ret, &ret, &ret);  //Wakeup call
+		mcSync(0, NULL, &ret);
 		mcRename(path[2]-'0', 0, oldPath, newPath);
 		mcSync(0, NULL, &ret);
 		if(ret == -4)
 			ret = -17;
-	}else
+	}else if(!strncmp(path, "host", 4)){
+		int temp_fd;
+
+		strcpy(oldPath, path);
+		if	(!strncmp(oldPath, "host:/", 6))
+			makeHostPath(oldPath+5, oldPath+6);
+		strcpy(newPath, oldPath+5);
+		strcat(oldPath, file->name);
+		strcat(newPath, name);
+		if(file->stats.attrFile & MC_ATTR_SUBDIR){ //Rename a folder ?
+			ret = (temp_fd = fioDopen(oldPath));
+			if (temp_fd >= 0){
+				ret = fioIoctl(temp_fd, IOCTL_RENAME, (void *) newPath);
+				fioDclose(temp_fd);
+			}
+		} else if(file->stats.attrFile & MC_ATTR_FILE){ //Rename a file ?
+			ret = (temp_fd = fioOpen(oldPath, O_RDONLY));
+			if (temp_fd >= 0){
+				ret = fioIoctl(temp_fd, IOCTL_RENAME, (void *) newPath);
+				fioClose(temp_fd);
+			}
+		} else  //This was neither a folder nor a file !!!
+			return -1;
+	} else  //The device was not recognized
 		return -1;
 		
 	return ret;
@@ -880,8 +913,13 @@ int newdir(const char *path, const char *name)
 		strcpy(dir, path);
 		strcat(dir, name);
 		ret = fioMkdir(dir);
+	}else if(!strncmp(path, "host", 4)){
+		strcpy(dir, path);
+		strcat(dir, name);
+		if	(!strncmp(dir, "host:/", 6))
+			makeHostPath(dir+5, dir+6);
+		ret = fioMkdir(dir);
 	}
-	
 	return ret;
 }
 //--------------------------------------------------------------
@@ -1115,6 +1153,8 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			out_fd = fileXioOpen(out,O_WRONLY|O_TRUNC|O_CREAT,fileMode);
 			if(out_fd<0) goto error;
 		}else{
+			if	(!strncmp(out, "host:/", 6))
+				makeHostPath(out+5, out+6);
 			out_fd=fioOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
 			if(out_fd<0) goto error;
 		}

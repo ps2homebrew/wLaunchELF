@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.44  (2006.02.18)
+-Implemented HOST interface write access to networked PC. This uses a new CNF variable named "NET_HOSTwrite" which has a default value of "0" meaning it is disabled. For reasons of safety there is no way to change this value from the config menu. Edit it yourself, and set its value to "1" (or any other non-zero value) to enable the new abilities, which include the following menu functions 'Cut', 'Paste', 'mcPaste', 'Delete', 'Rename', 'New Dir'. Note that most of the new functions require a very recent version of ps2client or RadHostClient to function, and at present the 'Rename' function only works with the ps2client version specially patched for LaunchELF. (Available in the LaunchELF forum.) (NB: file writing seems bugged in RadHostClient v1.5)
+-Added modified sources for ps2client to the folder "Changed source for external projects".
+
 LaunchELF v3.43  (2006.02.16)
 -This release is purely a bugfix for an old bug in the HOST interface. That bug was mostly harmless in older versions, but became capable of freezing the console in v3.41u and v3.42.
 

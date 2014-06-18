@@ -33,7 +33,6 @@ static char recv_packet[PACKET_MAXSIZE] __attribute__((aligned(16)));
 static int pko_fileio_sock = -1;
 static int pko_fileio_active = 0;
 
-//#define DEBUG
 #ifdef DEBUG
 #define dbgprintf(args...) printf(args)
 #else
@@ -394,7 +393,12 @@ int pko_read_file(int fd, char *buf, int length)
 
     readcmd->nbytes = htonl(length);
 
-    send(pko_fileio_sock, readcmd, sizeof(pko_pkt_read_req), 0);
+    i = send(pko_fileio_sock, readcmd, sizeof(pko_pkt_read_req), 0);
+    if (i<0)
+    {
+        dbgprintf("pko_file: pko_read_file: send failed (%d)\n", i);
+        return -1;
+    }
 
     if(!pko_accept_pkt(pko_fileio_sock, (char *)readrly, 
                        sizeof(pko_pkt_read_rly), PKO_READ_RLY)) {
@@ -410,13 +414,158 @@ int pko_read_file(int fd, char *buf, int length)
     // Now read the actual file data
     i = pko_recv_bytes(pko_fileio_sock, &buf[0], nbytes);
     if (i < 0) {
-        dbgprintf("pko_file: pko_read_file, data read error\n");
+        dbgprintf("pko_file: pko_read_file: data read error\n");
         return -1;
     }
     return nbytes;
     return readbytes;
 }
 
+//----------------------------------------------------------------------
+//
+int pko_ioctl(int fd,  unsigned long request, void *data)
+{
+    pko_pkt_ioctl_req *ioctlreq;
+    pko_pkt_file_rly *ioctlrly;
+
+    if (pko_fileio_sock < 0) {
+        return -1;
+    }
+
+    dbgprintf("pko_file: ioctl req (%x)\n", request);
+
+    ioctlreq = (pko_pkt_ioctl_req *)&send_packet[0];
+
+    // Build packet
+    ioctlreq->cmd = htonl(PKO_IOCTL_CMD);
+    ioctlreq->len = htons((unsigned short)sizeof(pko_pkt_ioctl_req));
+    ioctlreq->fd = htonl(fd);
+    ioctlreq->request = htonl(request);
+    memcpy(ioctlreq->data, data, 256);
+
+    if (pko_lwip_send(pko_fileio_sock, ioctlreq, sizeof(pko_pkt_ioctl_req), 0) < 0) {
+        return -1;
+    }
+
+    if (!pko_accept_pkt(pko_fileio_sock, recv_packet, 
+                        sizeof(pko_pkt_file_rly), PKO_IOCTL_RLY)) {
+        dbgprintf("pko_file: pko_ioctl: did not receive IOCTL_RLY\n");
+        return -1;
+    }
+
+    ioctlrly = (pko_pkt_file_rly *)recv_packet;
+    dbgprintf("pko_file: ioctl reply received (ret %d)\n", ntohl(ioctlrly->retval));
+    return ntohl(ioctlrly->retval);
+}
+
+//----------------------------------------------------------------------
+//
+int pko_remove(char *name)
+{
+    pko_pkt_remove_req *removereq;
+    pko_pkt_file_rly *removerly;
+
+    if (pko_fileio_sock < 0) {
+        return -1;
+    }
+
+    dbgprintf("pko_file: file remove req (%s)\n", name);
+
+    removereq = (pko_pkt_remove_req *)&send_packet[0];
+
+    // Build packet
+    removereq->cmd = htonl(PKO_REMOVE_CMD);
+    removereq->len = htons((unsigned short)sizeof(pko_pkt_remove_req));
+    strncpy(removereq->name, name, PKO_MAX_PATH);
+    removereq->name[PKO_MAX_PATH - 1] = 0; // Make sure it's null-terminated
+
+    if (pko_lwip_send(pko_fileio_sock, removereq, sizeof(pko_pkt_remove_req), 0) < 0) {
+        return -1;
+    }
+
+    if (!pko_accept_pkt(pko_fileio_sock, recv_packet, 
+                        sizeof(pko_pkt_file_rly), PKO_REMOVE_RLY)) {
+        dbgprintf("pko_file: pko_remove: did not receive REMOVE_RLY\n");
+        return -1;
+    }
+
+    removerly = (pko_pkt_file_rly *)recv_packet;
+    dbgprintf("pko_file: file remove reply received (ret %d)\n", ntohl(removerly->retval));
+    return ntohl(removerly->retval);
+}
+
+//----------------------------------------------------------------------
+//
+int pko_mkdir(char *name, int mode)
+{
+    pko_pkt_mkdir_req *mkdirreq;
+    pko_pkt_file_rly *mkdirrly;
+
+    if (pko_fileio_sock < 0) {
+        return -1;
+    }
+
+    dbgprintf("pko_file: make dir req (%s)\n", name);
+
+    mkdirreq = (pko_pkt_mkdir_req *)&send_packet[0];
+
+    // Build packet
+    mkdirreq->cmd = htonl(PKO_MKDIR_CMD);
+    mkdirreq->len = htons((unsigned short)sizeof(pko_pkt_mkdir_req));
+    mkdirreq->mode = mode;
+    strncpy(mkdirreq->name, name, PKO_MAX_PATH);
+    mkdirreq->name[PKO_MAX_PATH - 1] = 0; // Make sure it's null-terminated
+
+    if (pko_lwip_send(pko_fileio_sock, mkdirreq, sizeof(pko_pkt_mkdir_req), 0) < 0) {
+        return -1;
+    }
+
+    if (!pko_accept_pkt(pko_fileio_sock, recv_packet, 
+                        sizeof(pko_pkt_file_rly), PKO_MKDIR_RLY)) {
+        dbgprintf("pko_file: pko_mkdir: did not receive MKDIR_RLY\n");
+        return -1;
+    }
+
+    mkdirrly = (pko_pkt_file_rly *)recv_packet;
+    dbgprintf("pko_file: make dir reply received (ret %d)\n", ntohl(mkdirrly->retval));
+    return ntohl(mkdirrly->retval);
+}
+
+//----------------------------------------------------------------------
+//
+int pko_rmdir(char *name)
+{
+    pko_pkt_rmdir_req *rmdirreq;
+    pko_pkt_file_rly *rmdirrly;
+
+    if (pko_fileio_sock < 0) {
+        return -1;
+    }
+
+    dbgprintf("pko_file: remove dir req (%s)\n", name);
+
+    rmdirreq = (pko_pkt_rmdir_req *)&send_packet[0];
+
+    // Build packet
+    rmdirreq->cmd = htonl(PKO_RMDIR_CMD);
+    rmdirreq->len = htons((unsigned short)sizeof(pko_pkt_rmdir_req));
+    strncpy(rmdirreq->name, name, PKO_MAX_PATH);
+    rmdirreq->name[PKO_MAX_PATH - 1] = 0; // Make sure it's null-terminated
+
+    if (pko_lwip_send(pko_fileio_sock, rmdirreq, sizeof(pko_pkt_rmdir_req), 0) < 0) {
+        return -1;
+    }
+
+    if (!pko_accept_pkt(pko_fileio_sock, recv_packet, 
+                        sizeof(pko_pkt_file_rly), PKO_RMDIR_RLY)) {
+        dbgprintf("pko_file: pko_rmdir: did not receive RMDIR_RLY\n");
+        return -1;
+    }
+
+    rmdirrly = (pko_pkt_file_rly *)recv_packet;
+    dbgprintf("pko_file: remove dir reply received (ret %d)\n", ntohl(rmdirrly->retval));
+    return ntohl(rmdirrly->retval);
+}
 
 //----------------------------------------------------------------------
 //
@@ -446,7 +595,7 @@ int pko_open_dir(char *path)
 
     if (!pko_accept_pkt(pko_fileio_sock, recv_packet, 
                         sizeof(pko_pkt_file_rly), PKO_OPENDIR_RLY)) {
-        dbgprintf("pko_file: pko_open_file: did not receive OPENDIR_RLY\n");
+        dbgprintf("pko_file: pko_open_dir: did not receive OPENDIR_RLY\n");
         return -1;
     }
 

@@ -19,6 +19,7 @@ enum
 	DEF_RESETIOP = TRUE,
 	DEF_NUMCNF = 1,
 	DEF_SWAPKEYS = FALSE,
+	DEF_HOSTWRITE = FALSE,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
@@ -133,6 +134,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Menu_Pages = %d\r\n"
 		"GUI_Swap_Keys = %d\r\n"
 		"USBD_FILE = %s\r\n"
+		"NET_HOSTwrite = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->dirElf[0],  //auto
 		setting->dirElf[1],  //Circle
@@ -160,6 +162,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->numCNF,     //Menu_Pages
 		setting->swapKeys,   //GUI_Swap_Keys
 		setting->usbd,       //USBD_FILE
+		setting->HOSTwrite,  //NET_HOST_write
 		&CNF_size       // This variable measure the size of sprintf data
   );
 
@@ -237,6 +240,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->resetIOP = DEF_RESETIOP;
 	setting->numCNF = DEF_NUMCNF;
 	setting->swapKeys = DEF_SWAPKEYS;
+	setting->HOSTwrite = DEF_HOSTWRITE;
 
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
@@ -312,6 +316,7 @@ failed_load:
 		else if(!strcmp(name,"Menu_Pages")) setting->numCNF = atoi(value);
 		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
 		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd,value);
+		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
 	}
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);

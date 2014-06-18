@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.02.13
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.02.18
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -85,7 +85,24 @@ Screen_Interlace = 0
 Init_Reset_IOP   = 1
 Menu_Pages       = 1
 GUI_Swap_Keys    = 0
+# ----------------------------------------------------------------------
+# The variables below have been added after the original design (v3.41t)
+# of the new CNF format. They should be used as follows:
+# ----------------------------------------------------------------------
+# USBD_FILE is valid in v3.41u and later versions. It's used to choose
+# an alternate USBD.IRX file, which LaunchELF will then use instead of
+# the embedded one. You can set it in the 'STARTUP SETTINGS' screen.
+# ----------------------------------------------------------------------
 USBD_FILE =
+# ----------------------------------------------------------------------
+# NET_HOSTwrite is valid in v3.44 and later versions. It's can enable
+# the ability of the networked HOST interface to write on your PC HDDs!
+# Users who want to avoid risks for their PC should leave it as default,
+# which disables these new abilities. For safety reasons it can only be
+# changed by direct user editing. Edit it to a non-zero value to enable
+# the new abilities. (You'll need a very new ps2client.exe as well.)
+# ----------------------------------------------------------------------
+NET_HOSTwrite = 0
 # ----------------------------------------------------------------------
 # End of file: LAUNCHELF.CNF
 # ----------------------------------------------------------------------

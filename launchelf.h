@@ -67,6 +67,7 @@ typedef struct
 	int resetIOP;
 	int numCNF;
 	int swapKeys;
+	int HOSTwrite;
 } SETTING;
 
 typedef struct
