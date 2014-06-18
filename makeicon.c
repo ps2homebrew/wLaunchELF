@@ -319,6 +319,9 @@ int make_iconsys(char* title,char* iconname, char* filename)
 {
 	// mcIcon is defined as part of libmc
 	mcIcon icon_sys;
+
+	memset(((void *) &icon_sys), 0, sizeof(icon_sys));
+
 	strcpy(icon_sys.head,"PS2D");
 	icon_sys.nlOffset=0;//0=automagically wordwrap, otherwise newline position(multiple of 2)
 	strcpy_sjis((short *)&icon_sys.title, title);

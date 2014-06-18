@@ -13,25 +13,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <kernel.h>
 
 #include "gsKit.h"
 #include "gsInline.h"
-
-#ifdef HAVE_LIBJPG
-#include <libjpg.h>
-#endif
-
-#ifdef HAVE_LIBTIFF
-#include <tif_config.h>
-#include <tiffio.h>
-#endif
-
-#ifdef HAVE_LIBPNG
-#include <png.h>
-#include <assert.h>
-
-void gsKit_png_read(png_structp png_ptr, png_bytep data, png_size_t length);
-#endif
 
 static inline u32 lzw(u32 val)
 {
@@ -85,717 +70,6 @@ u32  gsKit_texture_size(int width, int height, int psm)
 	}
 
 	return -1;
-}
-
-int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-#ifdef HAVE_LIBPNG
-	FILE* File = fopen(Path, "r");
-	if (File == NULL)
-	{
-		printf("Failed to load PNG file: %s\n", Path);
-		return -1;
-	}
-
-	png_structp png_ptr;
-	png_infop info_ptr;
-	png_uint_32 width, height;
-	png_bytep *row_pointers;
-
-	unsigned int sig_read = 0;
-        int row, i, k=0, j, bit_depth, color_type, interlace_type;
-
-	png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, (png_voidp) NULL, NULL, NULL);
-
-	if(!png_ptr)
-	{
-		printf("PNG Read Struct Init Failed\n");
-		fclose(File);
-		return -1;
-	}
-
-	info_ptr = png_create_info_struct(png_ptr);
-
-	if(!info_ptr)
-	{
-		printf("PNG Info Struct Init Failed\n");
-		fclose(File);
-		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-		return -1;
-	}
-
-	if(setjmp(png_ptr->jmpbuf))
-	{
-		printf("Got PNG Error!\n");
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
-		fclose(File);
-		return -1;
-	}
-
-	png_set_read_fn(png_ptr, File, gsKit_png_read);
-
-	png_set_sig_bytes(png_ptr, sig_read);
-
-	png_read_info(png_ptr, info_ptr);
-
-	png_get_IHDR(png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,&interlace_type, NULL, NULL);
-
-	png_set_strip_16(png_ptr);
-
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
-		png_set_expand(png_ptr);
-
-	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_expand(png_ptr);
-
-	if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS))
-		png_set_tRNS_to_alpha(png_ptr);
-
-	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
-
-	png_read_update_info(png_ptr, info_ptr);
-
-	Texture->Width = width;
-	Texture->Height = height;
-
-        Texture->VramClut = 0;
-        Texture->Clut = NULL;
-
-	if(png_ptr->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
-	{
-        int row_bytes = png_get_rowbytes(png_ptr, info_ptr);
-		Texture->PSM = GS_PSM_CT32;
-		Texture->Mem = memalign(128, gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM));
-
-        row_pointers = calloc(height, sizeof(png_bytep));
-
-        for (row = 0; row < height; row++) {
-            row_pointers[row] = malloc(row_bytes);
-        }
-
-        png_read_image(png_ptr, row_pointers);
-
-        struct pixel { unsigned char r,g,b,a; };
-        struct pixel *Pixels = (struct pixel *) Texture->Mem;
-
-        for (i=0;i<height;i++) {
-                for (j=0;j<width;j++) {
-                        Pixels[k].r = row_pointers[i][4*j];
-                        Pixels[k].g = row_pointers[i][4*j+1];
-                        Pixels[k].b = row_pointers[i][4*j+2];
-                        Pixels[k++].a = (int) row_pointers[i][4*j+3] * 128 / 255;
-            }
-		}
-
-        for (row = 0; row < height; row++) {
-            free(row_pointers[row]);
-        }
-
-        free(row_pointers);
-		Texture->Filter = GS_FILTER_NEAREST;
-
-		png_read_end(png_ptr, NULL);
-
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
-	}
-	else if(png_ptr->color_type == PNG_COLOR_TYPE_RGB)
-	{
-        int row_bytes = png_get_rowbytes(png_ptr, info_ptr);
-		Texture->PSM = GS_PSM_CT24;
-		Texture->Mem = memalign(128, gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM));
-
-        row_pointers = calloc(height, sizeof(png_bytep));
-
-        for (row = 0; row < height; row++) {
-            row_pointers[row] = malloc(row_bytes);
-        }
-
-        png_read_image(png_ptr, row_pointers);
-
-        struct pixel3 { unsigned char r,g,b; };
-        struct pixel3 *Pixels = (struct pixel3 *) Texture->Mem;
-
-        for (i=0;i<height;i++) {
-                for (j=0;j<width;j++) {
-                        Pixels[k].r = row_pointers[i][4*j];
-                        Pixels[k].g = row_pointers[i][4*j+1];
-                        Pixels[k++].b = row_pointers[i][4*j+2];
-            }
-		}
-
-        for (row = 0; row < height; row++) {
-            free(row_pointers[row]);
-        }
-
-        free(row_pointers);
-		Texture->Filter = GS_FILTER_NEAREST;
-
-		png_read_end(png_ptr, NULL);
-
-		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
-	}
-	else
-	{
-		printf("This texture depth is not supported yet!\n");
-	}
-
-	fclose(File);
-
-	if(!Texture->Delayed)
-	{
-		u32 VramTextureSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
-		Texture->Vram = gsKit_vram_alloc(gsGlobal, VramTextureSize, GSKIT_ALLOC_USERBUFFER);
-		if(Texture->Vram == GSKIT_ALLOC_ERROR)
-		{
-			printf("VRAM Allocation Failed. Will not upload texture.\n");
-			return -1;
-		}
-
-		gsKit_texture_upload(gsGlobal, Texture);
-		free(Texture->Mem);
-	}
-	else
-	{
-		gsKit_setup_tbw(Texture);
-	}
-
-	return 0;
-#else
-	printf("ERROR: gsKit_texture_png unimplimented.\n");
-	return -1;
-#endif
-}
-
-int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-	GSBITMAP Bitmap;
-	int x, y;
-	int cy;
-	u32 FTexSize;
-	u8  *image;
-	u8  *p;
-
-	FILE* File = fopen(Path, "r");
-	if (File == NULL)
-	{
-		printf("Failed to load bitmap: %s\n", Path);
-		return -1;
-	}
-	if (fread(&Bitmap.FileHeader, sizeof(Bitmap.FileHeader), 1, File) <= 0)
-	{
-		printf("Could not load bitmap: %s\n", Path);
-		return -1;
-	}
-
-	if (fread(&Bitmap.InfoHeader, sizeof(Bitmap.InfoHeader), 1, File) <= 0)
-	{
-		printf("Could not load bitmap: %s\n", Path);
-		return -1;
-	}
-
-	Texture->Width = Bitmap.InfoHeader.Width;
-	Texture->Height = Bitmap.InfoHeader.Height;
-	Texture->Filter = GS_FILTER_NEAREST;
-
-	if(Bitmap.InfoHeader.BitCount == 4)
-	{
-		Texture->PSM = GS_PSM_T4;
-		Texture->Clut = memalign(128, gsKit_texture_size_ee(8, 2, GS_PSM_CT32));
-		Texture->ClutPSM = GS_PSM_CT32;
-
-		memset(Texture->Clut, 0, gsKit_texture_size_ee(8, 2, GS_PSM_CT32));
-		Texture->VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(8, 2, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-		fseek(File, 54, SEEK_SET);
-		if (fread(Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32), 1, File) <= 0)
-		{
-			printf("Could not load bitmap: %s\n", Path);
-			return -1;
-		}
-
-		GSBMCLUT *clut = (GSBMCLUT *)Texture->Clut;
-		int i;
-		for (i = Bitmap.InfoHeader.ColorUsed; i < 16; i++)
-		{
-			memset(&clut[i], 0, sizeof(clut[i]));
-		}
-
-		for (i = 0; i < 16; i++)
-		{
-			u8 tmp = clut[i].Blue;
-			clut[i].Blue = clut[i].Red;
-			clut[i].Red = tmp;
-			clut[i].Alpha = 0;
-		}
-
-	}
-	else if(Bitmap.InfoHeader.BitCount == 8)
-{
-		Texture->PSM = GS_PSM_T8;
-		Texture->Clut = memalign(128, gsKit_texture_size_ee(16, 16, GS_PSM_CT32));
-		Texture->ClutPSM = GS_PSM_CT32;
-
-		memset(Texture->Clut, 0, gsKit_texture_size_ee(16, 16, GS_PSM_CT32));
-		Texture->VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(16, 16, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-		fseek(File, 54, SEEK_SET);
-		if (fread(Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32), 1, File) <= 0)
-		{
-			printf("Could not load bitmap: %s\n", Path);
-			return -1;
-		}
-
-		GSBMCLUT *clut = (GSBMCLUT *)Texture->Clut;
-		int i;
-		for (i = Bitmap.InfoHeader.ColorUsed; i < 256; i++)
-		{
-			memset(&clut[i], 0, sizeof(clut[i]));
-		}
-
-		for (i = 0; i < 256; i++)
-		{
-			u8 tmp = clut[i].Blue;
-			clut[i].Blue = clut[i].Red;
-			clut[i].Red = tmp;
-			clut[i].Alpha = 0;
-		}
-
-		// rotate clut
-		for (i = 0; i < 256; i++)
-		{
-			if ((i&0x18) == 8)
-			{
-				GSBMCLUT tmp = clut[i];
-				clut[i] = clut[i+8];
-				clut[i+8] = tmp;
-			}
-		}
-	}
-	else if(Bitmap.InfoHeader.BitCount == 16)
-{
-		Texture->PSM = GS_PSM_CT16;
-		Texture->VramClut = 0;
-		Texture->Clut = NULL;
-	}
-	else if(Bitmap.InfoHeader.BitCount == 24)
-	{
-		Texture->PSM = GS_PSM_CT24;
-		Texture->VramClut = 0;
-		Texture->Clut = NULL;
-	}
-
-	FTexSize = fseek(File, 0, SEEK_END);
-	FTexSize -= Bitmap.FileHeader.Offset;
-
-	fseek(File, Bitmap.FileHeader.Offset, SEEK_SET);
-
-	u32 TextureSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
-	u32 VramTextureSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
-
-	Texture->Mem = memalign(128,TextureSize);
-
-	if(Bitmap.InfoHeader.BitCount == 24)
-	{
-		image = memalign(128, FTexSize);
-		if (image == NULL) return -1;
-		fread(image, FTexSize, 1, File);
-		p = (void *)((u32)Texture->Mem | 0x30000000);
-		for (y=Texture->Height-1,cy=0; y>=0; y--,cy++) {
-			for (x=0; x<Texture->Width; x++) {
-				p[(y*Texture->Width+x)*3+2] = image[(cy*Texture->Width+x)*3+0];
-				p[(y*Texture->Width+x)*3+1] = image[(cy*Texture->Width+x)*3+1];
-				p[(y*Texture->Width+x)*3+0] = image[(cy*Texture->Width+x)*3+2];
-			}
-		}
-		free(image);
-	}
-	else if(Bitmap.InfoHeader.BitCount == 16)
-	{
-		printf("16-bit BMP not supported yet.\n");
-	}
-	else if(Bitmap.InfoHeader.BitCount == 8 || Bitmap.InfoHeader.BitCount == 4 )
-	{
-		char *tex = (char *)((u32)Texture->Mem | 0x30000000);
-		image = memalign(128,FTexSize);
-		if (fread(image, FTexSize, 1, File) != FTexSize)
-		{
-			printf("Read failed!\n");
-			free(image);
-			fclose(File);
-		}
-		for (y=Texture->Height-1; y>=0; y--)
-		{
-			if(Bitmap.InfoHeader.BitCount == 8)
-				memcpy(&tex[y*Texture->Width], &image[(Texture->Height-y-1)*Texture->Width], Texture->Width);
-			else
-				memcpy(&tex[y*(Texture->Width/2)], &image[(Texture->Height-y-1)*(Texture->Width/2)], Texture->Width / 2);
-		}
-		free(image);
-
-		if(Bitmap.InfoHeader.BitCount == 4)
-		{
-			int byte;
-			u8 *tmpdst = (u8 *)((u32)Texture->Mem | 0x30000000);
-			u8 *tmpsrc = (u8 *)tex;
-
-			for(byte = 0; byte < FTexSize; byte++)
-			{
-				tmpdst[byte] = (tmpsrc[byte] << 4) | (tmpsrc[byte] >> 4);
-			}
-			free(tex);
-		}
-	}
-	else
-	{
-		printf("Unknown BMP bit depth format %d\n", Bitmap.InfoHeader.BitCount);
-	}
-
-	fclose(File);
-
-	if(!Texture->Delayed)
-	{
-		Texture->Vram = gsKit_vram_alloc(gsGlobal, VramTextureSize, GSKIT_ALLOC_USERBUFFER);
-		if(Texture->Vram == GSKIT_ALLOC_ERROR)
-		{
-			printf("VRAM Allocation Failed. Will not upload texture.\n");
-			return -1;
-		}
-
-		gsKit_texture_upload(gsGlobal, Texture);
-		free(Texture->Mem);
-	}
-	else
-	{
-		gsKit_setup_tbw(Texture);
-	}
-
-	return 0;
-}
-
-int  gsKit_texture_jpeg(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-#ifdef HAVE_LIBJPG
-
-	jpgData *jpg;
-	FILE *File = fopen(Path, "r");
-
-	int TextureSize = 0;
-	int VramTextureSize = 0;
-
-	jpg = jpgOpenFILE(File, JPG_WIDTH_FIX);
-	if (jpg == NULL) {
-		return -1;
-		printf("error opening %s\n", Path);
-	}
-
-	Texture->Width =  jpg->width;
-	Texture->Height = jpg->height;
-	Texture->PSM = GS_PSM_CT24;
-	Texture->Filter = GS_FILTER_NEAREST;
-	Texture->VramClut = 0;
-	Texture->Clut = NULL;
-
-	TextureSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
-	VramTextureSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
-	#ifdef DEBUG
-	printf("Texture Size = %i\n",TextureSize);
-	#endif
-
-	Texture->Mem = memalign(128,TextureSize);
-	jpgReadImage(jpg, (void *)Texture->Mem);
-	jpgClose(jpg);
-	fclose(File);
-
-
-	if(!Texture->Delayed)
-	{
-		Texture->Vram = gsKit_vram_alloc(gsGlobal, VramTextureSize, GSKIT_ALLOC_USERBUFFER);
-		if(Texture->Vram == GSKIT_ALLOC_ERROR)
-		{
-			printf("VRAM Allocation Failed. Will not upload texture.\n");
-			return -1;
-		}
-		gsKit_texture_upload(gsGlobal, Texture);
-
-		free(Texture->Mem);
-	}
-	else
-	{
-		gsKit_setup_tbw(Texture);
-	}
-
-	return 0;
-
-#else
-
-	printf("ERROR: gsKit_texture_jpeg unimplimented.\n");
-	return -1;
-
-#endif
-}
-
-int  gsKit_texture_tiff(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-#ifdef HAVE_LIBTIFF
-	int TextureSize = 0;
-	int VramTextureSize = 0;
-
-	TIFF* tif = TIFFOpen(Path, "r");
-	if(tif == NULL)
-	{
-		printf("Error Opening %s\n", Path);
-		return -1;
-	}
-
-	Texture->PSM = GS_PSM_CT32;
-	Texture->Filter = GS_FILTER_NEAREST;
-	Texture->VramClut = 0;
-	Texture->Clut = NULL;
-
-	TIFFGetField(tif, TIFFTAG_IMAGEWIDTH, &Texture->Width);
-	TIFFGetField(tif, TIFFTAG_IMAGELENGTH, &Texture->Height);
-	TextureSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
-	VramTextureSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
-
-	#ifdef GSKIT_DEBUG
-	printf("Texture Size = %i\n",TextureSize);
-	#endif
-
-	Texture->Mem = memalign(128,TextureSize);
-
-	if (!TIFFReadPS2Image(tif, Texture->Width, Texture->Height, Texture->Mem, 0))
-	{
-		printf("Error Reading TIFF Data\n");
-		TIFFClose(tif);
-		free(Texture->Mem);
-		return -1;
-	}
-
-	TIFFClose(tif);
-
-/*
-	// To dump+debug the RBGA data from tiff
-	FILE* File = fopen("host:texdump.raw", "w");
-
-	fwrite(Texture->Mem, TextureSize, 1, File);
-
-	fclose(File);
-*/
-	if(!Texture->Delayed)
-	{
-		Texture->Vram = gsKit_vram_alloc(gsGlobal, VramTextureSize, GSKIT_ALLOC_USERBUFFER);
-		if(Texture->Vram == GSKIT_ALLOC_ERROR)
-		{
-			printf("VRAM Allocation Failed. Will not upload texture.\n");
-			return -1;
-		}
-		gsKit_texture_upload(gsGlobal, Texture);
-
-		free(Texture->Mem);
-	}
-	else
-	{
-		gsKit_setup_tbw(Texture);
-	}
-
-	return 0;
-
-#else
-
-	printf("ERROR: gsKit_texture_tiff unimplimented.\n");
-	return -1;
-
-#endif
-}
-
-int gsKit_texture_tga(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-	printf("ERROR: gsKit_texture_tga unimplimented.\n");
-	return -1;
-}
-
-int gsKit_texture_raw(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
-{
-	FILE* File = fopen(Path, "r");
-	if (File == NULL)
-	{
-		printf("Failed to load  texture: %s\n", Path);
-		return -1;
-	}
-	int FileSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
-	int VramFileSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
-	Texture->Mem = memalign(128, FileSize);
-
-	if(Texture->PSM != GS_PSM_T8 && Texture->PSM != GS_PSM_T4)
-	{
-		Texture->VramClut = 0;
-		Texture->Clut = NULL;
-	}
-
-	if(fread(Texture->Mem, FileSize, 1, File) <= 0)
-	{
-		printf("Could not load texture: %s\n", Path);
-		return -1;
-	}
-	fclose(File);
-
-	if(!Texture->Delayed)
-	{
-		Texture->Vram = gsKit_vram_alloc(gsGlobal, VramFileSize, GSKIT_ALLOC_USERBUFFER);
-		if(Texture->Vram == GSKIT_ALLOC_ERROR)
-		{
-			printf("VRAM Allocation Failed. Will not upload texture.\n");
-			return -1;
-		}
-		gsKit_texture_upload(gsGlobal, Texture);
-
-		free(Texture->Mem);
-	}
-	else
-	{
-		gsKit_setup_tbw(Texture);
-	}
-
-	return 0;
-}
-
-int gsKit_texture_fnt_raw(GSGLOBAL *gsGlobal, GSFONT *gsFont)
-{
-	u32 *data = (u32*)gsFont->RawData;
-	u32 *mem;
-	int size = 0;
-	int vramsize = 0;
-	int i;
-
-	gsFont->Texture->Width  = data[1];
-	gsFont->Texture->Height = data[2];
-	gsFont->Texture->PSM    = data[3];
-	gsFont->Texture->Filter = GS_FILTER_NEAREST;
-	if(gsFont->Texture->PSM != GS_PSM_T8 && gsFont->Texture->PSM != GS_PSM_T4)
-	{
-		gsFont->Texture->VramClut = 0;
-		gsFont->Texture->Clut = NULL;
-	}
-
-	gsFont->HChars          = data[4];
-	gsFont->VChars          = data[5];
-	gsFont->CharWidth       = data[6];
-	gsFont->CharHeight      = data[7];
-
-	size = gsKit_texture_size_ee(gsFont->Texture->Width, gsFont->Texture->Height, gsFont->Texture->PSM);
-	vramsize = gsKit_texture_size(gsFont->Texture->Width, gsFont->Texture->Height, gsFont->Texture->PSM);
-	gsFont->Texture->Mem = memalign(128, size);
-	gsFont->Texture->Vram = gsKit_vram_alloc(gsGlobal, vramsize, GSKIT_ALLOC_USERBUFFER);
-	if(gsFont->Texture->Vram == GSKIT_ALLOC_ERROR)
-	{
-		printf("VRAM Allocation Failed. Will not upload texture.\n");
-		return -1;
-	}
-
-	memcpy(gsFont->Texture->Mem, &data[288/4], size);
-
-	if (gsFont->Texture->PSM != GS_PSM_CT32) {
-		printf("Unsupported fnt PSM %d\n", gsFont->Texture->PSM);
-	}
-	mem = (u32*)gsFont->Texture->Mem;
-	for (i=0; i<size/4; i++) {
-		if (mem[i] == 0xFF00FFFF) {
-			mem[i] = 0;
-		} else {
-			u32 c = (mem[i] & 0x00FF0000) >> 16;
-			mem[i] = 0x80000000 | (c) | (c<<8) | (c<<16);
-		}
-	}
-
-	gsKit_texture_upload(gsGlobal, gsFont->Texture);
-	free(gsFont->Texture->Mem);
-	return 0;
-}
-
-
-int gsKit_texture_fnt(GSGLOBAL *gsGlobal, GSFONT *gsFont)
-{
-	u32 *mem;
-	int size = 0;
-	int vramsize = 0;
-	int i;
-
-	FILE* File = fopen(gsFont->Path, "r");
-	if (File == NULL)
-	{
-		printf("Failed to load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	fseek(File, 4, SEEK_SET);
-	if(fread(&gsFont->Texture->Width, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->Texture->Height, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->Texture->PSM, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->HChars, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->VChars, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->CharWidth, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	if(fread(&gsFont->CharHeight, 4, 1, File) <= 0)
-	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
-	}
-	fseek(File, 288, SEEK_SET);
-
-	gsFont->Texture->Filter = GS_FILTER_NEAREST;
-
-	size = gsKit_texture_size_ee(gsFont->Texture->Width, gsFont->Texture->Height, gsFont->Texture->PSM);
-	vramsize = gsKit_texture_size(gsFont->Texture->Width, gsFont->Texture->Height, gsFont->Texture->PSM);
-	gsFont->Texture->Mem = memalign(128, size);
-	gsFont->Texture->Vram = gsKit_vram_alloc(gsGlobal, vramsize, GSKIT_ALLOC_USERBUFFER);
-	if(gsFont->Texture->Vram == GSKIT_ALLOC_ERROR)
-	{
-		printf("VRAM Allocation Failed. Will not upload texture.\n");
-		return -1;
-	}
-
-	if(fread(gsFont->Texture->Mem, size, 1, File) <= 0)
-	{
-	        printf("Font might be bad: %s\n", gsFont->Path);
-	}
-	fclose(File);
-
-	if (gsFont->Texture->PSM != 0) {
-		printf("Unsupported fnt PSM %d\n", gsFont->Texture->PSM);
-	}
-	mem = (u32*)gsFont->Texture->Mem;
-	for (i=0; i<size/4; i++) {
-		if (mem[i] == 0xFF00FFFF) {
-			mem[i] = 0;
-		} else {
-			u32 c = (mem[i] & 0x00FF0000) >> 16;
-			mem[i] = 0x80000000 | (c) | (c<<8) | (c<<16);
-		}
-	}
-
-	gsKit_texture_upload(gsGlobal, gsFont->Texture);
-	free(gsFont->Texture->Mem);
-	return 0;
 }
 
 void gsKit_texture_send(u32 *mem, int width, int height, u32 tbp, u32 psm, u32 tbw, u8 clut)
@@ -1030,16 +304,39 @@ void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture,
 #endif
 	}
 
-	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
-	int ix2 = (int)((x2 + 0.0625f) * 16.0f) + gsGlobal->OffsetX;
-	int iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
-	int iy2 = (int)((y2 + 0.0625f) * 16.0f) + gsGlobal->OffsetY;
+	int ix1,ix2,iy1,iy2,iu1,iu2,iv1,iv2;
 
-	int iu1 = (int)((u1 + 0.5f) * 16.0f);
-	int iu2 = (int)((u2 - 0.375f) * 16.0f);
-	int iv1 = (int)((v1 + 0.5f) * 16.0f);
-	int iv2 = (int)((v2 - 0.375f) * 16.0f);
+	if(x1<x2){
+		ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
+		ix2 = (int)((x2 + 0.0625f) * 16.0f) + gsGlobal->OffsetX;
+	}else{
+		ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
+		ix1 = (int)((x1 + 0.0625f) * 16.0f) + gsGlobal->OffsetX;
+	}
 
+	if(y1<y2){
+		iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
+		iy2 = (int)((y2 + 0.0625f) * 16.0f) + gsGlobal->OffsetY;
+	}else{
+		iy2 = (int)(y2 * 16.0f) + gsGlobal->OffsetY;
+		iy1 = (int)((y1 + 0.0625f) * 16.0f) + gsGlobal->OffsetY;
+	}
+
+	if(u1<u2){
+		iu1 = (int)((u1 + 0.5f) * 16.0f);
+		iu2 = (int)((u2 - 0.375f) * 16.0f);
+	}else{
+		iu2 = (int)((u2 + 0.5f) * 16.0f);
+		iu1 = (int)((u1 - 0.375f) * 16.0f);
+	}
+
+	if(v1<v2){
+		iv1 = (int)((v1 + 0.5f) * 16.0f);
+		iv2 = (int)((v2 - 0.375f) * 16.0f);
+	}else{
+		iv2 = (int)((v2 + 0.5f) * 16.0f);
+		iv1 = (int)((v1 - 0.375f) * 16.0f);
+	}
 
 	int tw = 31 - (lzw(Texture->Width) + 1);
 	if(Texture->Width > (1<<tw))
@@ -1091,19 +388,6 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 	u64* p_data;
 	int qsize = 4;
 	int bsize = 64;
-
-	if(gsGlobal->Field == GS_FRAME)
-	{
-		y1 /= 2.0f;
-		y2 /= 2.0f;
-#ifdef GSKIT_ENABLE_HBOFFSET
-		if(!gsGlobal->EvenOrOdd)
-		{
-			y1 += 0.5f;
-			y2 += 0.5f;
-		}
-#endif
-	}
 
 	int ix1 = x1;
 	int ix2 = x2;
@@ -1261,21 +545,6 @@ void gsKit_prim_triangle_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	if(Texture->Height > (1<<th))
 		th++;
 
-	if(gsGlobal->Field == GS_FRAME)
-	{
-		y1 /= 2.0f;
-		y2 /= 2.0f;
-		y3 /= 2.0f;
-#ifdef GSKIT_ENABLE_HBOFFSET
-		if(!gsGlobal->EvenOrOdd)
-		{
-			y1 += 0.5f;
-			y2 += 0.5f;
-			y3 += 0.5f;
-		}
-#endif
-	}
-
 	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
 	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
 	int ix3 = (int)(x3 * 16.0f) + gsGlobal->OffsetX;
@@ -1346,16 +615,6 @@ void gsKit_prim_triangle_strip_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	for(count = 0; count < (segments * 4); count+=4)
 	{
 		vertexdata[count] =  (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetX;
-		if(gsGlobal->Field == GS_FRAME)
-		{
-			*(TriStrip) /= 2.0f;
-		#ifdef GSKIT_ENABLE_HBOFFSET
-			if(!gsGlobal->EvenOrOdd)
-			{
-			*(TriStrip) += 0.5f;
-			}
-		#endif
-		}
 		vertexdata[count+1] =  (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetY;
 		vertexdata[count+2] =  (int)((*TriStrip++) * 16.0f);
 		vertexdata[count+3] =  (int)((*TriStrip++) * 16.0f);
@@ -1421,16 +680,6 @@ void gsKit_prim_triangle_strip_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture
 	for(count = 0; count < (segments * 5); count+=5)
 	{
 		vertexdata[count] = (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetX;
-		if(gsGlobal->Field == GS_FRAME)
-		{
-			*(TriStrip) /= 2.0f;
-		#ifdef GSKIT_ENABLE_HBOFFSET
-			if(!gsGlobal->EvenOrOdd)
-			{
-				*(TriStrip) += 0.5f;
-			}
-		#endif
-		}
 		vertexdata[count+1] = (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetY;
 		vertexdata[count+2] = (int)((*TriStrip++) * 16.0f);
 		vertexdata[count+3] = (int)((*TriStrip++) * 16.0f);
@@ -1496,16 +745,6 @@ void gsKit_prim_triangle_fan_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	for(count = 0; count < (verticies * 4); count+=4)
 	{
 		vertexdata[count] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetX;
-		if(gsGlobal->Field == GS_FRAME)
-		{
-			*(TriFan) /= 2.0f;
-		#ifdef GSKIT_ENABLE_HBOFFSET
-			if(!gsGlobal->EvenOrOdd)
-			{
-				*(TriFan) += 0.5f;
-			}
-		#endif
-		}
 		vertexdata[count+1] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetY;
 		vertexdata[count+2] =  (int)((*TriFan++) * 16.0f);
 		vertexdata[count+3] =  (int)((*TriFan++) * 16.0f);
@@ -1570,16 +809,6 @@ void gsKit_prim_triangle_fan_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	for(count = 0; count < (verticies * 5); count+=5)
 	{
 		vertexdata[count] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetX;
-		if(gsGlobal->Field == GS_FRAME)
-		{
-			*(TriFan) /= 2.0f;
-		#ifdef GSKIT_ENABLE_HBOFFSET
-			if(!gsGlobal->EvenOrOdd)
-			{
-				*(TriFan) += 0.5f;
-			}
-		#endif
-		}
 		vertexdata[count+1] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetY;
 		vertexdata[count+2] =  (int)((*TriFan++) * 16.0f);
 		vertexdata[count+3] =  (int)((*TriFan++) * 16.0f);
@@ -1645,25 +874,6 @@ void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	if(Texture->Height > (1<<th))
 		th++;
 
-	if(gsGlobal->Field == GS_FRAME)
-	{
-		y1 /= 2.0f;
-		y2 /= 2.0f;
-		y3 /= 2.0f;
-		y4 /= 2.0f;
-#ifdef GSKIT_ENABLE_HBOFFSET
-		if(!gsGlobal->EvenOrOdd)
-		{
-			y1 += 0.5f;
-			y2 += 0.5f;
-			y3 += 0.5f;
-			y4 += 0.5f;
-		}
-#endif
-	}
-
-
-
 	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
 	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
 	int ix3 = (int)(x3 * 16.0f) + gsGlobal->OffsetX;
@@ -1720,4 +930,3 @@ void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_UV( iu4, iv4 );
 	*p_data++ = GS_SETREG_XYZ2( ix4, iy4, iz4 );
 }
-

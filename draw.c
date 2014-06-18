@@ -512,9 +512,12 @@ void drawLastMsg(void)
 void setupGS(int gs_vmode)
 {
 	// GS Init
-	gsGlobal = gsKit_init_global_custom(gs_vmode,
+	gsGlobal = gsKit_init_global_custom(
 		GS_RENDER_QUEUE_OS_POOLSIZE+GS_RENDER_QUEUE_OS_POOLSIZE/2, //eliminates overflow
 		GS_RENDER_QUEUE_PER_POOLSIZE);
+
+	// GS video mode
+	gsGlobal->Mode = gs_vmode;
 
 	// Screen size and Interlace Init
 	gsGlobal->Width  = SCREEN_WIDTH;
@@ -522,12 +525,12 @@ void setupGS(int gs_vmode)
 		gsGlobal->Height = SCREEN_HEIGHT;
 		gsGlobal->Interlace = GS_INTERLACED;
 		gsGlobal->Field     = GS_FIELD;
-		gsGlobal->MagY      = 0;
+		gsGlobal->MagV      = 0;
 	}else{
 		gsGlobal->Height = SCREEN_HEIGHT/2;
 		gsGlobal->Interlace = GS_NONINTERLACED;
 		gsGlobal->Field     = GS_FRAME;
-		gsGlobal->MagY      = 0;
+		gsGlobal->MagV      = 0;
 	}
 	Old_Interlace = setting->interlace;
 
@@ -620,13 +623,13 @@ void updateScreenMode(int adapt_XY)
 
 	// Init screen size
 	gsGlobal->Width  = SCREEN_WIDTH;
-	gsGlobal->MagX = 3;
+	gsGlobal->MagH = 3;
 	if(setting->interlace){
 		gsGlobal->Height = SCREEN_HEIGHT;
-		gsGlobal->MagY = 0;
+		gsGlobal->MagV = 0;
 	} else {
 		gsGlobal->Height = SCREEN_HEIGHT/2;
-		gsGlobal->MagY = 0;
+		gsGlobal->MagV = 0;
 	}
 
 	// Init screen position
@@ -642,15 +645,15 @@ void updateScreenMode(int adapt_XY)
 
 	GS_SET_DISPLAY1(gsGlobal->StartX,		// X position in the display area (in VCK unit
 			gsGlobal->StartY,		// Y position in the display area (in Raster u
-			gsGlobal->MagX,			// Horizontal Magnification
-			gsGlobal->MagY,			// Vertical Magnification
+			gsGlobal->MagH,			// Horizontal Magnification
+			gsGlobal->MagV,			// Vertical Magnification
 			(gsGlobal->Width * 4) -1,	// Display area width
 			(gsGlobal->Height-1));		// Display area height
 
 	GS_SET_DISPLAY2(gsGlobal->StartX,		// X position in the display area (in VCK units)
 			gsGlobal->StartY,		// Y position in the display area (in Raster units)
-			gsGlobal->MagX,			// Horizontal Magnification
-			gsGlobal->MagY,			// Vertical Magnification
+			gsGlobal->MagH,			// Horizontal Magnification
+			gsGlobal->MagV,			// Vertical Magnification
 			(gsGlobal->Width * 4) -1,	// Display area width
 			(gsGlobal->Height-1));		// Display area height
 }

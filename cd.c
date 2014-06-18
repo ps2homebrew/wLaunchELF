@@ -23,7 +23,7 @@ s32 sCmdNum = 0;
 SifRpcClientData_t clientSCmd __attribute__ ((aligned(64)));
 u8 sCmdRecvBuff[48] __attribute__ ((aligned(64)));
 volatile s32 cbSema = 0;
-ee_thread_t cdThreadParam;
+ee_thread_status_t cdThreadParam;
 s32 callbackThreadId = 0;
 volatile s32 cdCallbackNum __attribute__ ((aligned(64)));
 

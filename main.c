@@ -2047,6 +2047,7 @@ int main(int argc, char *argv[])
 	}
 */
 	setupGS(gs_vmode);
+	updateScreenMode(0); //resolves screen position issue with newer gsKit
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	loadFont("");  //Some font must be loaded before loading some device modules

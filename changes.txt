@@ -1,5 +1,16 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.40g (2010.02.09)
+-Updated gsKit and existing source files to SVN rev 1664.
+-Readapted and added a few changes back to the gsKit to resolve issues with non-interlace mode.
+-Fixed a compiler warning, do to a change with the newer ps2sdk, by changing the data type from "ee_thread_t" to "ee_thread_status_t" for the ReferThreadStatus prototype.
+
+LaunchELF v4.40f (2010.02.08)
+-Added preclearing of icon.sys struct buffer for "New Icon" command
+(Needed to avoid crashing Sony Browser of v0 PS2 consoles at showing such icons)
+-Emphasized warning of old partition destruction for HddManager Format command
+-Corrected gsKit coordinate rounding (for proper 'upside-down' JPG display)
+
 LaunchELF v4.40e (2010.01.26)
 -Modified load_ps2host function to eliminate 'stalling' of its network init, by adding a setupPowerOff() call before the load_ps2ip() call.
 
