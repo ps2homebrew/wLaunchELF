@@ -185,8 +185,10 @@ void GetHddInfo(void)
 	
 				mountParty(tmp);
 				pfs_str[3] = '0'+latestMount;
-				zoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
-				zoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+				zoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL,0,NULL,0);
+				zoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL,0,NULL,0);
+				unmountParty(latestMount);
+
 				PartyInfo[numParty].FreeSize  = zoneFree*zoneSize / MB;
 				PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
 		
@@ -195,7 +197,6 @@ void GetHddInfo(void)
 			numParty++;
 		} //Ends clause for finding brand new name for PartyInfo[numParty]
 	} //ends main while loop
-	unmountParty(0);
 	fileXioDclose(hddFd);
 	hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
 	hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
@@ -345,8 +346,9 @@ int MenuParty(PARTYINFO Info)
 	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
 	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
 
-	unmountParty(0);
-	unmountParty(1);
+	unmountAll();    //unmount all uLE-used mountpoints
+	unmountParty(0); //unconditionally unmount primary mountpoint
+	unmountParty(1); //unconditionally unmount secondary mountpoint
 
 	memset(enable, TRUE, NUM_MENU);
 
@@ -615,14 +617,14 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	if(ret==0){
 		strcpy(PartyInfo[Info.Count].Game.Name, newName);
-		if(mountParty("hdd0:HDLoader Settings")==0){
+		if(mountParty("hdd0:HDLoader Settings")>=0){
 			if((fd=genOpen("pfs0:/gamelist.log", O_RDONLY)) >= 0){
 				genClose(fd);
 				if(fileXioRemove("pfs0:/gamelist.log")!=0)
 					ret=0;
 			}
+			unmountParty(latestMount);
 		}
-		unmountParty(0);
 	}else{
 		sprintf(DbgMsg,"HdlRenameGame(\"%s\",\n  \"%s\")\n=> %d",Info.Game.Name, newName,ret);
 		DebugDisp(DbgMsg);
@@ -753,8 +755,10 @@ void hddManager(void)
 			else if(new_pad & PAD_RIGHT)
 				browser_sel+=rows/2;
 			else if((new_pad & PAD_SELECT) || (new_pad & PAD_TRIANGLE)){
-				unmountParty(0);
-				unmountParty(1);
+				//Prepare for exit from HddManager
+				unmountAll();    //unmount all uLE-used mountpoints
+				unmountParty(0); //unconditionally unmount primary mountpoint
+				unmountParty(1); //unconditionally unmount secondary mountpoint
 				if (stricmp(setting->GUI_skin, "\0") != 0) {
 					GUI_active = 1;
 					loadSkin(BACKGROUND_PIC, 0, 0);

@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.30 (2008.09.30)
+-Fixed HDD mountpoint issues in HddManager (due to changed methods from v4.23)
+
 LaunchELF v4.29 (2008.09.25)
 -Fixed a new bug in the CNF parser, introduced when fixing the previous one. That bug cause the character after the equal sign in a variable assignment to be skipped. This should not matter for uLE or FMCB CNF files, where that character will always be a space. But it does matter when parsing SYSTEM.CNF for PS2 discs, since those files sometimes have no space in that position. This caused some discs to fail booting, both with the uLE MISC/PS2Disc command, and with the disc launcher of FMCB.
 -Minor changes to CDVD checking

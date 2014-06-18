@@ -289,6 +289,7 @@ int genRemove(char *path);
 int genRmdir(char *path);
 int mountParty(const char *party);
 void unmountParty(int party_ix);
+void unmountAll(void);
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode);
 
 /* hdd.c */
