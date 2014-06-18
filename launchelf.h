@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.36"
-#define ULE_VERDATE "2009.01.19"
+#define ULE_VERSION "v4.37"
+#define ULE_VERDATE "2009.01.21"
 
 #include <stdio.h>
 #include <tamtypes.h>
@@ -41,8 +41,6 @@
 
 #define TRUE		1
 #define FALSE		0
-
-#define SCANRATE (gsKit_detect_signal()==GS_MODE_NTSC ? 60:50)
 
 enum {  // cnfmode values for getFilePath in browsing for configurable file paths
 	NON_CNF = 0,    	// Normal browser mode, not configuration mode
@@ -305,6 +303,7 @@ void TextEditor(void);
 
 /* timer.c */
 extern u64 WaitTime;
+extern u64 CurrTime;
 
 void TimerInit(void);
 u64  Timer(void);

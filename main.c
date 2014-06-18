@@ -70,8 +70,8 @@ void Reset();
 
 int TV_mode;
 int selected=0;
-int timeout=0;
-int init_delay=0;
+int timeout=0, prev_timeout=1;
+int init_delay=0, prev_init_delay=1;
 int poweroff_delay=0; //Set only when calling hddPowerOff
 int mode=BUTTON;
 int user_acted = 0;  /* Set when commands given, to break timeout */
@@ -83,6 +83,10 @@ int swapKeys;
 int GUI_active;
 
 u64 WaitTime;
+u64 CurrTime;
+u64 init_delay_start;
+u64 timeout_start;
+u64 poweroff_start;
 
 #define IPCONF_MAX_LEN  (3*16)
 char if_conf[IPCONF_MAX_LEN];
@@ -424,9 +428,9 @@ int drawMainScreen(void)
 	x = Menu_start_x;
 	y = Menu_start_y;
 	c[0] = 0;
-	if(init_delay)    sprintf(c, "%s: %d", LNG(Init_Delay), init_delay/SCANRATE);
+	if(init_delay)    sprintf(c, "%s: %d", LNG(Init_Delay), init_delay/1000);
 	else if(setting->LK_Path[0][0]){
-		if(!user_acted) sprintf(c, "%s: %d", LNG(TIMEOUT), timeout/SCANRATE);
+		if(!user_acted) sprintf(c, "%s: %d", LNG(TIMEOUT), timeout/1000);
 		else            sprintf(c, "%s: %s", LNG(TIMEOUT), LNG(Halted));
 	}
 	if(c[0]){
@@ -560,9 +564,9 @@ int drawMainScreen2(int TV_mode)
 	x = Menu_start_x;
 	y = Menu_start_y;
 
-	if(init_delay)    sprintf(c, "%s:       %d", LNG(Delay), init_delay/SCANRATE);
+	if(init_delay)    sprintf(c, "%s:       %d", LNG(Delay), init_delay/1000);
 	else if(setting->LK_Path[0][0]){
-		if(!user_acted) sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout/SCANRATE);
+		if(!user_acted) sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout/1000);
 		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
 	}
 
@@ -1411,7 +1415,8 @@ int reloadConfig()
 	else
 		sprintf(mainMsg, "%s%s", LNG(Loaded_Config), tmp);
 
-	timeout = (setting->timeout+1)*SCANRATE;
+	timeout = (setting->timeout+1)*1000;
+	timeout_start = Timer();
 	if(setting->discControl)
 		loadCdModules();
 
@@ -1717,7 +1722,8 @@ Done_PS2Disc:
 		drawMsg(LNG(Powering_Off_Console));
 		setupPowerOff();
 		hddPowerOff();
-		poweroff_delay = SCANRATE/4; //trigger delay for those without net adapter
+		poweroff_delay = 250; //trigger delay for those without net adapter
+		poweroff_start = Timer();
 		return;
 	}else if(!stricmp(path, setting->Misc_HddManager)){
 		if (setting->GUI_skin[0]) {
@@ -1967,8 +1973,6 @@ int main(int argc, char *argv[])
 	else
 		strcpy(CNF_pathname, mainMsg+strlen(LNG(Loaded_Config)));
 
-	init_delay = setting->Init_Delay*SCANRATE;
-
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
 		TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
@@ -2014,6 +2018,15 @@ int main(int argc, char *argv[])
 	if(setting->discControl)
 		loadCdModules();
 
+	startKbd();
+	TimerInit();
+	WaitTime=Timer();
+
+	init_delay = setting->Init_Delay*1000;
+	init_delay_start = Timer();
+	timeout = (setting->timeout+1)*1000;
+	timeout_start = Timer();
+
 //Last chance to look at bootup screen, so allow braking here
 /*
 	if(readpad() && (new_pad && PAD_UP))
@@ -2027,10 +2040,6 @@ int main(int argc, char *argv[])
 */
 	setupGS(gs_vmode);
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
-
-	startKbd();
-	TimerInit();
-	WaitTime=Timer();
 
 	loadFont("");  //Some font must be loaded before loading some device modules
 	Load_External_Language();
@@ -2050,7 +2059,6 @@ int main(int argc, char *argv[])
 	Validate_CNF_Path();
 
 	RunPath[0] = 0; //Nothing to run yet
-	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state
 	event = 1;   //event = initial entry
 	//----- Start of main menu event loop -----
@@ -2078,19 +2086,31 @@ int main(int argc, char *argv[])
 		}
 
 		if(poweroff_delay) {
-			poweroff_delay--;
-			if(!poweroff_delay)
+			CurrTime = Timer();
+			if(CurrTime > (poweroff_start + poweroff_delay)){
+				poweroff_delay = 0;
 				triggerPowerOff();
+			}
 		}
 
 		if(init_delay){
-			init_delay--;
-			if(init_delay%SCANRATE==SCANRATE-1)
+			prev_init_delay = init_delay;
+			CurrTime = Timer();
+			if(CurrTime > (init_delay_start + init_delay)){
+				init_delay = 0;
+				timeout_start = Timer();
+			}else{
+				init_delay = init_delay_start + init_delay - CurrTime;
+			}
+			if((init_delay/1000) != (prev_init_delay/1000))
 				event |= 8;  //event |= visible delay change
-		}
-		else if(timeout && !user_acted){
-			timeout--;
-			if(timeout%SCANRATE==SCANRATE-1)
+		}else if(timeout && !user_acted){
+			prev_timeout = timeout;
+			CurrTime = Timer();
+			timeout = (CurrTime > (timeout_start + timeout))
+				? 0 
+				: (timeout_start + timeout - CurrTime);
+			if((timeout/1000) != (prev_timeout/1000))
 				event |= 8;  //event |= visible timeout change
 		}
 
@@ -2166,7 +2186,7 @@ int main(int argc, char *argv[])
 			}//ends switch(mode)
 		}//ends Pad response section
 
-		if(timeout/SCANRATE==0 && setting->LK_Path[0][0] && mode==BUTTON && !user_acted){
+		if(!user_acted && ((timeout/1000)==0) && setting->LK_Path[0][0] && mode==BUTTON){
 			event |= 8;  //event |= visible timeout change
 			strcpy(RunPath, setting->LK_Path[0]);
 		}

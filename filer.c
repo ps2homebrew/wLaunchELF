@@ -575,8 +575,16 @@ int readCD(const char *path, FILEINFO *info, int max)
 	static struct TocEntry TocEntryList[MAX_ENTRY];
 	char dir[MAX_PATH];
 	int i, j, n;
-	
+	u64 wait_start;
+
 	loadCdModules();
+	if(cdGetDiscType() < CDVD_TYPE_UNKNOWN){
+		wait_start = Timer();
+		while((Timer() < wait_start+500) && (cdGetDiscType() < CDVD_TYPE_UNKNOWN)){
+			if(cdGetDiscType() == CDVD_TYPE_NODISK)
+				return 0;
+		}
+	}
 	
 	strcpy(dir, &path[5]);
 	CDVD_FlushCache();

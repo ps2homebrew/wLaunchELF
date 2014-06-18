@@ -46,7 +46,8 @@ int readpad_noKBnoRepeat(void)
 //---------------------------------------------------------------------------
 int readpad_no_KB(void)
 {
-	static int n[2]={0,0}, nn[2]={0,0};
+	static u64 rpt_time[2]={0,0};
+	static int rpt_count[2];
 	int port, state, ret[2];
 
 	for(port=0; port<2; port++){
@@ -85,30 +86,25 @@ int readpad_no_KB(void)
 					}
 				}
 				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];
-				if(old_pad_t[port]==paddata_t[port]){ //if no change of pad data
-					n[port]++;
-					if(TV_mode == TV_mode_NTSC){ //Fix repeats for NTSC
-						if(n[port]>=25){ //NTSC initial repeat delay == 25 loops (0.416 sec)
-							new_pad_t[port]=paddata_t[port];
-							if(nn[port]++ < 20)	n[port]=20; //early repeats use 25-20 loops
-							else			n[port]=23;           //later repeats use 25-23 loops
-						}
-					}else{ //Fix repeats for PAL
-						if(n[port]>=21){ //PAL initial repeat delay == 21 loops (0.42 sec)
-							new_pad_t[port]=paddata_t[port];
-							if(nn[port]++ < 20)	n[port]=17; //early repeats use 21-17 loops
-							else			n[port]=19;           //later repeats use 21-19 loops
-						}
+				if(old_pad_t[port] == paddata_t[port]){
+					//no change of pad data
+					if(Timer() > rpt_time[port]){
+						new_pad_t[port]=paddata_t[port]; //Accept repeated buttons as new
+						rpt_time[port] = Timer() + 40; //Min delay = 40ms => 25Hz repeat
+						if(rpt_count[port]++ < 20)
+							rpt_time[port] += 43; //Early delays = 83ms => 12Hz repeat
 					}
-				}else{ //pad data has changed !
-					n[port]=0;
-					nn[port]=0;
+				}else{
+					//pad data has changed !
+					rpt_count[port] = 0;
+					rpt_time[port] = Timer()+400; //Init delay = 400ms
 					old_pad_t[port] = paddata_t[port];
 				}
 			}
 		}else{
 			//Deal with cases where pad state is not valid for padRead
 			new_pad_t[port]=0;
+			old_pad_t[port]=0;
 		}  //ends 'if' testing for state valid for padRead
 	}  //ends for
 	new_pad = new_pad_t[0]|new_pad_t[1];
@@ -273,7 +269,7 @@ int readpad_noRepeat(void)
 {
 	int	ret;
 
-	if((ret=readpad_no_KB()) && new_pad)
+	if((ret=readpad_noKBnoRepeat()) && new_pad)
 		return ret;
 
 	return simPadKB();

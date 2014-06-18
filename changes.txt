@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.37 (2009.01.21)
+-Changed VSync-based timeouts to use Timer() instead, to eliminate PAL/NTSC variations and cure an old bug causing uncontrolled button repeats
+-Changed libcdvd tray checking, to eliminate a case of FileBrowser freezing
+
 LaunchELF v4.36 (2009.01.19)
 -Fixed 'disc control' bugs in FileBrowser and JpgViewer browser
 -Improved recognition of disc types, displayed in main menu. ESR discs are shown as "ESR DVD (off)" if ESR driver needs to be activated to access disc contents, but as "ESR DVD (on)" if no driver activation is needed (if already running, or when used with a modchip)
