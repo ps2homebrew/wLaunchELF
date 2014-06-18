@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.46  (2006.02.20)
+-Modified the ELF loader of LaunchELF to improve compatibility with PS2Link. This resulted in slightly smaller code, and as a side effect the loader will no longer display the name of the ELF to be loaded on screen. The major benefit is that LaunchELF will work well with the new version of PS2Link, also released this night. Thanks go to Drakonite for his advice on how to improve this compatibility.
+
 LaunchELF v3.45  (2006.02.19)
 -Fixed a LaunchELF bug that prevented folder overwrites when pasting to HOST.
 -Fixed a PS2Client bug that prevented detection of folder conflicts on HOST.
@@ -201,13 +204,19 @@ The source changes to all the files that have been modified are also included. T
 Code from others was used so if anyone should get credit they should. Ideas from other people were also used, which has been helpful.
 
 Special Thanks to the following:
-Mr. Mirakichi the author of LaunchELF.
-Hermes for the early reset IOP source (BOOT.c cogswaploader).
-dlanor for the fix of a launch bug, which occurs upon executing an ELF after trying to execute a non-ELF file. Also for all the new additons, fixes, and help.
+Mr. Mirakichi the original creator of the LaunchELF project, with special gratitude for the fact that he released its source code in retiring from the project.
+
+'E P' Who revived the project after Mr. Mirakichi retired from it, and thus kept it alive, adding new features and maintaining the project in general, at first alone but later joined by:
+
+dlanor who has also made various additions, fixes, and other work on the project.
+
+Drakonite for his help and advice on how to improve the ELF loader
+sincro for his USBD.IRX selector code
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
 Slam-Tilt for the NETWORK SETTINGS option source changes.
 chip for ps2ftpd, of which a few modifications were made to.
 pixel for ps2-packer that made the small BOOTc.ELF binary.
+Hermes for the early reset IOP source (BOOT.c cogswaploader).
 mrbrown for the independence exploit.
 The ps2dev community for the tools and assistance.
 all those who like LaunchELF.

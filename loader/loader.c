@@ -291,7 +291,7 @@ int main(int argc, char *argv[])
 	SifInitRpc(0);
 	hddPreparePoweroff();
 	hddSetUserPoweroffCallback((void *)poweroffHandler,(void *)pid);
-	init_scr();
+	dbginit_scr();
 	wipeUserMem();
 	dbgprintf("Welcome to PS2Menu Loader v2.1\nPlease wait...loading.\n");
 	dbgprintf("Init MrBrown sbv_patches\n");
@@ -313,12 +313,12 @@ int main(int argc, char *argv[])
 		dbgprintf("argv[1] = %s\n", partition);
 		strcpy(HDDpath,s);
 		}
-	scr_printf("Loading %s\n",HDDpath);
+	dbgprintf("Loading %s\n",HDDpath);
 	pid = pkoLoadElf(HDDpath);
 	dbgprintf("pkoLoadElf returned %i\n",pid);
 	if (pid < 0)
 	{
-		scr_printf("failed\n");
+		dbgprintf("failed\n");
 		dbgprintf("Could not execute file %s\n", HDDpath);
 		return -1;
 		}
@@ -357,7 +357,7 @@ int main(int argc, char *argv[])
 	ret = StartThread(userThreadID, &userArgs);
 	if (ret < 0)
 	{
-		scr_printf("failed\n");
+		dbgprintf("failed\n");
 		dbgprintf("EE: Start user thread failed %d\n", ret);
 		DeleteThread(userThreadID);
 		return -1;
