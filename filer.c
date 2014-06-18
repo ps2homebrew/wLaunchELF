@@ -32,6 +32,7 @@ enum
 	DELETE,
 	RENAME,
 	NEWDIR,
+	NEWICON,
 	GETSIZE,
 	NUM_MENU
 };
@@ -1186,7 +1187,9 @@ int menu(const char *path, const char *file)
 	u64 color;
 	char enable[NUM_MENU], tmp[80];
 	int x, y, i, sel, test;
-	int event, post_event=0;
+	int event, post_event = 0;
+	int menu_disabled = 0;
+	int write_disabled = 0;
 	
 	int menu_len=strlen(LNG(Copy))>strlen(LNG(Cut))?
 		strlen(LNG(Copy)):strlen(LNG(Cut));
@@ -1205,49 +1208,45 @@ int menu(const char *path, const char *file)
 	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
 	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
 
-	memset(enable, TRUE, NUM_MENU);
-	if(!strncmp(path,"host",4)){
-		if(!setting->HOSTwrite || ((host_elflist) && !strcmp(path, "host:/"))){
-			enable[PASTE] = FALSE;
-			enable[MCPASTE] = FALSE;
-			enable[PSUPASTE] = FALSE;
-			enable[NEWDIR] = FALSE;
-			enable[CUT] = FALSE;
-			enable[DELETE] = FALSE;
-			enable[RENAME] = FALSE;
-		}
-	}
-	if(!strcmp(path,"hdd0:/") || path[0]==0){
+	memset(enable, TRUE, NUM_MENU); //Assume that all menu items are legal by default
+
+	//identify cases where write access is illegal, and disable menu items accordingly
+	if(	(!strncmp(path,"cdfs",4)) //Writing is always illegal for CDVD drive
+		||(	(!strncmp(path,"host",4)) //host: has special cases
+			&&(	(!setting->HOSTwrite)		//host: Writing is illegal if not enabled in CNF
+				||(host_elflist && !strcmp(path, "host:/")) //it's also illegal in elflist.txt
+		)	)	) write_disabled = 1;
+
+	if(	!strcmp(path,"hdd0:/") || path[0]==0) //No menu cmds in partition/device lists
+		menu_disabled = 1;
+	
+	if(menu_disabled) {
 		enable[COPY] = FALSE;
+		enable[GETSIZE] = FALSE;
+	}
+
+	if(write_disabled || menu_disabled){
 		enable[CUT] = FALSE;
 		enable[PASTE] = FALSE;
-		enable[DELETE] = FALSE;
-		enable[RENAME] = FALSE;
-		enable[NEWDIR] = FALSE;
-		enable[GETSIZE] = FALSE;
 		enable[MCPASTE] = FALSE;
 		enable[PSUPASTE] = FALSE;
-	}
-	if(!strncmp(path,"cdfs",4)){
-		enable[CUT] = FALSE;
-		enable[PASTE] = FALSE;
 		enable[DELETE] = FALSE;
 		enable[RENAME] = FALSE;
 		enable[NEWDIR] = FALSE;
+		enable[NEWICON] = FALSE;
 	}
+
 	if(!strncmp(path, "mass", 4)){
-		//enable[CUT] = FALSE;
-		//enable[PASTE] = FALSE;
-		//enable[DELETE] = FALSE;
 		enable[RENAME] = FALSE;
-		//enable[NEWDIR] = FALSE;
 	}
+
 	if(!strncmp(path, "mc", 2)){
 		mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
 		mcSync(0, NULL, &test);
 		if (mctype_PSx == 2) //PS2 MC ?
 			enable[RENAME] = FALSE;
 	}
+
 	if(nmarks==0){
 		if(!strcmp(file, "..")){
 			enable[COPY] = FALSE;
@@ -1258,6 +1257,7 @@ int menu(const char *path, const char *file)
 		}
 	}else
 		enable[RENAME] = FALSE;
+
 	if(nclipFiles==0){
 		//Nothing in clipboard
 		enable[PASTE] = FALSE;
@@ -1276,8 +1276,9 @@ int menu(const char *path, const char *file)
 				enable[PSUPASTE] = FALSE;
 			}
 	}
-	for(sel=0; sel<NUM_MENU; sel++)
-		if(enable[sel]==TRUE) break;
+
+	for(sel=0; sel<NUM_MENU; sel++) //loop to preselect the first enabled menu entry
+		if(enable[sel]==TRUE) break;  //break loop if sel is at an enabled menu entry
 	
 	event = 1;  //event = initial entry
 	while(1){
@@ -1322,12 +1323,13 @@ int menu(const char *path, const char *file)
 				if(i==COPY)			strcpy(tmp, LNG(Copy));
 				else if(i==CUT)		strcpy(tmp, LNG(Cut));
 				else if(i==PASTE)	strcpy(tmp, LNG(Paste));
+				else if(i==MCPASTE)	strcpy(tmp, LNG(mcPaste));
+				else if(i==PSUPASTE)	strcpy(tmp, LNG(psuPaste));
 				else if(i==DELETE)	strcpy(tmp, LNG(Delete));
 				else if(i==RENAME)	strcpy(tmp, LNG(Rename));
 				else if(i==NEWDIR)	strcpy(tmp, LNG(New_Dir));
+				else if(i==NEWICON)	strcpy(tmp, LNG(New_Icon));
 				else if(i==GETSIZE) strcpy(tmp, LNG(Get_Size));
-				else if(i==MCPASTE)	strcpy(tmp, LNG(mcPaste));
-				else if(i==PSUPASTE)	strcpy(tmp, LNG(psuPaste));
 
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
@@ -3198,7 +3200,8 @@ void getFilePath(char *out, int cnfmode)
 							}else
 								browser_cd=TRUE;
 						}
-					} else if(ret==PASTE)	submenu_func_Paste(msg0, path);
+					} //ends RENAME
+					else if(ret==PASTE)	submenu_func_Paste(msg0, path);
 					else if(ret==MCPASTE)	submenu_func_mcPaste(msg0, path);
 					else if(ret==PSUPASTE)	submenu_func_psuPaste(msg0, path);
 					else if(ret==NEWDIR){
@@ -3220,7 +3223,42 @@ void getFilePath(char *out, int cnfmode)
 								browser_cd=TRUE;
 							}
 						}
-					} else if(ret==GETSIZE) submenu_func_GetSize(msg0, path, files);
+					} //ends NEWDIR
+					else if(ret==NEWICON){
+						strcpy(tmp, LNG(Icon_Title));
+						if(keyboard(tmp, 36) <= 0)
+							goto DoneIcon;
+						genFixPath(path, tmp1); 
+						strcat(tmp1, "icon.sys");
+						if((ret = genOpen(tmp1, O_RDONLY))>=0){ //if old "icon.sys" file exists
+							genClose(ret);
+							sprintf(msg1,
+								"\n\"icon.sys\" %s.\n\n%s ?", LNG(file_alredy_exists),
+								LNG(Do_you_wish_to_overwrite_it));
+							if(ynDialog(msg1) < 0)
+								goto DoneIcon;
+							genRemove(tmp1);
+						}
+						make_iconsys(tmp, "icon.icn", tmp1);
+						browser_cd=TRUE;
+						strcpy(tmp, LNG(IconText));
+						keyboard(tmp, 36);
+						genFixPath(path, tmp1); 
+						strcat(tmp1, "icon.icn");
+						if((ret = genOpen(tmp1, O_RDONLY))>=0){ //if old "icon.icn" file exists
+							genClose(ret);
+							sprintf(msg1,
+								"\n\"icon.icn\" %s.\n\n%s ?", LNG(file_alredy_exists),
+								LNG(Do_you_wish_to_overwrite_it));
+							if(ynDialog(msg1) < 0)
+								goto DoneIcon;
+							genRemove(tmp1);
+						}
+						make_icon(tmp, tmp1);
+					DoneIcon:
+						strcpy(tmp, tmp1); //Dummy code to make 'goto DoneIcon' legal for gcc
+					} //ends NEWICON
+					else if(ret==GETSIZE) submenu_func_GetSize(msg0, path, files);
 				}else if((!swapKeys && new_pad & PAD_CROSS)
 				      || (swapKeys && new_pad & PAD_CIRCLE) ){
 					if(browser_sel!=0 && path[0]!=0 && strcmp(path,"hdd0:/")){

@@ -195,7 +195,6 @@ void drawLastMsg(void);
 void setupGS(int gs_vmode);
 void updateScreenMode(int adapt_XY);
 void clrScr(u64 color);
-int log(int Value);
 void setBrightness(int Brightness);
 void loadSkin(int Picture, char *Path, int ThumbNum);
 void drawScr(void);
@@ -330,5 +329,9 @@ enum {
 //"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
 	FONT_COUNT= 0x11C  //Total number of characters in font
 };
+
+/* makeicon.c */
+int make_icon(char* icontext,char* filename);
+int make_iconsys(char* title,char* iconname, char* filename);
 
 #endif

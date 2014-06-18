@@ -341,5 +341,11 @@ lang(306, No_Sort, "No Sort")
 lang(307, Timestamp, "Timestamp")
 lang(308, Back_to_Browser, "Back to Browser")
 //--------------------------------------------------------------
+// New Icon setup command added
+lang(309, New_Icon, "New Icon")
+lang(310, file_alredy_exists, "file already exists")
+lang(311, Icon_Title, "Icon Title")
+lang(312, IconText, "IconText")
+//--------------------------------------------------------------
 //End of file:  lang.h
 //--------------------------------------------------------------

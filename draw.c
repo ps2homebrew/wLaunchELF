@@ -94,17 +94,6 @@ const unsigned char sjis_lookup_82[256] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xE0
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xF0
 };
-
-int log( int Value ){
-	int r = 0;
-	Value--;
-	while( Value > 0 )
-	{
-		Value = Value >> 1;
-		r++;
-	}
-	return r;
-}
 //--------------------------------------------------------------
 int *CreateCoeffInt( int nLen, int nNewLen, int bShrink ) {
 
@@ -445,7 +434,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.08cÿ4",
+	printXY(" ÿ4 LaunchELF v4.08dÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);

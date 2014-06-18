@@ -1,5 +1,17 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.08d Beta (2007.01.07)
+-Added some newer network drivers from SMS by EEUG, raising host: speed to 1450 KByte/s
+-Removed usbhdfsd both from the modules folder and from the 'Changed source...' folder, as the standard PS2DEV version now has adopted all our modifications for it (SVN 1366)
+-Added makeicon.c to the uLE source. This is heavily based on example programs and advice contributed by 'ubergeek42' and 'ffgriever' at 'ps2-scene.org'. It allows the FileBrowser to add PS2-style icon sets to existing folders through a new command in the 'R1' menu. You can fine adjust text positioning in these icons by including some control characters into the icon text string, though at present this requires a USB keyboard. As yet these text entry dialogs use the same old routine we use for filename entry etc, but this will be improved in some later version, to gain the same abilities for gamepad as for a USB keyboard.
+The control characters for icon texts are:
+HT == Ctrl_I => Step past half a character width (to center text horizontally)
+VT == Ctrl_K => Start new row half a character height down (to center text vertically)
+CR == Ctrl_M => Start new row a full character height down (normal multi-row text)
+Rows will also be automatically 'broken' once every 8 chars, and characters that would pass beyond the bottom right corner will be ignored. If the current path already contains an icon.sys and/or icon.icn file, you will be asked if you want to overwrite or not.
+NB: Do NOT overwrite in your B?DATA-SYSTEM folder, as that will result in an invalid system save, and an exploit user will then lose the ability to boot properly !!!
+-All features added in earlier v4.08 betas are also included in this release
+
 LaunchELF v4.08c Beta (2007.01.03)
 -Modified Host interface to adapt to some changes in 'ps2client_for_uLE_rev3'.
 -One such change now allows browser display of file sizes and modification times for 'host:', except for an 'elflist' root, since that is just a pseudo-device
