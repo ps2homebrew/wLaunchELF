@@ -16,7 +16,7 @@ u64       BrightColor;
 
 int updateScr_1;     //dlanor: flags screen updates for drawScr()
 int updateScr_2;     //dlanor: used for anti-flicker delay in drawScr()
-int updateScr_t = 0; //dlanor: exit time of last drawScr()
+u64 updateScr_t = 0; //dlanor: exit time of last drawScr()
 
 char LastMessage[MAX_TEXT_LINE+2];
 
@@ -444,7 +444,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.82 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.83 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);

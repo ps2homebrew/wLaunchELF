@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.83 (2006.08.01)
+-Corrected a timer variable to be 'u64' instead of 'int'
+
 LaunchELF v3.82 (2006.08.01)
 -Added anti-aliasing flag for gsKit setup (improves all picture quality)
 -Modified screen update methods to eliminate interactive flickering
