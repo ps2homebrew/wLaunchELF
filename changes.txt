@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.64 (2006.05.08)
+-Fixed some bugs in launch key title management.
+
 LaunchELF v3.63 (2006.05.07)
 -Implemented user defined launch key titles for use in the main menu, in place of the ELF names. Such titles can be edited in the main CONFIG menu, but doing so is completely optional. The file name will be used (as previously) if no title is defined for an entry. Titles will only be displayed if the option "HIDE FULL ELF PATHS" is set ON in the CONFIG menu. Otherwise the full ELF path is shown (that setting replaces the old entry "PRINT ONLY FILENAME"). Titles will be saved to the CNF file in the form "LK_xxxx_Title", where xxxx is some button designation (eg: "Circle", "Square", etc. By editing the CNF directly you can also define some titles that are not accessible in CONFIG. These are LK_Select_Title, LK_Left_Title, and LK_Right_Title, and those titles will then be used for the corresponding entries in the main menu, even though these are not really launch keys. Note that the current virtual keyboard places a 33 char limit on these titles. This limit will be extended later. All other parts of the implementation allows for 70 characters.
 -Modified timeout halting, so that timeout will continue even if a button is pressed, if that button lacks any defined purpose in uLaunchELF. This is intended to allow button commands to mod chips without affecting the timeout of uLaunchELF.

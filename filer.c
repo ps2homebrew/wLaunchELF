@@ -1558,6 +1558,12 @@ error:
 	return ret;
 }
 //--------------------------------------------------------------
+//dlanor: For v3.64 the virtual keyboard function is modified to
+//allow entry of empty strings. The function now returns string
+//length, except if you use 'CANCEL' when it returns -1 instead.
+//Routines that require a non-empty string (eg: Rename, Newdir)
+//must test with '>' now, instead of '>=' as used previously.
+//--------------------------------------------------------------
 int keyboard(char *out, int max)
 {
 	int event, post_event=0;
@@ -1626,7 +1632,7 @@ int keyboard(char *out, int max)
 			}else if((swapKeys && new_pad & PAD_CROSS)
 			      || (!swapKeys && new_pad & PAD_CIRCLE) ){
 				i=strlen(out);
-				if(sel < WFONTS*HFONTS){
+				if(sel < WFONTS*HFONTS){  //Any char in matrix selected ?
 					if(i<max && i<33){
 						strcpy(tmp, out);
 						out[cur]=KEY[sel];
@@ -1635,9 +1641,9 @@ int keyboard(char *out, int max)
 						cur++;
 						t=0;
 					}
-				}else if(sel == WFONTS*HFONTS && i>0){
-					break;
-				}else
+				}else if(sel == WFONTS*HFONTS){ //'OK' exit-button selected ?
+					break;                        //break out of loop with i==strlen
+				}else  //Must be 'CANCEL' exit-button
 					return -1;
 			}
 		}
@@ -1694,7 +1700,7 @@ int keyboard(char *out, int max)
 		post_event = event;
 		event = 0;
 	}//ends while
-	return 0;
+	return i;
 }
 //--------------------------------------------------------------
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
@@ -1741,7 +1747,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		strcpy(files[4].name, "PS2Net");
 		files[4].stats.attrFile = MC_ATTR_FILE;
 		nfiles = 5;
-//Next 5 line section is only for use while debugging
+//Next 5 line section is only for use while debugging (also needs updating)
 /*
 		strcpy(files[5].name, "IOP Reset");
 		files[5].stats.attrFile = MC_ATTR_FILE;
@@ -1967,7 +1973,7 @@ void getFilePath(char *out, int cnfmode)
 						}
 					} else if(ret==RENAME){
 						strcpy(tmp, files[browser_sel].name);
-						if(keyboard(tmp, 36)>=0){
+						if(keyboard(tmp, 36)>0){
 							if(Rename(path, &files[browser_sel], tmp)<0){
 								browser_pushed=FALSE;
 								strcpy(msg0, "Rename Failed");
@@ -1978,7 +1984,7 @@ void getFilePath(char *out, int cnfmode)
 					else if(ret==MCPASTE)	submenu_func_mcPaste(msg0, path);
 					else if(ret==NEWDIR){
 						tmp[0]=0;
-						if(keyboard(tmp, 36)>=0){
+						if(keyboard(tmp, 36)>0){
 							ret = newdir(path, tmp);
 							if(ret == -17){
 								strcpy(msg0, "directory already exists");

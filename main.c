@@ -721,6 +721,7 @@ void RunElf(const char *path)
 			"	syscall;"
 			"	nop;"
 		);
+		//There has been a major change in the code for calling PS2Browser
 		//The method above is borrowed from PS2MP3. It's independent of ELF loader
 		//The method below was used earlier, but causes reset with new ELF loader
 		//party[0]=0;

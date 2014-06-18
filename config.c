@@ -271,10 +271,10 @@ void loadConfig(char *mainMsg, char *CNF)
 		free(setting);
 	setting = (SETTING*)malloc(sizeof(SETTING));
 
-	for(i=0; i<12; i++)
-		setting->LK_Path[i][0] = '\0';
-	for(i=0; i<30; i++)
-		PathPad[i][0] = '\0';
+	for(i=0; i<12; i++) setting->LK_Path[i][0] = 0;
+	for(i=0; i<15; i++) setting->LK_Title[i][0] = 0;
+	for(i=0; i<30; i++) PathPad[i][0] = 0;
+
 	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
 	setting->usbd[0] = '\0';
 	setting->skin[0] = '\0';
@@ -1434,8 +1434,10 @@ void config(char *mainMsg, char *CNF)
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				event |= 2;  //event |= valid pad command
-				if(s<TIMEOUT)
+				if(s<TIMEOUT){
 					setting->LK_Path[s][0]=0;
+					setting->LK_Title[s][0]=0;
+				}
 				else if(s==TIMEOUT)
 				{
 					if(setting->timeout > 0)
