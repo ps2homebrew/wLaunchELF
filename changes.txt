@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF wip3 (2013.09.17)
+ * gsKit and ps2sdk updates
+ * added default directory for searching related files (hdd0:__sysconf:pfs:/FMCB/)
+
 LaunchELF wip2 (2013.09.13)
  * now it supports homebrew hdd paths:
  e.g. hdd0:/__sysconf/FMCB/
