@@ -98,6 +98,7 @@ typedef struct
 	int Init_Delay;
 	int usbkbd_used;
 	int Show_Titles;
+	int PathPad_Lock;
 } SETTING;
 
 typedef struct
@@ -201,6 +202,7 @@ int mountParty(const char *party);
 void unmountParty(int party_ix);
 
 /* hdd.c */
+void DebugDisp(char *Message);
 void hddManager(void);
 
 /* editor.c */

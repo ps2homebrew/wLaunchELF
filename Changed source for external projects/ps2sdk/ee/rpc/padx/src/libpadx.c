@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libpadx.c 1283 2006-02-27 00:42:53Z jbit $
+# $Id: libpadx.c 1315 2006-06-06 20:52:52Z evilo $
 # Pad library functions
 */
 
@@ -162,7 +162,7 @@ static SifRpcClientData_t padsif[2] __attribute__((aligned(64)));
 static char buffer[128] __attribute__((aligned(16)));
 
 /* Port state data */
-static struct pad_state PadState[8][2];
+static struct pad_state PadState[2][8]; 
 
 
 /*
@@ -235,12 +235,12 @@ padInit(int a)
 
     for(i = 0; i<8; i++)
     {
-        PadState[i][0].open = 0;
-        PadState[i][0].port = 0;
-        PadState[i][0].slot = 0;
-        PadState[i][1].open = 0;
-        PadState[i][1].port = 0;
-        PadState[i][1].slot = 0;
+        PadState[0][i].open = 0;
+        PadState[0][i].port = 0;
+        PadState[0][i].slot = 0;
+        PadState[1][i].open = 0;
+        PadState[1][i].port = 0;
+        PadState[1][i].slot = 0; 
     }
 
 #ifndef ROM_PADMAN

@@ -28,6 +28,7 @@ enum
 	DEF_INIT_DELAY = 0,
 	DEF_USBKBD_USED = 1,
 	DEF_SHOW_TITLES = 1,
+	DEF_PATHPAD_LOCK = 0,
 	
 	DEFAULT=0,
 	SHOW_TITLES=12,
@@ -179,6 +180,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"USBKBD_FILE = %s\r\n"
 		"KBDMAP_FILE = %s\r\n"
 		"Menu_Show_Titles = %d\r\n"
+		"PathPad_Lock = %d\r\n"
 		"CNF_Path = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
@@ -211,6 +213,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->usbkbd_file,  //USBKBD_FILE
 		setting->kbdmap_file,  //KBDMAP_FILE
 		setting->Show_Titles,  //Menu_Show_Titles
+		setting->PathPad_Lock, //PathPad_Lock
 		setting->CNF_Path,     //CNF_Path
 		&CNF_step       // This variable measures the size of sprintf data
   );
@@ -227,6 +230,14 @@ void saveConfig(char *mainMsg, char *CNF)
 			CNF_size += CNF_step;
 		}//ends if
 	}//ends for
+
+	sprintf(tmp+CNF_size,
+		"PathPad_Lock = %d\r\n"
+		"%n",           // %n causes NO output, but only a measurement
+		setting->PathPad_Lock, //PathPad_Lock
+		&CNF_step       // This variable measures the size of sprintf data
+  );
+	CNF_size += CNF_step;
 
 	for(i=0; i<30; i++){  //Loop to save non-empty PathPad entries
 		if(PathPad[i][0]){  //Only save non-empty strings
@@ -356,6 +367,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->Init_Delay = DEF_INIT_DELAY;
 	setting->usbkbd_used = DEF_USBKBD_USED;
 	setting->Show_Titles = DEF_SHOW_TITLES;
+	setting->PathPad_Lock = DEF_PATHPAD_LOCK;
 
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
@@ -465,6 +477,7 @@ failed_load:
 		else if(!strcmp(name,"USBKBD_FILE")) strcpy(setting->usbkbd_file,value);
 		else if(!strcmp(name,"KBDMAP_FILE")) strcpy(setting->kbdmap_file,value);
 		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
+		else if(!strcmp(name,"PathPad_Lock")) setting->PathPad_Lock = atoi(value);
 		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
 		else {
 			for(i=0; i<15; i++){

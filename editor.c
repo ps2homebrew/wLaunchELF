@@ -985,7 +985,7 @@ int New(int Win)
 //--------------------------------------------------------------
 int Open(int Win)
 {
-	int i, ret=0;
+	int fd, i, ret=0;
 	char filePath[MAX_PATH];
 
 	getFilePath(Path[Win], TEXT_CNF); // No Filtering Be Carreful.
@@ -993,39 +993,17 @@ int Open(int Win)
 	if(Path[Win][0]=='\0')
 		goto abort;
 
-	if(!strncmp(Path[Win], "mass", 4)){
-		loadUsbModules();
-		strcpy(filePath, "mass:");
-		strcat(filePath, Path[Win]+6);
-	}else if(!strncmp(Path[Win], "hdd0:/", 6)){
-		char party[MAX_PATH];
-		char *p;
-		loadHddModules();
-		sprintf(party, "hdd0:%s", Path[Win]+6);
-		p = strchr(party, '/');
-		sprintf(filePath, "pfs0:%s", p);
-		*p = 0;
-		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
-	}else if(!strncmp(Path[Win], "cdfs", 4)){
-		loadCdModules();
-		strcpy(filePath, Path[Win]);
-		CDVD_FlushCache();
-		CDVD_DiskReady(0);
-	}else{
-		strcpy(filePath,Path[Win]);
-	}
-	FILE*	File = fopen( filePath, "r" );
+	genFixPath(Path[Win], filePath);
+	fd = genOpen( filePath, O_RDONLY );
  
-	if( File != NULL ) {
-
-		fseek ( File, 0, SEEK_END ); 
-		TextSize[Win] = ftell ( File ); 
-		fseek ( File, 0, SEEK_SET ); 
+	if( fd >= 0 ) {
+		TextSize[Win] = genLseek ( fd, 0, SEEK_END );
+		genLseek ( fd, 0, SEEK_SET );
 
 		if( TextSize[Win] && TextSize[Win] <= 512*1024 ){ // Limit Text Size To 512Kb???
 			if( ( TextBuffer[Win] = malloc( TextSize[Win]+256 ) ) > 0 ){ // 256 To Avoid Crash 256???
 				memset(TextBuffer[Win], 0, TextSize[Win]+256); // 256 To Avoid Crash 256???
-				fread( TextBuffer[Win], 1, TextSize[Win], File );
+				genRead( fd, TextBuffer[Win], TextSize[Win] );
 
 				for(i=0; i<TextSize[Win]; i++){ // Scan For Text Mode.
 					if(TextBuffer[Win][i-1]!='\r' && TextBuffer[Win][i]=='\n'){ // Mode MAC Only LF At Line End.
@@ -1047,7 +1025,7 @@ int Open(int Win)
 		}
 	}
 
-	fclose( File );
+	genClose( fd );
 
 	if(ret){
 		drawMsg("File Opened");
@@ -1092,37 +1070,28 @@ void Close(int Win)
 //--------------------------------------------------------------
 void Save(int Win)
 {
-	int i, ret=0;
+	int fd, i, ret=0;
 
 	char filePath[MAX_PATH];
 
-	if(!strncmp(Path[Win], "mass", 4)){
-		strcpy(filePath, "mass:");
-		strcat(filePath, Path[Win]+6);
-	}else if(!strncmp(Path[Win], "hdd0:/", 6)){
-		char party[MAX_PATH];
-		char *p;
-		sprintf(party, "hdd0:%s", Path[Win]+6);
-		p = strchr(party, '/');
-		sprintf(filePath, "pfs0:%s", p);
-		*p = 0;
-	}else if(!strncmp(Path[Win], "cdfs", 4)){
+	if(!strncmp(Path[Win], "cdfs", 4))
 		goto abort;
-	}else{
-		strcpy(filePath,Path[Win]);
-	}
-	FILE*	File = fopen( filePath, "w" );
+	genFixPath(Path[Win], filePath);
+
+	fd = genOpen( filePath, O_CREAT|O_WRONLY|O_TRUNC );
  
-	if( File != NULL ) {
+	if( fd >= 0 ) {
 		if(TextMode[Win]==OTHER && TextBuffer[Win][TextSize[Win]]=='\n')
-			fwrite( TextBuffer[Win], 1, TextSize[Win]-1, File );
+			genWrite(fd, TextBuffer[Win], TextSize[Win]-1);
 		else
-			fwrite( TextBuffer[Win], 1, TextSize[Win], File );
+			genWrite(fd, TextBuffer[Win], TextSize[Win]);
 		Window[Win][OPENED]=1, Window[Win][SAVED]=1;
 		ret=1;
 	}
 	
-	fclose( File );
+	genClose( fd );
+	if(!strncmp(filePath, "pfs", 3))
+		unmountParty(filePath[3]-'0');
 
 	if(ret){
 		drawMsg("File Saved");
@@ -1138,7 +1107,7 @@ abort:
 //--------------------------------------------------------------
 void Save_As(int Win)
 {
-	int i, ret=0;
+	int fd, i, ret=0;
 	char tmp[MAX_PATH], oldPath[MAX_PATH], filePath[MAX_PATH];
 	char *p;
 
@@ -1152,44 +1121,35 @@ void Save_As(int Win)
 	}
 
 	getFilePath(Path[Win], DIR_CNF);
+	if(Path[0] == '\0')
+		goto abort;
 
-	if(Path[0]!='\0'){
+	drawMsg("Enter File Name.");
+	drawMsg("Enter File Name.");
 
-		drawMsg("Enter File Name.");
-		drawMsg("Enter File Name.");
+	if(keyboard(tmp, 36)>0)
+		strcat(Path[Win], tmp);
+	else
+		goto abort;
 
-		if(keyboard(tmp, 36)>0)
-			strcat(Path[Win], tmp);
+	if(!strncmp(Path[Win], "cdfs", 4))
+		goto abort;
+	genFixPath(Path[Win], filePath);
+
+	fd = genOpen( filePath, O_CREAT|O_WRONLY|O_TRUNC );
+ 
+	if( fd >= 0 ) {
+		if(TextMode[Win]==OTHER && TextBuffer[Win][TextSize[Win]]=='\n')
+			genWrite(fd, TextBuffer[Win], TextSize[Win]-1);
 		else
-			goto abort;
-
-		if(!strncmp(Path[Win], "mass", 4)){
-			strcpy(filePath, "mass:");
-			strcat(filePath, Path[Win]+6);
-		}else if(!strncmp(Path[Win], "hdd0:/", 6)){
-			char party[MAX_PATH];
-			char *p;
-			sprintf(party, "hdd0:%s", Path[Win]+6);
-			p = strchr(party, '/');
-			sprintf(filePath, "pfs0:%s", p);
-			*p = 0;
-		}else if(!strncmp(Path[Win], "cdfs", 4)){
-			goto abort;
-		}else{
-			strcpy(filePath,Path[Win]);
-		}
-		FILE*	File = fopen( filePath, "w+" );
-
-		if( File != NULL ) {
-			if(TextMode[Win]==OTHER && TextBuffer[Win][TextSize[Win]]=='\n')
-				fwrite( TextBuffer[Win], 1, TextSize[Win]-1, File );
-			else
-				fwrite( TextBuffer[Win], 1, TextSize[Win], File );
-			Window[Win][CREATED]=0, Window[Win][OPENED]=1, Window[Win][SAVED]=1;
-			ret=1;
-		}
-		fclose( File );
-	} // Path Null.
+			genWrite(fd, TextBuffer[Win], TextSize[Win]);
+		Window[Win][CREATED]=0, Window[Win][OPENED]=1, Window[Win][SAVED]=1;
+		ret=1;
+	}
+	
+	genClose( fd );
+	if(!strncmp(filePath, "pfs", 3))
+		unmountParty(filePath[3]-'0');
 
 	if(ret){
 		drawMsg("File Saved");

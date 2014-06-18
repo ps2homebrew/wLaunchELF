@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.06.11
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.07.01
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -239,6 +239,15 @@ CNF_Path =
 LK_Select_Title = Configure uLaunchELF
 LK_Left_Title = Load 'lower' CNF file
 LK_Right_Title = Load 'higher' CNF file
+# ----------------------------------------------------------------------
+# PathPad_Lock allows you to lock changes to the browser navigation
+# shortcuts in the PathPad array. So if you set PathPad_Lock non-zero,
+# the 'Set' and 'Clear' commands will no longer be active in the PathPad
+# menu. This will prevent you from changing any of the entries, so the
+# default value is zero, which allows you to set up or change entries.
+# NB: Setting it non-zero must be done by text editor, for the present.
+# ----------------------------------------------------------------------
+PathPad_Lock = 0
 # ----------------------------------------------------------------------
 # PathPad[xx] is not one variable but many. You can replace the 'xx' by
 # any number from 00 through 29 (inclusive), and assign each variable of

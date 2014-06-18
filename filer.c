@@ -471,6 +471,14 @@ int genFixPath(char *uLE_path, char *gen_path)
 	char loc_path[MAX_PATH], party[MAX_NAME], *p;
 	int part_ix;
 
+	if(!strncmp(uLE_path, "cdfs", 4)){
+		loadCdModules();
+		CDVD_FlushCache();
+		CDVD_DiskReady(0);
+	} else if(!strncmp(uLE_path, "mass", 4)){
+		loadUsbModules();
+	}
+
 	if(!strncmp(uLE_path, "hdd0:/", 6)){ //If using an HDD path
 		strcpy(loc_path, uLE_path+6);
 		if((p=strchr(loc_path, '/'))!=NULL){
@@ -1134,13 +1142,14 @@ char *PathPad_menu(const char *path)
 						sel_x=0;
 				}else if(new_pad & PAD_TRIANGLE){ //Pushed 'Back'
 					return NULL;
-				}else if((!swapKeys && new_pad & PAD_CROSS)
-				      || (swapKeys && new_pad & PAD_CIRCLE) ){//Pushed 'Clear'
+				}else if(!setting->PathPad_Lock  //if PathPad changes allowed ?
+				      && ( (!swapKeys && new_pad & PAD_CROSS)
+				         ||(swapKeys && new_pad & PAD_CIRCLE) )) {//Pushed 'Clear'
 					PathPad[sel_x*10+sel_y][0] = '\0';
 				}else if((swapKeys && new_pad & PAD_CROSS)
 				      || (!swapKeys && new_pad & PAD_CIRCLE) ){//Pushed 'Use'
 					return PathPad[sel_x*10+sel_y];
-				}else if(new_pad & PAD_SQUARE){//Pushed 'Store'
+				}else if(!setting->PathPad_Lock && (new_pad & PAD_SQUARE)){//Pushed 'Set'
 					strncpy(PathPad[sel_x*10+sel_y], path, MAX_PATH-1);
 					PathPad[sel_x*10+sel_y][MAX_PATH-1]='\0';
 				}
@@ -1171,13 +1180,19 @@ char *PathPad_menu(const char *path)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0],
-				0, (y/2),
-				SCREEN_WIDTH, y/2+10);
-			if (swapKeys)
-				printXY("ÿ1:Use ÿ0:Clear ÿ2:Set ÿ3:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
-			else
-				printXY("ÿ0:Use ÿ1:Clear ÿ2:Set ÿ3:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
+			drawSprite(setting->color[0], 0, (y/2), SCREEN_WIDTH, y/2+10);
+
+			if(swapKeys) {
+				strcpy(textrow, "ÿ1:Use ");
+				if(!setting->PathPad_Lock)
+					strcat(textrow, "ÿ0:Clear ÿ2:Set ");
+			} else {
+				strcpy(textrow, "ÿ0:Use ");
+				if(!setting->PathPad_Lock)
+					strcat(textrow, "ÿ1:Clear ÿ2:Set ");
+			}
+			strcat(textrow, "ÿ3:Back L1/R1:Page_left/right");
+			printXY(textrow, x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2175,7 +2190,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "TextEditor");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Configurator");
+		strcpy(files[nfiles].name, "Configure");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Load CNF--");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;

@@ -1,6 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
-LaunchELF v3.78 (2006.06.11)
+LaunchELF v3.79 (2006.07.01)
+-Changed "MISC/Configurator" to "MISC/Configure"
+-Fixed a bug that made TextEditor unable to save files on HDD
+-Added PathPad_Lock as a CNF variable. Text edit this to a non-zero value if you want to prevent any changes to your PathPad array. This will then prevent the commands to clear or set PathPad entries from having any effect. You can still use them, but not change them.
+
+LaunchELF v3.78 (2006.06.12)
 -Added ability to use 'Select', 'Left', and 'Right' as normal launch keys, by giving them optional string definitions. If those are not used, the old default usage applies, with these keys being used to enter configurator and to switch CNF pages. If the new strings are used, but set to empty strings, then these keys are disabled, and if you use the new strings for proper launch paths, then those will be used as for normal launch keys.
 -Added three new MISC/ commands:
 -"MISC/Configurator" corresponds to the default action for 'Select' button

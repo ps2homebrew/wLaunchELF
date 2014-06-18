@@ -244,7 +244,7 @@ int drawMainScreen(void)
 	char *p;
 
 	if(!setting->LK_Flag[12])
-		strcpy(setting->LK_Path[12], "MISC/Configurator");
+		strcpy(setting->LK_Path[12], "MISC/Configure");
 	if((maxCNF>1) && !setting->LK_Flag[13])
 		strcpy(setting->LK_Path[13], "MISC/Load CNF--");
 	if((maxCNF>1) && !setting->LK_Flag[14])
@@ -838,7 +838,7 @@ void	ShowFont(void)
 	int ch_x  = mat_x+FONT_WIDTH/2+1,   ch_y  = mat_y+FONT_HEIGHT/2+1;
 	int px, ly, cy;
 	uint64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
-	
+
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
 	while(1) {
@@ -1087,7 +1087,7 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/TextEditor")){
 		TextEditor();
 		return;
-	}else if(!stricmp(path, "MISC/Configurator")){
+	}else if(!stricmp(path, "MISC/Configure")){
 		config(mainMsg, CNF);
 		return;
 	}else if(!stricmp(path, "MISC/Load CNF--")){
@@ -1213,6 +1213,7 @@ int main(int argc, char *argv[])
 	int	host_booted = 0;
 	int ito_vmode;
 
+
 	SifInitRpc(0);
 	CheckModules();
 	loadBasicModules();
@@ -1253,6 +1254,11 @@ int main(int argc, char *argv[])
 			)	p=strrchr(LaunchElfDir, ':');
 	if	(p!=NULL)
 		*(p+1)=0;
+
+	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){
+		//Patch DMS4 Dev2 booting here, when we learn more about how it works
+		//Trying to mount that partition for loading CNF simply crashes...
+	}
 
 	LastDir[0] = 0;
 
