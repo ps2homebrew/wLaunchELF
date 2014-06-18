@@ -962,11 +962,15 @@ int getDir(const char *path, FILEINFO *info)
 // on a PS1 MC, or similar saves backed up to a PS2 MC. Two new
 // methods need to be used to extract such titles correctly, and
 // these were added in v3.62, by me (dlanor).
+// From v3.91 This routine also extracts titles for PSU files.
 //--------------------------------------------------------------
 int getGameTitle(const char *path, const FILEINFO *file, char *out)
 {
 	char party[MAX_NAME], dir[MAX_PATH], tmpdir[MAX_PATH];
 	int fd=-1, size, hddin=FALSE, ret;
+	psu_header PSU_head;
+	int i, tst, PSU_content, psu_pad_pos;
+	char *cp;
 	
 	//Avoid title usage in browser root or partition list
 	if(path[0]==0 || !strcmp(path,"hdd0:/")) return -1;
@@ -986,10 +990,33 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
 	ret = -1;
 
 	if((file->stats.attrFile & MC_ATTR_SUBDIR)==0){
-		strcpy(tmpdir, dir);
-		goto get_PS1_GameTitle;
+		//Here we know that the object needing a title is a file
+		strcpy(tmpdir, dir);				//Copy the pathname for file access
+		cp = strrchr(tmpdir, '.');  //Find the extension, if any
+		if((cp==NULL) || stricmp(cp, ".psu") ) //If it's anything other than a PSU file
+			goto get_PS1_GameTitle;              //then it may be a PS1 save
+		//Here we know that the object needing a title is a PSU file
+		if((fd=genOpen(tmpdir, O_RDONLY)) < 0) goto finish;  //Abort if open fails
+		tst = genRead(fd, (void *) &PSU_head, sizeof(PSU_head));
+		if(tst != sizeof(PSU_head)) goto finish; //Abort if read fails
+		PSU_content = PSU_head.size;
+		for(i=0; i<PSU_content; i++){
+			tst = genRead(fd, (void *) &PSU_head, sizeof(PSU_head));
+			if(tst != sizeof(PSU_head)) goto finish; //Abort if read fails
+			PSU_head.name[sizeof(PSU_head.name)] = '\0';
+			if(!strcmp(PSU_head.name, "icon.sys")) {
+				genLseek(fd, 0xC0, SEEK_CUR);
+				goto read_title;
+			}
+			if(PSU_head.size){
+				psu_pad_pos = (PSU_head.size + 0x3FF) & -0x400;
+				genLseek(fd, psu_pad_pos, SEEK_CUR);
+			}
+			//Here the PSU file pointer is positioned for reading next header
+		}//ends for
 	}
 
+	//Here we know that the object needing a title is a folder
 	//First try to find a valid PS2 icon.sys file inside the folder
 	strcpy(tmpdir, dir);
 	strcat(tmpdir, "icon.sys");
@@ -1561,14 +1588,18 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 			i = strlen(out)-1;
 			if(out[i]=='/')
 				out[i] = 0;
-			sprintf(tmp, "%s.psu", out);
+			strcpy(tmp, out);
+			cp = tmp+strlen(tmp)-strlen(file.name); //set cp pointing to the pure filename
 
-			cp = tmp+strlen(outPath);
+			if(title_show && file.title[0])
+				transcpy_sjis(cp, file.title);
+
 			for(i=0; cp[i];) {
 				i = strcspn(cp, "\"\\/:*?<>|");	//Filter out illegal name characters
 				if(cp[i])
 					cp[i] = '_';
 			}
+			strcat(tmp, ".psu");
 
 			if	(!strncmp(tmp, "host:/", 6))
 				makeHostPath(tmp+5, tmp+6);

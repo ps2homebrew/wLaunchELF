@@ -263,6 +263,7 @@ static void View_Input( void ) {
 				WaitTime=Timer();
 				while(Timer()<WaitTime+500); // Wait To Ensure Switch
 				View_Render();
+				TimeRemain=SlideShowTime;
 			}else if(new_pad & PAD_DOWN){ // Rotate Pic -
 		    if(PanZoom!=1.0f){
 		    	for ( i = 0; i < 35; ++i ) {
@@ -275,6 +276,7 @@ static void View_Input( void ) {
 				WaitTime=Timer();
 				while(Timer()<WaitTime+500); // Wait To Ensure Switch
 				View_Render();
+				TimeRemain=SlideShowTime;
 			}else if(new_pad & PAD_R1){
 				if(++SlideShowTime>=3600) SlideShowTime=3600;
 				WaitTime=Timer();

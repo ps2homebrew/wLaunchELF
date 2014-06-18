@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.91 (2006.08.14)
+-Corrected PSU name filter which was incorrect for HDD destinations
+-Implemented title display mode for PSU files (using icon.sys stored in each file)
+-Implemented optional use of save title for PSU filename. This is based on display mode, so the name chosen will be the same as that displayed. However, since titles use Shift-JIS characters and filenames need ASCII, the title strings will be filtered to use only normal european characters. Any other character will be changed to underscore ('_').
+-Modified JpgViewer so that rotating a picture during slideshow will reset the timer so that a full normal viewing period is alloted after the rotation is performed.
+
 LaunchELF v3.90 (2006.08.13)
 -Fixed a bug that prevented proper restore of zero-length files from a PSU to MC
 -Fixed a bug that prevented proper backup of zero-length files from MC to a PSU

@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.90 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.91 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -1144,6 +1144,38 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 }
 //------------------------------
 //endfunc printXY_sjis
+//--------------------------------------------------------------
+//translate a string from shift-JIS to ascii (for gamesave titles)
+u8 *transcpy_sjis(u8 *d, u8 *s)
+{
+	u8 ascii;
+	u16 code1, code2;
+	int i, j;
+
+	for(i=0, j=0; s[i];){
+		code1 = s[i++];
+		if((code1 & 0x80) && s[i]) { //we have top bit and some more char (SJIS) ?
+			// SJIS
+			code2 = s[i++];
+			ascii=0xFF;
+			if(code1==0x81)
+				ascii = sjis_lookup_81[code2];
+			else if(code1==0x82)
+				ascii = sjis_lookup_82[code2];
+			if(ascii!=0xFF){
+				d[j++]=ascii;
+			}else{
+				d[j++]='_';
+			}
+		}else{ //First char lacks top bit set or no following char (non-SJIS)
+			d[j++] = code1;
+		}
+	}//ends for
+	d[j] = '\0'; //terminate result string
+	return d;
+}
+//------------------------------
+//endfunc transcpy_sjis
 //--------------------------------------------------------------
 //End of file: draw.c
 //--------------------------------------------------------------
