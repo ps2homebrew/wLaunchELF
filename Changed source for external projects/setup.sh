@@ -59,14 +59,14 @@ fi
 ####################
 if [ $DOWNLOAD -eq 1 ]; then
   cd $BUP_DIR
-	svn co svn://svn.ps2dev.org/ps2/trunk/ps2sdk --revision 1682 ps2sdksrc
-	svn co svn://svn.ps2dev.org/ps2/trunk/gsKit --revision 1664 gsKit
-	svn co svn://svn.ps2dev.org/ps2/trunk/usbhdfsd --revision 1534 usbhdfsd
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/ps2ftpd --revision 371 ps2ftpd
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/myPS2/lib/libjpg --revision 520 libjpg
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSUTILS --revision 588 SMS/drv/SMSUTILS
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSMAP --revision 588 SMS/drv/SMSMAP
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSTCPIP --revision 588 SMS/drv/SMSTCPIP
+	svn co http://svn.github.com/ps2dev/ps2sdk --revision 891 ps2sdksrc
+	svn co http://psp.jim.sh/svn/ps2/trunk/gsKit --revision 1684 gsKit
+	svn co http://psp.jim.sh/svn/ps2/trunk/usbhdfsd --revision 1534 usbhdfsd
+	svn co http://psp.jim.sh/svn/ps2ware/trunk/ps2ftpd --revision 371 ps2ftpd
+	svn co http://psp.jim.sh/svn/ps2ware/trunk/myPS2/lib/libjpg --revision 520 libjpg
+	svn co http://psp.jim.sh/svn/ps2ware/trunk/SMS/drv/SMSUTILS --revision 588 SMS/drv/SMSUTILS
+	svn co http://psp.jim.sh/svn/ps2ware/trunk/SMS/drv/SMSMAP --revision 588 SMS/drv/SMSMAP
+	svn co http://psp.jim.sh/svn/ps2ware/trunk/SMS/drv/SMSTCPIP --revision 588 SMS/drv/SMSTCPIP
 #
 # As of early 2010 access to the site server of ps2dev.org is no longer reliable
 # For SVN update this is transparent, as the SVN commands just keep current files
@@ -95,6 +95,7 @@ rm -fr ps2sdk/*
 rmdir ps2sdk
 rm -fr ps2sdksrc/*
 rm -fr ps2sdksrc/.svn
+rm -fr ps2sdksrc/.gitignore
 rmdir ps2sdksrc
 rm -fr gsKit/*
 rm -fr gsKit/.svn

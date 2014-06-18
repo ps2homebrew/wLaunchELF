@@ -97,6 +97,39 @@ void gsKit_prim_line_3d(GSGLOBAL *gsGlobal, float x1, float y1, int iz1, float x
 	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
 }
 
+void gsKit_prim_line_goraud_3d(GSGLOBAL *gsGlobal, float x1, float y1, int iz1, float x2, float y2, int iz2, u64 color1, u64 color2)
+{
+	u64* p_store;
+	u64* p_data;
+	int qsize = 3;
+	int bsize = 48;
+
+	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
+	int iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
+
+	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
+	int iy2 = (int)(y2 * 16.0f) + gsGlobal->OffsetY;
+
+
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GIF_PRIM_LINE);
+
+	if(p_store == gsGlobal->CurQueue->last_tag)
+	{
+		*p_data++ = GIF_TAG_LINE_GORAUD(0);
+		*p_data++ = GIF_TAG_LINE_GORAUD_REGS;
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_LINE, 1, 0, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				0, gsGlobal->PrimContext, 0) ;
+
+	*p_data++ = color1;
+	*p_data++ = GS_SETREG_XYZ2( ix1, iy1, iz1 );
+	
+	*p_data++ = color2;
+	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
+}
+
 void gsKit_prim_line_strip(GSGLOBAL *gsGlobal, float *LineStrip, int segments, int iz, u64 color)
 {
 	u64* p_store;

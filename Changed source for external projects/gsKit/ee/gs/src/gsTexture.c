@@ -593,7 +593,75 @@ void gsKit_prim_triangle_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_UV( iu3, iv3 );
 	*p_data++ = GS_SETREG_XYZ2( ix3, iy3, iz3 );
 }
+void gsKit_prim_triangle_goraud_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
+				float x1, float y1, int iz1, float u1, float v1,
+				float x2, float y2, int iz2, float u2, float v2,
+				float x3, float y3, int iz3, float u3, float v3,
+				u64 color1, u64 color2, u64 color3)
+{
+	gsKit_set_texfilter(gsGlobal, Texture->Filter);
+	u64* p_store;
+	u64* p_data;
+	int qsize = 6;
+	int bsize = 96;
 
+	int tw = 31 - (lzw(Texture->Width) + 1);
+	if(Texture->Width > (1<<tw))
+		tw++;
+
+	int th = 31 - (lzw(Texture->Height) + 1);
+	if(Texture->Height > (1<<th))
+		th++;
+
+	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
+	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
+	int ix3 = (int)(x3 * 16.0f) + gsGlobal->OffsetX;
+	int iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
+	int iy2 = (int)(y2 * 16.0f) + gsGlobal->OffsetY;
+	int iy3 = (int)(y3 * 16.0f) + gsGlobal->OffsetY;
+
+	int iu1 = (int)(u1 * 16.0f);
+	int iu2 = (int)(u2 * 16.0f);
+	int iu3 = (int)(u3 * 16.0f);
+	int iv1 = (int)(v1 * 16.0f);
+	int iv2 = (int)(v2 * 16.0f);
+	int iv3 = (int)(v3 * 16.0f);
+
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GIF_PRIM_TRIANGLE_TEXTURED);
+
+	*p_data++ = GIF_TAG_TRIANGLE_GORAUD_TEXTURED(0);
+	*p_data++ = GIF_TAG_TRIANGLE_GORAUD_TEXTURED_REGS(gsGlobal->PrimContext);
+
+	if(Texture->VramClut == 0)
+	{
+		*p_data++ = GS_SETREG_TEX0(Texture->Vram/256, Texture->TBW, Texture->PSM,
+			tw, th, gsGlobal->PrimAlphaEnable, 0,
+			0, 0, Texture->ClutPSM, 0, GS_CLUT_STOREMODE_NOLOAD);
+	}
+	else
+	{
+		*p_data++ = GS_SETREG_TEX0(Texture->Vram/256, Texture->TBW, Texture->PSM,
+			tw, th, gsGlobal->PrimAlphaEnable, 0,
+			Texture->VramClut/256, 0, 0, 0, GS_CLUT_STOREMODE_LOAD);
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRIANGLE, 1, 1, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				1, gsGlobal->PrimContext, 0);
+
+
+	*p_data++ = color1;
+	*p_data++ = GS_SETREG_UV( iu1, iv1 );
+	*p_data++ = GS_SETREG_XYZ2( ix1, iy1, iz1 );
+
+  *p_data++ = color2;
+	*p_data++ = GS_SETREG_UV( iu2, iv2 );
+	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
+
+  *p_data++ = color3;
+	*p_data++ = GS_SETREG_UV( iu3, iv3 );
+	*p_data++ = GS_SETREG_XYZ2( ix3, iy3, iz3 );
+}
 void gsKit_prim_triangle_strip_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 					float *TriStrip, int segments, int iz, u64 color)
 {
@@ -927,6 +995,87 @@ void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_UV( iu3, iv3 );
 	*p_data++ = GS_SETREG_XYZ2( ix3, iy3, iz3 );
 
+	*p_data++ = GS_SETREG_UV( iu4, iv4 );
+	*p_data++ = GS_SETREG_XYZ2( ix4, iy4, iz4 );
+}
+
+void gsKit_prim_quad_goraud_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
+				float x1, float y1, int iz1, float u1, float v1,
+				float x2, float y2, int iz2, float u2, float v2,
+				float x3, float y3, int iz3, float u3, float v3,
+				float x4, float y4, int iz4, float u4, float v4,
+				u64 color1, u64 color2, u64 color3, u64 color4)
+{
+	gsKit_set_texfilter(gsGlobal, Texture->Filter);
+
+	u64* p_store;
+	u64* p_data;
+	int qsize = 7;
+	int bsize = 112;
+
+	int tw = 31 - (lzw(Texture->Width) + 1);
+	if(Texture->Width > (1<<tw))
+		tw++;
+
+	int th = 31 - (lzw(Texture->Height) + 1);
+	if(Texture->Height > (1<<th))
+		th++;
+
+	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
+	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
+	int ix3 = (int)(x3 * 16.0f) + gsGlobal->OffsetX;
+	int ix4 = (int)(x4 * 16.0f) + gsGlobal->OffsetX;
+
+	int iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
+	int iy2 = (int)(y2 * 16.0f) + gsGlobal->OffsetY;
+	int iy3 = (int)(y3 * 16.0f) + gsGlobal->OffsetY;
+	int iy4 = (int)(y4 * 16.0f) + gsGlobal->OffsetY;
+
+	int iu1 = (int)(u1 * 16.0f);
+	int iu2 = (int)(u2 * 16.0f);
+	int iu3 = (int)(u3 * 16.0f);
+	int iu4 = (int)(u4 * 16.0f);
+
+	int iv1 = (int)(v1 * 16.0f);
+	int iv2 = (int)(v2 * 16.0f);
+	int iv3 = (int)(v3 * 16.0f);
+	int iv4 = (int)(v4 * 16.0f);
+
+	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, bsize, GIF_PRIM_QUAD_TEXTURED);
+
+	*p_data++ = GIF_TAG_QUAD_GORAUD_TEXTURED(0);
+	*p_data++ = GIF_TAG_QUAD_GORAUD_TEXTURED_REGS(gsGlobal->PrimContext);
+
+	if(Texture->VramClut == 0)
+	{
+		*p_data++ = GS_SETREG_TEX0(Texture->Vram/256, Texture->TBW, Texture->PSM,
+			tw, th, gsGlobal->PrimAlphaEnable, 0,
+			0, 0, Texture->ClutPSM, 0, GS_CLUT_STOREMODE_NOLOAD);
+	}
+	else
+	{
+		*p_data++ = GS_SETREG_TEX0(Texture->Vram/256, Texture->TBW, Texture->PSM,
+			tw, th, gsGlobal->PrimAlphaEnable, 0,
+			Texture->VramClut/256, 0, 0, 0, GS_CLUT_STOREMODE_LOAD);
+	}
+
+	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRISTRIP, 1, 1, gsGlobal->PrimFogEnable,
+				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
+				1, gsGlobal->PrimContext, 0);
+
+	*p_data++ = color1;
+	*p_data++ = GS_SETREG_UV( iu1, iv1 );
+	*p_data++ = GS_SETREG_XYZ2( ix1, iy1, iz1 );
+
+  *p_data++ = color2;
+	*p_data++ = GS_SETREG_UV( iu2, iv2 );
+	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
+
+  *p_data++ = color3;
+	*p_data++ = GS_SETREG_UV( iu3, iv3 );
+	*p_data++ = GS_SETREG_XYZ2( ix3, iy3, iz3 );
+
+  *p_data++ = color4;
 	*p_data++ = GS_SETREG_UV( iu4, iv4 );
 	*p_data++ = GS_SETREG_XYZ2( ix4, iy4, iz4 );
 }

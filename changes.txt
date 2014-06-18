@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.42b (2012.04.13)
+-Updated ps2sdk and existing source files from ps2dev SVN rev 1682 to github rev 891.
+
 LaunchELF v4.42a (2010.07.11)
 -Added subprogram MISC/OSDSYS to launch MC-based OSDSYS kelf (as used for FMCB). For most cases the default path should work with standard FMCB installations, but it is also possible to configure a user-defined path for it, so as to experiment with multiple such kelf files on the same MC.
 
