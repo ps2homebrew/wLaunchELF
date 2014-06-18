@@ -710,7 +710,7 @@ failed_load:
 	// This point is only reached after succefully opening CNF
 	genClose(fd);
 
-	if( (RAM_p = preloadCNF(path))==NULL )
+	if( (RAM_p = preloadCNF(cnf_path))==NULL )
 		goto failed_load;
 	CNF_p = RAM_p;
 

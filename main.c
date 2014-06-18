@@ -201,10 +201,6 @@ void ShowDebugInfo(void)
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
 			PrintRow(-1, TextRow);
-			sprintf(TextRow, "rel \"uLE:/LAUNCHELF.CNF\" => \"%s\"", uLE_rel_path);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "gen \"uLE:/LAUNCHELF.CNF\" => \"%s\"", uLE_gen_path);
-			PrintRow(-1, TextRow);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
