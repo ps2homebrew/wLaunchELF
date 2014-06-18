@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.62 (2006.05.06)
+-Improved free space calculation, to make it work correctly for PS1 memory cards
+-Changed browser display to show final slash for all links to directories, which was not done previously for ".." or for gamesave titles.
+-Added support for PS1 gamesave titles, both as separately copied gamesave files, and in the standard form produced by the built-in PS2 browser (save file in folder of same name). You can easily tell the difference from the fact that folders always have a slash at the end of the string, even in title mode.
+-Reimplemented string cursor blinking for virtual keyboard
+-Added support for both keypads, in parallel. Use both or either one, with no need for the other to be connected.
+-Added emergency CNF inhibit. Pressing 'Select' button during startup will prevent the normal loading of "LAUNCHELF.CNF". This can be used either to load an "EMERGENCY.CNF" file holding user-defined defaults, or to fall back on the built-in defaults (simply by not having any "EMERGENCY.CNF" file). When the emergency button is used there will be an extra 2 second delay from program init until button commands are accepted, to allow the user time to release the 'Select' button (so it is not misinterpreted as a normal command).
+
 LaunchELF v3.61 (2006.04.18)
 -Added PathPad array for user defined browser shortcuts which can be accessed in browser by pressing R2 to bring up the PathPad submenu. Though not strictly a CNF variable, since it doesn't really configure anything, this array is saved at the end of each CNF file, so the paths can be reused in future sessions. (The main purpose of this is to minimize repetitive manual browsing) NB: There is no separate save command for this feature, so you must enter the CONFIG menu and then exit it with 'OK', to resave a CNF with PathPad.
 -Modified some menus for consistent use of Triangle button

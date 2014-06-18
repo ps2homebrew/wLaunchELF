@@ -55,6 +55,7 @@ int PM_Indx[MAX_RECURSE]; //Attribute entry index for PasteMode attribute files
 unsigned char *elisaFnt=NULL;
 size_t freeSpace;
 int mcfreeSpace;
+int mctype_PSx;  //dlanor: Needed for proper scaling of mcfreespace
 int vfreeSpace;
 int browser_cut;
 int nclipFiles, nmarks, nparties;
@@ -81,6 +82,25 @@ void clear_mcTable(mcTable *mcT)
 {
 	memset((void *) mcT, 0, sizeof(mcTable));
 }
+//--------------------------------------------------------------
+// getHddParty below takes as input the string path and the struct file
+// and uses these to calculate the output strings party and dir. If the
+// file struct is not passed as NULL, then its file->name entry will be
+// added to the internal copy of the path string (which remains unchanged),
+// and if that file struct entry is for a folder, then a slash is also added.
+// The modified path is then used to calculate the output strings as follows. 
+//-----
+// party = the full path string with "hdd0:" and partition spec, but without
+// the slash character between them, used in user specified full paths. So
+// the first slash in that string will come after the partition name.
+//-----
+// dir = the pfs path string, starting like "pfs0:" (but may use different
+// pfs index), and this is then followed by the path within that partition.
+// Note that despite the name 'dir', this is also used for files.
+//-----
+//NB: From the first slash character those two strings are identical when
+// both are used, but either pointer may be set to NULL in the function call,
+// as an indication that the caller isn't interested in that part.
 //--------------------------------------------------------------
 int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
 {
@@ -112,6 +132,99 @@ int mountParty(const char *party)
 	if(fileXioMount("pfs0:", party, FIO_MT_RDWR) < 0) return -1;
 	strcpy(mountedParty[0], party);
 	return 0;
+}
+//--------------------------------------------------------------
+// The following group of file handling functions are used to allow
+// the main program to access files without having to deal with the
+// difference between fio and fileXio devices directly in each call.
+// Even so, paths for fileXio are assumed to be already prepared so
+// as to be accepted by fileXio calls (so HDD file access use "pfs")
+// Generic functions for this purpose that have been added so far are:
+// genInit(void), genOpen(path, mode), genClose(fd)
+// genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
+//--------------------------------------------------------------
+int gen_fd[256]; //Allow up to 256 generic file handles
+int gen_io[256]; //For each handle, also memorize io type
+//--------------------------------------------------------------
+void genInit(void)
+{
+	int	i;
+
+	for(i=0; i<256; i++)
+		gen_fd[i] = -1;
+}
+//--------------------------------------------------------------
+int genOpen(char *path, int mode)
+{
+	int i, fd, io;
+
+	for(i=0; i<256; i++)
+		if(gen_fd[i] < 0)
+			break;
+	if(i > 255)
+		return -1;
+
+	if(!strncmp(path, "pfs", 3)){
+		fd = fileXioOpen(path, mode, fileMode);
+		io = 1;
+	}else{
+		fd = fioOpen(path, mode);
+		io = 0;
+	}
+	if(fd < 0)
+		return fd;
+
+	gen_fd[i] = fd;
+	gen_io[i] = io;
+	return i;
+}
+//--------------------------------------------------------------
+int genLseek(int fd, int where, int how)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioLseek(gen_fd[fd], where, how);
+	else
+		return fioLseek(gen_fd[fd], where, how);
+}
+//--------------------------------------------------------------
+int genRead(int fd, void *buf, int size)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioRead(gen_fd[fd], buf, size);
+	else
+		return fioRead(gen_fd[fd], buf, size);
+}
+//--------------------------------------------------------------
+int genWrite(int fd, void *buf, int size)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioWrite(gen_fd[fd], buf, size);
+	else
+		return fioWrite(gen_fd[fd], buf, size);
+}
+//--------------------------------------------------------------
+int genClose(int fd)
+{
+	int ret;
+
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		ret = fileXioClose(gen_fd[fd]);
+	else
+		ret = fioClose(gen_fd[fd]);
+	gen_fd[fd] = -1;
+	return ret;
 }
 //--------------------------------------------------------------
 int ynDialog(const char *message)
@@ -605,59 +718,69 @@ int getDir(const char *path, FILEINFO *info)
 	return n;
 }
 //--------------------------------------------------------------
+// getGameTitle below is used to extract the real save title of
+// an MC gamesave folder. Normally this is held in the icon.sys
+// file of a PS2 game save, but that is not the case for saves
+// on a PS1 MC, or similar saves backed up to a PS2 MC. Two new
+// methods need to be used to extract such titles correctly, and
+// these were added in v3.62, by me (dlanor).
+//--------------------------------------------------------------
 int getGameTitle(const char *path, const FILEINFO *file, char *out)
 {
-	iox_dirent_t dirEnt;
-	char party[MAX_NAME], dir[MAX_PATH];
-	int fd=-1, dirfd=-1, size, hddin=FALSE, ret;
+	char party[MAX_NAME], dir[MAX_PATH], tmpdir[MAX_PATH];
+	int fd=-1, size, hddin=FALSE, ret;
 	
-	if(file->stats.attrFile & MC_ATTR_FILE) return -1;
+	//Avoid title usage in browser root or partition list
 	if(path[0]==0 || !strcmp(path,"hdd0:/")) return -1;
-	
+
 	if(!strncmp(path, "hdd", 3)){
 		ret = getHddParty(path, file, party, dir);
 		if(mountParty(party)<0) return -1;
 		dir[3]=ret+'0';
 		hddin=TRUE;
-	}else
-		sprintf(dir, "%s%s/", path, file->name);
-	
-	ret = -1;
-	if(hddin){
-		if((dirfd=fileXioDopen(dir)) < 0) goto error;
-		while(fileXioDread(dirfd, &dirEnt)){
-			if(dirEnt.stat.mode & FIO_S_IFREG &&
-			 !strcmp(dirEnt.name,"icon.sys")){
-				strcat(dir, "icon.sys");
-				if((fd=fileXioOpen(dir, O_RDONLY, fileMode)) < 0)
-					goto error;
-				if((size=fileXioLseek(fd,0,SEEK_END)) <= 0x100)
-					goto error;
-				fileXioLseek(fd,0xC0,SEEK_SET);
-				fileXioRead(fd, out, 16*4);
-				out[16*4] = 0;
-				fileXioClose(fd); fd=-1;
-				ret=0;
-				break;
-			}
-		}
-		fileXioDclose(dirfd); dirfd=-1;
 	}else{
-		strcat(dir, "icon.sys");
-		if((fd=fioOpen(dir, O_RDONLY)) < 0) goto error;
-		if((size=fioLseek(fd,0,SEEK_END)) <= 0x100) goto error;
-		fioLseek(fd,0xC0,SEEK_SET);
-		fioRead(fd, out, 16*4);
-		out[16*4] = 0;
-		fioClose(fd); fd=-1;
-		ret=0;
+		strcpy(dir, path);
+		strcat(dir, file->name);
+		if(file->stats.attrFile & MC_ATTR_SUBDIR) strcat(dir, "/");
 	}
-error:
-	if(fd>=0){
-		if(hddin) fileXioClose(fd);
-		else	  fioClose(fd);
+
+	ret = -1;
+
+	if((file->stats.attrFile & MC_ATTR_SUBDIR)==0){
+		strcpy(tmpdir, dir);
+		goto get_PS1_GameTitle;
 	}
-	if(dirfd>=0) fileXioDclose(dirfd);
+
+	//First try to find a valid PS2 icon.sys file inside the folder
+	strcpy(tmpdir, dir);
+	strcat(tmpdir, "icon.sys");
+	if((fd=genOpen(tmpdir, O_RDONLY)) >= 0){
+		if((size=genLseek(fd,0,SEEK_END)) <= 0x100) goto finish;
+		genLseek(fd,0xC0,SEEK_SET);
+		goto read_title;
+	}
+	//Next try to find a valid PS1 savefile inside the folder instead
+	strcpy(tmpdir, dir);
+	strcat(tmpdir, file->name);  //PS1 save file should have same name as folder
+
+get_PS1_GameTitle:
+	if((fd=genOpen(tmpdir, O_RDONLY)) < 0) goto finish;  //PS1 gamesave file needed
+	if((size=genLseek(fd,0,SEEK_END)) < 0x2000) goto finish;  //Min size is 8K
+	if(size & 0x1FFF) goto finish;  //Size must be a multiple of 8K
+	genLseek(fd, 0, SEEK_SET);
+	genRead(fd, out, 2);
+	if(strncmp(out, "SC", 2)) goto finish;  //PS1 gamesaves always start with "SC"
+	genLseek(fd, 4, SEEK_SET);
+
+read_title:
+	genRead(fd, out, 32*2);
+	out[32*2] = 0;
+	genClose(fd); fd=-1;
+	ret=0;
+
+finish:
+	if(fd>=0)
+		genClose(fd);
 	return ret;
 }
 //--------------------------------------------------------------
@@ -1519,6 +1642,10 @@ int keyboard(char *out, int max)
 			}
 		}
 
+		t++;
+		
+		if(t & 0x0F) event |= 4;  //repetitive timer event
+
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
@@ -1531,12 +1658,9 @@ int keyboard(char *out, int max)
 			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
 				setting->color[1], KEY_X+KEY_W-1, KEY_Y+11, 0);
 			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
-			t++;
-			if(t<SCANRATE/2){
+			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
 					KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
-			}else{
-				if(t==SCANRATE) t=0;
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
@@ -1579,6 +1703,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 	int nfiles, i, j, ret;
 	
 	if(path[0]==0){
+		//-- Start case for browser root pseudo folder with device links --
 		strcpy(files[0].name, "mc0:");
 		strcpy(files[1].name, "mc1:");
 		strcpy(files[2].name, "hdd0:");
@@ -1602,7 +1727,9 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			nfiles++;
 		}
 		vfreeSpace=FALSE;
+		//-- End case for browser root pseudo folder with device links --
 	}else if(!strcmp(path, "MISC/")){
+		//-- Start case for MISC command pseudo folder with function links --
 		strcpy(files[0].name, "..");
 		files[0].stats.attrFile = MC_ATTR_SUBDIR;
 		strcpy(files[1].name, "FileBrowser");
@@ -1625,7 +1752,9 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 //End of section used only for debugging
 		for(i=0; i<nfiles; i++)
 			files[i].title[0]=0;
+		//-- End case for MISC command pseudo folder with function links --
 	}else{
+		//-- Start case for normal folder with file/folder links --
 		strcpy(files[0].name, "..");
 		files[0].stats.attrFile = MC_ATTR_SUBDIR;
 		nfiles = getDir(path, &files[1]) + 1;
@@ -1651,6 +1780,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			vfreeSpace=FALSE;
 		else if(nfiles>1)
 			sort(&files[1], 0, nfiles-2);
+		//-- End case for normal folder with file/folder links --
 	}
 	
 	return nfiles;
@@ -1933,7 +2063,7 @@ void getFilePath(char *out, int cnfmode)
 			browser_nfiles = setFileList(path, ext, files, cnfmode);
 			if(!cnfmode){  //Calculate free space (unless configuring)
 				if(!strncmp(path, "mc", 2)){
-					mcGetInfo(path[2]-'0', 0, NULL, &mcfreeSpace, NULL);
+					mcGetInfo(path[2]-'0', 0, &mctype_PSx, &mcfreeSpace, NULL);
 					mcSync(0, NULL, &ret);
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
 					freeSpace = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0)
@@ -1985,15 +2115,15 @@ void getFilePath(char *out, int cnfmode)
 				if(top+i >= browser_nfiles) break;
 				if(top+i == browser_sel) color = setting->color[2];  //Highlight cursor line
 				else			 color = setting->color[3];
-				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
-					if(!strcmp(files[top+i].name,".."))
-						strcpy(tmp,"..");
-					else if(title_show && files[top+i].title[0]!=0)
-						strcpy(tmp,files[top+i].title);
-					else
-						sprintf(tmp, "%s/", files[top+i].name);
-				}else
+				
+				if(!strcmp(files[top+i].name,".."))
+					strcpy(tmp,"..");
+				else if(title_show && files[top+i].title[0]!=0)
+					strcpy(tmp,files[top+i].title);
+				else
 					strcpy(tmp,files[top+i].name);
+				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
+					strcat(tmp, "/");
 				printXY(tmp, x+4, y/2, color, TRUE);
 				if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
 				y += font_height;
@@ -2067,7 +2197,7 @@ void getFilePath(char *out, int cnfmode)
 			setScrTmp(msg0, msg1);
 			if(!strncmp(path, "mc", 2) && !vfreeSpace && !cnfmode){
 				if(mcSync(1,NULL,NULL)!=0){
-					freeSpace = mcfreeSpace*1024;
+					freeSpace = mcfreeSpace*((mctype_PSx==1) ? 8192 : 1024);
 					vfreeSpace=TRUE;
 				}
 			}
@@ -2101,7 +2231,7 @@ void getFilePath(char *out, int cnfmode)
 void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 {
 	size_t size;
-	int	i, text_pos, text_inc, sel=-1;
+	int	ret, i, text_pos, text_inc, sel=-1;
 	char filepath[MAX_PATH];
 
 /*
@@ -2166,15 +2296,23 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 				time->hour,time->min,time->sec,time->unknown);
 */
 //----- End of section for debug display of attributes -----
-			sprintf(mess+text_pos, " m=%04X %04d.%02d.%02d %02d:%02d:%02d",
+			sprintf(mess+text_pos, " m=%04X %04d.%02d.%02d %02d:%02d:%02d%n",
 				files[sel].stats.attrFile,
 				files[sel].stats._modify.year,
 				files[sel].stats._modify.month,
 				files[sel].stats._modify.day,
 				files[sel].stats._modify.hour,
 				files[sel].stats._modify.min,
-				files[sel].stats._modify.sec
+				files[sel].stats._modify.sec,
+				&text_inc
 			);
+			text_pos += text_inc;
+			if(!strncmp(path, "mc", 2)){
+				mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
+				mcSync(0, NULL, &ret);
+				sprintf(mess+text_pos, " mctype=%d%n", mctype_PSx, &text_inc);
+				text_pos += text_inc;
+			}
 		}
 //----- End of sections that show attributes -----
 	}

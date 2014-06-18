@@ -136,8 +136,8 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
 extern u32 new_pad;
 int setupPad(void);
 int readpad(void);
-int readpad_norepeat(void);
 void waitPadReady(int port, int slot);
+void waitAnyPadReady(void);
 
 /* config.c */
 #define TV_mode_AUTO 0
@@ -155,6 +155,12 @@ void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
 int keyboard(char *out, int max);
+void genInit(void);
+int genOpen(char *path, int mode);
+int genLseek(int fd, int where, int how);
+int genRead(int fd, void *buf, int size);
+int genWrite(int fd, void *buf, int size);
+int genClose(int fd);
 
 /* main.c */
 int swapKeys;

@@ -142,7 +142,7 @@ void ShowDebugScreen(void)
 	sprintf(TextRow, "Urgent = %3d", have_urgent);
 	PrintRow(0, TextRow);
 	drawScr();
-	waitPadReady(0, 0);
+	waitAnyPadReady();
 	while(1)
 	{	if	(readpad())
 			if	(new_pad & PAD_CROSS)
@@ -754,6 +754,7 @@ void RunElf(const char *path)
 	drawScr();
 	free(setting);
 	free(elisaFnt);
+	padPortClose(1,0);
 	padPortClose(0,0);
 	RunLoaderElf(fullpath, party);
 }
@@ -853,6 +854,8 @@ void Reset()
 	loadBasicModules();
 	mcInit(MC_TYPE_RESET);
 	mcInit(MC_TYPE_MC);
+	padReset();
+	setupPad();
 }
 //------------------------------
 //endfunc Reset
@@ -860,7 +863,7 @@ void Reset()
 int main(int argc, char *argv[])
 {
 	char *p;
-	int event, post_event=0;
+	int event, post_event=0, emergency;
 	int nElfs=0;
 	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
@@ -875,6 +878,7 @@ int main(int argc, char *argv[])
 	CheckModules();
 	loadBasicModules();
 	mcInit(MC_TYPE_MC);
+	genInit();
 
 	if	((argc > 0) && argv[0])
 	{	if	(!strncmp(argv[0], "mass", 4))
@@ -913,7 +917,19 @@ int main(int argc, char *argv[])
 
 	LastDir[0] = 0;
 
-	loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	setupPad();
+	waitAnyPadReady();
+
+	emergency = 0;
+	if(readpad()){
+		if(new_pad & PAD_SELECT)
+			emergency = 2*SCANRATE;
+	}
+
+	if(emergency)
+		loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
+	else
+		loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
@@ -951,7 +967,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	getIpConfig();
-	setupPad();
 	initsbv_patches();
 
 
@@ -1008,8 +1023,10 @@ int main(int argc, char *argv[])
 		event = 0;
 
 		//Pad response section
-		waitPadReady(0,0);
-		if(readpad()){
+		if(emergency)
+			emergency--;
+		waitAnyPadReady();
+		if(readpad()&&(emergency==0)){
 			if(new_pad){
 				user_acted = 1;
 				event |= 2;  //event |= pad command
