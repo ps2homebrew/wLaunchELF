@@ -28,6 +28,7 @@ enum
 	CUT,
 	PASTE,
 	MCPASTE,
+	PSUPASTE,
 	DELETE,
 	RENAME,
 	NEWDIR,
@@ -38,14 +39,16 @@ enum
 #define PM_NORMAL     0 //PasteMode value for normal copies
 #define PM_MC_BACKUP  1 //PasteMode value for gamesave backup from MC
 #define PM_MC_RESTORE 2 //PasteMode value for gamesave restore to MC
+#define PM_PSU_BACKUP  3 //PasteMode value for gamesave backup from MC to PSU
+#define PM_PSU_RESTORE 4 //PasteMode value for gamesave restore to MC from PSU
 #define MAX_RECURSE  16 //Maximum folder recursion for MC Backup/Restore
 
 int PasteMode;            //Top-level PasteMode flag
 int PM_flag[MAX_RECURSE]; //PasteMode flag for each 'copy' recursion level
 int PM_file[MAX_RECURSE]; //PasteMode attribute file descriptors
-int PM_fXio[MAX_RECURSE]; //Flags fileXio device usage for PasteMode attribute files
-int PM_Indx[MAX_RECURSE]; //Attribute entry index for PasteMode attribute files
 
+char mountedParty[MOUNT_LIMIT][MAX_NAME];
+int	latestMount = 0;
 unsigned char *elisaFnt=NULL;
 s64 freeSpace;
 int mcfreeSpace;
@@ -96,6 +99,40 @@ int host_use_Bsl = 1;	//By default assume that host paths use backslash
 unsigned long written_size; //Used for pasting progress report
 u64 PasteTime;              //Used for pasting progress report
 
+typedef struct {
+	u8	unused;
+	u8	sec;
+	u8	min;
+	u8	hour;
+	u8	day;
+	u8	month;
+	u16	year;
+} ps2time;
+
+typedef struct {                  //Offs:  Example content
+	ps2time cTime;                  //0x00:  8 bytes creation timestamp (struct above)
+	ps2time mTime;                  //0x08:  8 bytes modification timestamp (struct above)
+	u32 size;                       //0x10:  file size
+	u16 attr;                       //0x14:  0x8427  (=normal folder, 8497 for normal file)
+	u16 unknown_1_u16;              //0x16:  2 zero bytes
+	u64 unknown_2_u64;              //0x18:  8 zero bytes
+	u8  name[32];                   //0x20:  32 name bytes, padded with zeroes
+} mcT_header __attribute__((aligned (64)));
+
+typedef struct {                  //Offs:  Example content
+	u16 attr;                       //0x00:  0x8427  (=normal folder, 8497 for normal file)
+	u16 unknown_1_u16;              //0x02:  2 zero bytes
+	u32 size;                       //0x04:  header_count-1, file size, 0 for pseudo
+	ps2time	cTime;                  //0x08:  8 bytes creation timestamp (struct above)
+	u64 EMS_used_u64;               //0x10:  8 zero bytes (but used by EMS)
+	ps2time mTime;                  //0x18:  8 bytes modification timestamp (struct above)
+	u64 unknown_2_u64;              //0x20:  8 bytes from mcTable
+	u8  unknown_3_24_bytes[24];     //0x28:  24 zero bytes
+	u8  name[32];                   //0x40:  32 name bytes, padded with zeroes
+	u8  unknown_4_416_bytes[0x1A0]; //0x60:  zero byte padding to reach 0x200 size
+} psu_header;                     //0x200: End of psu_header struct
+
+int	PSU_content;	//Used to count PSU content headers for the main header
 
 //char debugs[4096]; //For debug display strings. Comment it out when unused
 //--------------------------------------------------------------
@@ -104,6 +141,16 @@ u64 PasteTime;              //Used for pasting progress report
 void clear_mcTable(mcTable *mcT)
 {
 	memset((void *) mcT, 0, sizeof(mcTable));
+}
+//--------------------------------------------------------------
+void clear_psu_header(psu_header *psu)
+{
+	memset((void *) psu, 0, sizeof(psu_header));
+}
+//--------------------------------------------------------------
+void pad_psu_header(psu_header *psu)
+{
+	memset((void *) psu, 0xFF, sizeof(psu_header));
 }
 //--------------------------------------------------------------
 // getHddParty below takes as input the string path and the struct file
@@ -146,17 +193,31 @@ int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
 //--------------------------------------------------------------
 int mountParty(const char *party)
 {
-	if(!strcmp(party, mountedParty[0]))
-		return 0;
-	else if(!strcmp(party, mountedParty[1]))
-		return 1;
-	
-	fileXioUmount("pfs0:");
-	mountedParty[0][0]=0;
-	if(fileXioMount("pfs0:", party, FIO_MT_RDWR) < 0)
+	int i, j;
+	char pfs_str[6];
+
+	for(i=0, j=-1; i<MOUNT_LIMIT; i++){
+		if(!strcmp(party, mountedParty[i]))
+			goto return_i;
+		if((j==-1) && (mountedParty[i][0] == 0))
+			j=i;
+	}
+
+	if(j == -1){
+		j = latestMount + 1;
+		if(j >= MOUNT_LIMIT)
+			j = 0;
+		unmountParty(j);
+	}
+	i = j;
+	strcpy(pfs_str, "pfs0:");
+	pfs_str[3] += i;
+	if(fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0)
 		return -1;
-	strcpy(mountedParty[0], party);
-	return 0;
+	strcpy(mountedParty[i], party);
+return_i:
+	latestMount = i;
+	return i;
 }
 //--------------------------------------------------------------
 void unmountParty(int party_ix)
@@ -166,7 +227,7 @@ void unmountParty(int party_ix)
 	strcpy(party_str, "pfs0:");
 	party_str[3] += party_ix;
 	fileXioUmount(party_str);
-	if(party_ix < DIM_mountedParty)
+	if(party_ix < MOUNT_LIMIT)
 		mountedParty[party_ix][0] = 0;
 }
 //--------------------------------------------------------------
@@ -255,7 +316,7 @@ int ynDialog(const char *message)
 //------------------------------
 //endfunc ynDialog
 //--------------------------------------------------------------
-void nonDialog(const char *message)
+void nonDialog(char *message)
 {
 	char msg[80*30]; //More than this can't be shown on screen, even in PAL
 	int dh, dw, dx, dy;
@@ -366,7 +427,7 @@ int readMC(const char *path, FILEINFO *info, int max)
 	mcSync(0,NULL,NULL);
 	
 	strcpy(dir, &path[4]); strcat(dir, "*");
-	mcGetDir(path[2]-'0', 0, dir, 0, MAX_ENTRY-2, mcDir);
+	mcGetDir(path[2]-'0', 0, dir, 0, MAX_ENTRY-2, (mcTable *) mcDir);
 	mcSync(0, NULL, &ret);
 	
 	for(i=j=0; i<ret; i++)
@@ -450,6 +511,7 @@ void setPartyList(void)
 // genInit(void), genFixPath(uLE_path, gen_path),
 // genOpen(path, mode), genClose(fd), genDopen(path), genDclose(fd),
 // genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
+// genRemove(path), genRmdir(path)
 //--------------------------------------------------------------
 int gen_fd[256]; //Allow up to 256 generic file handles
 int gen_io[256]; //For each handle, also memorize io type
@@ -502,6 +564,35 @@ int genFixPath(char *uLE_path, char *gen_path)
 }
 //------------------------------
 //endfunc genFixPath
+//--------------------------------------------------------------
+int genRmdir(char *path)
+{
+	int ret;
+
+	if(!strncmp(path, "pfs", 3)){
+		ret = fileXioRmdir(path);
+	}else{
+		ret = fioRmdir(path);
+	}
+	return ret;
+}
+//------------------------------
+//endfunc genRmdir
+//--------------------------------------------------------------
+int genRemove(char *path)
+{
+	int ret;
+
+	if(!strncmp(path, "pfs", 3)){
+		ret = fileXioRemove(path);
+	}else{
+		ret = fioRemove(path);
+		if(!strncmp("mc", path, 2))
+			ret = fioRmdir(path);	}
+	return ret;
+}
+//------------------------------
+//endfunc genRemove
 //--------------------------------------------------------------
 int genOpen(char *path, int mode)
 {
@@ -951,6 +1042,7 @@ int menu(const char *path, const char *file)
 		if(!setting->HOSTwrite || ((host_elflist) && !strcmp(path, "host:/"))){
 			enable[PASTE] = FALSE;
 			enable[MCPASTE] = FALSE;
+			enable[PSUPASTE] = FALSE;
 			enable[NEWDIR] = FALSE;
 			enable[CUT] = FALSE;
 			enable[DELETE] = FALSE;
@@ -966,6 +1058,7 @@ int menu(const char *path, const char *file)
 		enable[NEWDIR] = FALSE;
 		enable[GETSIZE] = FALSE;
 		enable[MCPASTE] = FALSE;
+		enable[PSUPASTE] = FALSE;
 	}
 	if(!strncmp(path,"cdfs",4)){
 		enable[CUT] = FALSE;
@@ -1001,14 +1094,19 @@ int menu(const char *path, const char *file)
 		//Nothing in clipboard
 		enable[PASTE] = FALSE;
 		enable[MCPASTE] = FALSE;
+		enable[PSUPASTE] = FALSE;
 	} else {
 		//Something in clipboard
 		if(!strncmp(path, "mc", 2)){
-			if(!strncmp(clipPath, "mc", 2))
+			if(!strncmp(clipPath, "mc", 2)){
 				enable[MCPASTE] = FALSE;  //No mcPaste if both src and dest are MC
+				enable[PSUPASTE] = FALSE;
+			}
 		}	else
-			if(strncmp(clipPath, "mc", 2))
+			if(strncmp(clipPath, "mc", 2)){
 				enable[MCPASTE] = FALSE;  //No mcPaste if both src and dest non-MC
+				enable[PSUPASTE] = FALSE;
+			}
 	}
 	for(sel=0; sel<NUM_MENU; sel++)
 		if(enable[sel]==TRUE) break;
@@ -1058,6 +1156,7 @@ int menu(const char *path, const char *file)
 				else if(i==NEWDIR)	strcpy(tmp, "New Dir");
 				else if(i==GETSIZE) strcpy(tmp, "Get Size");
 				else if(i==MCPASTE)	strcpy(tmp, "mcPaste");
+				else if(i==PSUPASTE)	strcpy(tmp, "psuPaste");
 
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
@@ -1420,62 +1519,34 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	int remain_time=0, TimeDiff=0;
 	long old_size=0, SizeDiff=0;
 	u64 OldTime=0LL;
+	psu_header PSU_head;
+	mcT_header *mcT_head_p = (mcT_header *) &file.stats;
+	mcT_header *mcT_files_p = (mcT_header *) &files[0].stats;
+	int psu_pad_size = 0;
+	int PSU_restart_f = 0;
+	char *cp;
 
-	sprintf(out, "%s%s", outPath, file.name);
-	sprintf(in, "%s%s", inPath, file.name);
-	
+	PM_flag[recurses+1] = PM_NORMAL;  //at first assume normal mode for next level
+	PM_file[recurses+1] = -1;         //also assume that no special file is needed
+
+restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
+
 	if(!strncmp(inPath, "hdd", 3)){
 		hddin = TRUE;
 		getHddParty(inPath, &file, inParty, in);
-		if(!strcmp(inParty, mountedParty[0]))
-			pfsin=0;
-		else if(!strcmp(inParty, mountedParty[1]))
-			pfsin=1;
-		else
-			pfsin=-1;
-	}
-	if(!strncmp(outPath, "hdd", 3)){
-		hddout = TRUE;
-		getHddParty(outPath, &file, outParty, out);
-		if(!strcmp(outParty, mountedParty[0]))
-			pfsout=0;
-		else if(!strcmp(outParty, mountedParty[1]))
-			pfsout=1;
-		else
-			pfsout=-1;
-	}
-	if(hddin){
-		if(pfsin<0){
-			if(pfsout==0) pfsin=1;
-			else		  pfsin=0;
-			sprintf(tmp, "pfs%d:", pfsin);
-			if(mountedParty[pfsin][0]!=0){
-				fileXioUmount(tmp);
-				mountedParty[pfsin][0]=0;
-			}
-			printf("%s mounting\n", inParty);
-			if(fileXioMount(tmp, inParty, FIO_MT_RDWR) < 0) return -1;
-			strcpy(mountedParty[pfsin], inParty);
-		}
+		pfsin = mountParty(inParty);
 		in[3]=pfsin+'0';
 	}else
 		sprintf(in, "%s%s", inPath, file.name);
-	if(hddout){
-		if(pfsout<0){
-			if(pfsin==0) pfsout=1;
-			else		 pfsout=0;
-			sprintf(tmp, "pfs%d:", pfsout);
-			if(mountedParty[pfsout][0]!=0){
-				fileXioUmount(tmp);
-				mountedParty[pfsout][0]=0;
-			}
-			if(fileXioMount(tmp, outParty, FIO_MT_RDWR) < 0) return -1;
-			printf("%s mounting\n", outParty);
-			strcpy(mountedParty[pfsout], outParty);
-		}
+
+	if(!strncmp(outPath, "hdd", 3)){
+		hddout = TRUE;
+		getHddParty(outPath, &file, outParty, out);
+		pfsout = mountParty(outParty);
 		out[3]=pfsout+'0';
 	}else
 		sprintf(out, "%s%s", outPath, file.name);
+
 //Here 'in' and 'out' are complete pathnames for the object to copy
 //patched to contain appropriate 'pfs' refs where args used 'hdd'
 //The physical device specifiers remain in 'inPath' and 'outPath'
@@ -1483,68 +1554,99 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 //Here we have an object to copy, which may be either file or folder
 	if(file.stats.attrFile & MC_ATTR_SUBDIR){
 //Here we have a folder to copy, starting with an attempt to create it
-		ret = newdir(outPath, file.name);
-		if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
-			ret=-1;
-			//if(title_show) ret=getGameTitle(outPath, &file, tmp);
-			//if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
-			sprintf(tmp, "%s%s/", outPath, file.name);
-			strcat(tmp, "\nOverwrite?");
-			if(ynDialog(tmp)<0) return -1;
-			drawMsg("Pasting...");
-		} else if(ret < 0)
-			return -1;
-//The return code above is for failure to create destination folder
-//Here a destination folder exists, ready to receive files
-		PM_flag[recurses+1] = PM_NORMAL;
-		if(PasteMode==PM_MC_BACKUP){         //MC Backup mode folder paste preparation
-			sprintf(tmp, "%s/PS2_MC_Backup_Attributes.BUP.bin", out);
+//This is where we must act differently for PSU backup, creating a PSU file instead
+		if(PasteMode==PM_PSU_BACKUP){
+			if(recurses)
+				return -1;
+			i = strlen(out)-1;
+			if(out[i]=='/')
+				out[i] = 0;
+			sprintf(tmp, "%s.psu", out);
 
-			if(hddout){
-				PM_fXio[recurses+1] = 1;
-				fileXioRemove(tmp);
-				out_fd = fileXioOpen(tmp,O_WRONLY|O_TRUNC|O_CREAT,fileMode);
-			} else {
-				PM_fXio[recurses+1] = 0;
-				if	(!strncmp(tmp, "host:/", 6))
-					makeHostPath(tmp+5, tmp+6);
-				out_fd=fioOpen(tmp, O_WRONLY | O_TRUNC | O_CREAT);
+			cp = tmp+strlen(outPath);
+			for(i=0; cp[i];) {
+				i = strcspn(cp, "\"\\/:*?<>|");	//Filter out illegal name characters
+				if(cp[i])
+					cp[i] = '_';
 			}
 
+			if	(!strncmp(tmp, "host:/", 6))
+				makeHostPath(tmp+5, tmp+6);
+			genRemove(tmp);
+			if(0 > (out_fd = genOpen(tmp, O_WRONLY | O_TRUNC | O_CREAT)))
+				return -1;	//return error on failure to create PSU file
+
+			PM_file[recurses+1] = out_fd;
+			PM_flag[recurses+1] = PM_PSU_BACKUP; //Set PSU backup mode for next level
+			clear_psu_header(&PSU_head);
+			PSU_content = 2;                //2 content headers minimum, for empty PSU
+			PSU_head.attr = mcT_head_p->attr;
+			PSU_head.size = PSU_content;
+			PSU_head.cTime = mcT_head_p->cTime;
+			PSU_head.mTime = mcT_head_p->mTime;
+			memcpy(PSU_head.name, mcT_head_p->name, sizeof(PSU_head.name));
+			PSU_head.unknown_1_u16 = mcT_head_p->unknown_1_u16;
+			PSU_head.unknown_2_u64 = mcT_head_p->unknown_2_u64;
+			size = genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+			if(size != sizeof(PSU_head)){
+PSU_error:
+				genClose(PM_file[recurses+1]);
+				return -1;
+			}
+			clear_psu_header(&PSU_head);
+			PSU_head.attr = 0x8427;  //Standard folder attr, for pseudo "." and ".."
+			PSU_head.cTime = mcT_head_p->cTime;
+			PSU_head.mTime = mcT_head_p->mTime;
+			PSU_head.name[0] = '.';  //Set name entry to "."
+			size = genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+			if(size != sizeof(PSU_head)) goto PSU_error;
+			PSU_head.name[1] = '.';  //Change name entry to ".."
+			size = genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+			if(size != sizeof(PSU_head)) goto PSU_error;
+		} else { //any other PasteMode than PM_PSU_BACKUP
+			ret = newdir(outPath, file.name);
+			if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
+				ret=-1;
+				//if(title_show) ret=getGameTitle(outPath, &file, tmp);
+				//if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
+				sprintf(tmp, "%s%s/", outPath, file.name);
+				strcat(tmp, "\nOverwrite?");
+				if(ynDialog(tmp)<0) return -1;
+				drawMsg("Pasting...");
+			} else if(ret < 0){
+				return -1;  //return error for failure to create destination folder
+			}
+		}
+//Here a destination folder, or a PSU file exists, ready to receive files
+		if(PasteMode==PM_MC_BACKUP){         //MC Backup mode folder paste preparation
+			sprintf(tmp, "%s/PS2_MC_Backup_Attributes.BUP.bin", out);
+			genRemove(tmp);
+			out_fd = genOpen(tmp, O_WRONLY | O_CREAT);
+
 			if(out_fd>=0){
-				if(PM_fXio[recurses+1]) size = fileXioWrite(out_fd, (void *) &file.stats, 64);
-				else                    size = fioWrite(out_fd, (void *) &file.stats, 64);
+				size = genWrite(out_fd, (void *) &file.stats, 64);
 				if(size == 64){
 					PM_file[recurses+1] = out_fd;
 					PM_flag[recurses+1] = PM_MC_BACKUP;
 				}
 				else
-					if(PM_fXio[recurses+1]) fileXioClose(PM_file[recurses+1]);
-					else                        fioClose(PM_file[recurses+1]);
+					genClose(PM_file[recurses+1]);
 			}
 		} else if(PasteMode==PM_MC_RESTORE){ //MC Restore mode folder paste preparation
 			sprintf(tmp, "%s/PS2_MC_Backup_Attributes.BUP.bin", in);
 
-			if(hddin){
-				PM_fXio[recurses+1] = 1;
-				in_fd = fileXioOpen(tmp, O_RDONLY, fileMode);
-			} else{
-				PM_fXio[recurses+1] = 0;
-				if	(!strncmp(tmp, "host:/", 6))
-					makeHostPath(tmp+5, tmp+6);
-				in_fd = fioOpen(tmp, O_RDONLY);
-			}
+			if(!strncmp(tmp, "host:/", 6))
+				makeHostPath(tmp+5, tmp+6);
+			in_fd = genOpen(tmp, O_RDONLY);
 
 			if(in_fd>=0){
-				if(PM_fXio[recurses+1]) size = fileXioRead(in_fd, (void *) &file.stats, 64);
-				else	                  size = fioRead(in_fd, (void *) &file.stats, 64);
+				size = genRead(in_fd, (void *) &file.stats, 64); //Read stats for the save folder
 				if(size == 64){
 					PM_file[recurses+1] = in_fd;
 					PM_flag[recurses+1] = PM_MC_RESTORE;
 				}
 				else
-					if(PM_fXio[recurses+1]) fileXioClose(PM_file[recurses+1]);
-					else                        fioClose(PM_file[recurses+1]);
+					genClose(PM_file[recurses+1]);
 			}
 		}
 		if(PM_flag[recurses+1]==PM_NORMAL){  //Normal mode folder paste preparation
@@ -1552,22 +1654,89 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		sprintf(out, "%s%s/", outPath, file.name);  //restore phys dev spec to 'out'
 		sprintf(in, "%s%s/", inPath, file.name);    //restore phys dev spec to 'in'
 
-		nfiles = getDir(in, files);
-		for(i=0; i<nfiles; i++)
-			if((ret = copy(out, in, files[i], recurses+1)) < 0) break;
+		if(PasteMode == PM_PSU_RESTORE && PSU_restart_f) {
+			nfiles = PSU_content;
+			for(i=0; i<nfiles; i++) {
+				size = genRead(PM_file[recurses+1], (void *) &PSU_head, sizeof(PSU_head));
+				if(size != sizeof(PSU_head)) { //Break with error on read failure
+					ret = -1;
+					break;
+				}
+				if(	(PSU_head.size == 0)
+				&&	(PSU_head.attr & MC_ATTR_SUBDIR))//Dummy/Pseudo folder entry ?
+					continue;                            //Just ignore dummies
+				if(PSU_head.attr & MC_ATTR_SUBDIR) { //break with error on weird folder in PSU
+					ret = -1;
+					break;
+				}
+				if(PSU_head.size & 0x3FF)		//Check if file is padded in PSU
+					psu_pad_size = 0x400-(PSU_head.size & 0x3FF);
+				else
+					psu_pad_size = 0;
+				//here we need to create a proper FILEINFO struct for PSU-contained file
+				mcT_files_p->attr = PSU_head.attr;
+				mcT_files_p->size = PSU_head.size;
+				mcT_files_p->cTime = PSU_head.cTime;
+				mcT_files_p->mTime = PSU_head.mTime;
+				memcpy(mcT_files_p->name, PSU_head.name, sizeof(PSU_head.name));
+				mcT_files_p->unknown_1_u16 = PSU_head.unknown_1_u16;
+				mcT_files_p->unknown_2_u64 = PSU_head.unknown_2_u64;
+				memcpy(files[0].name, PSU_head.name, sizeof(PSU_head.name));
+				files[0].name[sizeof(PSU_head.name)] = 0;
+				//Finally we can make the recursive call
+				if((ret = copy(out, in, files[0], recurses+1)) < 0)
+					break;
+				//We must also step past any file padding, for next header
+				if(psu_pad_size)
+					genLseek(PM_file[recurses+1], psu_pad_size, SEEK_CUR);
+				//finally, we must adjust attributes of the new file copy, to ensure
+				//correct timestamps and attributes (requires MC-specific functions)
+				strcpy(tmp, out);
+				strncat(tmp, files[0].stats.name, 32);
+				mcGetInfo(tmp[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
+				mcSync(0, NULL, &dummy);
+				mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &files[0].stats, 0xFFFF); //Fix file stats
+				mcSync(0, NULL, &dummy);
+			} //ends main for loop of valid PM_PSU_RESTORE mode
+			genClose(PM_file[recurses+1]); //Close the PSU file
+			//Finally fix the stats of the containing folder
+			//It has to be done last, as timestamps would change when fixing files
+			//--- This has been moved to a later clause, shared with PM_MC_RESTORE ---
+		} else { //Any other mode than a valid PM_PSU_RESTORE
+			nfiles = getDir(in, files);
+			for(i=0; i<nfiles; i++) {
+				if((ret = copy(out, in, files[i], recurses+1)) < 0)
+					break;
+			} //ends main for loop for all modes other than valid PM_PSU_RESTORE
+		}
 //folder contents are copied by the recursive call above, with error handling below
-		if(ret<0) return -1;
+		if(ret<0){
+			if(PM_flag[recurses+1]==PM_PSU_BACKUP) goto PSU_error;
+			else return -1;
+		}
 
 //Here folder contents have been copied error-free, but we also need to copy
-//attributes and timestamps, and close the attribute file if such was used
+//attributes and timestamps, and close the attribute/PSU file if such was used
+//Lots of stuff need to be done here to make PSU operations work properly
 		if(PM_flag[recurses+1]==PM_MC_BACKUP){         //MC Backup mode folder paste closure
-			if(PM_fXio[recurses+1]) fileXioClose(PM_file[recurses+1]);
-			else                        fioClose(PM_file[recurses+1]);
+			genClose(PM_file[recurses+1]);
+		} else if(PM_flag[recurses+1]==PM_PSU_BACKUP){ //PSU Backup mode folder paste closure
+			genLseek(PM_file[recurses+1], 0, SEEK_SET);
+			clear_psu_header(&PSU_head);
+			PSU_head.attr = mcT_head_p->attr;
+			PSU_head.size = PSU_content;
+			PSU_head.cTime = mcT_head_p->cTime;
+			PSU_head.mTime = mcT_head_p->mTime;
+			memcpy(PSU_head.name, mcT_head_p->name, sizeof(PSU_head.name));
+			PSU_head.unknown_1_u16 = mcT_head_p->unknown_1_u16;
+			PSU_head.unknown_2_u64 = mcT_head_p->unknown_2_u64;
+			size = genWrite(PM_file[recurses+1], (void *) &PSU_head, sizeof(PSU_head));
+			genLseek(PM_file[recurses+1], 0, SEEK_END);
+			genClose(PM_file[recurses+1]);
 		} else if(PM_flag[recurses+1]==PM_MC_RESTORE){ //MC Restore mode folder paste closure
 			in_fd = PM_file[recurses+1];
 			for(size=64, i=0; size==64;){
-				if(PM_fXio[recurses+1]) size = fileXioRead(in_fd, (void *) &stats, 64);
-				else	                  size = fioRead(in_fd, (void *) &stats, 64);
+				size = genRead(in_fd, (void *) &stats, 64);
 				if(size == 64){
 					strcpy(tmp, out);
 					strncat(tmp, stats.name, 32);
@@ -1576,16 +1745,12 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 					mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &stats, 0xFFFF); //Fix file stats
 					mcSync(0, NULL, &dummy);
 				} else {
-					if(PM_fXio[recurses+1]) fileXioClose(in_fd);
-					else                        fioClose(in_fd);
+					genClose(in_fd);
 				}
 			}
 			//Finally fix the stats of the containing folder
 			//It has to be done last, as timestamps would change when fixing files
-			mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
-			mcSync(0, NULL, &dummy);
-			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 0xFFFF); //Fix folder stats
-			mcSync(0, NULL, &dummy);
+			//--- This has been moved to a later clause, shared with PM_PSU_RESTORE ---
 		} else if(PM_flag[recurses+1]==PM_NORMAL){     //Normal mode folder paste closure
 			if(!strncmp(out, "mc", 2)){  //Handle folder copied to MC
 				mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
@@ -1608,43 +1773,100 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 				}
 			}
 		}
+		if(	(PM_flag[recurses+1]==PM_MC_RESTORE)
+		||	(PM_flag[recurses+1]==PM_PSU_RESTORE)) {
+			//Finally fix the stats of the containing folder
+			//It has to be done last, as timestamps would change when fixing files
+			mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
+			mcSync(0, NULL, &dummy);
+			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 0xFFFF); //Fix folder stats
+			mcSync(0, NULL, &dummy);
+		}
 //the return code below is used if there were no errors copying a folder
 		return 0;
 	}
 
 //Here we know that the object to copy is a file, not a folder
+//But in PSU Restore mode we must treat PSU files as special folders, at level 0.
+//and recursively call copy with higher recurse level to process the contents
+	if(PasteMode==PM_PSU_RESTORE && recurses==0){
+		cp = strrchr(in, '.');
+		if((cp==NULL) || stricmp(cp, ".psu") )
+			goto non_PSU_RESTORE_init;  //if not a PSU file, go do normal pasting
+
+		in_fd = genOpen(in, O_RDONLY);
+
+		if(in_fd < 0)
+			return -1;
+		size = genRead(in_fd, (void *) &PSU_head, sizeof(PSU_head));
+		if(size != sizeof(PSU_head)){
+			genClose(in_fd);
+			return -1;
+		}
+		PM_file[recurses+1] = in_fd;           //File descriptor for PSU
+		PM_flag[recurses+1] = PM_PSU_RESTORE;  //Mode flag for recursive entry
+		//Here we need to prep the file struct to appear like a normal MC folder
+		//before 'restarting' this 'copy' to handle creation of destination folder
+		//as well as the copying of files from the PSU into that folder
+		mcT_head_p->attr = PSU_head.attr;
+		PSU_content = PSU_head.size;
+		mcT_head_p->size = 0;
+		mcT_head_p->cTime = PSU_head.cTime;
+		mcT_head_p->mTime = PSU_head.mTime;
+		memcpy(mcT_head_p->name, PSU_head.name, sizeof(PSU_head.name));
+		mcT_head_p->unknown_1_u16 = PSU_head.unknown_1_u16;
+		mcT_head_p->unknown_2_u64 = PSU_head.unknown_2_u64;
+		memcpy(file.name, PSU_head.name, sizeof(PSU_head.name));
+		file.name[sizeof(PSU_head.name)] = 0;
+		PSU_restart_f = 1;
+		goto restart_copy;
+	}
+non_PSU_RESTORE_init:
 //In MC Restore mode we must here avoid copying the attribute file
 	if(PM_flag[recurses]==PM_MC_RESTORE)
 		if(!strcmp(file.name,"PS2_MC_Backup_Attributes.BUP.bin"))
 			return 0;
 
 //It is now time to open the input file, indicated by 'in_fd'
-	if(hddin){
-		in_fd = fileXioOpen(in, O_RDONLY, fileMode);
-		if(in_fd<0) goto error;
-		size = fileXioLseek(in_fd,0,SEEK_END);
-		fileXioLseek(in_fd,0,SEEK_SET);
-	}else{
+//But in PSU Restore mode we must use the already open PSU file instead
+	if(PM_flag[recurses]==PM_PSU_RESTORE){
+		in_fd = PM_file[recurses];
+		size = mcT_head_p->size;
+	}
+	else { //Any other mode than PM_PSU_RESTORE
 		if	(!strncmp(in, "host:/", 6))
 			makeHostPath(in+5, in+6);
-		in_fd = fioOpen(in, O_RDONLY);
+		in_fd = genOpen(in, O_RDONLY);
 		if(in_fd<0) goto error;
-		size = fioLseek(in_fd,0,SEEK_END);
-		fioLseek(in_fd,0,SEEK_SET);
+		size = genLseek(in_fd,0,SEEK_END);
+		genLseek(in_fd,0,SEEK_SET);
 	}
 
 //Here the input file has been opened, indicated by 'in_fd'
 //It is now time to open the output file, indicated by 'out_fd'
-		if(hddout){
-			fileXioRemove(out);
-			out_fd = fileXioOpen(out,O_WRONLY|O_TRUNC|O_CREAT,fileMode);
-			if(out_fd<0) goto error;
-		}else{
-			if	(!strncmp(out, "host:/", 6))
-				makeHostPath(out+5, out+6);
-			out_fd=fioOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
-			if(out_fd<0) goto error;
-		}
+//except in the case of a PSU backup, when we must add a header to PSU instead
+	if(PM_flag[recurses]==PM_PSU_BACKUP){
+		out_fd = PM_file[recurses];
+		clear_psu_header(&PSU_head);
+		PSU_head.attr = mcT_head_p->attr;
+		PSU_head.size = mcT_head_p->size;
+		PSU_head.cTime = mcT_head_p->cTime;
+		PSU_head.mTime = mcT_head_p->mTime;
+		memcpy(PSU_head.name, mcT_head_p->name, sizeof(PSU_head.name));
+		genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+		if(PSU_head.size & 0x3FF)
+			psu_pad_size = 0x400-(PSU_head.size & 0x3FF);
+		else
+			psu_pad_size = 0;
+		PSU_content++; //Increase PSU content header count
+	} else { //Any other PasteMode than PM_PSU_BACKUP needs a new output file
+		if	(!strncmp(out, "host:/", 6))
+			makeHostPath(out+5, out+6);
+		genRemove(out);
+		out_fd=genOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
+		if(out_fd<0) goto error;
+	}
+
 //Here the output file has been opened, indicated by 'out_fd'
 
 	buffSize = 0x100000;       //First assume buffer size = 1MB (good for HDD)
@@ -1658,7 +1880,7 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		buffSize = 350000;       //Use 350000 if writing to HOST (acceptable)
 	else if((!strncmp(in, "mass", 4)) || (!strncmp(in, "host", 4)))
 		buffSize = 500000;       //Use 500000 reading from USB or HOST (acceptable)
-	
+
 	if(size < buffSize)
 		buffSize = size;
 
@@ -1672,6 +1894,9 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	OldTime = Timer();	      //Note initial progress time
 
 	while(size>0){ // ----- The main copying loop starts here -----
+
+		if(size < buffSize)
+			buffSize = size;		//Adjust effective buffer size to remaining data
 
 		TimeDiff = Timer()-OldTime;
 		OldTime = Timer();
@@ -1737,41 +1962,23 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		nonDialog(progress);
 		drawMsg(file.name);
 		if(readpad() && new_pad){
-			if(-1 == ynDialog("Continue transfer ?")
-				) {
-				if(hddout){ //Remove interrupted file on HDD
-					fileXioClose(out_fd); out_fd=-1;
-					fileXioRemove(out);
-				} else { //Remove interrupted file on non_HDD
-					fioClose(out_fd); out_fd=-1;
-					fioRemove(out);
-					if(!strncmp("mc", out, 2))
-						fioRmdir(out);
-				}
+			if(-1 == ynDialog("Continue transfer ?")) {
+				genClose(out_fd); out_fd=-1;
+				if(PM_flag[recurses]!=PM_PSU_BACKUP)
+					genRemove(out);
 				ret = -1;   // flag generic error
 				goto error;	// go deal with it
 			}
 		}
-		if(hddin) buffSize = fileXioRead(in_fd, buff, buffSize);
-		else	  buffSize = fioRead(in_fd, buff, buffSize);
-		if(hddout){
-			outsize = fileXioWrite(out_fd,buff,buffSize);
-			if(buffSize!=outsize){
-				fileXioClose(out_fd); out_fd=-1;
-				fileXioRemove(out);
-				ret = -1;   // flag generic error
-				goto error;
-			}
-		}else{
-			outsize = fioWrite(out_fd,buff,buffSize);
-			if(buffSize!=outsize){
-				fioClose(out_fd); out_fd=-1;
-				fioRemove(out);
-				if(!strncmp("mc", out, 2))
-					fioRmdir(out);
-				ret = -1;   // flag generic error
-				goto error;
-			}
+		buffSize = genRead(in_fd, buff, buffSize);
+		if(buffSize > 0)
+			outsize = genWrite(out_fd, buff, buffSize);
+		if((buffSize <= 0) || (buffSize!=outsize)){
+			genClose(out_fd); out_fd=-1;
+			if(PM_flag[recurses]!=PM_PSU_BACKUP)
+				genRemove(out);
+			ret = -1;   // flag generic error
+			goto error;
 		}
 		size -= buffSize;
 		written_size += buffSize;
@@ -1779,9 +1986,9 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	ret=0;
 //Here the file has been copied. without error, as indicated by 'ret' above
 //but we also need to copy attributes and timestamps (as yet only for MC)
+//For PSU backup output padding may be needed, but not output file closure
 	if(PM_flag[recurses]==PM_MC_BACKUP){         //MC Backup mode file paste closure
-		if(PM_fXio[recurses]) size = fileXioWrite(PM_file[recurses], (void *) &file.stats, 64);
-		else                  size = fioWrite(PM_file[recurses], (void *) &file.stats, 64);
+		size = genWrite(PM_file[recurses], (void *) &file.stats, 64);
 		if(size != 64) return -1; //Abort if attribute file crashed
 	}
 	if(!strncmp(out, "mc", 2)){  //Handle file copied to MC
@@ -1804,20 +2011,35 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			//For the present this case is ignored (new timestamps and attr)
 		}
 	}
+	if(PM_flag[recurses]==PM_PSU_BACKUP){
+		if(psu_pad_size){
+			pad_psu_header(&PSU_head);
+			if(psu_pad_size >= sizeof(PSU_head)){
+				genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+				psu_pad_size -= sizeof(PSU_head);
+			}
+			if(psu_pad_size)
+				genWrite(out_fd, (void *) &PSU_head, psu_pad_size);
+		}
+		out_fd = -1;   //prevent output file closure below
+	}
+
 //The code below is also used for all errors in copying a file,
 //but those cases are distinguished by a negative value in 'ret'
 error:
 	free(buff);
-	if(in_fd>0){
-		if(hddin) fileXioClose(in_fd);
-		else	  fioClose(in_fd);
+	if(PM_flag[recurses]!=PM_PSU_RESTORE){ //Avoid closing PSU file here for PSU Restore
+		if(in_fd>=0){
+			genClose(in_fd);
+		}
 	}
-	if(out_fd>0){
-		if(hddout) fileXioClose(out_fd);
-		else	  fioClose(out_fd);
+	if(out_fd>=0){
+		genClose(out_fd);
 	}
 	return ret;
 }
+//------------------------------
+//endfunc copy
 //--------------------------------------------------------------
 //dlanor: For v3.64 the virtual keyboard function is modified to
 //allow entry of empty strings. The function now returns string
@@ -2338,6 +2560,7 @@ static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
 static void submenu_func_Paste(char *mess, char *path);
 static void submenu_func_mcPaste(char *mess, char *path);
+static void submenu_func_psuPaste(char *mess, char *path);
 void getFilePath(char *out, int cnfmode)
 {
 	char path[MAX_PATH], cursorEntry[MAX_PATH],
@@ -2526,6 +2749,7 @@ void getFilePath(char *out, int cnfmode)
 						}
 					} else if(ret==PASTE)	submenu_func_Paste(msg0, path);
 					else if(ret==MCPASTE)	submenu_func_mcPaste(msg0, path);
+					else if(ret==PSUPASTE)	submenu_func_psuPaste(msg0, path);
 					else if(ret==NEWDIR){
 						tmp[0]=0;
 						if(keyboard(tmp, 36)>0){
@@ -2827,12 +3051,14 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 		strcpy(mess, "Size test Failed");
 	}else{
 		text_pos = 0;
+
 		if(size >= 1024*1024)
 			sprintf(mess, "SIZE = %.1fMB%n", (double)size/1024/1024, &text_inc);
 		else if(size >= 1024)
 			sprintf(mess, "SIZE = %.1fKB%n", (double)size/1024, &text_inc);
 		else
 			sprintf(mess, "SIZE = %ldB%n", size, &text_inc);
+
 		text_pos += text_inc;
 //----- Comment out this section to skip attributes entirely -----
 		if((nmarks<2) && (sel>=0)){
@@ -2954,6 +3180,18 @@ void submenu_func_mcPaste(char *mess, char *path)
 }
 //------------------------------
 //endfunc submenu_func_mcPaste
+//--------------------------------------------------------------
+void submenu_func_psuPaste(char *mess, char *path)
+{
+	if(!strncmp(path, "mc", 2)){
+		PasteMode = PM_PSU_RESTORE;
+	} else {
+		PasteMode = PM_PSU_BACKUP;
+	}
+	subfunc_Paste(mess, path);
+}
+//------------------------------
+//endfunc submenu_func_psuPaste
 //--------------------------------------------------------------
 //End of file: filer.c
 //--------------------------------------------------------------

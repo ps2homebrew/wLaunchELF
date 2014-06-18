@@ -216,15 +216,16 @@ typedef struct{
 	mcTable stats;
 } FILEINFO;
 
-#define DIM_mountedParty 2
-char mountedParty[DIM_mountedParty][MAX_NAME];
+#define MOUNT_LIMIT 2
+extern char mountedParty[MOUNT_LIMIT][MAX_NAME];
+extern int latestMount;
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
 int ynDialog(const char *message);
-void nonDialog(const char *message);
+void nonDialog(char *message);
 int keyboard(char *out, int max);
 void genInit(void);
 int genFixPath(char *uLE_path, char *gen_path);

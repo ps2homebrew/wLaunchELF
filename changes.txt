@@ -1,5 +1,18 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.90 (2006.08.13)
+-Fixed a bug that prevented proper restore of zero-length files from a PSU to MC
+-Fixed a bug that prevented proper backup of zero-length files from MC to a PSU
+-Fixed a bug that could break backup to PSU if a file size was a multiple of 1K
+
+LaunchELF v3.89 (2006.08.13)
+-Fixed a bug that prevented PSU files from being created on HDD
+-Added name filtering to ensure valid PSU filenames, both for PC and PS2 filesystems
+-Modified PSU save format slightly, to conform better with current standards of EMS. This means that for some very rare saves this version may be incompatible with v3.88, so you may need to restore saves made with v3.88 to MC using that version, and then again save them to PSU with v3.89. If you do it that way, then the new saves will be fully compatible both with new uLE versions and with EMS PSU tools.
+
+LaunchELF v3.88 (2006.08.13)
+-Implemented 'psuPaste', a new command for the R1 menu, used to Backup/Restore MC folders to/from PSU files. Each created PSU file will be given the same name as its MC folder, but with the extension ".psu" added. When restoring PSU files to MC, their names do not matter, as the proper name for the MC folder is stored inside the PSU file. The PSU files preserve all MC specific attributes, timestamps, and other bytes, including those lacking any proper documentation. The psuPaste command is only available for copying from MC to non-MC devices, or vice-versa. Restoring PSU files to MC should only be done in the root directory of that MC, and backup to PSU files should also only be made with folders in an MC root directory selected, and those folders must not have any subfolders (always illegal on MC by Sony standards). This first implementation does not enforce all those rules, so it's up to each user to be aware of them.
+
 LaunchELF v3.87 (2006.08.10)
 -Fixed a bug preventing proper display of 'Tooltips' for the PathPad dialog
 -Modified JpgViewer Prev command to go from the first file to the last file.
