@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.40b (2009.09.14)
+ps2ftpd new additions and changes:
+-Forced memory card items to two, mc/0 and mc/1, in order to prevent the possible trigger of a buffer overflow noted by jimmikaelkaele for use with the new mc drivers.
+-Changed PFS items to only look for 4 mount points as before. This change was only made do to the earlier change of DEVICE_UNITS being set to ten for USB devices.
+-Fixed an issues that prevented PS1 memory cards from appearing in the listing with the new mc drivers. Now should work correctly for either driver.
+
 LaunchELF v4.40a (2009.09.13)
 -Modified gsGlobal usage at rez init and changes, to better follow standards
 -Merged EPs bugfix for FTP server's HDD mount bug, reverting it to SVN rev 371

@@ -506,13 +506,18 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 						ret = -1;
 
 					// determine status from stat and mode for both PS2 and PS1 memory cards
-					if( !strcmp(pContext->m_kFile.device->name, "mc") && ((stat.mode == 0x0027) || (stat.mode == 0x0000 && ret == -4)) )
+					if( !strcmp(pContext->m_kFile.device->name, "mc") )
 					{
-						ret = 0;
+						if( (stat.mode == 0x0027) || (stat.mode == 0x0000 && (ret == -4 || ret == -2)) )
+							ret = 0;
 						// fix for multiple mc directories, when both slots contain memory cards
-						if(pContext->m_kFile.unit > 1)
-							break; // stop evaluating units below device
+						if(pContext->m_kFile.unit > 0)
+							pContext->m_kFile.unit = 10; // stop evaluating units below device
 					}
+
+					// stop looking for mounted hdd partitions after four
+					if( !strcmp(pContext->m_kFile.device->name, "pfs") && (pContext->m_kFile.unit > 2) )
+						pContext->m_kFile.unit = 10; // stop evaluating units below device
 
 					// increase to next unit
 					pContext->m_kFile.unit++;
