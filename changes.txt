@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.29 (2008.09.25)
+-Fixed a new bug in the CNF parser, introduced when fixing the previous one. That bug cause the character after the equal sign in a variable assignment to be skipped. This should not matter for uLE or FMCB CNF files, where that character will always be a space. But it does matter when parsing SYSTEM.CNF for PS2 discs, since those files sometimes have no space in that position. This caused some discs to fail booting, both with the uLE MISC/PS2Disc command, and with the disc launcher of FMCB.
+-Minor changes to CDVD checking
+-Added DVD-Video launch capability for MISC/PS2Disc
+
 LaunchELF v4.28 (2008.09.07)
 -Fixed a bug in the CNF parser, preventing variables from being accepted when not separated by any other character from the '=' character preceding its value string. This bug affected all CNF file parsing, including that used for the PS2Disc command, as well as that used for the CNF files of uLaunchELF.
 NB: Since uLE always uses a space separator in creating CNF files, this bug has never affected CNF files created by uLE, but only CNF files edited by 'hand' and the SYSTEM.CNF files of game discs, causing some of those not to work with the PS2Disc command of uLE. So try again now, with games that failed earlier.

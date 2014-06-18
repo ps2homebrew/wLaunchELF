@@ -158,6 +158,8 @@ char SystemCnf_BOOT2[MAX_PATH];
 char SystemCnf_VER[10];   //Arbitrary. Real value should always be shorter
 char SystemCnf_VMODE[10]; //Arbitrary, same deal. As yet unused
 
+CdvdDiscType_t cdmode;
+
 //---------------------------------------------------------------------------
 //executable code
 //---------------------------------------------------------------------------
@@ -729,6 +731,45 @@ void loadCdModules(void)
 }
 //------------------------------
 //endfunc loadCdModules
+//---------------------------------------------------------------------------
+int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
+{
+	if (!have_cdvd) {
+		loadCdModules();
+	}
+	cdmode = cdGetDiscType();
+
+	switch(cdmode){
+	case CDVD_TYPE_PS1CD:
+	case CDVD_TYPE_PS1CDDA:
+	case CDVD_TYPE_PS2CD:
+	case CDVD_TYPE_PS2CDDA:
+	case CDVD_TYPE_PS2DVD:
+	case CDVD_TYPE_CDDA:
+	case CDVD_TYPE_DVDVIDEO:
+		return 1;
+	case CDVD_TYPE_NODISK:
+	case CDVD_TYPE_DETECT:
+	case CDVD_TYPE_DETECT_CD:
+	case CDVD_TYPE_DETECT_DVDSINGLE:
+	case CDVD_TYPE_DETECT_DVDDUAL:
+	case CDVD_TYPE_UNKNOWN:
+	case CDVD_TYPE_ILLEGAL:
+	default:
+		return 0;
+	}
+}
+//------------------------------
+//endfunc uLE_cdDiscValid
+//---------------------------------------------------------------------------
+int uLE_cdStop(void)
+{
+	if (uLE_cdDiscValid())
+		CDVD_Stop();
+	return cdmode;
+}
+//------------------------------
+//endfunc uLE_cdStop
 //---------------------------------------------------------------------------
 // loadExternalFile below will use the given path, and read the
 // indicated file into a buffer it allocates for that purpose.
@@ -1391,10 +1432,7 @@ void RunElf(char *pathin)
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		party[0]=0;
 		trayopen=FALSE;
-		if(readSystemCnf() == 0){
-			sprintf(mainMsg, "readSystemCnf %s", LNG(Failed));
-			return;  //This should be extended with a fitting error message
-		}
+		readSystemCnf();
 		if(BootDiscType==2){ //Boot a PS2 disc
 			strcpy(fullpath, SystemCnf_BOOT2);
 			goto CheckELF_fullpath;
@@ -1404,8 +1442,57 @@ void RunElf(char *pathin)
 			CleanUp();
 			LoadExecPS2("rom0:PS1DRV", 2, args);
 			sprintf(mainMsg, "PS1DRV %s", LNG(Failed));
+			goto Done_PS2Disc;
 		}
-		sprintf(mainMsg, "PS2Disc => BootDiscType %d", BootDiscType);
+		if(uLE_cdDiscValid()){
+			if(cdmode == CDVD_TYPE_DVDVIDEO){
+				//ESR Disc test case //Not yet implemented
+				//DVD Video test case
+				char arg0[20], arg1[20], arg2[20];
+				char *args[3] = {arg0, arg1, arg2};
+				char MG_region[10];
+				int i, pos, tst;
+
+				if ((tst = SifLoadModule("rom0:ADDDRV", 0, NULL)) < 0)
+					goto Fail_DVD_Video;
+
+				strcpy(MG_region, "ACEJMORU");
+				strcpy(arg0, "-k rom1:EROMDRVA");
+				strcpy(arg1, "-m erom0:UDFIO");
+				strcpy(arg2, "-x erom0:DVDPLA");
+				pos = strlen(arg0)-1;
+
+				for(i=0; i<9 ; i++){ //NB: MG_region[8] is a string terminator
+					arg0[pos] = MG_region[i];
+					tst = SifLoadModuleEncrypted(arg0+3, 0, NULL);
+					if(tst >= 0)
+						goto have_DVDELF;
+				}
+				goto Fail_PS2Disc;
+
+have_DVDELF:
+				pos = strlen(arg2);
+				if(i == 8)
+					strcpy(&arg2[pos-3], "ELF");
+				else
+					arg2[pos-1] = MG_region[i];
+
+				CleanUp();
+				LoadExecPS2("moduleload2 rom1:UDNL rom1:DVDCNF", 3, args);
+Fail_DVD_Video:
+				sprintf(mainMsg, "DVD-Video %s", LNG(Failed));
+				goto Done_PS2Disc;
+			}
+			if(cdmode == CDVD_TYPE_CDDA){
+Fail_CDDA:
+				sprintf(mainMsg, "CDDA %s", LNG(Failed));
+				goto Done_PS2Disc;
+			}
+		}
+Fail_PS2Disc:
+		sprintf(mainMsg, "%s => %s CDVD 0x%02X", LNG(PS2Disc), LNG(Failed), cdmode);
+Done_PS2Disc:
+		x = x;
 	}else if(!stricmp(path, setting->Misc_FileBrowser)){
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
@@ -1580,7 +1667,7 @@ int main(int argc, char *argv[])
 	char *p, CNF_pathname[MAX_PATH];
 	int event, post_event=0;
 	int RunELF_index, nElfs=0;
-	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
+	CdvdDiscType_t old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
 	int host_or_hdd_booted = 0;
 	int mass_booted = 0; //flags boot made with compatible mass drivers
@@ -1768,19 +1855,18 @@ int main(int argc, char *argv[])
 	while(1){
 		//Background event section
 		if(setting->discControl){
-			CDVD_Stop();
 			old_cdmode = cdmode;
-			cdmode = cdGetDiscType();
+			cdmode = uLE_cdStop();
 			if(cdmode!=old_cdmode)
 				event |= 4;  //event |= disc change detection
 			if(cdmode==CDVD_TYPE_NODISK){
 				trayopen = TRUE;
 				strcpy(mainMsg, LNG(No_Disc));
 			}else if(cdmode>=0x01 && cdmode<=0x04){
-				strcpy(mainMsg, LNG(Detecting_Disc));
+				sprintf(mainMsg, "%s == 0x%02X", LNG(Detecting_Disc), cdmode);
 			}else if(trayopen==TRUE){
 				trayopen=FALSE;
-				strcpy(mainMsg, LNG(Stop_Disc));
+				sprintf(mainMsg, "%s == 0x%02X", LNG(Stop_Disc), cdmode);
 			}
 		}
 

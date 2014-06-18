@@ -102,7 +102,6 @@ start_line:
 	if(*tp!='=') return false;             //exit (syntax error) if '=' missing
 	*tp++ = '\0';                          //zero '=' (possibly terminating name)
 
-	tp += 1;                               //skip '='
 	while((*tp<=' ') && (*tp>'\0')         //Skip pre-value whitespace, if any
 		&& (*tp!='\r') && (*tp!='\n'))tp+=1; //but do not pass the end of the line
 	if(*tp=='\0')	return false;            //but exit at EOF

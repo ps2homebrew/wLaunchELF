@@ -1,3 +1,6 @@
+//---------------------------------------------------------------------------
+//File name:   cd.c
+//---------------------------------------------------------------------------
 #include "launchelf.h"
 
 #define CD_SERVER_INIT			0x80000592
@@ -29,6 +32,7 @@ s32 cdCheckSCmd(s32 cur_cmd);
 s32 cdSyncS(s32 mode);
 void cdSemaExit(void);
 
+//---------------------------------------------------------------------------
 s32 cdInit(s32 mode)
 {
 	s32 i;
@@ -66,6 +70,7 @@ s32 cdInit(s32 mode)
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 void cdSemaExit(void)
 {
 	if (callbackThreadId) {
@@ -77,6 +82,7 @@ void cdSemaExit(void)
 	DeleteSema(callbackSemaId);
 }
 
+//---------------------------------------------------------------------------
 void cdSemaInit(void)
 {
 	struct t_ee_sema semaParam;
@@ -97,6 +103,7 @@ void cdSemaInit(void)
 	cbSema = 0;
 }
 
+//---------------------------------------------------------------------------
 s32 cdCheckSCmd(s32 cur_cmd)
 {
 	s32 i;
@@ -133,6 +140,7 @@ s32 cdCheckSCmd(s32 cur_cmd)
 	return 1;
 }
 
+//---------------------------------------------------------------------------
 s32 cdSyncS(s32 mode)
 {
 	if (mode == 0) {
@@ -145,6 +153,7 @@ s32 cdSyncS(s32 mode)
 	return SifCheckStatRpc(&clientSCmd);
 }
 
+//---------------------------------------------------------------------------
 CdvdDiscType_t cdGetDiscType(void)
 {
 	if (cdCheckSCmd(CD_SCMD_GETDISCTYPE) == 0)
@@ -158,3 +167,8 @@ CdvdDiscType_t cdGetDiscType(void)
 	SignalSema(sCmdSemaId);
 	return *(s32 *) UNCACHED_SEG(sCmdRecvBuff);
 }
+//------------------------------
+//endfunc cdGetDiscType
+//---------------------------------------------------------------------------
+//End of file: cd.c
+//---------------------------------------------------------------------------
