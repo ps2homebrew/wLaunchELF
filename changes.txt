@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.19 (2008.07.17)
+-Fixed a bug preventing launch keys D-Pad Left and D-Pad Right from working, when redefined from defaults, and only one menu page was used (== only one CNF)
+-Fixed missing implementation of "uLE:/" search for some device related configurable files (mainly alternate USB drivers and regional keyboard maps)
+
+LaunchELF v4.18 (2008.07.09)
+-Modified loading of IPCONFIG.DAT to use "uLE:/" (so also found in uLE dir). If no initial IPCONFIG.DAT is found, any new one edited will be saved as "mc0:/SYS-CONF/IPCONFIG.DAT".
+-Fixed a number of bugs affecting display and functionality of the default commands "Configure", "Load CNF++", "Load CNF--" for various combinations of settings for skin and menu control. Note that direct button linking was not affected, so pressing the correct button always gave the correct response. But highlighting a command and pressing the 'OK' button did not always work.
+-Consolidated some PAL/NTSC GUI menu routines, and corrected a slight error in the placement of button text for D-pad 'Right' button
+
 LaunchELF v4.17 (2008.07.05)
 -Fixed a bug that made some launch links malfunction for 'childsafe' setups
 -Modified loading of ELISA100.FNT to use "uLE:/" (so also found in SYS-CONF/)

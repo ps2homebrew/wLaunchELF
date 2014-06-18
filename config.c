@@ -1655,6 +1655,7 @@ void saveNetworkSettings(char *Message)
     int ret=0,i=0;
 	int size,sizeleft=0;
 	char *ipconfigfile=0;
+	char path[MAX_PATH];
 
 	// Default message, will get updated if save is sucessfull
 	sprintf(Message,"%s", LNG(Saved_Failed));
@@ -1662,24 +1663,31 @@ void saveNetworkSettings(char *Message)
 	sprintf(firstline,"%s %s %s\n\r",ip,netmask,gw);
 
 
-	mcSync(0,NULL,NULL);
-	mcMkDir(0, 0, "SYS-CONF");
-	mcSync(0, NULL, &ret);
 
 	// This block looks at the existing ipconfig.dat and works out if there is
 	// already any data beyond the first line. If there is it will get appended to the output
 	// to new file later.
 
-	in_fd = fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_RDONLY);
+	if(uLE_related(path, "uLE:/IPCONFIG.DAT")==1)
+		in_fd = genOpen(path, O_RDONLY);
+	else
+		in_fd=-1;
+
+	if(strncmp(path, "mc",2)){
+		mcSync(0,NULL,NULL);
+		mcMkDir(0, 0, "SYS-CONF");
+		mcSync(0, NULL, &ret);
+	}
+	
 	if (in_fd >= 0) {
 
-		size = fioLseek(in_fd, 0, SEEK_END);
+		size = genLseek(in_fd, 0, SEEK_END);
 		printf("size of existing file is %ibytes\n\r",size);
 
 		ipconfigfile = (char *)malloc(size);
 
-		fioLseek(in_fd, 0, SEEK_SET);
-		fioRead(in_fd, ipconfigfile, size);
+		genLseek(in_fd, 0, SEEK_SET);
+		genRead(in_fd, ipconfigfile, size);
 
 
 		for (i=0; (ipconfigfile[i] != 0 && i<=size); i++)
@@ -1690,29 +1698,30 @@ void saveNetworkSettings(char *Message)
 
 		sizeleft=size-i;
 
-		fioClose(in_fd);
-	}
+		genClose(in_fd);
+	}else
+		strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
 
 	// Writing the data out
 
-	out_fd=fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_WRONLY | O_TRUNC | O_CREAT);
+	out_fd=genOpen(path, O_WRONLY | O_TRUNC | O_CREAT);
 	if(out_fd >=0)
 	{
 		mcSync(0, NULL, &ret);
-		fioWrite(out_fd,firstline,strlen(firstline));
+		genWrite(out_fd,firstline,strlen(firstline));
 		mcSync(0, NULL, &ret);
 
 		// If we have any extra data, spit that out too.
 		if (sizeleft > 0)
 		{
 			mcSync(0, NULL, &ret);
-			fioWrite(out_fd,&ipconfigfile[i],sizeleft);
+			genWrite(out_fd,&ipconfigfile[i],sizeleft);
 			mcSync(0, NULL, &ret);
 		}
 
-		sprintf(Message,"%s mc0:/SYS-CONF/IPCONFIG.DAT", LNG(Saved));
+		sprintf(Message,"%s %s", LNG(Saved), path);
 
-		fioClose(out_fd);
+		genClose(out_fd);
 
 	}
 }
@@ -1771,6 +1780,7 @@ void Config_Network(void)
 	extern char gw[16];
 	data_ip_struct ipdata;
 	char NetMsg[MAX_PATH] = "";
+	char path[MAX_PATH];
 
 	event = 1;	//event = initial entry
 	s=1;
@@ -1919,7 +1929,9 @@ void Config_Network(void)
 
 			y += FONT_HEIGHT / 2;
 
-			sprintf(c, "  %s \"mc0:/SYS-CONF/IPCONFIG.DAT\"", LNG(Save_to));
+			if(uLE_related(path, "uLE:/IPCONFIG.DAT")!=1)
+				strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
+			sprintf(c, "  %s \"%s\"", LNG(Save_to), path);
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
 

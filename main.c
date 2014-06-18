@@ -139,6 +139,8 @@ int have_ps2netfs = 0;
 
 int force_IOP = 0; //flags presence of incompatible drivers, so we must reset IOP
 
+int menu_LK[15];  //holds RunElf index for each valid main menu entry
+
 int done_setupPowerOff = 0;
 int ps2kbd_opened = 0;
 
@@ -244,15 +246,20 @@ static void getIpConfig(void)
 	int len;
 	char c;
 	char buf[IPCONF_MAX_LEN];
+	char path[MAX_PATH];
 
-	fd = fioOpen("mc0:/SYS-CONF/IPCONFIG.DAT", O_RDONLY);
+	if(uLE_related(path, "uLE:/IPCONFIG.DAT")==1)
+		fd = genOpen(path, O_RDONLY);
+	else
+		fd=-1;
+	fd = genOpen(path, O_RDONLY);
 	if (fd >= 0) 
 	{	bzero(buf, IPCONF_MAX_LEN);
-		len = fioRead(fd, buf, IPCONF_MAX_LEN - 1); //Save a byte for termination
-		fioClose(fd);
+		len = genRead(fd, buf, IPCONF_MAX_LEN - 1); //Save a byte for termination
+		genClose(fd);
 	}
 
-	if	((fd > 0) && (len > 0))
+	if	((fd >= 0) && (len > 0))
 	{	buf[len] = '\0'; //Ensure string termination, regardless of file content
 		for	(i=0; ((c = buf[i]) != '\0'); i++) //Clear out spaces and any CR/LF
 			if	((c == ' ') || (c == '\r') || (c == '\n'))
@@ -316,7 +323,9 @@ int drawMainScreen(void)
 		y += FONT_HEIGHT*2;
 	}
 	for(i=0; i<15; i++){
-		if(setting->LK_Path[i][0]){
+		if((setting->LK_Path[i][0]) && ((i<13) || (maxCNF>1) || setting->LK_Flag[i]))
+		{
+			menu_LK[nElfs] = i; //memorize RunElf index for this menu entry
 			switch(i){
 			case 0:
 				strcpy(c,"Default: ");
@@ -363,7 +372,7 @@ int drawMainScreen(void)
 			case 14:
 				sprintf(c,"%s: ", LNG(RIGHT));
 				break;
-			}
+			} //ends switch
 			if(setting->Show_Titles) //Show Launch Titles ?
 				strcpy(f, setting->LK_Title[i]);
 			else
@@ -406,7 +415,7 @@ int drawMainScreen(void)
 				printXY(c, x+(len>9? (len-9)*FONT_WIDTH:0), y, color, TRUE, 0);
 			printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH), y, color, TRUE, 0);
 			y += FONT_HEIGHT;
-		} //ends clause for defined LK_Path[i]
+		} //ends clause for defined LK_Path[i] valid for menu
 	} //ends for
 
 	if(mode==BUTTON)	sprintf(c, "%s!", LNG(PUSH_ANY_BUTTON_or_DPAD));
@@ -424,11 +433,11 @@ int drawMainScreen(void)
 //------------------------------
 //endfunc drawMainScreen
 //--------------------------------------------------------------
-int drawMainScreen2pal(void)
+int drawMainScreen2(int TV_mode)
 {
 	int nElfs=0;
 	int i;
-	int x, y;
+	int x, y, xo_config, yo_config, yo_first, yo_step;
 	u64 color;
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
@@ -446,78 +455,26 @@ int drawMainScreen2pal(void)
 		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
 	}
 
+	if(TV_mode == TV_mode_PAL){
 		printXY(c, x+448, y+FONT_HEIGHT+6, setting->color[3], TRUE, 0);
 		y += FONT_HEIGHT+5;
-
-	for(i=0; i<15; i++){
-			if(setting->Show_Titles) //Show Launch Titles ?
-				strcpy(f, setting->LK_Title[i]);
-			else
-				f[0] = '\0';
-			if(!f[0]) {  //No title present, or allowed ?
-				if(setting->Hide_Paths) {  //Hide full path ?
-					if((p=strrchr(setting->LK_Path[i], '/'))) // found delimiter ?
-						strcpy(f, p+1);
-					else // No delimiter !
-						strcpy(f, setting->LK_Path[i]);
-					if((p=strrchr(f, '.')))
-						*p = 0;
-				} else {                  //Show full path !
-					strcpy(f, setting->LK_Path[i]);
-				}
-			} //ends clause for No title
-			if(setting->LK_Path[i][0] && nElfs++==selected && mode==DPAD)
-				color = setting->color[2];
-			else
-				color = setting->color[3];
-			int len = (strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)?
-				strlen(LNG(LEFT))+2:strlen(LNG(RIGHT))+2;
-			if (i==0){
-				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+20, y, color, TRUE, 0);
-				y += FONT_HEIGHT*2+5;
-			} else if (i==12) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-FONT_HEIGHT*2-60, color, TRUE, 0);
-			  else if (i==13) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-60, color, TRUE, 0);
-			  else if (i==14)printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-60+FONT_HEIGHT*2, color, TRUE, 0);
-			  else {
-				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+10, y, color, TRUE, 0);
-				y += FONT_HEIGHT*2;
-			} 
-	} //ends for
-
-	c[0] = '\0';           //dummy tooltip string (Tooltip unused for GUI menu)
-	setScrTmp(mainMsg, c);
-	
-	return nElfs;
-}
-//------------------------------
-//endfunc drawMainScreen2pal
-//--------------------------------------------------------------
-int drawMainScreen2ntsc(void)
-{
-	int nElfs=0;
-	int i;
-	int x, y;
-	u64 color;
-	char c[MAX_PATH+8], f[MAX_PATH];
-	char *p;
-
-	setLaunchKeys();
-
-	clrScr(setting->color[0]);
-
-	x = Menu_start_x;
-	y = Menu_start_y;
-
-	if(init_delay)    sprintf(c, "%s:       %d", LNG(Delay), init_delay/SCANRATE);
-	else if(setting->LK_Path[0][0]){
-		if(!user_acted) sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout/SCANRATE);
-		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
-	}
-
+		yo_first = 5;
+		yo_step = FONT_HEIGHT*2;
+		yo_config = -92;
+		xo_config = 370;
+	}else if(TV_mode == TV_mode_NTSC){
 		printXY(c, x+448, y+FONT_HEIGHT-5, setting->color[3], TRUE, 0);
 		y += FONT_HEIGHT-3;
+		yo_first = 3;
+		yo_step = FONT_HEIGHT*2-4;
+		yo_config = -80;
+		xo_config = 360;
+	}
 
 	for(i=0; i<15; i++){
+		if((setting->LK_Path[i][0]) && ((i<13)||(maxCNF>1)||setting->LK_Flag[i]))
+		{
+			menu_LK[nElfs] = i; //memorize RunElf index for this menu entry
 			if(setting->Show_Titles) //Show Launch Titles ?
 				strcpy(f, setting->LK_Title[i]);
 			else
@@ -540,16 +497,22 @@ int drawMainScreen2ntsc(void)
 				color = setting->color[3];
 			int len = (strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)?
 				strlen(LNG(LEFT))+2:strlen(LNG(RIGHT))+2;
-			if (i==0){
-				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+20, y-1, color, TRUE, 0);
-				y += FONT_HEIGHT*2-1;
-			} else if (i==12) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-FONT_HEIGHT*2-48, color, TRUE, 0);
-			  else if (i==13) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-52, color, TRUE, 0);
-			  else if (i==14)printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-54+FONT_HEIGHT*2, color, TRUE, 0);
-			  else {
+			if (i==0)
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+20, y, color, TRUE, 0);
+			else if (i==12)
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+xo_config, y, color, TRUE, 0);
+			else if (i==13)
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+xo_config, y, color, TRUE, 0);
+			else if (i==14)
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+xo_config, y, color, TRUE, 0);
+			else
 				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+10, y, color, TRUE, 0);
-				y += FONT_HEIGHT*2-4;
-			} 
+		} //ends clause for defined LK_Path[i] valid for menu
+		y += yo_step;
+		if (i==0)
+			y+=yo_first;
+		else if (i==11)
+			y+=yo_config;
 	} //ends for
 
 	c[0] = '\0';           //dummy tooltip string (Tooltip unused for GUI menu)
@@ -558,7 +521,7 @@ int drawMainScreen2ntsc(void)
 	return nElfs;
 }
 //------------------------------
-//endfunc drawMainScreen2ntsc
+//endfunc drawMainScreen2
 //--------------------------------------------------------------
 void delay(int count)
 {
@@ -786,7 +749,7 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
 	}else{
-		strcpy(filePath, argPath);
+		(void) uLE_related(filePath, argPath);
 	}
 	//Here 'filePath' is a valid path for fio or fileXio operations
 	//Which means we can now use generic file I/O
@@ -940,7 +903,8 @@ void loadNetModules(void)
 		loadUsbModules();
 		drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 		
-		// getIpConfig(); //RA NB: I always get that info, early in init
+		getIpConfig(); //RA NB: I always get that info, early in init
+		//             //But sometimes it is useful to do it again (HDD)
 		// Also, my module checking makes some other tests redundant
 		load_ps2netfs(); // loads ps2netfs from internal buffer
 		load_ps2ftpd();  // loads ps2dftpd from internal buffer
@@ -1496,21 +1460,6 @@ ELFnotFound:
 //------------------------------
 //endfunc RunElf
 //--------------------------------------------------------------
-void RunSelectedElf(void)
-{
-	int n=0;
-	int i;
-	
-	for(i=0; i<12; i++){
-		if(setting->LK_Path[i][0] && n++==selected){
-			RunElf(setting->LK_Path[i]);
-			break;
-		}
-	}
-}
-//------------------------------
-//endfunc RunSelectedElf
-//--------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 // dlanor: but changed now, as the original was badly bugged
 void Reset()
@@ -1785,12 +1734,8 @@ int main(int argc, char *argv[])
 				setLaunchKeys();
 				clrScr(setting->color[0]);
 			}
-			else {
-				if (TV_mode == TV_mode_NTSC)
-					nElfs = drawMainScreen2ntsc(); //NTSC Display GUI jpg plus button texts
-				else
-					nElfs = drawMainScreen2pal(); //PAL
-			}
+			else //Display launch filenames/titles on GUI jpg
+				nElfs = drawMainScreen2(TV_mode);
 		}
 		drawScr();
 		post_event = event;
@@ -1816,8 +1761,10 @@ int main(int argc, char *argv[])
 				else if(new_pad & PAD_R3)       RunELF_index = 10;
 				else if(new_pad & PAD_START)    RunELF_index = 11;
 				else if(new_pad & PAD_SELECT)   RunELF_index = 12;
-				else if(maxCNF > 1 && new_pad & PAD_LEFT)  RunELF_index = 13;
-				else if(maxCNF > 1 && new_pad & PAD_RIGHT) RunELF_index = 14;
+				else if((new_pad & PAD_LEFT) && (maxCNF > 1 || setting->LK_Flag[i]))
+					RunELF_index = 13;
+				else if((new_pad & PAD_RIGHT) && (maxCNF > 1 || setting->LK_Flag[i]))
+					RunELF_index = 14;
 				else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
 					user_acted = 1;
 					if (!setting->Show_Menu && setting->GUI_skin[0]){} //GUI Menu: disabled when there's no text on menu screen
@@ -1846,22 +1793,9 @@ int main(int argc, char *argv[])
 					mode=BUTTON;
 				}else if((swapKeys && new_pad & PAD_CROSS)
 				      || (!swapKeys && new_pad & PAD_CIRCLE) ){
-					i=nElfs-1;
-					if(!setting->LK_Flag[14] && maxCNF > 1 && selected==i--){
-						mode=BUTTON;
-						incConfig();
-					}else if(!setting->LK_Flag[13] && maxCNF > 1 && selected==i--){
-						mode=BUTTON;
-						decConfig();
-					}else if(!setting->LK_Flag[12] && maxCNF > 1 && selected==i){
-						mode=BUTTON;
-						if (setting->GUI_skin[0]) {
-							GUI_active = 0;
-							loadSkin(BACKGROUND_PIC, 0, 0);
-						}
-						config(mainMsg, CNF);
-					}else
-						RunSelectedElf();
+					if(setting->LK_Path[menu_LK[selected]][0])
+						RunElf(setting->LK_Path[menu_LK[selected]]);
+					mode=BUTTON;
 				}
 				break;
 			}
