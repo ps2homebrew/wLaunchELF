@@ -1389,11 +1389,12 @@ void RunElf(char *pathin)
 		goto CheckELF_fullpath;
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
-		strcpy(mainMsg, LNG(Failed));
 		party[0]=0;
 		trayopen=FALSE;
-		if(!readSystemCnf())
+		if(readSystemCnf() == 0){
+			sprintf(mainMsg, "readSystemCnf %s", LNG(Failed));
 			return;  //This should be extended with a fitting error message
+		}
 		if(BootDiscType==2){ //Boot a PS2 disc
 			strcpy(fullpath, SystemCnf_BOOT2);
 			goto CheckELF_fullpath;
@@ -1402,7 +1403,9 @@ void RunElf(char *pathin)
 			char *args[2] = {SystemCnf_BOOT, SystemCnf_VER};
 			CleanUp();
 			LoadExecPS2("rom0:PS1DRV", 2, args);
+			sprintf(mainMsg, "PS1DRV %s", LNG(Failed));
 		}
+		sprintf(mainMsg, "PS2Disc => BootDiscType %d", BootDiscType);
 	}else if(!stricmp(path, setting->Misc_FileBrowser)){
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;

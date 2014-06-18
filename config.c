@@ -96,9 +96,12 @@ start_line:
 
 	while((*tp>='A')||((*tp>='0')&&(*tp<='9'))) tp+=1;  //Seek name end
 	if(*tp=='\0')	return false;            //but exit at EOF
-	*tp++ = '\0';                          //terminate name string (passing)
-	while((*tp<=' ') && (*tp>'\0')) tp+=1; //Skip post-name whitespace, if any
+
+	while((*tp<=' ') && (*tp>'\0'))
+		*tp++ = '\0';                        //zero&skip post-name whitespace
 	if(*tp!='=') return false;             //exit (syntax error) if '=' missing
+	*tp++ = '\0';                          //zero '=' (possibly terminating name)
+
 	tp += 1;                               //skip '='
 	while((*tp<=' ') && (*tp>'\0')         //Skip pre-value whitespace, if any
 		&& (*tp!='\r') && (*tp!='\n'))tp+=1; //but do not pass the end of the line

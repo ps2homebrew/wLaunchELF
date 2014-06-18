@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.28 (2008.09.07)
+-Fixed a bug in the CNF parser, preventing variables from being accepted when not separated by any other character from the '=' character preceding its value string. This bug affected all CNF file parsing, including that used for the PS2Disc command, as well as that used for the CNF files of uLaunchELF.
+NB: Since uLE always uses a space separator in creating CNF files, this bug has never affected CNF files created by uLE, but only CNF files edited by 'hand' and the SYSTEM.CNF files of game discs, causing some of those not to work with the PS2Disc command of uLE. So try again now, with games that failed earlier.
+
 LaunchELF v4.27 (2008.09.04)
 -Added ability of MISC/PS2Disc subprogram to also boot PS1 discs
 (Based on ideas and examples contributed by jimmikaelkael @ psx-scene)
