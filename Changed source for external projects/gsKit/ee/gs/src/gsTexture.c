@@ -96,12 +96,12 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		printf("Failed to load PNG file: %s\n", Path);
 		return -1;
 	}
-	
+
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_uint_32 width, height;
 	png_bytep *row_pointers;
-	
+
 	unsigned int sig_read = 0;
         int row, i, k=0, j, bit_depth, color_type, interlace_type;
 
@@ -113,7 +113,7 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		fclose(File);
 		return -1;
 	}
-	
+
 	info_ptr = png_create_info_struct(png_ptr);
 
 	if(!info_ptr)
@@ -154,7 +154,7 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 
 	png_read_update_info(png_ptr, info_ptr);
-    
+
 	Texture->Width = width;
 	Texture->Height = height;
 
@@ -172,9 +172,9 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
         for (row = 0; row < height; row++) {
             row_pointers[row] = malloc(row_bytes);
         }
-	
+
         png_read_image(png_ptr, row_pointers);
-        
+
         struct pixel { unsigned char r,g,b,a; };
         struct pixel *Pixels = (struct pixel *) Texture->Mem;
 
@@ -186,14 +186,14 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
                         Pixels[k++].a = (int) row_pointers[i][4*j+3] * 128 / 255;
             }
 		}
-                
+
         for (row = 0; row < height; row++) {
             free(row_pointers[row]);
         }
 
         free(row_pointers);
 		Texture->Filter = GS_FILTER_NEAREST;
-		
+
 		png_read_end(png_ptr, NULL);
 
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
@@ -211,7 +211,7 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
         }
 
         png_read_image(png_ptr, row_pointers);
-        
+
         struct pixel3 { unsigned char r,g,b; };
         struct pixel3 *Pixels = (struct pixel3 *) Texture->Mem;
 
@@ -222,14 +222,14 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
                         Pixels[k++].b = row_pointers[i][4*j+2];
             }
 		}
-        
+
         for (row = 0; row < height; row++) {
             free(row_pointers[row]);
         }
 
         free(row_pointers);
 		Texture->Filter = GS_FILTER_NEAREST;
-		
+
 		png_read_end(png_ptr, NULL);
 
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
@@ -286,7 +286,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		printf("Could not load bitmap: %s\n", Path);
 		return -1;
 	}
-		
+
 	if (fread(&Bitmap.InfoHeader, sizeof(Bitmap.InfoHeader), 1, File) <= 0)
 	{
 		printf("Could not load bitmap: %s\n", Path);
@@ -421,7 +421,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 			free(image);
 			fclose(File);
 		}
-		for (y=Texture->Height-1; y>=0; y--) 
+		for (y=Texture->Height-1; y>=0; y--)
 		{
 			if(Bitmap.InfoHeader.BitCount == 8)
 				memcpy(&tex[y*Texture->Width], &image[(Texture->Height-y-1)*Texture->Width], Texture->Width);
@@ -435,7 +435,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 			int byte;
 			u8 *tmpdst = (u8 *)((u32)Texture->Mem | 0x30000000);
 			u8 *tmpsrc = (u8 *)tex;
-	
+
 			for(byte = 0; byte < FTexSize; byte++)
 			{
 				tmpdst[byte] = (tmpsrc[byte] << 4) | (tmpsrc[byte] >> 4);
@@ -473,7 +473,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 int  gsKit_texture_jpeg(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 {
 #ifdef HAVE_LIBJPG
-	
+
 	jpgData *jpg;
 	FILE *File = fopen(Path, "r");
 
@@ -485,7 +485,7 @@ int  gsKit_texture_jpeg(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		return -1;
 		printf("error opening %s\n", Path);
 	}
-	
+
 	Texture->Width =  jpg->width;
 	Texture->Height = jpg->height;
 	Texture->PSM = GS_PSM_CT24;
@@ -514,7 +514,7 @@ int  gsKit_texture_jpeg(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 			return -1;
 		}
 		gsKit_texture_upload(gsGlobal, Texture);
-		
+
 		free(Texture->Mem);
 	}
 	else
@@ -523,12 +523,12 @@ int  gsKit_texture_jpeg(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	}
 
 	return 0;
-	
+
 #else
 
 	printf("ERROR: gsKit_texture_jpeg unimplimented.\n");
 	return -1;
-	
+
 #endif
 }
 
@@ -595,14 +595,14 @@ int  gsKit_texture_tiff(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	{
 		gsKit_setup_tbw(Texture);
 	}
-	
+
 	return 0;
-	
+
 #else
 
 	printf("ERROR: gsKit_texture_tiff unimplimented.\n");
 	return -1;
-	
+
 #endif
 }
 
@@ -646,7 +646,7 @@ int gsKit_texture_raw(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 			return -1;
 		}
 		gsKit_texture_upload(gsGlobal, Texture);
-	
+
 		free(Texture->Mem);
 	}
 	else
@@ -689,7 +689,7 @@ int gsKit_texture_fnt_raw(GSGLOBAL *gsGlobal, GSFONT *gsFont)
 		printf("VRAM Allocation Failed. Will not upload texture.\n");
 		return -1;
 	}
-	
+
 	memcpy(gsFont->Texture->Mem, &data[288/4], size);
 
 	if (gsFont->Texture->PSM != GS_PSM_CT32) {
@@ -773,11 +773,10 @@ int gsKit_texture_fnt(GSGLOBAL *gsGlobal, GSFONT *gsFont)
 		printf("VRAM Allocation Failed. Will not upload texture.\n");
 		return -1;
 	}
-	
+
 	if(fread(gsFont->Texture->Mem, size, 1, File) <= 0)
 	{
-		printf("Could not load font: %s\n", gsFont->Path);
-		return -1;
+	        printf("Font might be bad: %s\n", gsFont->Path);
 	}
 	fclose(File);
 
@@ -828,7 +827,7 @@ void gsKit_texture_send(u32 *mem, int width, int height, u32 tbp, u32 psm, u32 t
 		p_size = (9+(packets * 3)+remain);
 
 	if(remain > 0)
-		p_size += 2; 
+		p_size += 2;
 
 	p_store = p_data = memalign(64, (p_size * 16));
 
@@ -858,11 +857,11 @@ void gsKit_texture_send(u32 *mem, int width, int height, u32 tbp, u32 psm, u32 t
 	*p_data++ = GS_SETREG_TRXDIR(0);
 	*p_data++ = GS_TRXDIR;
 
-	while (packets-- > 0) 
+	while (packets-- > 0)
 	{
 		*p_data++ = DMA_TAG( 1, 0, DMA_CNT, 0, 0, 0);
 		*p_data++ = 0;
-		*p_data++ = GIF_TAG( GS_GIF_BLOCKSIZE, 0, 0, 0, 2, 0 );		
+		*p_data++ = GIF_TAG( GS_GIF_BLOCKSIZE, 0, 0, 0, 2, 0 );
 		*p_data++ = 0;
 		*p_data++ = DMA_TAG( GS_GIF_BLOCKSIZE, 1, DMA_REF, 0, (u32)p_mem, 0 );
 		*p_data++ = 0;
@@ -891,8 +890,8 @@ void gsKit_texture_send(u32 *mem, int width, int height, u32 tbp, u32 psm, u32 t
 		*p_data++ = GIF_TAG( 1, 1, 0, 0, 0, 1 );
 		*p_data++ = GIF_AD;
 
-		*p_data++ = GS_TEXFLUSH;
 		*p_data++ = 0;
+		*p_data++ = GS_TEXFLUSH;
 	}
 
 	// Need to wait first to make sure that if our doublebuffered drawbuffer is still
@@ -953,11 +952,11 @@ void gsKit_texture_send_inline(GSGLOBAL *gsGlobal, u32 *mem, int width, int heig
 
 	p_data = gsKit_heap_alloc_dma(gsGlobal, dmasize, dmasize * 16);
 
-	while (packets-- > 0) 
+	while (packets-- > 0)
 	{
 		*p_data++ = DMA_TAG( 1, 0, DMA_CNT, 0, 0, 0);
 		*p_data++ = 0;
-		*p_data++ = GIF_TAG( GS_GIF_BLOCKSIZE, 0, 0, 0, 2, 0 );		
+		*p_data++ = GIF_TAG( GS_GIF_BLOCKSIZE, 0, 0, 0, 2, 0 );
 		*p_data++ = 0;
 		*p_data++ = DMA_TAG( GS_GIF_BLOCKSIZE, 0, DMA_REF, 0, (u32)p_mem, 0 );
 		*p_data++ = 0;
@@ -980,8 +979,8 @@ void gsKit_texture_send_inline(GSGLOBAL *gsGlobal, u32 *mem, int width, int heig
 		*p_data++ = GIF_TAG_AD(1);
 		*p_data++ = GIF_AD;
 
-		*p_data++ = GS_TEXFLUSH;
 		*p_data++ = 0;
+		*p_data++ = GS_TEXFLUSH;
 	}
 
 }
@@ -1007,7 +1006,7 @@ void gsKit_texture_upload(GSGLOBAL *gsGlobal, GSTEXTURE *Texture)
 	}
 }
 
-void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture, 	
+void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture,
 				float x1, float y1, int iz1, float u1, float v1,
 				float x2, float y2, int iz2, float u2, float v2, u64 color)
 {
@@ -1041,7 +1040,7 @@ void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture,
 	int iv1 = (int)((v1 + 0.5f) * 16.0f);
 	int iv2 = (int)((v2 - 0.375f) * 16.0f);
 
-	
+
 	int tw = 31 - (lzw(Texture->Width) + 1);
 	if(Texture->Width > (1<<tw))
 		tw++;
@@ -1135,7 +1134,7 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 			tw, th, gsGlobal->PrimAlphaEnable, 0,
 			Texture->VramClut/256, 0, 0, 0, GS_CLUT_STOREMODE_LOAD);
 	}
-	
+
 	u64 Prim = GS_SETREG_PRIM( GS_PRIM_PRIM_SPRITE, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
@@ -1176,7 +1175,7 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 
 	// This is a lie btw... it's not really A+D mode, but I lie to my allocator so it doesn't screw up the NLOOP arg of the GIFTAG.
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize * (stripcount + extracount), bsize * (stripcount + extracount), GIF_AD);
-	
+
 	*p_data++ = GIF_TAG_SPRITE_TEXTURED((stripcount + extracount));
 	*p_data++ = GIF_TAG_SPRITE_TEXTURED_REGS(gsGlobal->PrimContext);
 
@@ -1186,7 +1185,7 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 	{
 		*p_data++ = Tex0;
 		*p_data++ = Prim;
-	
+
 		*p_data++ = color;
 
 		*p_data++ = GS_SETREG_UV( ((int)(u1 * 16.0f)), iv1 );
@@ -1204,7 +1203,7 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 	{
 		*p_data++ = Tex0;
 		*p_data++ = Prim;
-	
+
 		*p_data++ = color;
 
 		*p_data++ = GS_SETREG_UV(((int)(fu1 * 16.0f)), iv1);
@@ -1222,10 +1221,10 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 
 	if(rightwidth > 0.0f)
 	{
-	
+
 		*p_data++ = Tex0;
 		*p_data++ = Prim;
-	
+
 		*p_data++ = color;
 
 		*p_data++ = GS_SETREG_UV(((int)(fu1 * 16.0f)), iv1);
@@ -1238,12 +1237,12 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *T
 		*p_data++ = GS_SETREG_XYZ2(((int)(rightwidth * 16.0f) + gsGlobal->OffsetX), iy2, iz2 );
 
 		*p_data++ = 0;
-	
+
 	}
 
 }
 
-void gsKit_prim_triangle_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, 	
+void gsKit_prim_triangle_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 				float x1, float y1, int iz1, float u1, float v1,
 				float x2, float y2, int iz2, float u2, float v2,
 				float x3, float y3, int iz3, float u3, float v3, u64 color)
@@ -1361,7 +1360,7 @@ void gsKit_prim_triangle_strip_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count+2] =  (int)((*TriStrip++) * 16.0f);
 		vertexdata[count+3] =  (int)((*TriStrip++) * 16.0f);
 	}
-	
+
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
 
 	*p_data++ = GIF_TAG_AD(qsize);
@@ -1384,21 +1383,21 @@ void gsKit_prim_triangle_strip_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRISTRIP, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
-	
+
 	*p_data++ = GS_PRIM;
-	
+
 	*p_data++ = color;
 	*p_data++ = GS_RGBAQ;
-	
+
 	for(count = 0; count < (segments * 4); count+=4)
 	{
 		*p_data++ = GS_SETREG_UV( vertexdata[count+2], vertexdata[count+3] );
 		*p_data++ = GS_UV;
-	
+
 		*p_data++ = GS_SETREG_XYZ2( vertexdata[count], vertexdata[count+1], iz );
 		*p_data++ = GS_XYZ2;
 	}
-	
+
 }
 
 void gsKit_prim_triangle_strip_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
@@ -1437,7 +1436,7 @@ void gsKit_prim_triangle_strip_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture
 		vertexdata[count+3] = (int)((*TriStrip++) * 16.0f);
 		vertexdata[count+4] = (int)((*TriStrip++) * 16.0f);
 	}
-	
+
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
 
 	*p_data++ = GIF_TAG_AD(qsize);
@@ -1460,17 +1459,17 @@ void gsKit_prim_triangle_strip_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture
 	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRISTRIP, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
-	
+
 	*p_data++ = GS_PRIM;
-	
+
 	*p_data++ = color;
 	*p_data++ = GS_RGBAQ;
-	
+
 	for(count = 0; count < (segments * 5); count+=5)
 	{
 		*p_data++ = GS_SETREG_UV( vertexdata[count+3], vertexdata[count+4] );
 		*p_data++ = GS_UV;
-	
+
 		*p_data++ = GS_SETREG_XYZ2( vertexdata[count], vertexdata[count+1], vertexdata[count+2] );
 		*p_data++ = GS_XYZ2;
 	}
@@ -1511,7 +1510,7 @@ void gsKit_prim_triangle_fan_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count+2] =  (int)((*TriFan++) * 16.0f);
 		vertexdata[count+3] =  (int)((*TriFan++) * 16.0f);
 	}
-	
+
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
 
 	*p_data++ = GIF_TAG_AD(qsize);
@@ -1534,17 +1533,17 @@ void gsKit_prim_triangle_fan_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRIFAN, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
-	
+
 	*p_data++ = GS_PRIM;
-	
+
 	*p_data++ = color;
 	*p_data++ = GS_RGBAQ;
-	
+
 	for(count = 0; count < (verticies * 4); count+=4)
 	{
 		*p_data++ = GS_SETREG_UV( vertexdata[count+2], vertexdata[count+3] );
 		*p_data++ = GS_UV;
-	
+
 		*p_data++ = GS_SETREG_XYZ2( vertexdata[count], vertexdata[count+1], iz );
 		*p_data++ = GS_XYZ2;
 	}
@@ -1586,7 +1585,7 @@ void gsKit_prim_triangle_fan_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count+3] =  (int)((*TriFan++) * 16.0f);
 		vertexdata[count+4] =  (int)((*TriFan++) * 16.0f);
 	}
-	
+
 	p_store = p_data = gsKit_heap_alloc(gsGlobal, qsize, (qsize * 16), GIF_AD);
 
 	*p_data++ = GIF_TAG_AD(qsize);
@@ -1609,23 +1608,23 @@ void gsKit_prim_triangle_fan_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRIFAN, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
-	
+
 	*p_data++ = GS_PRIM;
-	
+
 	*p_data++ = color;
 	*p_data++ = GS_RGBAQ;
-	
+
 	for(count = 0; count < (verticies * 5); count+=5)
 	{
 		*p_data++ = GS_SETREG_UV( vertexdata[count+3], vertexdata[count+4] );
 		*p_data++ = GS_UV;
-	
+
 		*p_data++ = GS_SETREG_XYZ2( vertexdata[count], vertexdata[count+1], vertexdata[count+2] );
 		*p_data++ = GS_XYZ2;
 	}
 }
 
-void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, 	
+void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 				float x1, float y1, int iz1, float u1, float v1,
 				float x2, float y2, int iz2, float u2, float v2,
 				float x3, float y3, int iz3, float u3, float v3,
@@ -1706,7 +1705,7 @@ void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_PRIM( GS_PRIM_PRIM_TRISTRIP, 0, 1, gsGlobal->PrimFogEnable,
 				gsGlobal->PrimAlphaEnable, gsGlobal->PrimAAEnable,
 				1, gsGlobal->PrimContext, 0);
-	
+
 	*p_data++ = color;
 
 	*p_data++ = GS_SETREG_UV( iu1, iv1 );

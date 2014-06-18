@@ -47,6 +47,9 @@ FileSystem.c
 -Changed procedure for evaluating devices when one was not found. Before when a device unit such as mc/0 was not found it wouldn't even look for a memory card in mc/1. Now since the number of device units was changed from 16 to 4, it’s easier to check all possible instances without penalty.
 -Changed partition filter and removed the codebreaker partition from the hdd partition listing.
 -Fixed a future year attribute issue with dlanor's fix.
+-Updated ps2ftpd and existing source files to SVN rev 587.
+-Changed "DEVICE_UNITS" from 4 to 10 for the newer USB driver.
+-Altered an old workaround to allow multiple USB devices to show up properly within FTP clients.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

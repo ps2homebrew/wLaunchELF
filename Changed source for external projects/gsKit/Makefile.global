@@ -14,11 +14,11 @@ include $(GSKITSRC)/ee/Rules.make
 EE_LIBS = -Xlinker --start-group
 EE_LIBS += $(EE_EXTRALIBS)
 
-ifdef LIBJPG
-	EE_INCS += -I$(LIBJPG)/include
-	EE_CFLAGS += -DHAVE_LIBJPG
-	EE_LIB_DIRS += -L$(LIBJPG)
-	EE_LIBS += -ljpg
+ifdef LIBJPEG
+	EE_INCS += -I$(LIBJPEG)/include
+	EE_CFLAGS += -DHAVE_LIBJPEG
+	EE_LIB_DIRS += -L$(LIBJPEG)
+	EE_LIBS += -ljpeg
 endif
 
 ifdef LIBTIFF

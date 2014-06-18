@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.38"
-#define ULE_VERDATE "2009.01.22"
+#define ULE_VERSION "v4.39"
+#define ULE_VERDATE "2009.02.17"
 
 #include <stdio.h>
 #include <tamtypes.h>
