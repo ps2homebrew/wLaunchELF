@@ -132,6 +132,241 @@ int CheckMC(void)
 	return -11;
 }
 //---------------------------------------------------------------------------
+unsigned long hextoul(char *string)
+{
+	unsigned long value;
+	char c;
+
+	value = 0;
+	while( !(((c=*string++)<'0')||(c>'F')||((c>'9')&&(c<'A'))) )
+		value = value*16 + ((c>'9') ? (c-'A'+10) : (c-'0'));
+	return value;
+}
+//---------------------------------------------------------------------------
+//storeSkinCNF will save most cosmetic settings to a RAM area
+//------------------------------
+size_t storeSkinCNF(char *cnf_buf)
+{
+	size_t CNF_size;
+
+	sprintf(cnf_buf,
+		"GUI_Col_1_ABGR = %08lX\r\n"
+		"GUI_Col_2_ABGR = %08lX\r\n"
+		"GUI_Col_3_ABGR = %08lX\r\n"
+		"GUI_Col_4_ABGR = %08lX\r\n"
+		"GUI_Col_5_ABGR = %08lX\r\n"
+		"GUI_Col_6_ABGR = %08lX\r\n"
+		"GUI_Col_7_ABGR = %08lX\r\n"
+		"GUI_Col_8_ABGR = %08lX\r\n"
+		"SKIN_FILE = %s\r\n"
+		"GUI_SKIN_FILE = %s\r\n"
+		"SKIN_Brightness = %d\r\n"
+		"TV_mode = %d\r\n"
+		"Screen_Interlace = %d\r\n"
+		"Screen_X = %d\r\n"
+		"Screen_Y = %d\r\n"
+		"Popup_Opaque = %d\r\n"
+		"Menu_Frame = %d\r\n"
+		"Show_Menu = %d\r\n"
+		"%n",           // %n causes NO output, but only a measurement
+		setting->color[0],   //Col_1
+		setting->color[1],   //Col_2
+		setting->color[2],   //Col_3
+		setting->color[3],   //Col_4
+		setting->color[4],   //Col_5
+		setting->color[5],   //Col_6
+		setting->color[6],   //Col_7
+		setting->color[7],   //Col_8
+		setting->skin,       //SKIN_FILE
+		setting->GUI_skin,   //GUI_SKIN_FILE
+		setting->Brightness, //SKIN_Brightness
+		setting->TV_mode,    //TV_mode
+		setting->interlace,  //Screen_Interlace
+		setting->screen_x,   //Screen_X
+		setting->screen_y,   //Screen_Y
+		setting->Popup_Opaque, //Popup_Opaque
+		setting->Menu_Frame, //Menu_Frame
+		setting->Show_Menu,  //Show_Menu
+		&CNF_size       // This variable measures the size of sprintf data
+  );
+  return CNF_size;
+}
+//------------------------------
+//endfunc storeSkinCNF
+//---------------------------------------------------------------------------
+//saveSkinCNF will save most cosmetic settings to a skin CNF file
+//------------------------------
+int saveSkinCNF(char *CNF)
+{
+	int ret, fd;
+	char tmp[26*MAX_PATH + 30*MAX_PATH];
+	char cnf_path[MAX_PATH];
+	size_t CNF_size;
+
+	CNF_size = storeSkinCNF(tmp);
+
+	ret = genFixPath(CNF, cnf_path);
+	if((ret < 0) || ((fd=genOpen(cnf_path,O_CREAT|O_WRONLY|O_TRUNC)) < 0)){
+		return -1; //Failed open
+	}
+	ret = genWrite(fd,&tmp,CNF_size);
+	if(ret!=CNF_size)
+		ret = -2; //Failed writing
+	genClose(fd);
+
+	return ret;
+}
+//-----------------------------
+//endfunc saveSkinCNF
+//---------------------------------------------------------------------------
+//saveSkinBrowser will save most cosmetic settings to browsed skin CNF file
+//------------------------------
+void saveSkinBrowser(void)
+{
+	int  tst;
+	char path[MAX_PATH];
+	char mess[MAX_PATH];
+
+	getFilePath(path, DIR_CNF);
+	if(path[0] == '\0')
+		goto abort;
+	if(!strncmp(path, "cdfs", 4))
+		goto abort;
+
+	drawMsg(LNG(Enter_File_Name));
+
+	tmp[0]=0;
+	if(keyboard(tmp, 36)>0)
+		strcat(path, tmp);
+	else{
+abort:
+		tst = -3;
+		goto test;
+	}
+
+	tst = saveSkinCNF(path);
+
+test:
+	switch(tst){
+	case -1:
+		sprintf(mess, "%s \"%s\".", LNG(Failed_To_Save), path);
+		break;
+	case -2:
+		sprintf(mess, "%s \"%s\".", LNG(Failed_writing), path);
+		break;
+	case -3:
+		sprintf(mess, "%s \"%s\".", LNG(Failed_Saving_File), path);
+		break;
+	default:
+		sprintf(mess, "%s \"%s\".", LNG(Saved), path);
+	}
+	drawMsg(mess);
+}
+//-----------------------------
+//endfunc saveSkinBrowser
+//---------------------------------------------------------------------------
+//preloadCNF loads an entire CNF file into RAM it allocates
+//------------------------------
+unsigned char *preloadCNF(char *path)
+{
+	int fd, tst;
+	size_t CNF_size;
+	char cnf_path[MAX_PATH];
+	unsigned char *RAM_p;
+
+	fd=-1;
+	if((tst = genFixPath(path, cnf_path)) >= 0)
+		fd = genOpen(cnf_path, O_RDONLY);
+	if(fd<0){
+failed_load:
+		return NULL;
+	}
+	CNF_size = genLseek(fd, 0, SEEK_END);
+	printf("CNF_size=%d\n", CNF_size);
+	genLseek(fd, 0, SEEK_SET);
+	RAM_p = (char*)malloc(CNF_size);
+	if	(RAM_p==NULL)	{ genClose(fd); goto failed_load; }
+	genRead(fd, RAM_p, CNF_size);  //Read CNF as one long string
+	genClose(fd);
+	RAM_p[CNF_size] = '\0';        //Terminate the CNF string
+	return RAM_p;
+}
+//------------------------------
+//endfunc preloadCNF
+//---------------------------------------------------------------------------
+//scanSkinCNF will check for most cosmetic variables of a CNF
+//------------------------------
+int scanSkinCNF(unsigned char *name, unsigned char *value)
+{
+	if(!strcmp(name,"GUI_Col_1_ABGR")) setting->color[0] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_2_ABGR")) setting->color[1] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_3_ABGR")) setting->color[2] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_4_ABGR")) setting->color[3] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_5_ABGR")) setting->color[4] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_6_ABGR")) setting->color[5] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_7_ABGR")) setting->color[6] = hextoul(value);
+	else if(!strcmp(name,"GUI_Col_8_ABGR")) setting->color[7] = hextoul(value);
+	//----------
+	else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
+	else if(!strcmp(name,"GUI_SKIN_FILE")) strcpy(setting->GUI_skin,value);
+	else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
+	//----------
+	else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
+	else if(!strcmp(name,"Screen_Interlace")) setting->interlace = atoi(value);
+	else if(!strcmp(name,"Screen_X")) setting->screen_x = atoi(value);
+	else if(!strcmp(name,"Screen_Y")) setting->screen_y = atoi(value);
+	//----------
+	else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
+	else if(!strcmp(name,"Menu_Frame")) setting->Menu_Frame = atoi(value);
+	else if(!strcmp(name,"Show_Menu")) setting->Show_Menu = atoi(value);
+	else
+		return 0; //when no skin variable
+	return 1; //when skin variable found
+}
+//------------------------------
+//endfunc scanSkinCNF
+//---------------------------------------------------------------------------
+//loadSkinCNF will load most cosmetic settings from CNF file
+//------------------------------
+int loadSkinCNF(char *path)
+{
+	int dummy, var_cnt;
+	unsigned char *RAM_p, *CNF_p, *name, *value;
+
+	if( !(RAM_p = preloadCNF(path)) )
+		return -1;
+	CNF_p = RAM_p;
+	for(var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
+		dummy = scanSkinCNF(name, value);
+	free(RAM_p);
+	updateScreenMode(0);
+	if(setting->skin)
+		loadSkin(BACKGROUND_PIC, 0, 0);
+	return 0;
+}
+//------------------------------
+//endfunc loadSkinCNF
+//---------------------------------------------------------------------------
+//loadSkinBrowser will load most cosmetic settings from browsed skin CNF file
+//------------------------------
+void loadSkinBrowser(void)
+{
+	int tst;
+	char path[MAX_PATH];
+	char mess[MAX_PATH];
+
+	getFilePath(path, TEXT_CNF); // No Filtering, Be Careful.
+	tst = loadSkinCNF(path);
+	if(tst<0)
+		sprintf(mess, "%s \"%s\".", LNG(Failed_To_Load), path);
+	else
+		sprintf(mess, "%s \"%s\".", LNG(Loaded_Config), path);
+
+	drawMsg(mess);
+}
+//------------------------------
+//endfunc loadSkinBrowser
+//---------------------------------------------------------------------------
 // Save LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD save USBD_FILE string
 // polo: ADD save SKIN_FILE string
@@ -197,34 +432,18 @@ void saveConfig(char *mainMsg, char *CNF)
   );
 	CNF_size += CNF_step;
 
+	CNF_size += storeSkinCNF(tmp+CNF_size);
+
 	sprintf(tmp+CNF_size,
 		"LK_auto_Timer = %d\r\n"
 		"Menu_Hide_Paths = %d\r\n"
-		"GUI_Col_1_ABGR = %08lX\r\n"
-		"GUI_Col_2_ABGR = %08lX\r\n"
-		"GUI_Col_3_ABGR = %08lX\r\n"
-		"GUI_Col_4_ABGR = %08lX\r\n"
-		"GUI_Col_5_ABGR = %08lX\r\n"
-		"GUI_Col_6_ABGR = %08lX\r\n"
-		"GUI_Col_7_ABGR = %08lX\r\n"
-		"GUI_Col_8_ABGR = %08lX\r\n"
-		"Screen_X = %d\r\n"
-		"Screen_Y = %d\r\n"
 		"Init_CDVD_Check = %d\r\n"
-		"Screen_Interlace = %d\r\n"
 		"Init_Reset_IOP = %d\r\n"
 		"Menu_Pages = %d\r\n"
 		"GUI_Swap_Keys = %d\r\n"
 		"USBD_FILE = %s\r\n"
 		"NET_HOSTwrite = %d\r\n"
-		"SKIN_FILE = %s\r\n"
-		"GUI_SKIN_FILE = %s\r\n"
 		"Menu_Title = %s\r\n"
-		"Menu_Frame = %d\r\n"
-		"Show_Menu = %d\r\n"
-		"SKIN_Brightness = %d\r\n"
-		"TV_mode = %d\r\n"
-		"Popup_Opaque = %d\r\n"
 		"Init_Delay = %d\r\n"
 		"USBKBD_USED = %d\r\n"
 		"USBKBD_FILE = %s\r\n"
@@ -244,31 +463,13 @@ void saveConfig(char *mainMsg, char *CNF)
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
-		setting->color[0],   //Col_1
-		setting->color[1],   //Col_2
-		setting->color[2],   //Col_3
-		setting->color[3],   //Col_4
-		setting->color[4],   //Col_5
-		setting->color[5],   //Col_6
-		setting->color[6],   //Col_7
-		setting->color[7],   //Col_8
-		setting->screen_x,   //Screen_X
-		setting->screen_y,   //Screen_Y
 		setting->discControl,  //Init_CDVD_Check
-		setting->interlace,  //Screen_Interlace
 		setting->resetIOP,   //Init_Reset_IOP
 		setting->numCNF,     //Menu_Pages
 		setting->swapKeys,   //GUI_Swap_Keys
 		setting->usbd_file,  //USBD_FILE
 		setting->HOSTwrite,  //NET_HOST_write
-		setting->skin,       //SKIN_FILE
-		setting->GUI_skin,   //GUI_SKIN_FILE
 		setting->Menu_Title, //Menu_Title
-		setting->Menu_Frame, //Menu_Frame
-		setting->Show_Menu, //GUI_Menu
-		setting->Brightness, //SKIN_Brightness
-		setting->TV_mode,    //TV_mode
-		setting->Popup_Opaque, //Popup_Opaque
 		setting->Init_Delay,   //Init_Delay
 		setting->usbkbd_used,  //USBKBD_USED
 		setting->usbkbd_file,  //USBKBD_FILE
@@ -369,17 +570,6 @@ void saveConfig(char *mainMsg, char *CNF)
 	genClose(fd);
 }
 //---------------------------------------------------------------------------
-unsigned long hextoul(char *string)
-{
-	unsigned long value;
-	char c;
-
-	value = 0;
-	while( !(((c=*string++)<'0')||(c>'F')||((c>'9')&&(c<'A'))) )
-		value = value*16 + ((c>'9') ? (c-'A'+10) : (c-'0'));
-	return value;
-}
-//---------------------------------------------------------------------------
 void initConfig(void)
 {
 	int i;
@@ -470,12 +660,10 @@ void initConfig(void)
 int loadConfig(char *mainMsg, char *CNF)
 {
 	int i, fd, tst, len, mcport, var_cnt, CNF_version;
-	size_t CNF_size;
 	char tsts[20];
 	char path[MAX_PATH];
 	char cnf_path[MAX_PATH];
 	unsigned char *RAM_p, *CNF_p, *name, *value;
-	int X_flag=0, Y_flag=0, IL_flag=0;
 
 	initConfig();
 
@@ -490,13 +678,13 @@ int loadConfig(char *mainMsg, char *CNF)
 		char strtmp[MAX_PATH], *p;
 		int  pos;
 
-		p = strrchr(path, '.');
-		if(*(p-1)!='F')
-			p--;
+		p = strrchr(path, '.');  //make p point to extension
+		if(*(p-1)!='F')          //is this an indexed CNF
+			p--;                   //then make p point to index
 		pos = (p-path);
 		strcpy(strtmp, path);
-		strcpy(strtmp+pos-9, "LNCHELF");
-		strcpy(strtmp+pos-2, path+pos);
+		strcpy(strtmp+pos-9, "LNCHELF"); //Replace LAUNCHELF with LNCHELF (for CD)
+		strcpy(strtmp+pos-2, path+pos); //Add index+extension too
 		if((tst = genFixPath(strtmp, cnf_path)) >= 0)
 			fd = genOpen(cnf_path, O_RDONLY);
 		if(fd<0) {
@@ -506,9 +694,9 @@ int loadConfig(char *mainMsg, char *CNF)
 				mcport = CheckMC();
 			if(mcport==1 || mcport==0){
 				sprintf(strtmp, "mc%d:/SYS-CONF/", mcport);
-				strcpy(path, strtmp);
-				strcat(path, CNF);
-				fd = genOpen(path, O_RDONLY);
+				strcpy(cnf_path, strtmp);
+				strcat(cnf_path, CNF);
+				fd = genOpen(cnf_path, O_RDONLY);
 				if(fd>=0)
 					strcpy(LaunchElfDir, strtmp);
 			}
@@ -520,17 +708,11 @@ failed_load:
 		return -1;
 	}
 	// This point is only reached after succefully opening CNF
-
-	CNF_size = genLseek(fd, 0, SEEK_END);
-	printf("CNF_size=%d\n", CNF_size);
-	genLseek(fd, 0, SEEK_SET);
-	RAM_p = (char*)malloc(CNF_size);
-	CNF_p = RAM_p;
-	if	(CNF_p==NULL)	{ genClose(fd); goto failed_load; }
-		
-	genRead(fd, CNF_p, CNF_size);  //Read CNF as one long string
 	genClose(fd);
-	CNF_p[CNF_size] = '\0';        //Terminate the CNF string
+
+	if( (RAM_p = preloadCNF(path))==NULL )
+		goto failed_load;
+	CNF_p = RAM_p;
 
 //RA NB: in the code below, the 'LK_' variables have been implemented such that
 //       any _Ex suffix will be accepted, with identical results. This will need
@@ -544,6 +726,9 @@ failed_load:
 			continue;
 		} else if(CNF_version == 0)
 			goto failed_load;  // Refuse unidentified CNF
+
+		if( scanSkinCNF(name, value) )
+			continue;
 
 		for(i=0; i<15; i++){
 			sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
@@ -591,45 +776,17 @@ failed_load:
 		//----------
 		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
 		else if(!strcmp(name,"Menu_Hide_Paths")) setting->Hide_Paths = atoi(value);
-		//----------
-		else if(!strcmp(name,"GUI_Col_1_ABGR")) setting->color[0] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_2_ABGR")) setting->color[1] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_3_ABGR")) setting->color[2] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_4_ABGR")) setting->color[3] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_5_ABGR")) setting->color[4] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_6_ABGR")) setting->color[5] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_7_ABGR")) setting->color[6] = hextoul(value);
-		else if(!strcmp(name,"GUI_Col_8_ABGR")) setting->color[7] = hextoul(value);
-		//----------
-		else if(!strcmp(name,"Screen_X")){
-			setting->screen_x = atoi(value);
-			X_flag = 1;
-		}
-		else if(!strcmp(name,"Screen_Y")){
-			setting->screen_y = atoi(value);
-			Y_flag = 1;
-		}
+		//---------- NB: color settings moved to scanSkinCNF
 		else if(!strcmp(name,"Init_CDVD_Check")) setting->discControl = atoi(value);
-		else if(!strcmp(name,"Screen_Interlace")){
-			setting->interlace = atoi(value);
-			IL_flag = 1;
-		}
 		else if(!strcmp(name,"Init_Reset_IOP")) setting->resetIOP = atoi(value);
 		else if(!strcmp(name,"Menu_Pages")) setting->numCNF = atoi(value);
 		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
 		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd_file,value);
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
-		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
-		else if(!strcmp(name,"GUI_SKIN_FILE")) strcpy(setting->GUI_skin,value);
 		else if(!strcmp(name,"Menu_Title")){
 			strncpy(setting->Menu_Title, value, MAX_MENU_TITLE);
 			setting->Menu_Title[MAX_MENU_TITLE] = '\0';
 		}
-		else if(!strcmp(name,"Menu_Frame")) setting->Menu_Frame = atoi(value);
-		else if(!strcmp(name,"Show_Menu")) setting->Show_Menu = atoi(value);
-		else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
-		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
-		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
 		else if(!strcmp(name,"Init_Delay")) setting->Init_Delay = atoi(value);
 		else if(!strcmp(name,"USBKBD_USED")) setting->usbkbd_used = atoi(value);
 		else if(!strcmp(name,"USBKBD_FILE")) strcpy(setting->usbkbd_file,value);
@@ -669,11 +826,6 @@ failed_load:
 	} //ends for
 	for(i=0; i<15; i++) setting->LK_Title[i][MAX_ELF_TITLE-1] = 0;
 	free(RAM_p);
-	if(CNF_version < 3){
-		if(X_flag) setting->screen_x *= 4;
-		if(Y_flag && !IL_flag)
-				setting->screen_y = setting->screen_y*2 - 2;
-	}
 	if(setting->JpgView_Timer < 0)
 		setting->JpgView_Timer = DEF_JPGVIEW_TIMER;
 	if((setting->JpgView_Trans < 1) || (setting->JpgView_Trans > 4))
@@ -908,7 +1060,7 @@ void Config_Skin(void)
 void Config_Screen(void)
 {
 	int i;
-	int s, max_s=33;		//define cursor index and its max value
+	int s, max_s=35;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	u64 rgb[8][3];
@@ -953,9 +1105,9 @@ void Config_Screen(void)
 			else if(new_pad & PAD_LEFT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=32) s=30;
-				else if(s>=30) s=29;
-				else if(s>=29) s=28;
+				if(s>=34) s=32;
+				else if(s>=32) s=31;
+				else if(s>=31) s=28;
 				else if(s>=28) s=27;
 				else if(s>=27) s=25;
 				else if(s>=25) s=24; //at or 
@@ -965,9 +1117,9 @@ void Config_Screen(void)
 			else if(new_pad & PAD_RIGHT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=30) s=32;
-				else if(s>=29) s=30;
-				else if(s>=28) s=29;
+				if(s>=32) s=34;
+				else if(s>=31) s=32;
+				else if(s>=28) s=31;
 				else if(s>=27) s=28;
 				else if(s>=25) s=27;
 				else if(s>=24) s=25;
@@ -993,7 +1145,7 @@ void Config_Screen(void)
 						setting->screen_y--;
 						updateScreenMode(0);
 					}
-				} else if(s==29) {  //cursor is at Menu_Title
+				} else if(s==31) {  //cursor is at Menu_Title
 						setting->Menu_Title[0] = '\0';
 				}
 			}
@@ -1020,14 +1172,18 @@ void Config_Screen(void)
 					updateScreenMode(1);
 				} else if(s==28) {
 					Config_Skin();
-				} else if(s==29) {  //cursor is at Menu_Title
+				} else if(s==29) {
+					loadSkinBrowser();
+				} else if(s==30) {
+					saveSkinBrowser();
+				} else if(s==31) {  //cursor is at Menu_Title
 					char tmp[MAX_MENU_TITLE+1];
 					strcpy(tmp, setting->Menu_Title);
 					if(keyboard(tmp, 36)>=0)
 						strcpy(setting->Menu_Title, tmp);
-				} else if(s==30) {
+				} else if(s==32) {
 					setting->Menu_Frame = !setting->Menu_Frame;
-				} else if(s==31) {
+				} else if(s==33) {
 					setting->Popup_Opaque = !setting->Popup_Opaque;
 				} else if(s==max_s-1) { //Always put 'RETURN' next to last
 					return;
@@ -1103,7 +1259,7 @@ void Config_Screen(void)
 				y += FONT_HEIGHT;
 				sprintf(c, "ÿ4");
 				printXY(c, x+(space*(i+1))-FONT_WIDTH, y, setting->color[i], TRUE, 0);
-			}
+			} //ends loop for colour RGB values
 			y += FONT_HEIGHT*2;
 			sprintf(c, "  %s: ", LNG(TV_mode));
 			if(setting->TV_mode==TV_mode_NTSC)
@@ -1133,6 +1289,12 @@ void Config_Screen(void)
 			y += FONT_HEIGHT / 2;
 
 			sprintf(c, "  %s...", LNG(Skin_Settings));
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+			sprintf(c, "  %s...", LNG(Load_Skin_CNF));
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+			sprintf(c, "  %s...", LNG(Save_Skin_CNF));
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
@@ -1187,9 +1349,9 @@ void Config_Screen(void)
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below screen offsets
 				if(s>=28)            //if cursor at or beyond 'SKIN SETTINGS'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below interlace choice
-				if(s>=29)            //if cursor at or beyond 'Menu Title'
+				if(s>=31)            //if cursor at or beyond 'Menu Title'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'SKIN SETTINGS'
-				if(s>=30)            //if cursor at or beyond 'Menu Frame'
+				if(s>=32)            //if cursor at or beyond 'Menu Frame'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Menu Title'
 				if(s>=max_s-1)            //if cursor at or beyond 'RETURN'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Popups Opaque'
@@ -1202,18 +1364,18 @@ void Config_Screen(void)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
 				else
 					sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
-			} else if(s==24||s==27||s==30||s==31) {
+			} else if(s==24||s==27||s==32||s==33) {
 				//if cursor at 'TV mode', 'INTERLACE', 'Menu Frame' or 'Popups Opaque'
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s", LNG(Change));
 				else
 					sprintf(c, "ÿ0:%s", LNG(Change));
-			} else if(s==28){  //if cursor at 'SKIN SETTINGS'
+			} else if(s==28||s==29||s==30){  //if cursor at 'SKIN SETTINGS'
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s", LNG(OK));
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
-			} else if(s==29){  //if cursor at Menu_Title
+			} else if(s==31){  //if cursor at Menu_Title
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Edit), LNG(Clear));
 				else

@@ -1,8 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.13d beta (2008.06.12)
+-removed loadConfig adaption of CNFs from obsolete uLE versions
+-Fixed some bugs in "Save As" command of TextEditor
+-Implemented "Load Skin CNF" and "Save Skin CNF" commands in "Screen Settings". The save skin command will create a CNF file similar to LAUNCHELF.CNF, but containing only 18 variables relevant to skins. The load skin command can accept either such files created by the save skin command or a complete LAUNCHELF.CNF file. In the latter case only 18 variables relevant to skins will be loaded, with the rest of the CNF file being ignored. It is also allowed to edit skin files to remove variables, which will then be unaltered when such a skin file is loaded.
+
 LaunchELF v4.13c beta (2008.06.11)
 -Fixed a bug in cursor movement for colours in "Screen Settings"
--Implemented uLE-related file selection. Using R3 on a file in FileBrowser will return a pathname like "uLE:/filename.ext" (assuming "filename.ext" was selected). Reference to a file with the "uLE:/" prefix will cause a search for that file in some uLE-related folders. First the active CNF folder, then the SYS-CONF folders of memory cards, starting with mc0 unless the active CNF folder is on mc1. Using R3 on a folder in FileBrowser will navigate to active CNF folder.
+-Implemented uLE-related file selection. Using R3 on a file in FileBrowser will return a pathname like "uLE:/filename.ext" (assuming "filename.ext" was selected). Reference to a file with the "uLE:/" prefix will cause a search for that file in some uLE-related folders. First the active CNF folder, then the SYS-CONF folders of memory cards, starting with mc0 unless the active CNF folder is on mc1. Using R3 on a folder in FileBrowser will just navigate to active CNF folder.
 
 LaunchELF v4.13b beta (2008.06.01)
 -Compiled with an older lib setup, but using exactly the same sources as v4.13. This cures a bug of v4.13 making it unable to load JPG files from HDD.

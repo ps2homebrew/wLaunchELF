@@ -357,5 +357,9 @@ lang(317, Halt, "Halt") // Alternative Halted text, added for main screen skinni
 lang(318, Delay, "Delay")// Same reason as above
 lang(319, Show_Menu, "Show Menu")
 //---------------------------------------------------------------------------
+// New skin file commands added
+lang(320, Load_Skin_CNF, "Load Skin CNF")
+lang(321, Save_Skin_CNF, "Save Skin CNF")
+//---------------------------------------------------------------------------
 //End of file:  lang.h
 //---------------------------------------------------------------------------

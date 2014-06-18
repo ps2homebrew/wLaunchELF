@@ -55,7 +55,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   JPG_CNF,				 // Jpg viewer choice
 	USBMASS_IRX_CNF, // USB_MASS.IRX choice for startup
 	LANG_CNF,				 // Language file choise
-	FONT_CNF,				 // Font file choise ( .fnt )
+	FONT_CNF,				 // Font file choice ( .fnt )
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 

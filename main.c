@@ -952,8 +952,8 @@ void loadNetModules(void)
 	}
 	strcpy(mainMsg, netConfig);
 	if (setting->GUI_skin[0]) {
-	GUI_active = 1;
-	loadSkin(BACKGROUND_PIC, 0, 0);
+		GUI_active = 1;
+		loadSkin(BACKGROUND_PIC, 0, 0);
 	}
 }
 //------------------------------

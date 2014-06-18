@@ -1123,10 +1123,11 @@ void Save_As(int Win)
 	}
 
 	getFilePath(Path[Win], DIR_CNF);
-	if(Path[0] == '\0')
+	if(Path[Win][0] == '\0')
+		goto abort;
+	if(!strncmp(Path[Win], "cdfs", 4))
 		goto abort;
 
-	drawMsg(LNG(Enter_File_Name));
 	drawMsg(LNG(Enter_File_Name));
 
 	if(keyboard(tmp, 36)>0)
@@ -1134,8 +1135,6 @@ void Save_As(int Win)
 	else
 		goto abort;
 
-	if(!strncmp(Path[Win], "cdfs", 4))
-		goto abort;
 	genFixPath(Path[Win], filePath);
 
 	fd = genOpen( filePath, O_CREAT|O_WRONLY|O_TRUNC );

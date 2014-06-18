@@ -434,7 +434,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.13cÿ4",
+	printXY(" ÿ4 LaunchELF v4.13dÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -548,7 +548,6 @@ void setupGS(int gs_vmode)
 	gsKit_mode_switch(gsGlobal, GS_ONESHOT);
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 }
-
 //--------------------------------------------------------------
 void updateScreenMode(int adapt_XY)
 {
