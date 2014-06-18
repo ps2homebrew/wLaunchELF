@@ -1998,6 +1998,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "PS2Net");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "PS2PowerOff");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //Next 5 line section is only for use while debugging
 /*
 		strcpy(files[nfiles].name, "IOP Reset");

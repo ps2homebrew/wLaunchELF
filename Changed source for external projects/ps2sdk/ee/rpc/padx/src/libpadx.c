@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: libpadx.c 577 2004-09-14 14:41:46Z pixel $
+# $Id: libpadx.c 1283 2006-02-27 00:42:53Z jbit $
 # Pad library functions
 */
 
@@ -577,7 +577,7 @@ padInfoMode(int port, int slot, int infoMode, int index)
             if(index == -1) {
                 return pdata->nrOfModes;
             }
-            else if (pdata->nrOfModes < index) {
+            else if (index < pdata->nrOfModes) {
                 return pdata->modeTable[index];
             }
             else {

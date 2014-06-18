@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.67 (2006.05.13)
+-Added PS2PowerOff function to MISC. Only works with PS2's that have a hard drive installed?
+-Updated ps2sdk's libpadx.c in external projects source package.
+-Added fixed header files to the libito external projects source package. This eliminates all the compiler warnings related to libito when building launchELF. Note: includes ito.h, itodma.h, itotypes.h, itomisc.h, itosyscalls.h, and itoimage.h.
+
 LaunchELF v3.66 (2006.05.11)
 -Added Triangle as quick exit button for all CONFIG menus, and at top level this acts the same way as the 'Cancel' command. The purpose of this is to allow you to exit and recover original settings, if you accidentally create settings that make the screen text invisible. All you need do in such a case is to press Triangle repeatedly. When you reach the main menu, all settings will have been restored.
 -Added ability to complete boot without any gamepad connected. Note that you'll need a USB keyboard to use uLaunchELF without gamepad, and that this keyboard must be enabled in the CNF (also default). If you connect a gamepad after booting, then it needs to be a Sony original, or fully compatible, otherwise it may fail to work correctly.

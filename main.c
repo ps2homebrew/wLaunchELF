@@ -703,7 +703,7 @@ void loadNetModules(void)
 	if(!have_NetModules){
 		loadHddModules();
 		loadUsbModules();
-		drawMsg("Loading FTP Modules...");
+		drawMsg("Loading NetFS and FTP Modules...");
 		
 		// getIpConfig(); //RA NB: I always get that info, early in init
 		// Also, my module checking makes some other tests redundant
@@ -853,6 +853,22 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/PS2Net")){
 		mainMsg[0] = 0;
 		loadNetModules();
+		return;
+	}else if(!stricmp(path, "MISC/PS2PowerOff")){
+		mainMsg[0] = 0;
+	if(have_HDD_modules && have_poweroff)
+		hddPowerOff();
+	else
+	{
+		// Check and setup poweroff handler then finally execute poweroff handler.
+		// Note: The code below is incomplete as hdd's poweroff handler is used to 
+		// turn off the console. A better implementation is needed so that the hdd 
+		// is not required to turn off the console. One way is to do an import to 
+		// add I_AddPowerOffHandler to ps2dev9 and use it to poweroff the console.
+		// Currently the code starts up the hdd and then turns off the console.
+		loadHddModules();
+		hddPowerOff();
+	}
 		return;
 //Next two clauses are only for debugging
 /*
