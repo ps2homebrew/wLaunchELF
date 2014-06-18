@@ -1304,7 +1304,7 @@ void Reset()
 
 	CheckModules();
 	loadBasicModules();
-	mcInit(MC_TYPE_RESET);
+	mcReset();
 	mcInit(MC_TYPE_MC);
 //	padReset();
 //	setupPad();

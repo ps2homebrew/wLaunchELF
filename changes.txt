@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.09 (2007.01.27)
+-Updated to use the current ps2sdk changes added by jbit.
+-Cleaned up the external source package and updated some of the ps2sdk source files.
+
 LaunchELF v4.08e Beta (2007.01.27)
 -Upgraded to a newer version of EEUG's networking module "SMSTCPIP.irx". This upgrade should eliminate some data corruption seen with the previous beta
 -Added a new LNG definition, LNG(KB_RETURN), to be used only to designate such keyboard keys (virtual or physical), as it seems that some languages need this term separate from other uses of similar words. The english version of this term in "lang.h" is just "RETURN"

@@ -7,7 +7,7 @@
 # Licenced under Academic Free License version 2.0
 # Review ps2sdk README & LICENSE files for further details.
 #
-# $Id: misc.c 577 2004-09-14 14:41:46Z pixel $
+# $Id: misc.c 1370 2007-01-17 02:28:14Z jbit $
 # Miscellaneous routines
 */
 
@@ -43,7 +43,7 @@ int getPs2Time(ps2time *tm)
 		timeBuf.min=(((tmp<<2)+tmp)<<1)+(cdtime.minute&0x0F);
 		tmp=cdtime.hour>>4;
 		timeBuf.hour=(((tmp<<2)+tmp)<<1)+(cdtime.hour&0x0F);
-		//timeBuf.hour = (timeBuf.hour + 4) % 24; // TEMP FIX (need to deal with timezones?)
+//		timeBuf.hour = (timeBuf.hour + 4) % 24; // TEMP FIX (need to deal with timezones?) ... aparently not
 		tmp=cdtime.day>>4;
 		timeBuf.day=(((tmp<<2)+tmp)<<1)+(cdtime.day&0x0F);
 		tmp=cdtime.month>>4;
