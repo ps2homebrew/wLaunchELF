@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.74 (2006.06.06)
+-Speed optimized various aspects of HddManager
+
 LaunchELF v3.74 (2006.06.05)
 -Modified HddManager to make more partitions visible
 -Added lots of changes to HddManager to improve speed and reliability (still slow init)

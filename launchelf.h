@@ -171,6 +171,7 @@ void loadConfig(char *, char *);
 void config(char *, char *);
 
 /* filer.c */
+char mountedParty[2][MAX_NAME]; //NB: Must be cleared if you force unmounting
 int nparties; //Clearing this causes FileBrowser to refresh party list
 unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);

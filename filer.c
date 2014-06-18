@@ -265,14 +265,14 @@ void nonDialog(const char *message)
 	dw = 2*2+a*2+tw;
 	dx = (SCREEN_WIDTH-dw)/2;
 	dy = (SCREEN_HEIGHT-dh)/2;
-	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
+	//printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
 	drawPopSprite(setting->color[0],
 		dx, dy/2,
 		dx+dw, (dy+dh)/2);
 	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 	for(i=len=0; i<n; i++){
-		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
+		printXY(&msg[len], dx+2+a,(dy+a+2+i*FONT_HEIGHT)/2, setting->color[3],TRUE);
 		len+=strlen(&msg[len])+1;
 	}
 }
