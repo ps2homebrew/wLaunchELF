@@ -60,7 +60,8 @@ enum
 	MAX_ENTRY = 2048,
 	MAX_PARTITIONS=100,
 	MAX_MENU_TITLE = 40,
-	MAX_ELF_TITLE = 72
+	MAX_ELF_TITLE = 72,
+	MAX_TEXT_LINE = 80
 };
 
 typedef struct
@@ -134,6 +135,7 @@ void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
+void drawLastMsg(void);
 void setupito(int ito_vmode);
 void updateScreenMode(void);
 void clrScr(uint64 color);

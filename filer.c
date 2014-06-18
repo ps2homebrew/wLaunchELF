@@ -171,6 +171,8 @@ void genInit(void)
 	for(i=0; i<256; i++)
 		gen_fd[i] = -1;
 }
+//------------------------------
+//endfunc genInit
 //--------------------------------------------------------------
 int genOpen(char *path, int mode)
 {
@@ -196,6 +198,8 @@ int genOpen(char *path, int mode)
 	gen_io[i] = io;
 	return i;
 }
+//------------------------------
+//endfunc genOpen
 //--------------------------------------------------------------
 int genLseek(int fd, int where, int how)
 {
@@ -207,6 +211,8 @@ int genLseek(int fd, int where, int how)
 	else
 		return fioLseek(gen_fd[fd], where, how);
 }
+//------------------------------
+//endfunc genLseek
 //--------------------------------------------------------------
 int genRead(int fd, void *buf, int size)
 {
@@ -218,6 +224,8 @@ int genRead(int fd, void *buf, int size)
 	else
 		return fioRead(gen_fd[fd], buf, size);
 }
+//------------------------------
+//endfunc genRead
 //--------------------------------------------------------------
 int genWrite(int fd, void *buf, int size)
 {
@@ -229,6 +237,8 @@ int genWrite(int fd, void *buf, int size)
 	else
 		return fioWrite(gen_fd[fd], buf, size);
 }
+//------------------------------
+//endfunc genWrite
 //--------------------------------------------------------------
 int genClose(int fd)
 {
@@ -244,6 +254,8 @@ int genClose(int fd)
 	gen_fd[fd] = -1;
 	return ret;
 }
+//------------------------------
+//endfunc genClose
 //--------------------------------------------------------------
 int ynDialog(const char *message)
 {
@@ -300,9 +312,6 @@ int ynDialog(const char *message)
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
-			drawSprite(setting->color[0],
-				0, (Menu_message_y)/2,
-				SCREEN_WIDTH, (Menu_message_y+FONT_HEIGHT)/2);
 			drawPopSprite(setting->color[0],
 				dx, dy/2,
 				dx+dw, (dy+dh)/2);
@@ -320,12 +329,18 @@ int ynDialog(const char *message)
 			else
 				drawChar(127,dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
 		}//ends if(event||post_event)
-		drawScr();
+		drawLastMsg();
 		post_event = event;
 		event = 0;
 	}//ends while
+	drawSprite(setting->color[0], dx, dy/2, dx+dw+1, (dy+dh)/2+1);
+	drawScr();
+	drawSprite(setting->color[0], dx, dy/2, dx+dw+1, (dy+dh)/2+1);
+	drawScr();
 	return ret;
 }
+//------------------------------
+//endfunc ynDialog
 //--------------------------------------------------------------
 void nonDialog(const char *message)
 {
@@ -355,9 +370,6 @@ void nonDialog(const char *message)
 	dy = (SCREEN_HEIGHT-dh)/2;
 	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
-	drawSprite(setting->color[0],
-		0, (Menu_message_y)/2,
-		SCREEN_WIDTH, (Frame_start_y)/2);
 	drawPopSprite(setting->color[0],
 		dx, dy/2,
 		dx+dw, (dy+dh)/2);
@@ -366,8 +378,9 @@ void nonDialog(const char *message)
 		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
 		len+=strlen(&msg[len])+1;
 	}
-	drawScr();
 }
+//------------------------------
+//endfunc nonDialog
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 {
@@ -1529,9 +1542,9 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			written_size
 		);
 		nonDialog(progress);
+		drawMsg(file.name);
 		if(readpad() && new_pad){
-			if(-1 == ynDialog("Continue with the\n"
-			                  "file transfer ???")
+			if(-1 == ynDialog("Continue transfer ?")
 				) {
 				if(hddout){ //Remove interrupted file on HDD
 					fileXioClose(out_fd); out_fd=-1;
@@ -2284,9 +2297,10 @@ void getFilePath(char *out, int cnfmode)
 							}else if(ret < 0){
 								strcpy(msg0, "NewDir Failed");
 								browser_pushed=FALSE;
-							}else{
-								strcat(path, tmp);
-								strcat(path, "/");
+							}else{ //dlanor: modified to avoid 'automatic' navigation
+								strcpy(msg0, "Created folder: ");
+								strcat(msg0, tmp);
+								browser_pushed=FALSE;
 								browser_cd=TRUE;
 							}
 						}
@@ -2448,13 +2462,14 @@ void getFilePath(char *out, int cnfmode)
 			} //ends clause for scrollbar
 			if(nclipFiles) { //if Something in clipboard, emulate LED indicator
 				uint64 LED_colour, RIM_colour = ITO_RGBA(0,0,0,0);
-				int x1 = SCREEN_WIDTH-SCREEN_MARGIN-10, x2 = x1+8;
-				int y1 = Frame_start_y+2, y2 = y1+8; 
+				int RIM_w=4, LED_w=6, indicator_w = LED_w+2*RIM_w;
+				int x2 = SCREEN_WIDTH-SCREEN_MARGIN-2, x1 = x2-indicator_w;
+				int y1 = Frame_start_y+2, y2 = y1+indicator_w; 
 
 				if(browser_cut) LED_colour = ITO_RGBA(0xC0,0,0,0); //Red LED == CUT
 				else            LED_colour = ITO_RGBA(0,0xC0,0,0); //Green LED == COPY
 				itoSprite(RIM_colour, x1, y1/2, x2, y2/2, 0);
-				itoSprite(LED_colour, x1+2, (y1+2)/2, x2-2, (y2-2)/2, 0);
+				itoSprite(LED_colour, x1+RIM_w, (y1+RIM_w)/2, x2-RIM_w, (y2-RIM_w)/2, 0);
 			} //ends clause for clipboard indicator
 			if(browser_pushed)
 				sprintf(msg0, "Path: %s", path);

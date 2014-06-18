@@ -13,6 +13,8 @@ int				SCREEN_X			= 158;
 int				SCREEN_Y			= 26;
 //dlanor: values shown above are defaults for NTSC mode
 
+char LastMessage[MAX_TEXT_LINE];
+
 int Menu_start_x   = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 int Menu_title_y   = SCREEN_MARGIN;
 int Menu_message_y = SCREEN_MARGIN + FONT_HEIGHT;
@@ -400,9 +402,11 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.68 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.69 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
+	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
+	LastMessage[MAX_TEXT_LINE] = '\0';
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
 
 	if(setting->Menu_Frame)
@@ -415,7 +419,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 ) {
 		setBrightness(setting->Brightness);
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1-1, x1, y1, x2, y2-1, x2, y2,0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1, x1, y1, x2, y2, x2, y2,0);
 		setBrightness(50);
 	}else{
 		itoSprite(color, x1, y1, x2, y2, 0);
@@ -425,7 +429,7 @@ void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 && !setting->Popup_Opaque) {
 		setBrightness(setting->Brightness);
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1-1, x1, y1, x2, y2-1, x2, y2,0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1, x1, y1, x2, y2, x2, y2,0);
 		setBrightness(50);
 	}else{
 		itoSprite(color, x1, y1, x2, y2, 0);
@@ -434,9 +438,19 @@ void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 //--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
+	strncpy(LastMessage, msg, MAX_TEXT_LINE);
+	LastMessage[MAX_TEXT_LINE] = '\0';
 	drawSprite(setting->color[0], 0, (Menu_message_y)/2,
 		SCREEN_WIDTH, (Frame_start_y)/2);
 	printXY(msg, SCREEN_MARGIN, Menu_message_y/2, setting->color[2], TRUE);
+	drawScr();
+}
+//--------------------------------------------------------------
+void drawLastMsg(void)
+{
+	drawSprite(setting->color[0], 0, (Menu_message_y)/2,
+		SCREEN_WIDTH, (Frame_start_y)/2);
+	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y/2, setting->color[2], TRUE);
 	drawScr();
 }
 //--------------------------------------------------------------

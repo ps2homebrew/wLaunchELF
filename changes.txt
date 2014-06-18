@@ -1,5 +1,15 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.69 (2006.05.18)
+-Changed MISC/PS2PowerOff function to work without either HDD or Network Adaptor
+-Changed MISC/PS2Net message to "Loading NetFS and FTP Server Modules..."
+-Changed Clipboard indicator to make it larger (now 14 pixels total width)
+-Changed 'New Dir' command to avoid 'automatic' navigation (stay in old dir)
+-Changed display of file names during Paste/mcPaste operations
+-Changed ynDialog and nonDialog to preserve operational messages on screen
+-Changed ynDialog to clean up screen background after completion
+-Changed text for ynDialog used in query to continue/abort paste operations
+
 LaunchELF v3.68 (2006.05.14)
 -Added LED-like clipboard content indicator Red=CUT, Green=COPY (overlaps scrollbar)
 -Added ability to abort Paste/mcPaste file transfers (partial dest file is removed)

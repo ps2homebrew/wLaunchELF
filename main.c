@@ -64,6 +64,7 @@ int trayopen=FALSE;
 int selected=0;
 int timeout=0;
 int init_delay=0;
+int poweroff_delay=0; //Set only when calling hddPowerOff
 int mode=BUTTON;
 int user_acted = 0;  /* Set when commands given, to break timeout */
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
@@ -127,6 +128,7 @@ int have_ps2hdd   = 0;
 int have_ps2fs    = 0;
 int have_ps2netfs = 0;
 ;
+int done_setupPowerOff = 0;
 int ps2kbd_opened = 0;
 //--------------------------------------------------------------
 //executable code
@@ -672,15 +674,12 @@ void poweroffHandler(int i)
 //------------------------------
 //endfunc poweroffHandler
 //--------------------------------------------------------------
-void loadHddModules(void)
-{
+void setupPowerOff(void) {
 	int ret;
-	int i=0;
-	
-	if(!have_HDD_modules) {
-		drawMsg("Loading HDD Modules...");
+
+	if(!done_setupPowerOff) {
 		hddPreparePoweroff();
-		hddSetUserPoweroffCallback((void *)poweroffHandler,(void *)i);
+		hddSetUserPoweroffCallback((void *)poweroffHandler, NULL);
 		if	(!have_poweroff) {
 			SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
 			have_poweroff = 1;
@@ -688,14 +687,21 @@ void loadHddModules(void)
 		load_iomanx();
 		load_filexio();
 		load_ps2dev9();
+		done_setupPowerOff = 1;
+	}
+}
+//------------------------------
+//endfunc setupPowerOff
+//--------------------------------------------------------------
+void loadHddModules(void)
+{
+	if(!have_HDD_modules) {
+		drawMsg("Loading HDD Modules...");
+		setupPowerOff();
 		load_ps2atad(); //also loads ps2hdd & ps2fs
 		have_HDD_modules = TRUE;
 	}
 }
-//RA NB: I have removed the loading of ps2netfs from loadHddModules as it made
-//no sense. That is a networking module, not an HDD module. It needs ps2ip+smap.
-//I also consider it a wasted resource to always use up one server thread for a
-//server having no convenient clients.
 //------------------------------
 //endfunc loadHddModules
 //--------------------------------------------------------------
@@ -706,7 +712,7 @@ void loadNetModules(void)
 	if(!have_NetModules){
 		loadHddModules();
 		loadUsbModules();
-		drawMsg("Loading FTP Modules...");
+		drawMsg("Loading NetFS and FTP Server Modules...");
 		
 		// getIpConfig(); //RA NB: I always get that info, early in init
 		// Also, my module checking makes some other tests redundant
@@ -872,6 +878,21 @@ void	ShowFont(void)
 //------------------------------
 //endfunc ShowFont
 //--------------------------------------------------------------
+void triggerPowerOff(void)
+{
+	char filepath[MAX_PATH] = "xyz:/imaginary/hypothetical/doesn't.exist";
+	FILE *File;
+
+	File = fopen( filepath, "r" );
+	sprintf(mainMsg, "%s => %08X.", filepath, File);
+	drawMsg(mainMsg);
+	if( File != NULL ) {
+		fclose( File );
+	} // end if( File != NULL )
+}
+//------------------------------
+//endfunc triggerPowerOff
+//--------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
 void RunElf(const char *path)
@@ -958,19 +979,10 @@ void RunElf(const char *path)
 		return;
 	}else if(!stricmp(path, "MISC/PS2PowerOff")){
 		mainMsg[0] = 0;
-	if(have_HDD_modules && have_poweroff)
+		drawMsg("Powering Off Console...");
+		setupPowerOff();
 		hddPowerOff();
-	else
-	{
-		// Check and setup poweroff handler then finally execute poweroff handler.
-		// Note: The code below is incomplete as hdd's poweroff handler is used to 
-		// turn off the console. A better implementation is needed so that the hdd 
-		// is not required to turn off the console. One way is to do an import to 
-		// add I_AddPowerOffHandler to ps2dev9 and use it to poweroff the console.
-		// Currently the code starts up the hdd and then turns off the console.
-		loadHddModules();
-		hddPowerOff();
-	}
+		poweroff_delay = SCANRATE/4; //trigger delay for those without net adapter
 		return;
 //Next clause is for an optional font test routine
 	}else if(!stricmp(path, "MISC/ShowFont")){
@@ -1267,6 +1279,12 @@ int main(int argc, char *argv[])
 				trayopen=FALSE;
 				strcpy(mainMsg, "Stop Disc");
 			}
+		}
+
+		if(poweroff_delay) {
+			poweroff_delay--;
+			if(!poweroff_delay)
+				triggerPowerOff();
 		}
 
 		if(init_delay){
