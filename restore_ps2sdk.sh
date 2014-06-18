@@ -5,6 +5,8 @@
 cd $PS2SDKSRC
 
 ## Download the source code.
-git checkout -f || exit 1
-make clean && make -j 2 && make release && make clean|| { exit 1; }
+make clean
+git fetch origin &&
+git reset --hard origin/master || exit 1
+make release && make clean|| { exit 1; }
 source ~/.profile
