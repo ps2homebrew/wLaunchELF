@@ -50,6 +50,7 @@ FileSystem.c
 -Updated ps2ftpd and existing source files to SVN rev 587.
 -Changed "DEVICE_UNITS" from 4 to 10 for the newer USB driver.
 -Altered an old workaround to allow multiple USB devices to show up properly within FTP clients.
+-Switched back to SVN rev 371 to likely resolve issue with auto-mounting hdd partitions.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

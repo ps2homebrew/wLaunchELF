@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.40a (2009.09.13)
+-Modified gsGlobal usage at rez init and changes, to better follow standards
+-Merged EPs bugfix for FTP server's HDD mount bug, reverting it to SVN rev 371
+
 LaunchELF v4.40 (2009.09.08)
 -Reimplemented 'paddata', to allow button combos independent of debounce
 -Merged in a new mcman module by jimmikaelkael, fixing the FTP server bug

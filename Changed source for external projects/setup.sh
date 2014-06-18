@@ -63,7 +63,7 @@ if [ $DOWNLOAD -eq 1 ]; then
 	svn co svn://svn.ps2dev.org/ps2/trunk/gsKit --revision 1470 gsKit
 	svn co svn://svn.ps2dev.org/ps2/trunk/ps2sdk/iop/usb/usbd/ --revision 1494 usbd_irx
 	svn co svn://svn.ps2dev.org/ps2/trunk/usbhdfsd --revision 1534 usbhdfsd
-	svn co svn://svn.ps2dev.org/ps2ware/trunk/ps2ftpd --revision 587 ps2ftpd
+	svn co svn://svn.ps2dev.org/ps2ware/trunk/ps2ftpd --revision 371 ps2ftpd
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/myPS2/lib/libjpg --revision 520 libjpg
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSUTILS --revision 588 SMS/drv/SMSUTILS
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSMAP --revision 588 SMS/drv/SMSMAP
