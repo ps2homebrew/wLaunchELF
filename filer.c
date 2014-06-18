@@ -67,6 +67,24 @@ char clipPath[MAX_PATH], LastDir[MAX_NAME], marks[MAX_ENTRY];
 FILEINFO clipFiles[MAX_ENTRY];
 int fileMode =  FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH;
 
+char cnfmode_extU[CNFMODE_CNT][4] = {
+	"*",   // cnfmode FALSE
+	"ELF", // cnfmode TRUE
+	"IRX", // cnfmode USBD_IRX_CNF
+	"JPG", // cnfmode SKIN_CNF
+	"IRX", // cnfmode USBKBD_IRX_CNF
+	"KBD", // cnfmode KBDMAP_FILE_CNF
+};
+
+char cnfmode_extL[CNFMODE_CNT][4] = {
+	"*",   // cnfmode FALSE
+	"elf", // cnfmode TRUE
+	"irx", // cnfmode USBD_IRX_CNF
+	"jpg", // cnfmode SKIN_CNF
+	"irx", // cnfmode USBKBD_IRX_CNF
+	"kbd", // cnfmode KBDMAP_FILE_CNF
+};
+
 int host_ready   = 0;
 int host_error   = 0;
 int host_elflist = 0;
@@ -311,7 +329,7 @@ int ynDialog(const char *message)
 //--------------------------------------------------------------
 void nonDialog(const char *message)
 {
-	char msg[512];
+	char msg[80*30]; //More than this can't be shown on screen, even in PAL
 	int dh, dw, dx, dy;
 	int a=6, b=4, c=2, n, tw;
 	int i, len, ret;
@@ -931,9 +949,9 @@ int menu(const char *path, const char *file)
 				0, (y/2),
 				SCREEN_WIDTH, y/2+10);
 			if (swapKeys)
-				printXY("Å~:OK Åõ:Cancel Å¢:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ˇ1:OK ˇ0:Cancel ˇ3:Back", x, y/2, setting->color[2], TRUE);
 			else
-				printXY("Åõ:OK Å~:Cancel Å¢:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ˇ0:OK ˇ1:Cancel ˇ3:Back", x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1033,9 +1051,9 @@ char *PathPad_menu(const char *path)
 				0, (y/2),
 				SCREEN_WIDTH, y/2+10);
 			if (swapKeys)
-				printXY("Å~:Use Åõ:Clear Å†:Set Å¢:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
+				printXY("ˇ1:Use ˇ0:Clear ˇ2:Set ˇ3:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
 			else
-				printXY("Åõ:Use Å~:Clear Å†:Set Å¢:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
+				printXY("ˇ0:Use ˇ1:Clear ˇ2:Set ˇ3:Back R1/L1:Page_left/right", x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1504,13 +1522,30 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		buff = (char*)malloc(buffSize); //Allocate 32KB buffer
 	}
 
-	while(size>0){
+	while(size>0){ // ----- The main copying loop starts here -----
 		sprintf(progress,
 			"Pasted file bytes:\n"
 			"    %10lu",
 			written_size
 		);
 		nonDialog(progress);
+		if(readpad() && new_pad){
+			if(-1 == ynDialog("Continue with the\n"
+			                  "file transfer ???")
+				) {
+				if(hddout){ //Remove interrupted file on HDD
+					fileXioClose(out_fd); out_fd=-1;
+					fileXioRemove(out);
+				} else { //Remove interrupted file on non_HDD
+					fioClose(out_fd); out_fd=-1;
+					fioRemove(out);
+					if(!strncmp("mc", out, 2))
+						fioRmdir(out);
+				}
+				ret = -1;   // flag generic error
+				goto error;	// go deal with it
+			}
+		}
 		if(hddin) buffSize = fileXioRead(in_fd, buff, buffSize);
 		else	  buffSize = fioRead(in_fd, buff, buffSize);
 		if(hddout){
@@ -1518,20 +1553,23 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			if(buffSize!=outsize){
 				fileXioClose(out_fd); out_fd=-1;
 				fileXioRemove(out);
+				ret = -1;   // flag generic error
 				goto error;
 			}
 		}else{
 			outsize = fioWrite(out_fd,buff,buffSize);
 			if(buffSize!=outsize){
-				FILEINFO *FI_p = &file;
 				fioClose(out_fd); out_fd=-1;
-				delete(out, FI_p);
+				fioRemove(out);
+				if(!strncmp("mc", out, 2))
+					fioRmdir(out);
+				ret = -1;   // flag generic error
 				goto error;
 			}
 		}
 		size -= buffSize;
 		written_size += buffSize;
-	}
+	} // ends while(size>0), ----- The main copying loop ends here -----
 	ret=0;
 //Here the file has been copied. without error, as indicated by 'ret' above
 //but we also need to copy attributes and timestamps (as yet only for MC)
@@ -1763,10 +1801,10 @@ int keyboard(char *out, int max)
 			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
 
 			if (swapKeys) 
-				printXY("Å~:OK Åõ:Back L1:Left R1:Right START:Enter",
+				printXY("ˇ1:OK ˇ0:Back L1:Left R1:Right START:Enter",
 					x, y/2, setting->color[2], TRUE);
 			else
-				printXY("Åõ:OK Å~:Back L1:Left R1:Right START:Enter",
+				printXY("ˇ0:OK ˇ1:Back L1:Left R1:Right START:Enter",
 					x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1930,10 +1968,10 @@ int keyboard2(char *out, int max)
 			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
 
 			if (swapKeys) 
-				printXY("Å~:OK Åõ:Back L1:Left R1:Right START:Enter",
+				printXY("ˇ1:OK ˇ0:Back L1:Left R1:Right START:Enter",
 					x, y/2, setting->color[2], TRUE);
 			else
-				printXY("Åõ:OK Å~:Back L1:Left R1:Right START:Enter",
+				printXY("ˇ0:OK ˇ1:Back L1:Left R1:Right START:Enter",
 					x, y/2, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
@@ -2000,7 +2038,10 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "PS2PowerOff");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-//Next 5 line section is only for use while debugging
+//Next 2 lines add an optional font test routine
+		strcpy(files[nfiles].name, "ShowFont");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+//Next 4 line section is only for use while debugging
 /*
 		strcpy(files[nfiles].name, "IOP Reset");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
@@ -2081,11 +2122,7 @@ void getFilePath(char *out, int cnfmode)
 	browser_sel=0;
 	browser_nfiles=0;
 
-	if(cnfmode==TRUE) strcpy(ext, "elf");
-	else if((cnfmode==USBD_IRX_CNF)
-		||    (cnfmode==USBKBD_IRX_CNF))strcpy(ext, "irx");
-	else if(cnfmode==SKIN_CNF) strcpy(ext, "jpg");
-	else		strcpy(ext, "*");
+	strcpy(ext, cnfmode_extL[cnfmode]);
 
 	if( (cnfmode!=USBD_IRX_CNF)
 		&&(cnfmode!=USBKBD_IRX_CNF))
@@ -2141,6 +2178,7 @@ void getFilePath(char *out, int cnfmode)
 					// Must to include a function for check IRX Header 
 					if( (cnfmode!=USBD_IRX_CNF)
 						&&(cnfmode!=USBKBD_IRX_CNF)
+						&&(cnfmode!=KBDMAP_FILE_CNF)
 						&&(cnfmode!=SKIN_CNF)
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
@@ -2161,16 +2199,8 @@ void getFilePath(char *out, int cnfmode)
 			}
 			if(cnfmode){
 				if(new_pad & PAD_SQUARE) {
-					if(cnfmode==TRUE){
-						if(!strcmp(ext,"*")) strcpy(ext, "elf");
-						else				 strcpy(ext, "*");
-					}else if((cnfmode==USBD_IRX_CNF)||(cnfmode==USBKBD_IRX_CNF)){
-						if(!strcmp(ext,"*")) strcpy(ext, "irx");
-						else				 strcpy(ext, "*");
-					}else if(cnfmode==SKIN_CNF){
-						if(!strcmp(ext,"*")) strcpy(ext, "jpg");
-						else				 strcpy(ext, "*");
-					}
+					if(!strcmp(ext,"*")) strcpy(ext, cnfmode_extL[cnfmode]);
+					else				 strcpy(ext, "*");
 					browser_cd=TRUE;
 				}else if((!swapKeys && new_pad & PAD_CROSS)
 				      || (swapKeys && new_pad & PAD_CIRCLE) ){
@@ -2380,24 +2410,31 @@ void getFilePath(char *out, int cnfmode)
 
 			for(i=0; i<rows; i++)
 			{
+				int	title_flag;
+
 				if(top+i >= browser_nfiles) break;
 				if(top+i == browser_sel) color = setting->color[2];  //Highlight cursor line
 				else			 color = setting->color[3];
 				
+				title_flag = 0;
 				if(!strcmp(files[top+i].name,".."))
 					strcpy(tmp,"..");
-				else if(title_show && files[top+i].title[0]!=0)
+				else if(title_show && files[top+i].title[0]!=0) {
 					strcpy(tmp,files[top+i].title);
+					title_flag = 1;
+				}
 				else
 					strcpy(tmp,files[top+i].name);
 				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 					strcat(tmp, "/");
-				printXY(tmp, x+4, y/2, color, TRUE);
+				if(title_flag)
+					printXY_sjis(tmp, x+4, y/2, color, TRUE);
+				else
+					printXY(tmp, x+4, y/2, color, TRUE);
 				if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
 				y += font_height;
-			}
-			if(browser_nfiles > rows)
-			{
+			} //ends for, so all browser rows were fixed above
+			if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
 				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y/2,
 					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
 				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
@@ -2408,58 +2445,43 @@ void getFilePath(char *out, int cnfmode)
 					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
 					(y1+Menu_start_y-4)/2,
 					0);
-			}
+			} //ends clause for scrollbar
+			if(nclipFiles) { //if Something in clipboard, emulate LED indicator
+				uint64 LED_colour, RIM_colour = ITO_RGBA(0,0,0,0);
+				int x1 = SCREEN_WIDTH-SCREEN_MARGIN-10, x2 = x1+8;
+				int y1 = Frame_start_y+2, y2 = y1+8; 
+
+				if(browser_cut) LED_colour = ITO_RGBA(0xC0,0,0,0); //Red LED == CUT
+				else            LED_colour = ITO_RGBA(0,0xC0,0,0); //Green LED == COPY
+				itoSprite(RIM_colour, x1, y1/2, x2, y2/2, 0);
+				itoSprite(LED_colour, x1+2, (y1+2)/2, x2-2, (y2-2)/2, 0);
+			} //ends clause for clipboard indicator
 			if(browser_pushed)
 				sprintf(msg0, "Path: %s", path);
 
 			//Tooltip section
-			if(cnfmode==TRUE){
-				if(!strcmp(ext, "*")) {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->ELF R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->ELF R2:PathPad");
-				} else {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:ELF->* R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:ELF->* R2:PathPad");
-				}
-			}else if((cnfmode==USBD_IRX_CNF)||(cnfmode==USBKBD_IRX_CNF)){
-				if(!strcmp(ext, "*")) {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->IRX R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->IRX R2:PathPad");
-				} else {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:IRX->* R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:IRX->* R2:PathPad");
-				}
-			}else if(cnfmode==SKIN_CNF){
-				if(!strcmp(ext, "*")) {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:*->JPG R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:*->JPG R2:PathPad");
-				} else {
-					if (swapKeys)
-						sprintf(msg1, "Å~:OK Åõ:Cancel Å¢:Up Å†:JPG->* R2:PathPad");
-					else
-						sprintf(msg1, "Åõ:OK Å~:Cancel Å¢:Up Å†:JPG->* R2:PathPad");
-				}
-	 		}else{
+			if(cnfmode) {//cnfmode indicates configurable file selection
+				if (swapKeys)
+					strcpy(msg1, "ˇ1:OK ˇ0:Cancel ˇ3:Up ˇ2:");
+				else
+					strcpy(msg1, "ˇ0:OK ˇ1:Cancel ˇ3:Up ˇ2:");
+				if(ext[0] == '*')
+					strcat(msg1, "*->");
+				strcat(msg1, cnfmode_extU[cnfmode]);
+				if(ext[0] != '*')
+					strcat(msg1, "->*");
+				strcat(msg1, " R2:PathPad");
+			}else{ // cnfmode == FALSE
 				if(title_show) {
 					if (swapKeys) 
-						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ˇ1:OK ˇ3:Up ˇ0:Mark ˇ2:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
 					else
-						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ˇ0:OK ˇ3:Up ˇ1:Mark ˇ2:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
 				} else {
 					if (swapKeys) 
-						sprintf(msg1, "Å~:OK Å¢:Up Åõ:Mark Å†:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ˇ1:OK ˇ3:Up ˇ0:Mark ˇ2:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
 					else
-						sprintf(msg1, "Åõ:OK Å¢:Up Å~:Mark Å†:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ˇ0:OK ˇ3:Up ˇ1:Mark ˇ2:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
 				}
 			}
 			setScrTmp(msg0, msg1);

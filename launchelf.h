@@ -35,10 +35,14 @@
 
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
-enum {  // Define getFilePath flags to browse for configurable file paths
-	USBD_IRX_CNF = 3,   // sincro needed for modified getFilePath
-	SKIN_CNF = 4,       // polo needed for modified getFilePath
-	USBKBD_IRX_CNF = 5, // dlanor needed for modified getFilePath
+enum {  // cnfmode values for getFilePath in browsing for configurable file paths
+	NON_CNF = 0,     // Normal browser mode, not configuration mode
+	LK_ELF_CNF,      // Normal ELF choice for launch keys
+	USBD_IRX_CNF,    // USBD.IRX choice for startup
+	SKIN_CNF,        // Skin JPG choice
+	USBKBD_IRX_CNF,  // USB keyboard IRX choice (only PS2SDK)
+  KBDMAP_FILE_CNF, // USB keyboard mapping table choice 
+  CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
 //#define GS_border_colour itoSetBgColor(setting->color[0]) /* Old method */
@@ -65,6 +69,7 @@ typedef struct
 	char LK_Title[15][MAX_ELF_TITLE];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
+	char kbdmap_file[MAX_PATH];
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
 	int  Menu_Frame;
@@ -84,6 +89,7 @@ typedef struct
 	int Popup_Opaque;
 	int Init_Delay;
 	int usbkbd_used;
+	int Show_Titles;
 } SETTING;
 
 typedef struct
@@ -138,6 +144,7 @@ void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
 void drawChar(unsigned char c, int x, int y, uint64 colour);
 int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
+int printXY_sjis(const unsigned char *s, int x, int y, uint64 colour, int);
 
 /* pad.c */
 extern u32 new_pad;

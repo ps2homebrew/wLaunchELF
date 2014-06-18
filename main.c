@@ -3,44 +3,45 @@
 //--------------------------------------------------------------
 #include "launchelf.h"
 
-extern u8 *iomanx_irx;
-extern int size_iomanx_irx;
-extern u8 *filexio_irx;
-extern int size_filexio_irx;
-extern u8 *ps2dev9_irx;
-extern int size_ps2dev9_irx;
-extern u8 *ps2ip_irx;
-extern int size_ps2ip_irx;
-extern u8 *ps2smap_irx;
-extern int size_ps2smap_irx;
-extern u8 *ps2host_irx;
-extern int size_ps2host_irx;
-extern u8 *ps2ftpd_irx;
-extern int size_ps2ftpd_irx;
-extern u8 *ps2atad_irx;
-extern int size_ps2atad_irx;
-extern u8 *ps2hdd_irx;
-extern int size_ps2hdd_irx;
-extern u8 *ps2fs_irx;
-extern int size_ps2fs_irx;
-extern u8 *poweroff_irx;
-extern int size_poweroff_irx;
-extern u8 *loader_elf;
-extern int size_loader_elf;
-extern u8 *ps2netfs_irx;
-extern int size_ps2netfs_irx;
-extern u8 *iopmod_irx;
-extern int size_iopmod_irx;
-extern u8 *usbd_irx;
-extern int size_usbd_irx;
-extern u8 *usbkbd_irx;
-extern int size_usbkbd_irx;
-extern u8 *usb_mass_irx;
-extern int size_usb_mass_irx;
-extern u8 *cdvd_irx;
-extern int size_cdvd_irx;
-extern u8 *ps2kbd_irx;
-extern int size_ps2kbd_irx;
+//dlanor: I'm correcting all these erroneous 'u8 *name' declarations
+//dlanor: They are not pointers at all, but pure block addresses
+//dlanor: Thus they should be declared as 'void name'
+extern void iomanx_irx;
+extern int  size_iomanx_irx;
+extern void filexio_irx;
+extern int  size_filexio_irx;
+extern void ps2dev9_irx;
+extern int  size_ps2dev9_irx;
+extern void ps2ip_irx;
+extern int  size_ps2ip_irx;
+extern void ps2smap_irx;
+extern int  size_ps2smap_irx;
+extern void ps2host_irx;
+extern int  size_ps2host_irx;
+extern void ps2ftpd_irx;
+extern int  size_ps2ftpd_irx;
+extern void ps2atad_irx;
+extern int  size_ps2atad_irx;
+extern void ps2hdd_irx;
+extern int  size_ps2hdd_irx;
+extern void ps2fs_irx;
+extern int  size_ps2fs_irx;
+extern void poweroff_irx;
+extern int  size_poweroff_irx;
+extern void loader_elf;
+extern int  size_loader_elf;
+extern void ps2netfs_irx;
+extern int  size_ps2netfs_irx;
+extern void iopmod_irx;
+extern int  size_iopmod_irx;
+extern void usbd_irx;
+extern int  size_usbd_irx;
+extern void usb_mass_irx;
+extern int  size_usb_mass_irx;
+extern void cdvd_irx;
+extern int  size_cdvd_irx;
+extern void ps2kbd_irx;
+extern int  size_ps2kbd_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -261,19 +262,19 @@ int drawMainScreen(void)
 		if(setting->LK_Path[i][0]){
 			switch(i){
 			case 0:
-				strcpy(c,"DEFAULT: ");
+				strcpy(c,"Default: ");
 				break;
 			case 1:
-				strcpy(c,"     ›: ");
+				strcpy(c,"     ÿ0: ");
 				break;
 			case 2:
-				strcpy(c,"     ~: ");
+				strcpy(c,"     ÿ1: ");
 				break;
 			case 3:
-				strcpy(c,"      : ");
+				strcpy(c,"     ÿ2: ");
 				break;
 			case 4:
-				strcpy(c,"     ¢: ");
+				strcpy(c,"     ÿ3: ");
 				break;
 			case 5:
 				strcpy(c,"     L1: ");
@@ -306,20 +307,22 @@ int drawMainScreen(void)
 				strcpy(c,"  RIGHT: ");
 				break;
 			}
-			if(setting->Hide_Paths){       //Hide full path ?
-				if(setting->LK_Title[i][0]) //User-defined title ?
-					strcpy(f, setting->LK_Title[i]);
-				else{                       //Filename only !
-					if((p=strrchr(setting->LK_Path[i], '/')))
+			if(setting->Show_Titles) //Show Launch Titles ?
+				strcpy(f, setting->LK_Title[i]);
+			else
+				f[0] = '\0';
+			if(!f[0]) {  //No title present, or allowed ?
+				if(setting->Hide_Paths) {  //Hide full path ?
+					if((p=strrchr(setting->LK_Path[i], '/'))) // found delimiter ?
 						strcpy(f, p+1);
-					else
+					else // No delimiter !
 						strcpy(f, setting->LK_Path[i]);
 					if((p=strrchr(f, '.')))
 						*p = 0;
+				} else {                  //Show full path !
+					strcpy(f, setting->LK_Path[i]);
 				}
-			}else{                         //Show full path !
-				strcpy(f, setting->LK_Path[i]);
-			}
+			} //ends clause for No title
 			strcat(c, f);
 			if(nElfs++==selected && mode==DPAD)
 				color = setting->color[2];
@@ -327,15 +330,15 @@ int drawMainScreen(void)
 				color = setting->color[3];
 			printXY(c, x, y/2, color, TRUE);
 			y += FONT_HEIGHT;
-		}
-	}
+		} //ends clause for defined LK_Path[i]
+	} //ends for
 
 	if(mode==BUTTON)	sprintf(c, "PUSH ANY BUTTON or D-PAD!");
 	else{
 		if(swapKeys) 
-			sprintf(c, "~:OK ›:Cancel");
+			sprintf(c, "ÿ1:OK ÿ0:Cancel");
 		else
-			sprintf(c, "›:OK ~:Cancel");
+			sprintf(c, "ÿ0:OK ÿ1:Cancel");
 	}
 	
 	setScrTmp(mainMsg, c);
@@ -537,7 +540,7 @@ void loadCdModules(void)
 // needed anymore, is entirely the responsibility of the caller,
 // though, of course, none is allocated if the file is not found.
 //--------------------------------------------------------------
-int	loadExternalFile(char *argPath, u8 **fileBaseP, int *fileSizeP)
+int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 { //The first three variables are local variants similar to the arguments
 	char filePath[MAX_PATH];
 	void *fileBase;
@@ -605,9 +608,9 @@ int	loadExternalFile(char *argPath, u8 **fileBaseP, int *fileSizeP)
 // 0 is also returned if loading of default module fails. But
 // normally the value returned will be the size of the module.
 //--------------------------------------------------------------
-int loadExternalModule(char *modPath, u8 *defBase, int defSize)
+int loadExternalModule(char *modPath, void *defBase, int defSize)
 {
-	u8 *extBase;
+	void *extBase;
 	int extSize;
 	int external;       //Flags loading of external file into buffer
 	int ext_OK, def_OK; //Flags success for external and default module
@@ -656,7 +659,7 @@ void loadKbdModules(void)
 {
 	loadUsbDModule();
 	if( (have_usbd && !have_ps2kbd)
-		&&(loadExternalModule(setting->usbkbd_file,&ps2kbd_irx, size_ps2kbd_irx))
+		&&(loadExternalModule(setting->usbkbd_file, &ps2kbd_irx, size_ps2kbd_irx))
 	)	have_ps2kbd = 1;
 }
 //------------------------------
@@ -703,7 +706,7 @@ void loadNetModules(void)
 	if(!have_NetModules){
 		loadHddModules();
 		loadUsbModules();
-		drawMsg("Loading NetFS and FTP Modules...");
+		drawMsg("Loading FTP Modules...");
 		
 		// getIpConfig(); //RA NB: I always get that info, early in init
 		// Also, my module checking makes some other tests redundant
@@ -715,6 +718,38 @@ void loadNetModules(void)
 }
 //------------------------------
 //endfunc loadNetModules
+//--------------------------------------------------------------
+void startKbd(void)
+{
+	int kbd_fd;
+	void *mapBase;
+	int   mapSize;
+
+	printf("Entering startKbd()\r\n");
+	if(setting->usbkbd_used) {
+		loadKbdModules();
+		PS2KbdInit();
+		ps2kbd_opened = 1;
+		if(setting->kbdmap_file[0]) {
+			if((kbd_fd = fioOpen(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
+				printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n",kbd_fd,setting->kbdmap_file);
+				if(loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
+					if(mapSize == 0x600) {
+						fioIoctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
+						fioIoctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase+0x300);
+						fioIoctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase+0x400);
+						fioIoctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase+0x500);
+					}
+					printf("Freeing buffer after setting Kbd maps\r\n");
+					free(mapBase);
+				}
+				fioClose(kbd_fd);
+			}
+		}
+	}
+}
+//------------------------------
+//endfunc startKbd
 //--------------------------------------------------------------
 // Read SYSTEM.CNF for MISC/PS2Disc launch command
 int ReadCNF(char *LK_Path)
@@ -769,6 +804,73 @@ int ReadCNF(char *LK_Path)
 }
 //------------------------------
 //endfunc ReadCNF
+//--------------------------------------------------------------
+void	ShowFont(void)
+{
+	int	i, j, event, post_event=0;
+	char Hex[18] = "0123456789ABCDEF";
+	int	mat_w = (16*2+3)*FONT_WIDTH+2,  mat_h = (9*2+2)*FONT_HEIGHT+2;
+	int mat_x = (SCREEN_WIDTH-mat_w)/2, mat_y = (SCREEN_HEIGHT-mat_h)/2;
+	int ch_x  = mat_x+FONT_WIDTH/2+1,   ch_y  = mat_y+FONT_HEIGHT/2+1;
+	int px, ly, cy;
+	uint64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
+	
+	event = 1;   //event = initial entry
+	//----- Start of event loop -----
+	while(1) {
+		//Display section
+		if(event||post_event) { //NB: We need to update two frame buffers per event
+			itoSprite(col_0, mat_x, mat_y/2, mat_x+mat_w, (mat_y+mat_h)/2 ,0);
+			itoLine(col_1, mat_x, mat_y/2, 0, col_1, mat_x+mat_w, mat_y/2, 0);
+			itoLine(col_1, mat_x, mat_y/2, 0, col_1, mat_x, (mat_y+mat_h)/2, 0);
+			itoLine(col_1, mat_x+1, mat_y/2, 0, col_1, mat_x+1, (mat_y+mat_h)/2, 0);
+			px=mat_x+3*FONT_WIDTH;
+			itoLine(col_1, px, mat_y/2, 0, col_1, px, (mat_y+mat_h)/2, 0);
+			itoLine(col_1, px+1, mat_y/2, 0, col_1, px+1, (mat_y+mat_h)/2, 0);
+			for(j=0; j<16; j++) {
+				px += 2*FONT_WIDTH;
+				itoLine(col_1, px, mat_y/2, 0, col_1, px, (mat_y+mat_h)/2, 0);
+				itoLine(col_1, px+1, mat_y/2, 0, col_1, px+1, (mat_y+mat_h)/2, 0);
+			}
+			cy=ch_y;
+			ly=mat_y;
+			for(i=0; i<10; i++) {
+				px=ch_x;
+				if(!i) {
+					drawChar('-', px, cy/2, col_3);
+					px += FONT_WIDTH;
+					drawChar('-', px, cy/2, col_3);
+				} else {
+					drawChar(Hex[i+1], px, cy/2, col_3);
+					px += FONT_WIDTH;
+					drawChar('0', px, cy/2, col_3);
+				}
+				for(j=0; j<16; j++) {
+					px += FONT_WIDTH*2;
+					if(!i) {
+						drawChar(Hex[j], px, cy/2, col_3);
+					} else {
+						drawChar((i+1)*16+j, px, cy/2, col_3);
+					}
+				}
+				ly += FONT_HEIGHT*2;
+				itoLine(col_1, mat_x, ly/2, 0, col_1, mat_x+mat_w, ly/2, 0);
+				cy += FONT_HEIGHT*2;
+			}
+		}
+		drawScr();
+		post_event = event;
+		event = 0;
+
+		//Pad response section
+		waitAnyPadReady();
+		if(readpad() && new_pad)
+			break;
+	}
+	//----- End of event loop -----
+}
+//------------------------------
+//endfunc ShowFont
 //--------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
@@ -869,6 +971,10 @@ void RunElf(const char *path)
 		loadHddModules();
 		hddPowerOff();
 	}
+		return;
+//Next clause is for an optional font test routine
+	}else if(!stricmp(path, "MISC/ShowFont")){
+		ShowFont();
 		return;
 //Next two clauses are only for debugging
 /*
@@ -1138,11 +1244,7 @@ int main(int argc, char *argv[])
 	setupito(ito_vmode);
 	loadSkin(BACKGROUND_PIC);
 
-	if(setting->usbkbd_used) {
-		loadKbdModules();
-		PS2KbdInit();
-		ps2kbd_opened = 1;
-	}
+	startKbd();
 
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state

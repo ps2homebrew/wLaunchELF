@@ -1558,7 +1558,7 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	ret = createShortNameMask(lname,sname);
 	if (ret < 0) {
 		XPRINTF("E: short name invalid!\n");
-		return ret;
+		return ret; //Return the negative error code
 	}
 	compressShortName = ret;
 
@@ -1567,11 +1567,11 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	ret = fat_fillDirentryInfo(bpb, lname, sname, directory, startCluster, entry, DIRENTRY_COUNT, retSector, retOffset);
 	if (ret < 0) {
 		XPRINTF("E: direntry data invalid!\n");
-		return ret;
+		return ret; //Return the negative error code
 	}
 	//ret 0 means that exact filename/directory already exist
 	if (ret == 0) {
-		return ret;		
+		return ret; //Return Zero as NAME CONFLICT code
 	}
 
 	//exact filename not exist and we want to report it
@@ -1606,7 +1606,7 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	ret = enlargeDirentryClusterSpace(bpb, *startCluster, entryCount, entryIndex, direntrySize);
 	XPRINTF("I: enlarge direntry cluster space ret=%d\n", ret);
 	if (ret < 0) {
-		return ret;
+		return ret; //Return the negative error code
 	}
 
 	//get new cluster for file/directory
@@ -1620,7 +1620,7 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	ret = createDirentry(lname, sname, directory, newCluster, tbuf);
 	XPRINTF("I: create direntry to buf ret=%d\n", ret);
 	if (ret < 0) {
-		return ret;
+		return ret; //Return the negative error code
 	}
 	direntrySize = ret;
 
@@ -1628,13 +1628,13 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 	fat_dumpSectorHex(tbuf, direntrySize * 32);
 #endif
 
-//	return -1;
+//	return -1; //Return -1 as negative error code
 
 	//now store direntries into the directory space
 	ret = saveDirentry(bpb, *startCluster, tbuf, direntrySize, entryIndex, retSector, retOffset);
 	XPRINTF("I: save direntry ret=%d\n", ret);
 	if (ret < 0) {
-		return ret;
+		return ret; //Return the negative error code
 	}
 
 	//create empty directory structure 
@@ -1642,11 +1642,11 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 		ret = createDirectorySpace(bpb, newCluster, *startCluster);
 		XPRINTF("I: create directory space ret=%d\n", ret);
 		if (ret < 0) {
-			return ret;
+			return ret; //Return the negative error code
 		}
 	}
 
-	return 1;
+	return 1; //Return 1 as SUCCESS code
 
 }
 
@@ -1941,10 +1941,20 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 	}
 	XPRINTF("I: SFN info: sector=%d (%d)  offset=%d (%d) startCluster=%d\n", *sfnSector, *sfnSector * bpb->sectorSize, *sfnOffset, *sfnOffset + (*sfnSector * bpb->sectorSize), startCluster);
 	*cluster = startCluster;
-	//The test below was bugged and caused problems for LaunchELF earlier
-	if (startCluster != directoryCluster) {
-	//The test below replaced the one above, to make LaunchELF work right
-	//if (ret == 0) {
+	//dlanor: I've repatched the stuff below to improve functionality
+	//The simple test below was bugged for the case of creating a folder in root
+	//if (startCluster != directoryCluster) {
+	//That test (on the line above) fails in root because created folders never
+	//get a startCluster of 0. That is reserved for root only.
+	//The test below replaces this with a more complex test that takes all of this
+	//stuff into proper account, but behaves like the old test for other cases.
+	//That's mainly because I can't tell how consistent name conflict flagging is
+	//for those other cases, and it's not really worth the trouble of finding out :)
+	if( (ret == 0) //if we have a directly flagged name conflict
+		||( (directoryCluster || !directory)   //OR working in non_root, or making a file
+			&&(startCluster != directoryCluster) //AND we get an unexpected startCluster
+			)
+		) {
 		XPRINTF("I: file already exists at cluster=%d\n", startCluster);
 		return 2;
 	}

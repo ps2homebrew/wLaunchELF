@@ -1,5 +1,19 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.68 (2006.05.14)
+-Added LED-like clipboard content indicator Red=CUT, Green=COPY (overlaps scrollbar)
+-Added ability to abort Paste/mcPaste file transfers (partial dest file is removed)
+-Added loadable custom key maps for the USB keyboard driver. Note that the built-in font used at present is not capable of displaying non-english characters. Some such keys may correspond to graphics characters in this font, and will then be displayed as such, while other national keys may not have any corresponding font character. Those keys will then be displayed simply as an underscore character ('_').
+-Added MISC/ShowFont for reference purposes (Displays font on screen until next input)
+-Added 'Show Launch Titles' to main CONFIG with CNF variable Menu_Show_Titles. When set this causes Launch Key titles to be displayed instead of ELF pathnames. The variable Menu_Hide_Paths is no longer involved in that decision, though it was earlier.
+-Moved 'TIMEOUT' config to 'STARTUP SETTINGS' as it only takes effect on startup
+-Corrected a bug with tooltips for configurable files
+-Rearranged various font operations to allow for larger fonts (more characters) later
+-Corrected bug in string drawing routines (missing test for 2byte char validity)
+-Corrected bugs in char drawing routines (missing tests for font array limits)
+-Corrected a usb_mass bug (false error msg for folder creation in root directory)
+-Updated ps2sdk's libpad.c in external projects source package. This is the same bugfix that EP added to libpadx.c in v3.67
+
 LaunchELF v3.67 (2006.05.13)
 -Added PS2PowerOff function to MISC. Only works with PS2's that have a hard drive installed?
 -Updated ps2sdk's libpadx.c in external projects source package.

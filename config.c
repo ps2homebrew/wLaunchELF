@@ -23,9 +23,10 @@ enum
 	DEF_POPUP_OPAQUE = FALSE,
 	DEF_INIT_DELAY = 0,
 	DEF_USBKBD_USED = 1,
+	DEF_SHOW_TITLES = 1,
 	
 	DEFAULT=0,
-	TIMEOUT=12,
+	SHOW_TITLES=12,
 	DISCCONTROL,
 	FILENAME,
 	SCREEN,
@@ -165,6 +166,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Init_Delay = %d\r\n"
 		"USBKBD_USED = %d\r\n"
 		"USBKBD_FILE = %s\r\n"
+		"KBDMAP_FILE = %s\r\n"
+		"Menu_Show_Titles = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
@@ -190,6 +193,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Init_Delay,   //Init_Delay
 		setting->usbkbd_used,  //USBKBD_USED
 		setting->usbkbd_file,  //USBKBD_FILE
+		setting->kbdmap_file,  //KBDMAP_FILE
+		setting->Show_Titles,  //Menu_Show_Titles
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -283,6 +288,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
 	setting->usbd_file[0] = '\0';
 	setting->usbkbd_file[0] = '\0';
+	setting->kbdmap_file[0] = '\0';
 	setting->skin[0] = '\0';
 	setting->Menu_Title[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
@@ -305,6 +311,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 	setting->Init_Delay = DEF_INIT_DELAY;
 	setting->usbkbd_used = DEF_USBKBD_USED;
+	setting->Show_Titles = DEF_SHOW_TITLES;
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
@@ -392,6 +399,8 @@ failed_load:
 		else if(!strcmp(name,"Init_Delay")) setting->Init_Delay = atoi(value);
 		else if(!strcmp(name,"USBKBD_USED")) setting->usbkbd_used = atoi(value);
 		else if(!strcmp(name,"USBKBD_FILE")) strcpy(setting->usbkbd_file,value);
+		else if(!strcmp(name,"KBDMAP_FILE")) strcpy(setting->kbdmap_file,value);
+		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
 		else if(!strcmp(name,"LK_auto_Title"))     strncpy(setting->LK_Title[0], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Circle_Title"))   strncpy(setting->LK_Title[1], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Cross_Title"))    strncpy(setting->LK_Title[2], value, MAX_ELF_TITLE-1);
@@ -570,21 +579,21 @@ void Config_Skin(void)
 			//Tooltip section
 			if (s == 1) {
 				if (swapKeys)
-					sprintf(c, "~:Edit ›:Clear");
+					sprintf(c, "ÿ1:Edit ÿ0:Clear");
 				else
-					sprintf(c, "›:Edit ~:Clear");
+					sprintf(c, "ÿ0:Edit ÿ1:Clear");
 			} else if (s == 3) {  //if cursor at a colour component or a screen offset
 				if (swapKeys)
-					strcpy(c, "~:Add ›:Subtract");
+					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
-					strcpy(c, "›:Add ~:Subtract");
+					strcpy(c, "ÿ0:Add ÿ1:Subtract");
 			} else {
 				if (swapKeys)
-					strcpy(c, "~:OK");
+					strcpy(c, "ÿ1:OK");
 				else
-					strcpy(c, "›:OK");
+					strcpy(c, "ÿ0:OK");
 			}
-			strcat(c, " ¢:Return");
+			strcat(c, " ÿ3:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -781,7 +790,7 @@ void Config_Screen(void)
 				rgb[0][2], rgb[1][2], rgb[2][2], rgb[3][2]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "¡");
+			sprintf(c, "ÿ4");
 			for(i=0; i<4; i++)
 				printXY(c, x+FONT_WIDTH*(6+i*8), y/2, setting->color[i], TRUE);
 			y += FONT_HEIGHT;
@@ -864,33 +873,33 @@ void Config_Screen(void)
 			//Tooltip section
 			if (s <= 13) {  //if cursor at a colour component or a screen offset
 				if (swapKeys)
-					strcpy(c, "~:Add ›:Subtract");
+					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
-					strcpy(c, "›:Add ~:Subtract");
+					strcpy(c, "ÿ0:Add ÿ1:Subtract");
 			} else if(s==14||s==17||s==18) {
 				//if cursor at 'INTERLACE' or 'Menu Frame' or 'Popups Opaque'
 				if (swapKeys)
-					strcpy(c, "~:Change");
+					strcpy(c, "ÿ1:Change");
 				else
-					strcpy(c, "›:Change");
+					strcpy(c, "ÿ0:Change");
 			} else if(s==15){  //if cursor at 'SKIN SETTINGS'
 				if (swapKeys)
-					sprintf(c, "~:OK");
+					sprintf(c, "ÿ1:OK");
 				else
-					sprintf(c, "›:OK");
+					sprintf(c, "ÿ0:OK");
 			} else if(s==16){  //if cursor at Menu_Title
 				if (swapKeys)
-					sprintf(c, "~:Edit ›:Clear");
+					sprintf(c, "ÿ1:Edit ÿ0:Clear");
 				else
-					sprintf(c, "›:Edit ~:Clear");
+					sprintf(c, "ÿ0:Edit ÿ1:Clear");
 			} else {  //if cursor at 'RETURN' or 'DEFAULT' options
 				if (swapKeys)
-					strcpy(c, "~:OK");
+					strcpy(c, "ÿ1:OK");
 				else
-					strcpy(c, "›:OK");
+					strcpy(c, "ÿ0:OK");
 			}
 		
-			strcat(c, " ¢:Return");
+			strcat(c, " ÿ3:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -906,7 +915,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=9;		//define cursor index and its max value
+	int s, max_s=11;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -949,7 +958,9 @@ void Config_Startup(void)
 				if(s==2 && setting->numCNF>1) setting->numCNF--;
 				else if(s==4) setting->usbd_file[0] = '\0';
 				else if(s==6 && setting->Init_Delay>0) setting->Init_Delay--;
-				else if(s==8) setting->usbkbd_file[0] = '\0';
+				else if(s==7 && setting->timeout>0) setting->timeout--;
+				else if(s==9) setting->usbkbd_file[0] = '\0';
+				else if(s==10) setting->kbdmap_file[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -967,9 +978,13 @@ void Config_Startup(void)
 				else if(s==6)
 					setting->Init_Delay++;
 				else if(s==7)
-					setting->usbkbd_used = !setting->usbkbd_used;
+					setting->timeout++;
 				else if(s==8)
+					setting->usbkbd_used = !setting->usbkbd_used;
+				else if(s==9)
 					getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
+				else if(s==10)
+					getFilePath(setting->kbdmap_file, KBDMAP_FILE_CNF);
 				else
 					return;
 			}
@@ -1001,9 +1016,9 @@ void Config_Startup(void)
 			y += FONT_HEIGHT;
 
 			if(setting->swapKeys)
-				sprintf(c, "  KEY MAPPING: ~:OK ›:CANCEL");
+				sprintf(c, "  KEY MAPPING: ÿ1:OK ÿ0:CANCEL");
 			else
-				sprintf(c, "  KEY MAPPING: ›:OK ~:CANCEL");
+				sprintf(c, "  KEY MAPPING: ÿ0:OK ÿ1:CANCEL");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1028,6 +1043,10 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
+			sprintf(c, "  TIMEOUT: %d", setting->timeout);
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
 			if(setting->usbkbd_used)
 				sprintf(c, "  USB Keyboard Used: ON");
 			else
@@ -1042,6 +1061,13 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
+			if(strlen(setting->kbdmap_file)==0)
+				sprintf(c, "  USB Keyboard Map: DEFAULT");
+			else
+				sprintf(c, "  USB Keyboard Map: %s",setting->kbdmap_file);
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
@@ -1053,39 +1079,39 @@ void Config_Startup(void)
 			drawChar(127, x, y/2, setting->color[3]);
 
 			//Tooltip section
-			if ((s==1)||(s==7)) { //resetIOP || usbkbd_used
+			if ((s==1)||(s==8)) { //resetIOP || usbkbd_used
 				if (swapKeys)
-					strcpy(c, "~:Change");
+					strcpy(c, "ÿ1:Change");
 				else
-					strcpy(c, "›:Change");
-			} else if ((s==2)||(s==6)) { //numCNF || Init_Delay
+					strcpy(c, "ÿ0:Change");
+			} else if ((s==2)||(s==6)||(s==7)) { //numCNF || Init_Delay || timeout
 				if (swapKeys)
-					strcpy(c, "~:Add ›:Subtract");
+					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
-					strcpy(c, "›:Add ~:Subtract");
+					strcpy(c, "ÿ0:Add ÿ1:Subtract");
 			} else if(s == 3) {
 				if (swapKeys)
-					sprintf(c, "~:Change");
+					sprintf(c, "ÿ1:Change");
 				else
-					sprintf(c, "›:Change");
-			} else if((s==4)||(s==8)) { //usbd_file || usbkbd_file
+					sprintf(c, "ÿ0:Change");
+			} else if((s==4)||(s==9)||(s==10)) { //usbd_file||usbkbd_file||kbdmap_file
 				if (swapKeys)
-					sprintf(c, "~:Browse ›:Clear");
+					sprintf(c, "ÿ1:Browse ÿ0:Clear");
 				else
-					sprintf(c, "›:Browse ~:Clear");
+					sprintf(c, "ÿ0:Browse ÿ1:Clear");
 			} else if(s == 5) {
 				if (swapKeys)
-					sprintf(c, "~:Change");
+					sprintf(c, "ÿ1:Change");
 				else
-					sprintf(c, "›:Change");
+					sprintf(c, "ÿ0:Change");
 			} else {
 				if (swapKeys)
-					strcpy(c, "~:OK");
+					strcpy(c, "ÿ1:OK");
 				else
-					strcpy(c, "›:OK");
+					strcpy(c, "ÿ0:OK");
 			}
 		
-			strcat(c, " ¢:Return");
+			strcat(c, " ÿ3:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1384,22 +1410,22 @@ void Config_Network(void)
 					strcpy(c, "Right D-Pad to Edit");
 			} else if (s < 4) {
 				if (swapKeys)
-					strcpy(c, "~:Add ›:Subtract");
+					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
-					strcpy(c, "›:Add ~:Subtract");
+					strcpy(c, "ÿ0:Add ÿ1:Subtract");
 			} else if( s== 4) {
 				if (swapKeys)
-					sprintf(c, "~:Save");
+					sprintf(c, "ÿ1:Save");
 				else
-					sprintf(c, "›:Save");
+					sprintf(c, "ÿ0:Save");
 			} else {
 				if (swapKeys)
-					strcpy(c, "~:OK");
+					strcpy(c, "ÿ1:OK");
 				else
-					strcpy(c, "›:OK");
+					strcpy(c, "ÿ0:OK");
 			}
 	
-			strcat(c, " ¢:Return");
+			strcat(c, " ÿ3:Return");
 			setScrTmp(NetMsg, c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1455,19 +1481,19 @@ void config(char *mainMsg, char *CNF)
 			{
 				event |= 2;  //event |= valid pad command
 				if(s>=OK)
-					s=TIMEOUT;
+					s=SHOW_TITLES;
 				else
 					s=DEFAULT;
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s<TIMEOUT)
-					s=TIMEOUT;
+				if(s<SHOW_TITLES)
+					s=SHOW_TITLES;
 				else if(s<OK)
 					s=OK;
 			}
-			else if((new_pad & PAD_SQUARE) && (s<TIMEOUT)){
+			else if((new_pad & PAD_SQUARE) && (s<SHOW_TITLES)){
 				event |= 2;  //event |= valid pad command
 				strcpy(title_tmp, setting->LK_Title[s]);
 				if(keyboard(title_tmp, MAX_ELF_TITLE)>=0)
@@ -1476,20 +1502,15 @@ void config(char *mainMsg, char *CNF)
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				event |= 2;  //event |= valid pad command
-				if(s<TIMEOUT){
+				if(s<SHOW_TITLES){
 					setting->LK_Path[s][0]=0;
 					setting->LK_Title[s][0]=0;
-				}
-				else if(s==TIMEOUT)
-				{
-					if(setting->timeout > 0)
-						setting->timeout--;
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
 				event |= 2;  //event |= valid pad command
-				if(s<TIMEOUT)
+				if(s<SHOW_TITLES)
 				{
 					getFilePath(setting->LK_Path[s], TRUE);
 					if(!strncmp(setting->LK_Path[s], "mc0", 3) ||
@@ -1498,8 +1519,8 @@ void config(char *mainMsg, char *CNF)
 						strcpy(setting->LK_Path[s], c);
 					}
 				}
-				else if(s==TIMEOUT)
-					setting->timeout++;
+				else if(s==SHOW_TITLES)
+					setting->Show_Titles = !setting->Show_Titles;
 				else if(s==FILENAME)
 					setting->Hide_Paths = !setting->Hide_Paths;
 				else if(s==DISCCONTROL)
@@ -1536,31 +1557,31 @@ cancel_exit:
 			//Display section
 			clrScr(setting->color[0]);
 
-			if(s < TIMEOUT) localMsg = setting->LK_Title[s];
-			else            localMsg = "";
+			if(s < SHOW_TITLES) localMsg = setting->LK_Title[s];
+			else                localMsg = "";
 
 			x = Menu_start_x;
 			y = Menu_start_y;
-			printXY("BUTTON SETTING", x, y/2, setting->color[3], TRUE);
+			printXY("Button Settings", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			for(i=0; i<12; i++)
 			{
 				switch(i)
 				{
 				case 0:
-					strcpy(c,"  DEFAULT: ");
+					strcpy(c,"  Default: ");
 					break;
 				case 1:
-					strcpy(c,"  ›     : ");
+					strcpy(c,"  ÿ0     : ");
 					break;
 				case 2:
-					strcpy(c,"  ~     : ");
+					strcpy(c,"  ÿ1     : ");
 					break;
 				case 3:
-					strcpy(c,"        : ");
+					strcpy(c,"  ÿ2     : ");
 					break;
 				case 4:
-					strcpy(c,"  ¢     : ");
+					strcpy(c,"  ÿ3     : ");
 					break;
 				case 5:
 					strcpy(c,"  L1     : ");
@@ -1591,70 +1612,63 @@ cancel_exit:
 
 			y += FONT_HEIGHT / 2;
 
-			sprintf(c, "  TIMEOUT: %d", setting->timeout);
+			if(setting->Show_Titles)
+				sprintf(c, "  Show launch titles: ON");
+			else
+				sprintf(c, "  Show launch titles: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->discControl)
-				sprintf(c, "  DISC CONTROL: ON");
+				sprintf(c, "  Disc control: ON");
 			else
-				sprintf(c, "  DISC CONTROL: OFF");
+				sprintf(c, "  Disc control: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->Hide_Paths)
-				sprintf(c, "  HIDE FULL ELF PATHS: ON");
+				sprintf(c, "  Hide full ELF paths: ON");
 			else
-				sprintf(c, "  HIDE FULL ELF PATHS: OFF");
+				sprintf(c, "  Hide full ELF paths: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			printXY("  SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("  Screen Settings...", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("  Startup Settings...", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  NETWORK SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("  Network Settings...", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			printXY("  OK", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  CANCEL", x, y/2, setting->color[3], TRUE);
+			printXY("  Cancel", x, y/2, setting->color[3], TRUE);
 
 			//Cursor positioning section
 			y = Menu_start_y + (s+1)*FONT_HEIGHT;
-			if(s>=TIMEOUT)
+			if(s>=SHOW_TITLES)
 				y += FONT_HEIGHT / 2;
 			drawChar(127, x, y/2, setting->color[3]);
 
 			//Tooltip section
-			if (s < TIMEOUT) {
+			if (s < SHOW_TITLES) {
 				if (swapKeys)
-					sprintf(c, "~:Browse ›:Clear  :Edit Title");
+					sprintf(c, "ÿ1:Browse ÿ0:Clear ÿ2:Edit Title");
 				else
-					sprintf(c, "›:Browse ~:Clear  :Edit Title");
-			} else if(s==TIMEOUT) {
+					sprintf(c, "ÿ0:Browse ÿ1:Clear ÿ2:Edit Title");
+			} else if((s==SHOW_TITLES)||(s==FILENAME)||(s==DISCCONTROL)) {
 				if (swapKeys)
-					sprintf(c, "~:Add ›:Subtract");
+					sprintf(c, "ÿ1:Change");
 				else
-					sprintf(c, "›:Add ~:Subtract");
-			} else if(s==FILENAME) { 
-				if (swapKeys)
-					sprintf(c, "~:Change");
-				else
-					sprintf(c, "›:Change");
-			} else if(s==DISCCONTROL) {
-				if (swapKeys)
-					sprintf(c, "~:Change");
-				else
-					sprintf(c, "›:Change");
+					sprintf(c, "ÿ0:Change");
 			} else {
 				if (swapKeys)
-					sprintf(c, "~:OK");
+					sprintf(c, "ÿ1:OK");
 				else
-					sprintf(c, "›:OK");
+					sprintf(c, "ÿ0:OK");
 			}
 
-			strcat(c, " ¢:Return");
+			strcat(c, " ÿ3:Return");
 			setScrTmp(localMsg, c);
 		}//ends if(event||post_event)
 		drawScr();

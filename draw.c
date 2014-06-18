@@ -400,7 +400,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" Å° LaunchELF v3.67 Å°",
+	printXY(" ˇ4 LaunchELF v3.68 ˇ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
@@ -651,12 +651,15 @@ void drawFrame(int x1, int y1, int x2, int y2, uint64 color)
 // draw a char using the system font (8x8)
 void drawChar(unsigned char c, int x, int y, uint64 colour)
 {
-	unsigned int i, j;
+	unsigned int i, j, ix;
 	unsigned char cc;
 
+	if(c < 0x20)       ix=(0x5F-0x20)*8;
+	else if(c >= 0xAA) ix=(0x5F-0x20)*8;
+	else               ix=(c-0x20)*8;
 	for(i=0; i<8; i++)
 	{
-		cc = font5200[(c-32)*8+i];
+		cc = font5200[ix++];
 		for(j=0; j<8; j++)
 		{
 			if(cc & 0x80) itoPoint(colour, x+j, y+i, 0);
@@ -664,7 +667,8 @@ void drawChar(unsigned char c, int x, int y, uint64 colour)
 		}
 	}
 }
-
+//------------------------------
+//endfunc drawChar
 //--------------------------------------------------------------
 // draw a char using the ELISA font (8x8)
 void drawChar2(int32 n, int x, int y, uint64 colour)
@@ -684,10 +688,49 @@ void drawChar2(int32 n, int x, int y, uint64 colour)
 		}
 	}
 }
-
+//------------------------------
+//endfunc drawChar2
 //--------------------------------------------------------------
-// draw a string of characters
+// draw a string of characters, without shift-JIS support
 int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
+{
+	unsigned char c1, c2;
+	int i;
+	
+	i=0;
+	while((c1=s[i++])!=0) {
+		if(c1 != 0xFF) { // Normal character
+			if(draw) drawChar(c1, x, y, colour);
+			x += 8;
+			if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH)
+				break;
+			continue;
+		}  //End if for normal character
+		// Here we got a sequence starting with 0xFF ('ˇ')
+		if((c2=s[i++])==0)
+			break;
+		if((c2 < '0') || (c2 > '4'))
+			continue;
+		c1=(c2-'0')*2+0xA0;
+		if(draw) {
+			//expand sequence ˇ0=Circle  ˇ1=Cross  ˇ2=Square  ˇ3=Triangle  ˇ4=FilledBox
+			drawChar(c1, x, y, colour);
+			x += 8;
+			if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH)
+				break;
+			drawChar(c1+1, x, y, colour);
+			x += 8;
+			if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH)
+				break;
+		}
+	}  // ends while(1)
+	return x;
+}
+//------------------------------
+//endfunc printXY
+//--------------------------------------------------------------
+// draw a string of characters, with shift-JIS support (only for gamesave titles)
+int printXY_sjis(const unsigned char *s, int x, int y, uint64 colour, int draw)
 {
 	int32 n;
 	unsigned char ascii;
@@ -696,13 +739,13 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 	
 	i=0;
 	while(s[i]){
-		if(s[i] & 0x80) {
-			// SJISÉRÅ[ÉhÇÃê∂ê¨
+		if((s[i] & 0x80) && s[i+1]) { //we have top bit and some more char ?
+			// SJIS
 			code = s[i++];
 			code = (code<<8) + s[i++];
 			
 			switch(code){
-			// Åõ
+			// Circle == "Åõ"
 			case 0x819B:
 				if(draw){
 					drawChar(160, x, y, colour);
@@ -710,7 +753,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				}
 				x+=16;
 				break;
-			// Å~
+			// Cross == "Å~"
 			case 0x817E:
 				if(draw){
 					drawChar(162, x, y, colour);
@@ -718,7 +761,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				}
 				x+=16;
 				break;
-			// Å†
+			// Square == "Å†"
 			case 0x81A0:
 				if(draw){
 					drawChar(164, x, y, colour);
@@ -726,7 +769,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				}
 				x+=16;
 				break;
-			// Å¢
+			// Triangle == "Å¢"
 			case 0x81A2:
 				if(draw){
 					drawChar(166, x, y, colour);
@@ -734,7 +777,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				}
 				x+=16;
 				break;
-			// Å°
+			// FilledBox == "Å°"
 			case 0x81A1:
 				if(draw){
 					drawChar(168, x, y, colour);
@@ -743,7 +786,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				x+=16;
 				break;
 			default:
-				if(elisaFnt!=NULL){
+				if(elisaFnt!=NULL){ // elisa font is available ?
 					tmp=y;
 					if(code<=0x829A) tmp++;
 					// SJISÇ©ÇÁEUCÇ…ïœä∑
@@ -778,7 +821,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 						if(draw) drawChar('_', x, y, colour);
 						x+=8;
 					}
-				}else{
+				}else{ //elisa font is not available
 					ascii=0xFF;
 					if(code>>8==0x81)
 						ascii = sjis_lookup_81[code & 0x00FF];
@@ -793,7 +836,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 				}
 				break;
 			}
-		}else{
+		}else{ //First char does not have top bit set or no following char
 			if(draw) drawChar(s[i], x, y, colour);
 			i++;
 			x += 8;
@@ -803,9 +846,10 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 			return x;
 		}
 	}
-	
 	return x;
 }
+//------------------------------
+//endfunc printXY_sjis
 //--------------------------------------------------------------
 //End of file: draw.c
 //--------------------------------------------------------------
