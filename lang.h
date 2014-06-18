@@ -323,5 +323,23 @@ lang(297, ZoomFade, "Zoom+Fade")
 // Startup Setting Font file Added
 lang(298, Font_File, "Font File")
 //--------------------------------------------------------------
+// New MISC entry for debug info
+// Note that substrings in that info screen should NEVER have
+// any language definitions made for them, as they can and will
+// differ between versions, depending on current debug needs.
+// So only the name of the MISC entry itself should be defined.
+lang(299, Debug_Info, "Debug Info")
+//--------------------------------------------------------------
+// New FileBrowser display modes and sort modes added
+lang(300, Mode, "Mode")
+lang(301, Show_Content_as, "Show Content as")
+lang(302, Filename, "Filename")
+lang(303, Game_Title, "Game Title")
+lang(304, _plus_Details, " + Details")
+lang(305, Sort_Content_by, "Sort Content by")
+lang(306, No_Sort, "No Sort")
+lang(307, Timestamp, "Timestamp")
+lang(308, Back_to_Browser, "Back to Browser")
+//--------------------------------------------------------------
 //End of file:  lang.h
 //--------------------------------------------------------------

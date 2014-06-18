@@ -95,6 +95,7 @@ typedef struct
 	char Misc_Set_CNF_Path[64];
 	char Misc_Load_CNF[64];
 	char Misc_ShowFont[64];
+	char Misc_Debug_Info[64];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
 	char usbmass_file[MAX_PATH];
@@ -234,6 +235,7 @@ void waitAnyPadReady(void);
 
 extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;
+void initConfig(void);
 int loadConfig(char *, char *);  //0==OK, -1==load failed
 void config(char *, char *);
 
@@ -311,6 +313,8 @@ void Load_External_Language(void);
 
 extern unsigned char font_uLE[];
 enum {
+//0x100-0x109 are 5 double width characters for D-Pad buttons, which are accessed as:
+//"ÿ0"==Circle  "ÿ1"==Cross  "ÿ2"==Square  "ÿ3"==Triangle  "ÿ4"==filled Square
 	RIGHT_CUR = 0x10A, //Triangle pointing left, for use to the right of an item
 	LEFT_CUR  = 0x10B, //Triangle pointing right, for use to the left of an item
 	UP_ARROW  = 0x10C, //Arrow pointing up
@@ -321,7 +325,9 @@ enum {
 	UL_ARROW  = 0x111, //Arrow pointing up and to the left, from a vertical start.
 	BR_SPLIT  = 0x112, //Splits rectangle from BL to TR with BR portion filled
 	BL_SPLIT  = 0x113, //Splits rectangle from TL to BR with BL portion filled
-	FONT_COUNT= 0x114  //Total number of characters in font
+//0x114-0x11B are 4 double width characters for D-Pad buttons, which are accessed as:
+//"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
+	FONT_COUNT= 0x11C  //Total number of characters in font
 };
 
 #endif

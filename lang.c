@@ -288,6 +288,8 @@ aborted_1:
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Load_CNF));
 					else if(!strcmp(tmp+1, setting->Misc_ShowFont+strlen(setting->Misc)))
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(ShowFont));
+					else if(!strcmp(tmp+1, setting->Misc_Debug_Info+strlen(setting->Misc)))
+						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Debug_Info));
 				} // end if Misc
 			} // end if LK assigned
 		} // end for
@@ -308,6 +310,7 @@ aborted_1:
 	sprintf(setting->Misc_Set_CNF_Path , "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
 	sprintf(setting->Misc_Load_CNF     , "%s/%s", LNG(MISC), LNG(Load_CNF));
 	sprintf(setting->Misc_ShowFont     , "%s/%s", LNG(MISC), LNG(ShowFont));
+	sprintf(setting->Misc_Debug_Info     , "%s/%s", LNG(MISC), LNG(Debug_Info));
 
 }
 //Ends Load_External_Language

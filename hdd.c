@@ -3,6 +3,9 @@
 //--------------------------------------------------------------
 #include "launchelf.h"
 
+#define MAX_PARTGB 128                  //Partition MAX in GB
+#define MAX_PARTMB (MAX_PARTGB*1024)   //Partition MAX in MB
+
 typedef struct{
 	char Name[MAX_NAME];
 	s64  RawSize;
@@ -226,8 +229,8 @@ int sizeSelector(int size)
 		if(readpad()){
 			if(new_pad & PAD_RIGHT){
 				event |= 2;  //event |= valid pad command
-				if((size += 128)>32768)
-					size = 32768;
+				if((size += 128)>MAX_PARTMB)
+					size = MAX_PARTMB;
 			}else if(new_pad & PAD_LEFT){
 				event |= 2;  //event |= valid pad command
 				if((size -= 128)<saveSize)
@@ -237,12 +240,24 @@ int sizeSelector(int size)
 				if(size<1024)
 					size=1024;
 				else{
-					if((size += 1024)>32768)
-						size = 32768;
+					if((size += 1024)>MAX_PARTMB)
+						size = MAX_PARTMB;
 				}
 			}else if(new_pad & PAD_L1){
 				event |= 2;  //event |= valid pad command
 				if((size -= 1024)<saveSize)
+					size = saveSize;
+			}else if(new_pad & PAD_R2){
+				event |= 2;  //event |= valid pad command
+				if(size<10240)
+					size=10240;
+				else{
+					if((size += 10240)>MAX_PARTMB)
+						size = MAX_PARTMB;
+				}
+			}else if(new_pad & PAD_L2){
+				event |= 2;  //event |= valid pad command
+				if((size -= 10240)<saveSize)
 					size = saveSize;
 			}else if((new_pad & PAD_TRIANGLE)
 						|| (!swapKeys && new_pad & PAD_CROSS)
@@ -269,14 +284,17 @@ int sizeSelector(int size)
 			drawFrame(mSprite_X1+7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT/2,
 				mSprite_X2-7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT*2+FONT_HEIGHT/2, setting->color[1]);
 
-			sprintf(c, "128%s             32%s", LNG(MB), LNG(GB));
+			//RA NB: Next line assumes a scrollbar 19 characters wide (see below)
+			sprintf(c, "128%s            %3d%s", LNG(MB), MAX_PARTGB, LNG(GB));
 			printXY(c, mSprite_X1+FONT_WIDTH, mSprite_Y1+FONT_HEIGHT*3, setting->color[3], TRUE, 0);
 
 			drawOpSprite(setting->color[1],
 				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-LINE_THICKNESS+1,
 				mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5);
 
-			scrollBar = (size*100/32640)*(19*FONT_WIDTH)/100;
+
+			//RA NB: Next line sets scroll position on a bar 19 chars wide (see above)
+			scrollBar = (size*(19*FONT_WIDTH)/(MAX_PARTMB-128));
 
 			drawOpSprite(setting->color[1],
 				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-LINE_THICKNESS+1,
@@ -291,13 +309,11 @@ int sizeSelector(int size)
 				0, y-1,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				sprintf(c, "ÿ1:%s ÿ0:%s ÿ3:%s %s:+128%s Left:-128%s R1:+1024%s L1:-1024%s",
-					LNG(OK), LNG(Cancel), LNG(Back), LNG(Right),
-					LNG(MB), LNG(MB), LNG(MB), LNG(MB));
+				sprintf(c, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ</ÿ::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
+					LNG(OK), LNG(Cancel), LNG(Back), LNG(MB), LNG(GB), LNG(GB));
 			else
-				sprintf(c, "ÿ0:%s ÿ1:%s ÿ3:%s %s:+128%s Left:-128%s R1:+1024%s L1:-1024%s",
-					LNG(OK), LNG(Cancel), LNG(Back), LNG(Right),
-					LNG(MB), LNG(MB), LNG(MB), LNG(MB));
+				sprintf(c, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ</ÿ::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
+					LNG(OK), LNG(Cancel), LNG(Back), LNG(MB), LNG(GB), LNG(GB));
 			printXY(c, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
@@ -328,6 +344,9 @@ int MenuParty(PARTYINFO Info)
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
 	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
 	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
+
+	unmountParty(0);
+	unmountParty(1);
 
 	memset(enable, TRUE, NUM_MENU);
 

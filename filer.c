@@ -52,14 +52,17 @@ int PM_file[MAX_RECURSE]; //PasteMode attribute file descriptors
 char mountedParty[MOUNT_LIMIT][MAX_NAME];
 int	latestMount = 0;
 unsigned char *elisaFnt=NULL;
+int elisa_failed = FALSE; //Set at failure to load font, cleared at browser entry
 s64 freeSpace;
 int mcfreeSpace;
 int mctype_PSx;  //dlanor: Needed for proper scaling of mcfreespace
 int vfreeSpace;  //flags validity of freespace value
 int browser_cut;
 int nclipFiles, nmarks, nparties;
-int title_show;
-int title_sort;
+int file_show = 1;  //dlanor: 0==name_only, 1==name+size+time, 2==title+size+time
+int file_sort = 1;  //dlanor: 0==none, 1==name, 2==title, 3==mtime
+int size_valid = 0;
+int time_valid = 0;
 char parties[MAX_PARTITIONS][MAX_NAME];
 char clipPath[MAX_PATH], LastDir[MAX_NAME], marks[MAX_ENTRY];
 FILEINFO clipFiles[MAX_ENTRY];
@@ -407,11 +410,19 @@ void nonDialog(char *message)
 //------------------------------
 //endfunc nonDialog
 //--------------------------------------------------------------
+// cmpFile below returns negative if the 'a' entry is 'lower'
+// than the 'b' entry, normally meaning that 'a' should be in
+// a higher/earlier screen position than 'b'. Such negative
+// return value causes the calling sort routine to adjust the
+// entry order, which does not occur for other return values.
+//--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 {
 	unsigned char *p, ca, cb;
-	int i, n, ret, aElf=FALSE, bElf=FALSE, t=(title_show & title_sort);
-	
+	int i, n, ret, aElf=FALSE, bElf=FALSE, t=(file_sort==2);
+
+	if(file_sort == 0) return 0; //return 0 for unsorted mode
+
 	if((a->stats.attrFile & MC_ATTR_OBJECT) == (b->stats.attrFile & MC_ATTR_OBJECT)){
 		if(a->stats.attrFile & MC_ATTR_FILE){
 			p = strrchr(a->name, '.');
@@ -420,7 +431,15 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 			if(p!=NULL && !stricmp(p+1, "ELF")) bElf=TRUE;
 			if(aElf && !bElf)		return -1;
 			else if(!aElf && bElf)	return 1;
-			t=FALSE;
+		}
+		if(file_sort == 3){ //Sort by timestamp
+			t=(file_show==2);  //Set secondary sort criterion
+			if(time_valid){
+				u64 time_a = *(u64 *) &a->stats._modify;
+				u64 time_b = *(u64 *) &b->stats._modify;
+				if(time_a > time_b) return -1;  //NB: reversed comparison for falling order
+				if(time_a < time_b) return 1;
+			}
 		}
 		if(t){
 			if(a->title[0]!=0 && b->title[0]==0) return -1;
@@ -474,9 +493,15 @@ int readMC(const char *path, FILEINFO *info, int max)
 	static mcTable mcDir[MAX_ENTRY] __attribute__((aligned(64)));
 	char dir[MAX_PATH];
 	int i, j, ret;
-	
+
 	mcSync(0,NULL,NULL);
-	
+
+	mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
+	mcSync(0, NULL, &ret);
+	if (mctype_PSx == 2) //PS2 MC ?
+		time_valid = 1;
+	size_valid = 1;
+
 	strcpy(dir, &path[4]); strcat(dir, "*");
 	mcGetDir(path[2]-'0', 0, dir, 0, MAX_ENTRY-2, (mcTable *) mcDir);
 	mcSync(0, NULL, &ret);
@@ -493,6 +518,8 @@ int readMC(const char *path, FILEINFO *info, int max)
 	
 	return j;
 }
+//------------------------------
+//endfunc readMC
 //--------------------------------------------------------------
 int readCD(const char *path, FILEINFO *info, int max)
 {
@@ -514,15 +541,22 @@ int readCD(const char *path, FILEINFO *info, int max)
 			continue;  //Skip pseudopaths "." and ".."
 		strcpy(info[j].name, TocEntryList[i].filename);
 		clear_mcTable(&info[j].stats);
-		if(TocEntryList[i].fileProperties & 0x02)
+		if(TocEntryList[i].fileProperties & 0x02){
 			info[j].stats.attrFile = MC_ATTR_norm_folder;
-		else
+		}
+		else{
 			info[j].stats.attrFile = MC_ATTR_norm_file;
+			info[j].stats.fileSizeByte = TocEntryList[i].fileSize;
+		}
 		j++;
 	}
-	
+
+	size_valid = 1;
+
 	return j;
 }
+//------------------------------
+//endfunc readCD
 //--------------------------------------------------------------
 void setPartyList(void)
 {
@@ -841,9 +875,14 @@ int readHDD(const char *path, FILEINFO *info, int max)
 	}
 	
 	fileXioDclose(fd);
-	
+
+	size_valid = 1;
+	time_valid = 1;
+
 	return i;
 }
+//------------------------------
+//endfunc readHDD
 //--------------------------------------------------------------
 int readMASS(const char *path, FILEINFO *info, int max)
 {
@@ -875,11 +914,15 @@ int readMASS(const char *path, FILEINFO *info, int max)
 		n++;
 		if(n==max) break;
 	} //ends while
+	size_valid = 1;
+	time_valid = 1;
 
 exit:
 	if(dd >= 0) fioDclose(dd); //Close directory if opened above
 	return n;
 }
+//------------------------------
+//endfunc readMASS
 //--------------------------------------------------------------
 char	*makeHostPath(char *dp, char *sp)
 {
@@ -1000,10 +1043,18 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 			clear_mcTable(&info[hostcount].stats);
 			if	((tfd = fioOpen(Win_path, O_RDONLY)) >= 0)
 			{	fioClose(tfd);
-				info[hostcount++].stats.attrFile = MC_ATTR_norm_file;
+				info[hostcount].stats.attrFile = MC_ATTR_norm_file;
+				info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
+				memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
+				memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
+				hostcount++;
 			} else if ((tfd = fioDopen(Win_path)) >= 0)
 			{	fioDclose(tfd);
-				info[hostcount++].stats.attrFile = MC_ATTR_norm_folder;
+				info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
+				info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
+				memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
+				memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
+				hostcount++;
 			}
 			if (hostcount >= max)
 				break;
@@ -1013,6 +1064,8 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 	strcpy (info[hostcount].name, "\0");
 	return hostcount;
 }
+//------------------------------
+//endfunc readHOST
 //--------------------------------------------------------------
 int getDir(const char *path, FILEINFO *info)
 {
@@ -1705,7 +1758,7 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 			if(!setting->PSU_HugeNames)
 				cp = np;                              //cp = start of the pure filename
 
-			if(title_show || setting->PSU_HugeNames){ //at request, use game title
+			if((file_show==2) || setting->PSU_HugeNames){ //at request, use game title
 				ret = getGameTitle(inPath, &file, file.title);
 				if((ret == 0) && file.title[0] && setting->PSU_HugeNames){
 					*cp++ = '_';
@@ -2208,7 +2261,7 @@ non_PSU_RESTORE_init:
 		if(size != 64) return -1; //Abort if attribute file crashed
 	}
 	if(!strncmp(out, "mc", 2)){  //Handle file copied to MC
-		mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
+		mcGetInfo(out[2]-'0', 0, &mctype_PSx, &dummy, &dummy); //Wakeup call & MC type check
 		mcSync(0, NULL, &dummy);
 		ret = 0xFFFF; //default request for changing entire mcTable
 		if(strncmp(in, "mc", 2)){  //Handle file copied from non-MC to MC
@@ -2217,8 +2270,10 @@ non_PSU_RESTORE_init:
 				ret = 4;      //request change only of main attribute for host:
 			} //ends host: source clause
 		} //ends non-MC source clause
-		mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, ret);
-		mcSync(0, NULL, &dummy);
+		if(mctype_PSx == 2){ //if copying to a PS2 MC
+			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, ret);
+			mcSync(0, NULL, &dummy);
+		}
 	} else {  //Handle file copied to non-MC
 		if(!strncmp(out, "pfs", 3)){  //for pfs on HDD we use fileXio_ stuff
 			memcpy(iox_stat.ctime, (void *) &file.stats._create, 8);
@@ -2675,7 +2730,10 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 {
 	char *p;
 	int nfiles, i, j, ret;
-	
+
+	size_valid = 0;
+	time_valid = 0;
+
 	nfiles = 0;
 	if(path[0]==0){
 		//-- Start case for browser root pseudo folder with device links --
@@ -2746,13 +2804,11 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 //Next 2 lines add an optional font test routine
 		strcpy(files[nfiles].name, LNG(ShowFont));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-//Next 4 line section is only for use while debugging
-/*
-		strcpy(files[nfiles].name, "IOP Reset");
+//This section is only for use while debugging
+///*
+		strcpy(files[nfiles].name, "Debug Info");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Debug Screen");
-		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-*/
+//*/
 //End of section used only for debugging
 		for(i=0; i<nfiles; i++)
 			files[i].title[0]=0;
@@ -2774,7 +2830,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			}
 			nfiles = j;
 		}
-		if(title_show){
+		if((file_show==2)||(file_sort==2)){
 			for(i=1; i<nfiles; i++){
 				ret = getGameTitle(path, &files[i], files[i].title);
 				if(ret<0) files[i].title[0]=0;
@@ -2790,6 +2846,144 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 }
 //------------------------------
 //endfunc setFileList
+//--------------------------------------------------------------
+int BrowserModePopup(void)
+{
+	char tmp[80];
+	int x, y, i, test;
+	int event, post_event=0;
+
+	int entry_file_show = file_show;
+	int entry_file_sort = file_sort;
+
+	int Show_len = strlen(LNG(Show_Content_as))+1;
+	int Sort_len = strlen(LNG(Sort_Content_by))+1;
+
+	int menu_len = Show_len;
+	if(menu_len < (i = Sort_len)) menu_len = i;
+	if(menu_len < (i = strlen(LNG(Filename))+strlen(LNG(_plus_Details)))) menu_len = i;
+	if(menu_len < (i = strlen(LNG(Game_Title))+strlen(LNG(_plus_Details)))) menu_len = i;
+	if(menu_len < (i = strlen(LNG(No_Sort)))) menu_len = i;
+	if(menu_len < (i = strlen(LNG(Timestamp)))) menu_len = i;
+	if(menu_len < (i = strlen(LNG(Back_to_Browser)))) menu_len = i;
+	menu_len += 3; //All of the above strings are indented 3 spaces, for tooltips
+
+	int menu_ch_w = menu_len+1;    //Total characters in longest menu string
+	int menu_ch_h = 14;      //Total number of menu lines
+	int mSprite_w = (menu_ch_w + 3) * FONT_WIDTH;
+	int mSprite_h = (menu_ch_h +1) * FONT_HEIGHT;
+	int mSprite_X1 = SCREEN_WIDTH/2 - mSprite_w/2;
+	int mSprite_Y1 = SCREEN_HEIGHT/2 - mSprite_h/2;
+	int mSprite_X2 = mSprite_X1+mSprite_w;
+	int mSprite_Y2 = mSprite_Y1+mSprite_h;
+
+	char minuses_s[81];
+
+	for(i=0; i<80; i++)
+		minuses_s[i] = '-';
+	minuses_s[80] = '\0';
+
+	event = 1;  //event = initial entry
+	while(1){
+		//Pad response section
+		waitPadReady(0, 0);
+		if(readpad()){
+			switch(new_pad){
+			case PAD_RIGHT:
+				file_sort = 0;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_DOWN:
+				file_sort = 1;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_LEFT:
+				file_sort = 2;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_UP:
+				file_sort = 3;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_CIRCLE:
+				file_show = 0;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_CROSS:
+				file_show = 1;
+				event |= 2;  //event |= valid pad command
+				break;
+			case PAD_SQUARE:
+				file_show = 2;
+				event |= 2;  //event |= valid pad command
+				if((file_show==2) && elisaFnt==NULL && elisa_failed==FALSE){
+					int fd;
+
+					sprintf(tmp, "%s%s", LaunchElfDir, "ELISA100.FNT");
+					if(!strncmp(tmp, "cdrom", 5)) strcat(tmp, ";1");
+					fd = genOpen(tmp, O_RDONLY);
+					if(fd>0){
+						test = genLseek(fd,0,SEEK_END);
+						if(test==55016){
+							elisaFnt = (char*)malloc(test);
+							genLseek(fd,0,SEEK_SET);
+							genRead(fd, elisaFnt, test);
+						}
+						genClose(fd);
+					}else
+						elisa_failed = TRUE;
+				}
+				break;
+			case PAD_TRIANGLE:
+				return (file_show!=entry_file_show)||(file_sort!=entry_file_sort);
+			} //ends switch(new_pad)
+		} //ends if(readpad())
+
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawPopSprite(setting->color[0],
+				mSprite_X1, mSprite_Y1,
+				mSprite_X2, mSprite_Y2);
+			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+
+			for(i=0, y=mSprite_Y1+FONT_HEIGHT/2; i<menu_ch_h; i++){
+				if(i==0) sprintf(tmp, "   %s:", LNG(Show_Content_as));
+				else if(i==1) sprintf(tmp, "   %s", &minuses_s[80-Show_len]);
+				else if(i==2) sprintf(tmp, "ÿ0 %s", LNG(Filename));
+				else if(i==3) sprintf(tmp, "ÿ1 %s%s", LNG(Filename), LNG(_plus_Details));
+				else if(i==4) sprintf(tmp, "ÿ2 %s%s", LNG(Game_Title), LNG(_plus_Details));
+				else if(i==6) sprintf(tmp, "   %s:", LNG(Sort_Content_by));
+				else if(i==7) sprintf(tmp, "   %s", &minuses_s[80-Sort_len]);
+				else if(i==8) sprintf(tmp, "ÿ: %s", LNG(No_Sort));
+				else if(i==9) sprintf(tmp, "ÿ; %s", LNG(Filename));
+				else if(i==10) sprintf(tmp, "ÿ< %s", LNG(Game_Title));
+				else if(i==11) sprintf(tmp, "ÿ= %s", LNG(Timestamp));
+				else if(i==13) sprintf(tmp, "ÿ3 %s", LNG(Back_to_Browser));
+				else tmp[0] = 0;
+
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, setting->color[3], TRUE,0);
+				//Display marker for current modes
+				if((file_show == i-2) || (file_sort == i-8))
+					drawChar(LEFT_CUR, mSprite_X1+FONT_WIDTH/2, y, setting->color[2]);
+				y+=FONT_HEIGHT;
+
+			} //ends for loop handling one text row per loop
+
+			//Tooltip section
+			x = SCREEN_MARGIN;
+			y = Menu_tooltip_y;
+			drawSprite(setting->color[0],
+				0, y-1,
+				SCREEN_WIDTH, y+FONT_HEIGHT);
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	}//ends while
+}
+//------------------------------
+//endfunc BrowserModePopup
 //--------------------------------------------------------------
 // get_FilePath is the main browser function.
 // It also contains the menu handler for the R1 submenu
@@ -2818,12 +3012,13 @@ void getFilePath(char *out, int cnfmode)
 	u64 color;
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
-	int nofnt=FALSE;
 	int x, y, y0, y1;
-	int i, ret, fd;
+	int i, ret;
 	int event, post_event=0;
 	int font_height;
-	
+
+  elisa_failed = FALSE; //set at failure to load font, cleared at each browser entry
+
 	browser_cd=TRUE;
 	browser_up=FALSE;
 	browser_repos=FALSE;
@@ -2846,10 +3041,12 @@ void getFilePath(char *out, int cnfmode)
 	clipPath[0] = 0;
 	nclipFiles = 0;
 	browser_cut = 0;
-	title_show=FALSE;
+
+	file_show = 1;
+	file_sort = 1;
 
 	font_height = FONT_HEIGHT;
-	if(title_show && elisaFnt!=NULL)
+	if((file_show==2) && elisaFnt!=NULL)
 		font_height = FONT_HEIGHT+2;
 	rows = (Menu_end_y-Menu_start_y)/font_height;
 
@@ -3043,25 +3240,8 @@ void getFilePath(char *out, int cnfmode)
 							}
 						}
 					}
-				} else if((new_pad & PAD_L1) || (new_pad & PAD_L2)) {
-					title_show = !title_show;
-					title_sort = !!(new_pad & PAD_L1);
-					if(elisaFnt==NULL && nofnt==FALSE){
-						sprintf(tmp, "%s%s", LaunchElfDir, "ELISA100.FNT");
-						if(!strncmp(tmp, "cdrom", 5)) strcat(tmp, ";1");
-						fd = fioOpen(tmp, O_RDONLY);
-						if(fd>0){
-							ret = fioLseek(fd,0,SEEK_END);
-							if(ret==55016){
-								elisaFnt = (char*)malloc(ret);
-								fioLseek(fd,0,SEEK_SET);
-								fioRead(fd, elisaFnt, ret);
-								fioClose(fd);
-							}
-						}else
-							nofnt = TRUE;
-					}
-					browser_cd=TRUE;
+				} else if(new_pad & PAD_L1) {
+					browser_cd = BrowserModePopup();
 				} else if(new_pad & PAD_SELECT){  //Leaving the browser ?
 					unmountAll();
 					return;
@@ -3140,7 +3320,7 @@ void getFilePath(char *out, int cnfmode)
 			x = Menu_start_x;
 			y = Menu_start_y;
 			font_height = FONT_HEIGHT;
-			if(title_show && elisaFnt!=NULL){
+			if((file_show==2) && elisaFnt!=NULL){
 				y-=2;
 				font_height = FONT_HEIGHT+2;
 			}
@@ -3157,18 +3337,55 @@ void getFilePath(char *out, int cnfmode)
 				title_flag = 0;
 				if(!strcmp(files[top+i].name,".."))
 					strcpy(tmp,"..");
-				else if(title_show && files[top+i].title[0]!=0) {
+				else if((file_show==2) && files[top+i].title[0]!=0) {
 					strcpy(tmp,files[top+i].title);
 					title_flag = 1;
-				}
-				else
+				}else{
 					strcpy(tmp,files[top+i].name);
+					if(file_show > 0)
+						tmp[40]=0;
+				}
+
 				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 					strcat(tmp, "/");
 				if(title_flag)
 					printXY_sjis(tmp, x+4, y, color, TRUE);
 				else
 					printXY(tmp, x+4, y, color, TRUE, 0);
+				if(file_show > 0){
+					unsigned int size = files[top+i].stats.fileSizeByte;
+					int scale = 0; //0==Bytes, 1==KBytes, 2==MBytes, 3==GB
+					char scale_s[4] = " KMG";
+					PS2TIME timestamp = *(PS2TIME *) &files[top+i].stats._modify;
+
+					if(!size_valid) size = 0;
+					if(!time_valid) memset((void *) &timestamp, 0, sizeof(timestamp));
+
+					if(!size_valid)
+						strcpy(tmp, "----- B");
+					else {
+						while(size > 99999){
+							scale++;
+							size /= 1024;
+						}
+						sprintf(tmp, "%5u%cB", size, scale_s[scale]);
+					}
+
+					if(!time_valid)
+						strcat(tmp, " ----.--.-- --:--:--");
+					else {
+						sprintf(tmp+strlen(tmp), " %04d.%02d.%02d %02d:%02d:%02d", 
+							timestamp.year,
+							timestamp.month,
+							timestamp.day,
+							timestamp.hour,
+							timestamp.min,
+							timestamp.sec
+						);
+					}
+
+					printXY(tmp, x+4+44*FONT_WIDTH, y, color, TRUE, 0);
+				}
 				if(marks[top+i]) drawChar('*', x-6, y, setting->color[3]);
 				y += font_height;
 			} //ends for, so all browser rows were fixed above
@@ -3221,25 +3438,14 @@ void getFilePath(char *out, int cnfmode)
 				sprintf(tmp, " R2:%s", LNG(PathPad));
 				strcat(msg1, tmp);
 			}else{ // cnfmode == FALSE
-				if(title_show) {
-					if (swapKeys) 
-						sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
-							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-							LNG(TitleOFF), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
-					else
-						sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
-							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-							LNG(TitleOFF), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
-				} else {
-					if (swapKeys) 
-						sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
-							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-							LNG(TitleON), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
-					else
-						sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
-							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-							LNG(TitleON), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
-				}
+				if (swapKeys) 
+					sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1:%s R1:%s R2:%s %s:%s",
+						LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
+				else
+					sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1:%s R1:%s R2:%s %s:%s",
+						LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
 			}
 			setScrTmp(msg0, msg1);
 			if(vfreeSpace){

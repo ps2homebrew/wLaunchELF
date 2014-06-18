@@ -71,7 +71,7 @@ int poweroff_delay=0; //Set only when calling hddPowerOff
 int mode=BUTTON;
 int user_acted = 0;  /* Set when commands given, to break timeout */
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
-char CNF[MAX_PATH];
+char CNF[MAX_NAME];
 int numCNF=0;
 int maxCNF;
 int swapKeys;
@@ -133,42 +133,73 @@ int	have_ps2atad  = 0;
 int have_ps2hdd   = 0;
 int have_ps2fs    = 0;
 int have_ps2netfs = 0;
-;
+
+int force_IOP = 0; //flags presence of incompatible drivers, so we must reset IOP
+
 int done_setupPowerOff = 0;
 int ps2kbd_opened = 0;
+
+int boot_argc;
+char *boot_argv[8];
+char boot_path[MAX_PATH];
 
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
 //Function to print a text row to the 'gs' screen
 //------------------------------
-void	PrintRow(int row, char *text_p)
-{	int x = (Menu_start_x + 4);
-	int y = (Menu_start_y + FONT_HEIGHT*row);
-   
+int	PrintRow(int row_f, char *text_p)
+{	static int row;
+	int x = (Menu_start_x + 4);
+	int y;
+
+	if(row_f >= 0) row = row_f;
+	y = (Menu_start_y + FONT_HEIGHT*row++);
 	printXY(text_p, x, y, setting->color[3], TRUE, 0);
+	return row;
 }  
 //------------------------------
 //endfunc PrintRow
 //--------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
-void ShowDebugScreen(void)
+void ShowDebugInfo(void)
 {	char TextRow[256];
+	int	i, event, post_event=0;
 
-	clrScr(setting->color[0]);
-	sprintf(TextRow, "Urgent = %3d", have_urgent);
-	PrintRow(0, TextRow);
-	drawScr();
-	waitAnyPadReady();
-	while(1)
-	{	if	(readpad())
-			if	(new_pad & PAD_CROSS)
-				break;
-	}
+	event = 1;   //event = initial entry
+	//----- Start of event loop -----
+	while(1) {
+		//Pad response section
+		waitAnyPadReady();
+		if(readpad() && new_pad){
+			event |= 2;
+			break;
+		}
+
+		//Display section
+		if(event||post_event) { //NB: We need to update two frame buffers per event
+			clrScr(setting->color[0]);
+			PrintRow(0,"Debug Info Screen:");
+			sprintf(TextRow, "argc == %d", boot_argc);
+			PrintRow(1,TextRow);
+			for(i=0; (i<boot_argc)&&(i<8); i++){
+				sprintf(TextRow, "argv[%d] == \"%s\"", i, boot_argv[i]);
+				PrintRow(-1, TextRow);
+			}
+			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
+			PrintRow(-1, TextRow);
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	} //ends while
+	//----- End of event loop -----
 }
 //------------------------------
-//endfunc ShowDebugScreen
+//endfunc ShowDebugInfo
 //--------------------------------------------------------------
 //Function to check for presence of key modules
 //------------------------------
@@ -1008,7 +1039,7 @@ void Set_CNF_Path(void)
 //endfunc Set_CNF_Path
 //--------------------------------------------------------------
 //Reload CNF, possibly after a path change
-void reloadConfig()
+int reloadConfig()
 {
 	char tmp[MAX_PATH];
 	int CNF_error = -1;
@@ -1039,6 +1070,8 @@ void reloadConfig()
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
 		loadCdModules();
+
+	return CNF_error;
 }
 //------------------------------
 //endfunc reloadConfig
@@ -1193,6 +1226,9 @@ void RunElf(char *path)
 	}else if(!stricmp(path, setting->Misc_ShowFont)){
 		ShowFont();
 		return;
+	}else if(!stricmp(path, setting->Misc_Debug_Info)){
+		ShowDebugInfo();
+		return;
 	}else if(!strncmp(path, "cdfs", 4)){
 		loadCdModules();
 		CDVD_FlushCache();
@@ -1276,17 +1312,23 @@ void Reset()
 int main(int argc, char *argv[])
 {
 	char *p, CNF_pathname[MAX_PATH];
-	int event, post_event=0, emergency;
+	int event, post_event=0;
 	int RunELF_index, nElfs=0;
 	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
 	int host_or_hdd_booted = 0;
-	int mass_booted = 0;
+	int mass_booted = 0; //flags boot made with compatible mass drivers
+	int mass_needed = 0; //flags need to load compatible mass drivers
 	int mc_booted = 0;
 	int cdvd_booted = 0;
 	int	host_booted = 0;
 	int gs_vmode;
 	int CNF_error = -1; //assume error until CNF correctly loaded
+	int i;
+
+	boot_argc = argc;
+	for(i=0; (i<argc)&&(i<8); i++)
+		boot_argv[i] = argv[i];
 
 	SifInitRpc(0);
 	CheckModules();
@@ -1295,22 +1337,40 @@ int main(int argc, char *argv[])
 	genInit();
 	Init_Default_Language();
 
-	if	((argc > 0) && argv[0])
-	{	if	(!strncmp(argv[0], "mass", 4))
-			mass_booted = 1;
+	force_IOP = 0;
+	LaunchElfDir[0] = 0;
+	if	((argc > 0) && argv[0]){
+		strcpy(LaunchElfDir, argv[0]);
+		if	(!strncmp(argv[0], "mass", 4)){
+			if(!strncmp(argv[0], "mass0:\\", 7)){  //SwapMagic boot path for usb_mass
+				//Transform the boot path to homebrew standards
+				LaunchElfDir[4]=':';
+				strcpy(&LaunchElfDir[5], &LaunchElfDir[7]);
+				for(i=0; LaunchElfDir[i]!=0; i++){
+					if(LaunchElfDir[i] == '\\')
+						LaunchElfDir[i] = '/';
+				}
+				force_IOP = 1;   //Note incompatible drivers present (as yet ignored)
+				mass_needed = 1; //Note need to load compatible mass: drivers
+			} else {  //else we booted with normal homebrew mass: drivers
+				mass_booted = 1; //Note presence of compatible mass: drivers
+			}
+		}
 		else if	(!strncmp(argv[0], "mc", 2))
 			mc_booted = 1;
 		else if	(!strncmp(argv[0], "cd", 2))
 			cdvd_booted = 1;
 		else if	((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
+			hdd_booted = 1;  //Modify this section later to cover Dev2 needs !!!
+	}
+	strcpy(boot_path, LaunchElfDir);
+
+	if(!strncmp(LaunchElfDir, "host",4)) {
+		host_or_hdd_booted = 1;
+		if	(have_fakehost)
 			hdd_booted = 1;
-		else if	((!strncmp(argv[0], "host", 4)))
-		{	host_or_hdd_booted = 1;
-			if	(have_fakehost)
-				hdd_booted = 1;
-			else
-			  host_booted = 1;
-		}
+		else
+			host_booted = 1;
 	}
 
 	if	(host_booted)	//Fix untestable modules for host booting
@@ -1323,7 +1383,6 @@ int main(int argc, char *argv[])
 		have_usb_mass = 1;
 	}
 
-	strcpy(LaunchElfDir, argv[0]);
 	if	(	((p=strrchr(LaunchElfDir, '/'))==NULL)
 			&&((p=strrchr(LaunchElfDir, '\\'))==NULL)
 			)	p=strrchr(LaunchElfDir, ':');
@@ -1332,17 +1391,11 @@ int main(int argc, char *argv[])
 
 	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
 		//Patch DMS4 Dev2 booting here, when we learn more about how it works
-		//Trying to mount that partition for loading CNF simply crashes...
+		//Trying to mount that partition for loading CNF simply crashes.
+		//We may need a new IOP reset method for this.
 	}
 
 	LastDir[0] = 0;
-
-//	setupPad();
-//	waitAnyPadReady();
-
-//	if(readpad() && (new_pad & PAD_SELECT))	emergency = 1;
-//	else emergency = 0;
-	emergency = 0; //Comment out this line when using early setupPad above
 
 	if(gsKit_detect_signal()==GS_MODE_PAL) {  //Test console TV mode
 		SCREEN_X			= 652;
@@ -1351,19 +1404,15 @@ int main(int argc, char *argv[])
 		SCREEN_X			= 632;
 		SCREEN_Y			= 50;
 	}
+
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
-
-	if(emergency) CNF_error = loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
-	else          CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-
+	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 	if(CNF_error<0)
 		strcpy(CNF_pathname, mainMsg+strlen(LNG(Failed_To_Load)));
 	else
 		strcpy(CNF_pathname, mainMsg+strlen(LNG(Loaded_Config)));
 
 	init_delay = setting->Init_Delay*SCANRATE;
-	if(emergency && (init_delay < 2*SCANRATE))
-		init_delay = 2*SCANRATE;
 
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request

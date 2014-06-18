@@ -1,5 +1,21 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.07 (2006.11.30)
+-Modified MC attribute handling to ensure compatibility of PS1 gamesaves
+-Improved HddManager unmounting, to prevent failure of some partition commands
+-Added new "Debug Info" popup to the "MISC" pseudodrive (its use may vary in future)
+-Extended FileBrowser from 2 display modes to 3
+-Extended FileBrowser from 2 sort modes to 4
+-Added 8 new character definitions to "font_uLE.c", for use as 4 double-width characters, representing the 4 D-Pad buttons
+-Added a new popup menu to FileBrowser, to control the new display and sort modes. The new popup is opened by the button L1, as it obsoletes the old Title ON/OFF functionality
+-Added new LNG definitions to cover all new features
+-Modified initialization of uLE to improve compatibility with SwapMagic ELF launching. These changes allow uLE to find its CNF in the same folder as the ELF when launched on mass: by SwapMagic, despite the incorrect path passed in argv[0] ("mass0:\SWAPMAGIC\"). Note that this is NOT the same modification used in earlier betas, which caused other bugs. This method does not involve IOP reset, and should therefore be bug-free. That has been verified both for exploit booting and the 'back to browser' feature of SMS, which were both bugged by the old method.
+-Shortened the LNG(Modes) lang.h definition of earlier betas to LNG(Mode)
+-Extended HddManager size limit for logical partitions to 128 GB
+-Corrected a bug in HddManager sizeSelector tooltips (missed using an LNG definition)
+-Modified HddManager sizeSelector to use L2/R2 to step partition size -/+ 10 GB
+-Modified tooltips for HddManager sizeSelector to include new features
+
 LaunchELF v4.06 (2006.10.13)
 ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
 -Changed partition filter and removed the codebreaker partition from the hdd partition listing.

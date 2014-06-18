@@ -173,6 +173,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Misc_Set_CNF_Path = %s\r\n"
 		"Misc_Load_CNF = %s\r\n"
 		"Misc_ShowFont = %s\r\n"
+		"Misc_Debug_Info = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->Misc,
 		setting->Misc_PS2Disc+i,
@@ -189,6 +190,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Misc_Set_CNF_Path+i,
 		setting->Misc_Load_CNF+i,
 		setting->Misc_ShowFont+i,
+		setting->Misc_Debug_Info+i,
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -372,20 +374,9 @@ unsigned long hextoul(char *string)
 	return value;
 }
 //---------------------------------------------------------------------------
-// Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
-// sincro: ADD load USBD_FILE string
-// polo: ADD load SKIN_FILE string
-// dlanor: added error flag return value 0==OK, -1==failure
-//---------------------------------------------------------------------------
-int loadConfig(char *mainMsg, char *CNF)
+void initConfig(void)
 {
-	int i, fd, tst, len, mcport, var_cnt, CNF_version;
-	size_t CNF_size;
-	char tsts[20];
-	char path[MAX_PATH];
-	char cnf_path[MAX_PATH];
-	unsigned char *RAM_p, *CNF_p, *name, *value;
-	int X_flag=0, Y_flag=0, IL_flag=0;
+	int i;
 	
 	if(setting!=NULL)
 		free(setting);
@@ -406,6 +397,7 @@ int loadConfig(char *mainMsg, char *CNF)
 	sprintf(setting->Misc_Set_CNF_Path, "%s/%s", LNG_DEF(MISC), LNG_DEF(Set_CNF_Path));
 	sprintf(setting->Misc_Load_CNF, "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNF));
 	sprintf(setting->Misc_ShowFont, "%s/%s", LNG_DEF(MISC), LNG_DEF(ShowFont));
+	sprintf(setting->Misc_Debug_Info, "%s/%s", LNG_DEF(MISC), LNG_DEF(Debug_Info));
 
 	for(i=0; i<15; i++){
 		setting->LK_Path[i][0]  = 0;
@@ -414,7 +406,7 @@ int loadConfig(char *mainMsg, char *CNF)
 	}
 	for(i=0; i<30; i++) PathPad[i][0] = 0;
 
-	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
+	strcpy(setting->LK_Path[1], setting->Misc_FileBrowser);
 	setting->LK_Flag[1] = 1;
 	setting->usbd_file[0] = '\0';
 	setting->usbmass_file[0] = '\0';
@@ -457,6 +449,26 @@ int loadConfig(char *mainMsg, char *CNF)
 	setting->PSU_HugeNames = DEF_PSU_HUGENAMES;
 	setting->PSU_DateNames = DEF_PSU_DATENAMES;
 	setting->PSU_NoOverwrite = DEF_PSU_NOOVERWRITE;
+}
+//------------------------------
+//endfunc initConfig
+//---------------------------------------------------------------------------
+// Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
+// sincro: ADD load USBD_FILE string
+// polo: ADD load SKIN_FILE string
+// dlanor: added error flag return value 0==OK, -1==failure
+//---------------------------------------------------------------------------
+int loadConfig(char *mainMsg, char *CNF)
+{
+	int i, fd, tst, len, mcport, var_cnt, CNF_version;
+	size_t CNF_size;
+	char tsts[20];
+	char path[MAX_PATH];
+	char cnf_path[MAX_PATH];
+	unsigned char *RAM_p, *CNF_p, *name, *value;
+	int X_flag=0, Y_flag=0, IL_flag=0;
+
+	initConfig();
 
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
@@ -565,6 +577,8 @@ failed_load:
 			sprintf(setting->Misc_Load_CNF, "%s%s", setting->Misc, value);
 		else if(!strcmp(name,"Misc_ShowFont"))
 			sprintf(setting->Misc_ShowFont, "%s%s", setting->Misc, value);
+		else if(!strcmp(name,"Misc_Debug_Info"))
+			sprintf(setting->Misc_Debug_Info, "%s%s", setting->Misc, value);
 		//----------
 		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
 		else if(!strcmp(name,"Menu_Hide_Paths")) setting->Hide_Paths = atoi(value);
@@ -656,6 +670,8 @@ failed_load:
 	sprintf(mainMsg, "%s (%s)", LNG(Loaded_Config), path);
 	return 0;
 }
+//------------------------------
+//endfunc loadConfig
 //---------------------------------------------------------------------------
 // Polo: ADD Skin Menu with Skin preview
 //---------------------------------------------------------------------------

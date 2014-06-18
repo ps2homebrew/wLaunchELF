@@ -1,0 +1,44 @@
+uLE now has 3 different display modes, as follows:
+
+Display mode 0 == Filenames only
+The full screen width is used to display the file/folder names, thus allowing quite long names to be fully displayed, but at cost of not being able to show other file info. This is identical to the traditional filename display mode of older uLE versions.
+
+Display mode 1 == Filenames and Info
+This new mode uses a little more than half the screen width to display file/folder names, and uses the remainder at the right screen edge to display file sizes and timestamps. This is done at cost of not being able to display long filenames, but since normal PS2 filenames are quite short (max 32 characters on MC), this is not a major problem, so this mode is the new default for the FileBrowser.
+
+Display mode 2 == Game Titles and Info
+This new mode is similar to mode 1 in how it uses the screen, except that it displays gamesave titles instead of filenames (when titles are available). Since such titles are always limited to max 32 characters there will be no space conflict (except possibly for files that don't have any titles). Gamesave titles will be displayed correctly for PS1 gamesave files, PS2 gamesave folders, and PSU gamesave backup files, and regardless of the media any of these are stored on.
+
+
+uLE now has 4 different sorting modes for the FileBrowser, as follows:
+
+Sort mode 0 == No sort
+As the name indicates, uLE does not change the display order at all for this mode, so that all objects are displayed in the order they were given by the device drivers, which presumably matches the physical order of storage.
+
+
+Sort mode 1 == Sort by Filename
+This is the default mode, and works as the traditional main sort mode of older uLE versions. Note that this also performs two other sorting tasks, as folders are displayed above files, and ELF files are displayed above all other files. Thus there may be three groups of objects in such a display.
+
+1a: All folders, sorted by name
+1b: All ELF files, sorted by name
+1c: All non-ELF files, sorted by name
+ 
+
+Sort mode 2 == Sort by Game Title
+This works as the alternate sort mode used by older uLE versions when displaying game titles, but in the new version it can also be used when displaying filenames. In addition to the title sorting, this mode also separates folders and ELFs in the same way as mode 1. Additionally, objects that have no title will be separated to follow those of the same object type that do have titles, and the internal sorting of title-less objects will be by name. This means that such a display can contain five object groups.
+
+2a: All folders with valid titles, sorted by title
+2b: All folders lacking titles, sorted by name
+2c: All ELF files, sorted by name
+2d: All files with valid titles (PSU files or PS1 saves), sorted by title
+2e: All non-ELF files lacking titles, sorted by name
+
+
+Sort mode 3 == Sort by Timestamp
+This new mode sorts objects by the modification timestamp, if the current device allows valid timestamps. Otherwise sorting defaults to mode 1 or 2, depending on the displayed file identifiers (file names or game titles). In all three cases this mode also performs the same separation of folders and ELFs as modes 1 and 2. When timestamps are valid such a display can contain three object groups.
+
+3a: All folders, sorted by timestamp
+3b: All ELF files, sorted by timestamp
+3c: All non-ELF files, sorted by timestamp
+
+The timestamp sorting is made in 'falling' sequence, so that the most recently modified objects are displayed at the top of the list, and the oldest at its bottom.

@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.06 ÿ4",
+	printXY(" ÿ4 LaunchELF v4.07 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -1046,11 +1046,12 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 		// Here we got a sequence starting with 0xFF ('ÿ')
 		if((c2=s[i++])==0)
 			break;
-		if((c2 < '0') || (c2 > '4'))
+		if((c2 < '0') || (c2 > '='))
 			continue;
 		c1=(c2-'0')*2+0x100;
 		if(draw) {
 			//expand sequence ÿ0=Circle  ÿ1=Cross  ÿ2=Square  ÿ3=Triangle  ÿ4=FilledBox
+			//"ÿ:"=Pad_Right  "ÿ;"=Pad_Down  "ÿ<"=Pad_Left  "ÿ="=Pad_Up
 			drawChar(c1, x, y, colour);
 			x += 8;
 			if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH)
