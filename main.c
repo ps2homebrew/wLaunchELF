@@ -781,6 +781,7 @@ void decConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
+	updateScreenMode();
 	loadSkin(BACKGROUND_PIC);
 	itoSetBgColor(setting->color[0]);
 	
@@ -804,6 +805,7 @@ void incConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
+	updateScreenMode();
 	loadSkin(BACKGROUND_PIC);
 	itoSetBgColor(setting->color[0]);
 	
@@ -919,14 +921,14 @@ int main(int argc, char *argv[])
 		SCREEN_WIDTH	= 640;
 		SCREEN_HEIGHT = 512;
 		SCREEN_X			= 163;
-		SCREEN_Y			= 72;
+		SCREEN_Y			= 37;
 		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
 	}else{                      //else use NTSC mode (forced or auto/default)
 		ito_vmode = ITO_VMODE_NTSC;
 		SCREEN_WIDTH	= 640;
 		SCREEN_HEIGHT = 448;
 		SCREEN_X			= 158;
-		SCREEN_Y			= 50;
+		SCREEN_Y			= 26;
 		Menu_end_y		 = Menu_start_y + 22*FONT_HEIGHT;
 	} /* end else */
 	Frame_end_y			= Menu_end_y + 4;

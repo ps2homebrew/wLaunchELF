@@ -358,7 +358,6 @@ void Config_Skin(void)
 	char skinSave[MAX_PATH];
 	int  Brightness = setting->Brightness;
 
-	strcpy(skinSave, "\0");
 	strcpy(skinSave, setting->skin);
 
 	loadSkin(PREVIEW_PIC);
@@ -648,6 +647,8 @@ void Config_Screen(void)
 				} else if(s==max_s-1) { //Always put 'RETURN' next to last
 					return;
 				} else if(s==max_s) { //Always put 'DEFAULT SCREEN SETTINGS' last
+					setting->skin[0] = '\0';
+					loadSkin(BACKGROUND_PIC);
 					setting->color[0] = DEF_COLOR1;
 					setting->color[1] = DEF_COLOR2;
 					setting->color[2] = DEF_COLOR3;
@@ -656,11 +657,7 @@ void Config_Screen(void)
 					setting->screen_y = SCREEN_Y;
 					setting->interlace = DEF_INTERLACE;
 					setting->Menu_Frame = DEF_MENU_FRAME;
-					screen_env.screen.x = setting->screen_x;
-					screen_env.screen.y = setting->screen_y;
-					screen_env.interlace = setting->interlace;
-					itoGsReset();
-					itoGsEnvSubmit(&screen_env);
+					updateScreenMode();
 					itoSetBgColor(setting->color[0]);
 					
 					for(i=0; i<4; i++) {
@@ -1295,11 +1292,13 @@ void Config_Network(void)
 void config(char *mainMsg, char *CNF)
 {
 	char c[MAX_PATH];
+	char skinSave[MAX_PATH];
 	int i;
 	int s;
 	int x, y;
 	int event, post_event=0;
 	
+	strcpy(skinSave, setting->skin);
 	tmpsetting = setting;
 	setting = (SETTING*)malloc(sizeof(SETTING));
 	*setting = *tmpsetting;
@@ -1389,11 +1388,9 @@ void config(char *mainMsg, char *CNF)
 				{
 					free(setting);
 					setting = tmpsetting;
-					screen_env.screen.x = setting->screen_x;
-					screen_env.screen.y = setting->screen_y;
-					screen_env.interlace = setting->interlace;
-					itoGsReset();
-					itoGsEnvSubmit(&screen_env);
+					updateScreenMode();
+					strcpy(setting->skin, skinSave);
+					loadSkin(BACKGROUND_PIC);
 					mainMsg[0] = 0;
 					break;
 				}

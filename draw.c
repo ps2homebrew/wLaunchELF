@@ -10,7 +10,7 @@ int				testsetskin;
 int				SCREEN_WIDTH	= 640;
 int				SCREEN_HEIGHT = 448;
 int				SCREEN_X			= 158;
-int				SCREEN_Y			= 50;
+int				SCREEN_Y			= 26;
 //dlanor: values shown above are defaults for NTSC mode
 
 int Menu_start_x   = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
@@ -400,7 +400,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.58 ¡",
+	printXY(" ¡ LaunchELF v3.59 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
@@ -471,6 +471,15 @@ void setupito(int ito_vmode)
 	itoSetBgColor(setting->color[0]);
 }
 
+//--------------------------------------------------------------
+void updateScreenMode(void)
+{
+	screen_env.screen.x = setting->screen_x;
+	screen_env.screen.y = setting->screen_y;
+	screen_env.interlace = setting->interlace;
+	itoGsReset();
+	itoGsEnvSubmit(&screen_env);
+}
 //--------------------------------------------------------------
 void loadSkin(int Picture)
 {

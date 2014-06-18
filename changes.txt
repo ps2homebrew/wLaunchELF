@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.59  (2006.04.04)
+-Modified 'CONFIG' so that 'CANCEL' restores original skin state
+-Modified 'SCREEN SETTINGS' so that 'DEFAULT SCREEN SETTINGS' turns off skin
+-Modified main menu so that 'LOAD CONFIG++' and 'LOAD CONFIG--' will update all screen settings correctly. This was already done for skin, but not for screen offset and interlace.
+-Fixed a bug that made v3.58 use wrong default value for vertical screen offset
+
 LaunchELF v3.58  (2006.04.04)
 -dlanor: Fixed a bug that could corrupt a Launch Key setting, if you started to browse for a new ELF of a launch key whose old ELF was on MC, and then cancelled out of the browser
 -dlanor: Tweaked some display parameters to improve visibility of characters at the 'edges' of the screen. Mainly needed for top and bottom lines (esp corner characters)
