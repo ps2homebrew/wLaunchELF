@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.48  (2006.02.25)
+-EP corrected a bug in the reading of free size on MC. This bug could cause menu commands to fail with extremely slow MC. (Noted with 64MB MCs from Datel.) Thanks go to 'cmal1492' for bringing this bug to our attention. (It is older than the uLaunchELF project.)
+
 LaunchELF v3.47  (2006.02.22)
 -Corrected a serious bug in the IOP Reset routine (reverse logic for SifIopSync).
 

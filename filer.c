@@ -1774,6 +1774,7 @@ void getFilePath(char *out, int cnfmode)
 			if(!cnfmode){
 				if(!strncmp(path, "mc", 2)){
 					mcGetInfo(path[2]-'0', 0, NULL, &mcfreeSpace, NULL);
+					mcSync(0, NULL, &ret);
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
 					freeSpace = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0)
 					          * fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
