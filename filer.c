@@ -2238,15 +2238,11 @@ void getFilePath(char *out, int cnfmode)
 						if(ret==CUT)	browser_cut=TRUE;
 						else			browser_cut=FALSE;
 					} else if(ret==DELETE){
-						if(nmarks==0){
-							if(title_show && files[browser_sel].title[0])
-								sprintf(tmp,"%s",files[browser_sel].title);
-							else{
-								sprintf(tmp,"%s",files[browser_sel].name);
-								if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
-									strcat(tmp,"/");
-							}
-							strcat(tmp, "\nDelete?");
+						if(nmarks==0){	//dlanor: using title was inappropriate here (filesystem op)
+							sprintf(tmp,"%s",files[browser_sel].name);
+							if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
+								strcat(tmp,"/");
+							strcat(tmp, "\nDelete ?");
 							ret = ynDialog(tmp);
 						}else
 							ret = ynDialog("Mark Files Delete?");

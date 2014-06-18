@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.70 (2006.05.18)
+-Fixed a bug from v3.69 that messed up screen when switching CNFs or canceling CONFIG
+-Changed text for ynDialog used to confirm Delete operations
+
 LaunchELF v3.69 (2006.05.18)
 -Changed MISC/PS2PowerOff function to work without either HDD or Network Adaptor
 -Changed MISC/PS2Net message to "Loading NetFS and FTP Server Modules..."
