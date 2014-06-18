@@ -221,6 +221,7 @@ static void getIpConfig(void)
 int drawMainScreen(void)
 {
 	int nElfs=0;
+	int nItems=13;
 	int i;
 	int x, y;
 	uint64 color;
@@ -228,10 +229,8 @@ int drawMainScreen(void)
 	char *p;
 	
 	strcpy(setting->dirElf[12], "CONFIG");
-	if (maxCNF > 1){
-		strcpy(setting->dirElf[13], "LOAD CONFIG--");
-		strcpy(setting->dirElf[14], "LOAD CONFIG++");
-	}
+	strcpy(setting->dirElf[13], "LOAD CONFIG--");
+	strcpy(setting->dirElf[14], "LOAD CONFIG++");
 	
 	clrScr(setting->color[0]);
 	
@@ -244,7 +243,9 @@ int drawMainScreen(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
-	for(i=0; i<15; i++){
+	if(maxCNF>1)
+		nItems=15;
+	for(i=0; i<nItems; i++){
 		if(setting->dirElf[i][0]){
 			switch(i){
 			case 0:

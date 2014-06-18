@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.49  (2006.02.26)
+-Fixed an issue where garbage could be displayed at startup when LaunchELF was booted by another programs' generic launcher function. (Note: Issue only appeared to occur randomly with the packed ELF when using only one CNF).
+
 LaunchELF v3.48  (2006.02.25)
 -EP corrected a bug in the reading of free size on MC. This bug could cause menu commands to fail with extremely slow MC. (Noted with 64MB MCs from Datel.) Thanks go to 'cmal1492' for bringing this bug to our attention. (It is older than the uLaunchELF project.)
 
@@ -220,6 +223,7 @@ Drakonite for his help and advice on how to improve the ELF loader
 sincro for his USBD.IRX selector code
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.
 Slam-Tilt for the NETWORK SETTINGS option source changes.
+sincro for the source changes that allow for the selection of external USBD.IRX files.
 chip for ps2ftpd, of which a few modifications were made to.
 pixel for ps2-packer that made the small BOOTc.ELF binary.
 Hermes for the early reset IOP source (BOOT.c cogswaploader).
