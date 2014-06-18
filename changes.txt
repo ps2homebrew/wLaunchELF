@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.94 (2006.08.19)
+-Fixed a bug of v3.93 that made PSU restore use incorrect gamesave folder names
+
 LaunchELF v3.93 (2006.08.19)
 -Fixed a new bug that let FTP server interfere with FileBrowser through PFS0
 -Fixed an old bug that let FTP server interfere with FileBrowser through PFS1..PFS3

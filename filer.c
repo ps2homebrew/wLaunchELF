@@ -1609,6 +1609,9 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 
 	PM_flag[recurses+1] = PM_NORMAL;  //assume normal mode for next level
 	PM_file[recurses+1] = -1;         //assume that no special file is needed
+
+restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
+
 	newfile = file;                   //assume that no renaming is to be done
 
 	if(PasteMode==PM_RENAME && recurses==0){ //if renaming requested and valid
@@ -1617,8 +1620,6 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	} //ends if clause for renaming name entry
 	//Here the struct 'newfile' is FILEINFO for destination, regardless of renaming
 	//for non-renaming cases this is always identical to the struct 'file'
-
-restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 
 	if(!strncmp(inPath, "hdd", 3)){
 		hddin = TRUE;
