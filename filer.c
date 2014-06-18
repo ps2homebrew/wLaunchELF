@@ -236,25 +236,28 @@ int mountParty(const char *party)
 	}
 	//Here j is the index of a free PFS mountpoint
 	//But 'free' only means that the main uLE program isn't using it
-	//If the ftp server is running, that may have used 4 mountpoints !!!
+	//If the ftp server is running, that may have used the mountpoints
+
+	//RA NB: The old code to reclaim FTP partitions was seriously bugged...
 
 	i = j;
 	strcpy(pfs_str, "pfs0:");
-	pfs_str[3] += i;
-	for(j=0; j<=4; j++){ //for loop to kill FTP partition mounts, to release partitions
-		if(fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
-			break; //break from the loop on successful mount
-		//Here mount has failed, which may mean that FTP server stole the partition
 
-		//j is the index for the next mountpoint to kill in trying to release it
-		i=0;  //as we'll kill at least PFS0, we may as well use that for mounting
-		if((j<4) && (Party_vmcIndex[j]<0))	//if non-VMC j<4, we try to kill it
-			unmountParty(j);  //unmount partition
-	} //ends for loop to kill FTP partition mounts, to release partitions
-	//Here j indicates what happened above with the following meanings:
-	//0..4==Success after trying j mountpoints,  5==Failure
-	if(j>4)
-		return -1;
+	pfs_str[3] = '0'+i;
+	if(fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0){ //if FTP stole it
+		for(i=0; i<=4; i++){ //for loop to kill FTP partition mountpoints
+			if((i!=latestMount) && (Party_vmcIndex[i]<0)){ //if unneeded by uLE
+				unmountParty(i);  //unmount partition mountpoint
+				pfs_str[3] = '0'+i; //prepare to reuse that mountpoint
+				if(fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
+					break; //break from the loop on successful mount
+			} //ends if unneeded by uLE
+		} //ends for loop to kill FTP partition mountpoints
+		//Here i indicates what happened above with the following meanings:
+		//0..4==Success after trying i mountpoints,  5==Failure
+		if(i>4)
+			return -1;
+	} //ends if clause for mountpoints stolen by FTP
 	strcpy(mountedParty[i], party);
 return_i:
 	latestMount = i;
@@ -280,24 +283,28 @@ void unmountParty(int party_ix)
 // but unlike the individual unmountParty, it will only do so
 // for mountpoints indicated as used by the matching string in
 // the string array 'mountedParty'.
+// From v4.23 this routine is also used to unmount VMC devices
 //------------------------------
 void unmountAll(void)
 {
 	char pfs_str[6];
 	char vmc_str[6];
-	int i, j;
+	int i;
+
+	strcpy(vmc_str, "vmc0:");
+	for(i=0; i<2; i++){
+		if(vmcMounted[i]){
+			vmc_str[3] = '0'+i;
+			fileXioUmount(vmc_str);
+			vmcMounted[i] = 0;
+			vmc_PartyIndex[i]=-1;
+		}
+	}
 
 	strcpy(pfs_str, "pfs0:");
-	strcpy(vmc_str, "vmc0:");
 	for(i=0; i<MOUNT_LIMIT; i++){
+		Party_vmcIndex[i]=-1;
 		if(mountedParty[i][0]!=0){
-			if((j=Party_vmcIndex[i])>=0){
-				vmc_str[3] = '0'+i;
-				fileXioUmount(vmc_str);
-				vmcMounted[j] = 0;
-				vmc_PartyIndex[j]=-1;
-				Party_vmcIndex[i]=-1;
-			}
 			pfs_str[3] = '0'+i;
 			fileXioUmount(pfs_str);
 			mountedParty[i][0] = 0;

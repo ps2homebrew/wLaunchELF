@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.24 (2008.08.15)
+-Fixed a bug preventing unmounting of VMC devices for some cases
+
+NB: Though VMC usage should no longer be able to interfere with normal HDD access, it may still lock up in some VMC operations. This VMC driver is still to be considered a beta version, though the uLE release is otherwise stable. You should therefore not use VMC operations without backup of each VMC file used.
+
 LaunchELF v4.23 (2008.08.15)
 -Fixed a bug that made it possible to select uLE configurable files (drivers, skins, etc) on VMC
 -Fixed a bug preventing psuPaste from restoring PSU files to gamesave folders on VMC
@@ -7,8 +12,6 @@ LaunchELF v4.23 (2008.08.15)
 -Enforced 32 character limit for vmc object names in FileBrowser (same as on MC)
 -Modified VMC mounting to last only throughout a FileBrowser session. Leaving the FileBrowser automatically unmounts any mounted VMC files
 -Fixed a VMC driver bug causing it to consider a VMC to be mounted even after a failure to do so due to unformatted content
-
-NB: Though VMC usage should no longer be able to interfere with normal HDD access, it may still lock up in some VMC operations. This VMC driver is still to be considered a beta version, though the uLE release is otherwise stable. You should therefore not use VMC operations without backup of each VMC file used.
 
 LaunchELF v4.22 (2008.08.14)
 -Fixed various bugs that could crash the RunELF function when called with improper device names or paths to non-ELF files. From now on on real launch attempts are made only after accessing the file and checking its ELF header.
