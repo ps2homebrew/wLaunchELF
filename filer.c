@@ -161,29 +161,12 @@ int ynDialog(const char *message)
 			}
 		}
 		
-		if ( testskin == 1 ) {
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		drawSprite(setting->color[0],
 			0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-			0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-			0);
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
+		drawSprite(setting->color[0],
 			dx-2, (dy-2)/2,
-			dx-2, (dy-2)/2,
-			dx+dw+2, (dy+dh+4)/2,
-			dx+dw+2, (dy+dh+4)/2,
-			0);
-		}else{
-			itoSprite(setting->color[0],
-			0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-			0);
-			itoSprite(setting->color[0],
-			dx-2, (dy-2)/2,
-			dx+dw+2, (dy+dh+4)/2,
-			0);
-		}
+			dx+dw+2, (dy+dh+4)/2);
 		drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 		for(i=len=0; i<n; i++){
 			printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -231,29 +214,12 @@ void nonDialog(const char *message)
 	dy = (432-dh)/2;
 	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
-	if ( testskin == 1 ) {
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+	drawSprite(setting->color[0],
 		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		0);
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
+	drawSprite(setting->color[0],
 		dx-2, (dy-2)/2,
-		dx-2, (dy-2)/2,
-		dx+dw+2, (dy+dh+4)/2,
-		dx+dw+2, (dy+dh+4)/2,
-		0);
-	}else{
-		itoSprite(setting->color[0],
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		0);
-		itoSprite(setting->color[0],
-		dx-2, (dy-2)/2,
-		dx+dw+2, (dy+dh+4)/2,
-		0);
-	}
+		dx+dw+2, (dy+dh+4)/2);
 	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 	for(i=len=0; i<n; i++){
 		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -787,19 +753,9 @@ int menu(const char *path, const char *file)
 			}
 		}
 
-		if ( testskin == 1 ) {
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		drawSprite(setting->color[0],
 			mSprite_X1, mSprite_Y1,
-			mSprite_X1, mSprite_Y1,
-			mSprite_X2, mSprite_Y2,
-			mSprite_X2, mSprite_Y2,
-			0);
-		}else{
-			itoSprite(setting->color[0],
-			mSprite_X1, mSprite_Y1,
-			mSprite_X2, mSprite_Y2,
-			0);
-		}
+			mSprite_X2, mSprite_Y2);
 		drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
 		
 		for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
@@ -823,19 +779,9 @@ int menu(const char *path, const char *file)
 		
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if ( testskin == 1 ) {
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		drawSprite(setting->color[0],
 			0, y/2,
-			0, y/2,
-			SCREEN_WIDTH, y/2+8,
-			SCREEN_WIDTH, y/2+8,
-			0);
-		}else{
-			itoSprite(setting->color[0],
-			0, y/2,
-			SCREEN_WIDTH, y/2+8,
-			0);
-		}
+			SCREEN_WIDTH, y/2+8);
 		if (swapKeys)
 			printXY("~:OK ›:Cancel", x, y/2, setting->color[2], TRUE);
 		else
@@ -1442,36 +1388,19 @@ int keyboard(char *out, int max)
 					return -1;
 			}
 		}
-		if ( testskin == 1 ) {
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		drawSprite(setting->color[0],
 			KEY_X-2, KEY_Y-1,
-			KEY_X-2, KEY_Y-1,
-			KEY_X+KEY_W+3, KEY_Y+KEY_H+2,
-			KEY_X+KEY_W+3, KEY_Y+KEY_H+2,
-			0);
-		}else{
-			itoSprite(setting->color[0],
-			KEY_X-2, KEY_Y-1,
-			KEY_X+KEY_W+3, KEY_Y+KEY_H+2,
-			0);
-		}
+			KEY_X+KEY_W+3, KEY_Y+KEY_H+2);
 		drawFrame(
-			KEY_X,
-			KEY_Y,
-			KEY_X+KEY_W,
-			KEY_Y+KEY_H,setting->color[1]);
+			KEY_X, KEY_Y,
+			KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
 		itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
 			setting->color[1], KEY_X+KEY_W, KEY_Y+11, 0);
-		printXY(out,
-			KEY_X+2+3,
-			KEY_Y+2,
-			setting->color[3], TRUE);
+		printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
 		t++;
 		if(t<SCANRATE/2){
 			printXY("|",
-				KEY_X+cur*8+1,
-				KEY_Y+2,
-				setting->color[3], TRUE);
+				KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
 		}else{
 			if(t==SCANRATE) t=0;
 		}
@@ -1481,9 +1410,7 @@ int keyboard(char *out, int max)
 				KEY_Y+16 + (i/WFONTS)*8,
 				setting->color[3]);
 		printXY("OK                       CANCEL",
-			KEY_X+2+4 + 20 - 12,
-			KEY_Y+16 + HFONTS*8,
-			setting->color[3], TRUE);
+			KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
 		if(sel<=WFONTS*HFONTS)
 			x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
 		else
@@ -1493,25 +1420,14 @@ int keyboard(char *out, int max)
 		
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if ( testskin == 1 ) {
-			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
-			0, y/2,
-			0, y/2,
-			SCREEN_WIDTH, y/2+8,
-			SCREEN_WIDTH, y/2+8,
-			0);
-		}else{
-			itoSprite(setting->color[0],
-			0, y/2,
-			SCREEN_WIDTH, y/2+8,
-			0);
-		}
+		drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+8);
+
 		if (swapKeys) 
-			printXY("~:OK ›:Back L1:Left R1:Right START:Enter",x, y/2,
-			        setting->color[2], TRUE);
+			printXY("~:OK ›:Back L1:Left R1:Right START:Enter",
+				x, y/2, setting->color[2], TRUE);
 		else
-			printXY("›:OK ~:Back L1:Left R1:Right START:Enter",x, y/2,
-			        setting->color[2], TRUE);
+			printXY("›:OK ~:Back L1:Left R1:Right START:Enter",
+				x, y/2, setting->color[2], TRUE);
 		drawScr();
 	}
 	return 0;
@@ -1998,19 +1914,9 @@ void getFilePath(char *out, int cnfmode)
 			else
 				sprintf(tmp, "[%dB free]", freeSpace);
 			ret=strlen(tmp);
-			if ( testskin == 1 ) {
-				itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+			drawSprite(setting->color[0],
 				SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2,
-				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2,
-				0);
-			}else{
-				itoSprite(setting->color[0],
-				SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2,
-				0);
-			}
+				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2);
 			printXY(tmp,
 				SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
 				(SCREEN_MARGIN+FONT_HEIGHT+4)/2,

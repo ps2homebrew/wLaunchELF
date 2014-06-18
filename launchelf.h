@@ -97,6 +97,7 @@ void RunLoaderElf(char *filename, char *);
 extern itoGsEnv screen_env;
 extern int      testskin;
 void setScrTmp(const char *msg0, const char *msg1);
+void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void setupito(void);
 void clrScr(uint64 color);

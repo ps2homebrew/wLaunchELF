@@ -134,8 +134,12 @@ void RunLoaderElf(char *filename, char *party)
 
 	if((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))){
 		char fakepath[128], *p;
-		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
-			return;
+		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)){
+			//Some error occurred, it could be due to something else having used pfs0
+			fileXioUmount("pfs0:");  //So we try unmounting pfs0, to try again
+			if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
+				return;  //If it still fails, we have to give up...
+		}
 		strcpy(fakepath,filename);
 		p=strrchr(fakepath,'/');
 		if(p==NULL) strcpy(fakepath,"pfs0:");

@@ -382,7 +382,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.53 ¡",
+	printXY(" ¡ LaunchELF v3.54 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	
@@ -401,28 +401,24 @@ void setScrTmp(const char *msg0, const char *msg1)
 	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
 	printXY(msg1, x, y/2, setting->color[2], TRUE);
 }
-
+//--------------------------------------------------------------
+void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
+	if ( testskin == 1 ) {
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),x1, y1,x1, y1,x2, y2,x2, y2,0);
+	}else{
+		itoSprite(color,x1, y1,x2, y2,0);
+	}
+}
 //--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
-	if ( testskin == 1 ) {
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+	drawSprite(setting->color[0],
 		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		0);
-	}else{
-		itoSprite(setting->color[0],
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-		0);
-	}
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
 	printXY(msg, SCREEN_MARGIN, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
 		setting->color[2], TRUE);
 	drawScr();
 }
-
 //--------------------------------------------------------------
 void setupito(void)
 {
@@ -530,6 +526,7 @@ void loadSkin(void)
 			free(Buf);
 		} /* end if */
 	} /* end if */
+	if(!strncmp(setting->skin, "hdd0:/", 6)) fileXioUmount("pfs0:");
 }
 
 //--------------------------------------------------------------

@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.54  (2006.03.29)
+-Removed limitation that prevented use of JPG skins stored on HDD
+-Improved readability of source code by adding a new drawSprite function
+
 LaunchELF v3.53  (2006.03.28)
 -dlanor: Added user editable menu title (individual per menu page)
 -Polo35: Sealed some memory leaks in the JPG background skin implementation.
