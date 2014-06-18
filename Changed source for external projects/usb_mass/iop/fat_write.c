@@ -1,3 +1,6 @@
+//--------------------------------------------------------------
+//File name:   fat_write.c
+//--------------------------------------------------------------
 /*
  * fat_driver.c - USB Mass storage driver for PS2
  *
@@ -7,7 +10,7 @@
  *
  * See the file LICENSE included with this distribution for licensing terms.
  */
-
+//--------------------------------------------------------------
 #ifdef _PS2_
 #include <tamtypes.h>
 #include <cdvdman.h>
@@ -27,7 +30,7 @@
 
 //#define DEBUG
 #include "mass_debug.h"
-
+//--------------------------------------------------------------
 #define DATE_CREATE 1
 #define DATE_MODIFY 2
 
@@ -59,6 +62,7 @@ unsigned int clStack[MAX_CLUSTER_STACK]; //cluster allocation stack
 int clStackIndex = 0;
 unsigned int clStackLast = 0; // last free cluster of the fat table
 
+//--------------------------------------------------------------
 /*
  reorder (swap) the cluster stack records
 */
@@ -88,7 +92,9 @@ void swapClStack(int startIndex, int endIndex) {
 		clStack[offset2] = tmp;
 	}
 }
-
+//------------------------------
+//endfunc swapClStack
+//--------------------------------------------------------------
 /*
  scan FAT12 for free clusters and store them to the cluster stack
 */
@@ -161,8 +167,9 @@ int fat_readEmptyClusters12(fat_bpb* bpb) {
 	return clStackIndex;
 	
 }
-
-
+//------------------------------
+//endfunc fat_readEmptyClusters12
+//--------------------------------------------------------------
 /*
  scan FAT32 for free clusters and store them to the cluster stack
 */
@@ -213,7 +220,9 @@ int fat_readEmptyClusters32(fat_bpb* bpb) {
 	swapClStack(oldClStackIndex, clStackIndex);
 	return clStackIndex;
 }
-
+//------------------------------
+//endfunc fat_readEmptyClusters32
+//--------------------------------------------------------------
 /*
  scan FAT16 for free clusters and store them to the cluster stack
 */
@@ -264,8 +273,9 @@ int fat_readEmptyClusters16(fat_bpb* bpb) {
 	swapClStack(oldClStackIndex, clStackIndex);
 	return clStackIndex;
 }
-
-
+//------------------------------
+//endfunc fat_readEmptyClusters16
+//--------------------------------------------------------------
 /*
  scan FAT for free clusters and store them to the cluster stack
 */
@@ -276,9 +286,9 @@ int fat_readEmptyClusters(fat_bpb* bpb) {
 		case FAT32: return fat_readEmptyClusters32(bpb); 
 	}
 }
-
-
-
+//------------------------------
+//endfunc fat_readEmptyClusters
+//--------------------------------------------------------------
 /*
    set sinlge cluster record (FAT12)into buffer
 
@@ -301,7 +311,9 @@ void fat_setClusterRecord12(unsigned char* buf, unsigned int cluster, int type) 
 	}
 
 }
-
+//------------------------------
+//endfunc fat_setClusterRecord12
+//--------------------------------------------------------------
 void fat_setClusterRecord12part1(unsigned char* buf, unsigned int cluster, int type) {
 	if (type) { //type 1
 		buf[0] = (buf[0] & 0x0F) + ((cluster & 0x0F)<<4);
@@ -309,7 +321,9 @@ void fat_setClusterRecord12part1(unsigned char* buf, unsigned int cluster, int t
 		buf[0] = (cluster & 0xFF);
 	}
 }
-
+//------------------------------
+//endfunc fat_setClusterRecord12part1
+//--------------------------------------------------------------
 void fat_setClusterRecord12part2(unsigned char* buf, unsigned int cluster, int type) {
 	if (type) { //type 1
 		buf[0] = (cluster & 0xFF0) >> 4;		
@@ -317,7 +331,9 @@ void fat_setClusterRecord12part2(unsigned char* buf, unsigned int cluster, int t
 		buf[0] = (buf[0] & 0xF0) + ((cluster & 0xF00) >> 8);
 	}
 }
-
+//------------------------------
+//endfunc fat_setClusterRecord12part2
+//--------------------------------------------------------------
 /*
    save value at the cluster record in FAT 12
 */
@@ -385,7 +401,9 @@ int fat_saveClusterRecord12(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 	} //end for
 	return ret;
 }
-
+//------------------------------
+//endfunc fat_saveClusterRecord12
+//--------------------------------------------------------------
 /*
    save value at the cluster record in FAT 16
 */
@@ -422,9 +440,11 @@ int fat_saveClusterRecord16(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 	}
 	return ret;
 }
-
+//------------------------------
+//endfunc fat_saveClusterRecord16
+//--------------------------------------------------------------
 /*
-   save value at the cluster record in FAT 16
+   save value at the cluster record in FAT 32
 */
 int fat_saveClusterRecord32(fat_bpb* bpb, unsigned int currentCluster, unsigned int value) {
         int i;
@@ -462,8 +482,9 @@ int fat_saveClusterRecord32(fat_bpb* bpb, unsigned int currentCluster, unsigned 
 	}
 	return ret;
 }
-
-
+//------------------------------
+//endfunc fat_saveClusterRecord32
+//--------------------------------------------------------------
 /*
   Append (and write) cluster chain to the FAT table.
 
@@ -516,7 +537,9 @@ int fat_appendClusterChain(fat_bpb* bpb, unsigned int currentCluster, unsigned i
 	}
 	return ret;
 }
-
+//------------------------------
+//endfunc fat_appendClusterChain
+//--------------------------------------------------------------
 /*
  create new cluster chain (of size 1 cluster) at the cluster index
 */
@@ -528,8 +551,9 @@ int fat_createClusterChain(fat_bpb* bpb, unsigned int cluster) {
 	}
 	return -EFAULT;
 }
-
-
+//------------------------------
+//endfunc fat_createClusterChain
+//--------------------------------------------------------------
 /*
  modify the cluster (in FAT table) at the cluster index
 */
@@ -541,9 +565,9 @@ int fat_modifyClusterChain(fat_bpb* bpb, unsigned int cluster, unsigned int valu
 	}
 	return -EFAULT;
 }
-
-
-
+//------------------------------
+//endfunc fat_modifyClusterChain
+//--------------------------------------------------------------
 /*
   delete cluster chain starting at cluster
 */
@@ -592,7 +616,9 @@ int fat_deleteClusterChain(fat_bpb* bpb, unsigned int cluster) {
 	}
 	return 1;
 }
-
+//------------------------------
+//endfunc fat_deleteClusterChain
+//--------------------------------------------------------------
 /*
   Get single empty cluster from the clusterStack (cS is small cache of free clusters)
   Passed currentCluster is updated in the FAT and the new returned cluster index is
@@ -623,8 +649,9 @@ unsigned int fat_getFreeCluster(fat_bpb* bpb, unsigned int currentCluster) {
 	if (ret < 0) return 0;
 	return result;
 }
-
-
+//------------------------------
+//endfunc fat_getFreeCluster
+//--------------------------------------------------------------
 /*
  simple conversion of the char from lower case to upper case
 */
@@ -634,7 +661,9 @@ inline unsigned char toUpperChar(unsigned char c) {
 	} 
 	return c;
 }
-
+//------------------------------
+//endfunc toUpperChar
+//--------------------------------------------------------------
 /*
 returns number of direntry positions that the name takes
 */
@@ -646,7 +675,9 @@ int getDirentrySize(unsigned char* lname) {
 	if (len % 13 > 0) result++;
 	return result;
 }
-
+//------------------------------
+//endfunc getDirentrySize
+//--------------------------------------------------------------
 /*
 compute checksum of the short filename
 */
@@ -661,8 +692,9 @@ unsigned char computeNameChecksum(unsigned char* sname) {
 	}
 	return result;
 }
-
-
+//------------------------------
+//endfunc computeNameChecksum
+//--------------------------------------------------------------
 /*
   fill the LFN (long filename) direntry
 */
@@ -717,7 +749,9 @@ void setLfnEntry(unsigned char* lname, int nameSize, unsigned char chsum, unsign
 	dlfn->reserved2[0] = 0;
 	dlfn->reserved2[1] = 0;	
 }
-
+//------------------------------
+//endfunc setLfnEntry
+//--------------------------------------------------------------
 /*
   update the SFN (long filename) direntry - DATE and TIME
 */
@@ -802,7 +836,9 @@ void setSfnDate(fat_direntry_sfn* dsfn, int mode) {
 		dsfn->dateWrite[1] = tmpClk[3];
 	}
 }
-
+//------------------------------
+//endfunc setSfnDate
+//--------------------------------------------------------------
 /*
   fill the SFN (short filename) direntry
 */
@@ -831,10 +867,9 @@ void setSfnEntry(unsigned char* shortName, char directory, unsigned char *buffer
 
 	setSfnDate(dsfn, DATE_CREATE + DATE_MODIFY);
 }
-
-
-
-
+//------------------------------
+//endfunc setSfnEntry
+//--------------------------------------------------------------
 /*
  Create short name by squeezing long name into the 8.3 name boundaries
  lname - existing long name
@@ -913,7 +948,9 @@ int createShortNameMask(unsigned char* lname, unsigned char* sname) {
 	}
 	return 1;	
 }
-
+//------------------------------
+//endfunc createShortNameMask
+//--------------------------------------------------------------
 /*
   separate path and filename
   fname - the source (merged) string (input)
@@ -924,30 +961,25 @@ int separatePathAndName(const char* fname, unsigned char* path, unsigned char* n
 	int i;
 	int lastSeparator;
 	int nameIndex;
+	int path_len;
+	unsigned char *sp, *np;
 
-	lastSeparator = 0;
-	nameIndex = 0;
-
-	for (i = 0;  fname[i] != 0; i++) {
-		path[i] = fname[i];
-		if (fname[i] == '/' || fname[i] == '\\') {
-			lastSeparator = i;
-			nameIndex = 0;
-			
-		} else {
-			if (nameIndex >= FAT_MAX_NAME-1) {
-				return -ENAMETOOLONG;
-			}
-			name[nameIndex] = fname[i];
-			nameIndex++;
-		}
-	}
-	//terminate strings
-	path[lastSeparator+1] = 0;
-	name[nameIndex] = 0;
+	if(!(sp=strrchr(fname, '/')))	 //if last path separator missing ?
+		np = (char *)fname;                  //  name starts at start of fname string
+	else                           //else last path separator found
+		np = sp+1;                   //  name starts after separator
+	if(strlen(np) >= FAT_MAX_NAME) //if name is too long 
+		return -ENAMETOOLONG;        //  return error code
+	strcpy(name, np);              //copy name from correct part of fname string
+	if((path_len = ((void *)np - (void *)fname)) >= FAT_MAX_PATH) //if path is too long
+		return -ENAMETOOLONG;        //  return error code
+	strncpy(path, fname, path_len);//copy path from start of fname string
+	path[path_len] = 0;            //terminate path
 	return 1;
 }
-
+//------------------------------
+//endfunc separatePathAndName
+//--------------------------------------------------------------
 /*
  get the sequence number from existing direntry name
 */
@@ -982,7 +1014,9 @@ int getShortNameSequence(unsigned char* name, unsigned char* ext, unsigned char*
 	XPRINTF("found short name sequence number='%s' \n", buf);
 	return strtol((const char*)buf, NULL, 10);
 }
-
+//------------------------------
+//endfunc getShortNameSequence
+//--------------------------------------------------------------
 /*
   set the short name sequence number 
 */
@@ -1042,7 +1076,9 @@ int setShortNameSequence(unsigned char* entry, int maxEntry, unsigned char* snam
 
 	return 0;
 }
-
+//------------------------------
+//endfunc setShortNameSequence
+//--------------------------------------------------------------
 /*
   find space where to put the direntry
 */
@@ -1129,9 +1165,9 @@ int getDirentryStoreOffset(unsigned char* entry, int entryCount, unsigned char* 
 	return entryCount;
 
 }
-
-
-
+//------------------------------
+//endfunc getDirentryStoreOffset
+//--------------------------------------------------------------
 /*
   scans current directory entries and fills the info records
 
@@ -1254,7 +1290,9 @@ int fat_fillDirentryInfo(fat_bpb* bpb, unsigned char* lname, unsigned char* snam
 	}
 	return j;
 }
-
+//------------------------------
+//endfunc fat_fillDirentryInfo
+//--------------------------------------------------------------
 /*
   check wether the new direntries (note: one file have at least 2 direntries for 1 SFN and 1..n LFN)
   fit into the current directory space. 
@@ -1327,8 +1365,9 @@ int enlargeDirentryClusterSpace(fat_bpb* bpb, unsigned int startCluster, int ent
 	}
 	return 1; // 1 cluster allocated
 }
-
-
+//------------------------------
+//endfunc enlargeDirentryClusterSpace
+//--------------------------------------------------------------
 /*
   Create direntries of the long and short filename to the supplied buffer.
 
@@ -1359,7 +1398,9 @@ int createDirentry(unsigned char* lname, unsigned char* sname, char directory, u
 	setSfnEntry(sname, directory, buffer + (lsize * 32), cluster);
 	return lsize + 1;
 }
-
+//------------------------------
+//endfunc createDirentry
+//--------------------------------------------------------------
 /*
   Create empty directory space with two SFN direntries:
   1) current directory "."
@@ -1410,10 +1451,10 @@ int createDirectorySpace(fat_bpb* bpb, unsigned int dirCluster, unsigned int par
 			return -EIO;
 		}
 	}
-	
 }
-
-
+//------------------------------
+//endfunc createDirectorySpace
+//--------------------------------------------------------------
 /*
   save direntries stored in dbuf to the directory space on the disk
  
@@ -1497,8 +1538,9 @@ int saveDirentry(fat_bpb* bpb, unsigned int startCluster, unsigned char * dbuf, 
 	}
 	return j;
 }
-
-
+//------------------------------
+//endfunc saveDirentry
+//--------------------------------------------------------------
 /*
   - create/convert long name to short name
   - analyse directory space
@@ -1645,12 +1687,11 @@ int fat_modifyDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, char 
 			return ret; //Return the negative error code
 		}
 	}
-
 	return 1; //Return 1 as SUCCESS code
-
 }
-
-
+//------------------------------
+//endfunc fat_modifyDirSpace
+//--------------------------------------------------------------
 /*
    Check wether directory space contain any file or directory
 
@@ -1697,6 +1738,9 @@ int checkDirspaceEmpty(fat_bpb* bpb, unsigned int startCluster, unsigned char* e
 	return 1;
 }
 
+//------------------------------
+//endfunc checkDirspaceEmpty
+//--------------------------------------------------------------
 /*
    Remove the name (direntries of the file or directory) from the directory space.
 
@@ -1802,10 +1846,9 @@ int fat_clearDirSpace(fat_bpb* bpb, unsigned char* lname, char directory, unsign
 	FLUSH_SECTORS();
 	return 1;
 }
-
-
-
-
+//------------------------------
+//endfunc fat_clearDirSpace
+//--------------------------------------------------------------
 /* ===================================================================== */
 
 /*
@@ -1854,8 +1897,9 @@ int fat_truncateFile(fat_bpb* bpb, unsigned int cluster, unsigned int sfnSector,
 	}
 	return 1;
 }
-
-
+//------------------------------
+//endfunc fat_truncateFile
+//--------------------------------------------------------------
 /*
   Update size of the SFN entry
 
@@ -1893,8 +1937,9 @@ int fat_updateSfn(int size, unsigned int sfnSector, int sfnOffset ) {
 	XPRINTF("I: sfn updated, file size=%d \n", size);
 	return 1;
 }
-
-
+//------------------------------
+//endfunc fat_updateSfn
+//--------------------------------------------------------------
 /*
  create file or directory
 
@@ -1960,8 +2005,9 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 	}
 	return 1;
 }
-
-
+//------------------------------
+//endfunc fat_createFile
+//--------------------------------------------------------------
 int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 	int ret;
 	unsigned int startCluster;
@@ -1998,8 +2044,9 @@ int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 	}
 	return 1;
 }
-
-
+//------------------------------
+//endfunc fat_deleteFile
+//--------------------------------------------------------------
 int fat_writeFile(fat_bpb* bpb, fat_dir* fatDir, int* updateClusterIndices, unsigned int filePos, unsigned char* buffer, int size) {
 	int ret;
 	int i,j;
@@ -2145,8 +2192,9 @@ int fat_writeFile(fat_bpb* bpb, fat_dir* fatDir, int* updateClusterIndices, unsi
 
 	return bufferPos; //return number of bytes already written
 }
-
-
+//------------------------------
+//endfunc fat_writeFile
+//--------------------------------------------------------------
 void fat_test() {
 /*
 	fat_bpb* bpb;
@@ -2159,7 +2207,9 @@ void fat_test() {
 	fat_appendClusterChain(bpb, 33,34);
 */
 }
-
+//------------------------------
+//endfunc fat_test
+//--------------------------------------------------------------
 int fat_allocSector(unsigned int sector, unsigned char** buf) {
 	int ret;
 
@@ -2171,7 +2221,9 @@ int fat_allocSector(unsigned int sector, unsigned char** buf) {
 	*buf = sbuf;
 	return Size_Sector;
 }
-
+//------------------------------
+//endfunc fat_allocSector
+//--------------------------------------------------------------
 int fat_writeSector(unsigned int sector) {
 	int ret;
 
@@ -2182,7 +2234,14 @@ int fat_writeSector(unsigned int sector) {
 	}
 	return Size_Sector;
 }
-
+//------------------------------
+//endfunc fat_writeSector
+//--------------------------------------------------------------
 int fat_flushSectors(void) {
 	FLUSH_SECTORS();
 }
+//------------------------------
+//endfunc fat_flushSectors
+//--------------------------------------------------------------
+//End of file: fat_write.c
+//--------------------------------------------------------------

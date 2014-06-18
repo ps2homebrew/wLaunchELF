@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.74 (2006.06.05)
+-Modified HddManager to make more partitions visible
+-Added lots of changes to HddManager to improve speed and reliability (still slow init)
+-Fixed a bug that affected creation of a partition of exactly 2048MB
+-Fixed a bug that made HddManager miss subpartition sizes of 4096MB in total sum
+
 LaunchELF v3.73 (2006.06.02)
 -Added "MISC/Set CNF_Path" command that sets the CNF_Path variable by direct browsing. Note however that this does not work properly for HDD paths (yet). For those you can only use the CNF_Path variable in the "Startup Settings"
 -Added "MISC/Load CNF" command that simply reloads CNF (useful with CNF_Path variable)

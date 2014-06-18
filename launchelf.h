@@ -60,7 +60,7 @@ enum
 	MAX_NAME = 256,
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
-	MAX_PARTITIONS=400,
+	MAX_PARTITIONS=500,
 	MAX_MENU_TITLE = 40,
 	MAX_ELF_TITLE = 72,
 	MAX_TEXT_LINE = 80
@@ -156,6 +156,7 @@ extern u32 new_pad;
 int setupPad(void);
 int readpad(void);
 int readpad_no_KB(void);
+int readpad_noRepeat(void);
 void waitPadReady(int port, int slot);
 void waitAnyPadReady(void);
 

@@ -9,11 +9,20 @@ typedef struct{
 	s64  FreeSize;
 	s64  UsedSize;
 	int  FsGroup;
+	//GameInfo Game;  //Intended for HDL game info, but not yet implemented
+	int  Count;
+	int  Treatment;
 } PARTYINFO;
 
-enum
-{
-	CREATE,
+enum {//For Treatment codes
+	TREAT_PFS = 0,			//PFS partition for normal file access
+	TREAT_HDL,			//HDL game partition
+	TREAT_SYSTEM,		//System partition that must never be modified (__mbr)
+	TREAT_NOACCESS  //Inaccessible partition (but can be deleted)
+};
+
+enum {//For menu commands
+	CREATE = 0,
 	REMOVE,
 	RENAME,
 	EXPAND,
@@ -21,17 +30,20 @@ enum
 	NUM_MENU
 };
 
-PARTYINFO PartyInfo[MAX_ENTRY];
-char mountedParty[2][MAX_NAME];
+#define SECTORS_PER_MB 2048  //Divide by this to convert from sector count to MB
+#define MB 1048576
+
+PARTYINFO PartyInfo[MAX_PARTITIONS];
+PARTYINFO TmpInfo;
 int  numParty;
 int  hddSize, hddFree, hddFreeSpace, hddUsed;
 int  hddConnected, hddFormated;
 
 //--------------------------------------------------------------
-void GetHddInfo(void)
+void GetHddInfo(int CreateNew)
 {
 	iox_dirent_t infoDirEnt;
-	int  rv, hddFd=0, partitionFd, i;
+	int  rv, hddFd=0, partitionFd, i, Treat;
 	s64  size=0;
 	char tmp[MAX_PATH];
 	char dbgtmp[MAX_PATH];
@@ -55,18 +67,21 @@ void GetHddInfo(void)
 	}else
 		hddFormated=1;
 
-	hddSize = fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0) * 512 / 1024 / 1024;
+	size =((s64) fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0))*512;
+	hddSize = (size / MB);
 
 	if((hddFd = fileXioDopen("hdd0:")) < 0) return;
 
 	rv = fileXioDread(hddFd, &infoDirEnt);
-	while(rv > 0)
-	{
-		if(infoDirEnt.stat.mode != FS_TYPE_EMPTY) hddUsed += infoDirEnt.stat.size / 1024 / 1024;
+	while(rv > 0){
+		if(infoDirEnt.stat.mode != FS_TYPE_EMPTY){
+				hddUsed +=
+					((((s64) infoDirEnt.stat.hisize)<<32) + infoDirEnt.stat.size) / MB;
+		}
 		rv = fileXioDread(hddFd, &infoDirEnt);
 	}
-	hddFreeSpace = hddSize - hddUsed;
-	hddFree = (hddFreeSpace*100)/hddSize;
+	hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
+	hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
 
 	fileXioDclose(hddFd);
 
@@ -77,7 +92,8 @@ void GetHddInfo(void)
 
 	while(fileXioDread(hddFd, &infoDirEnt) > 0)
 	{
-		if(numParty >= MAX_PARTITIONS)
+		//----- Start of main loop looking for main partitions -----
+		if(numParty >= MAX_PARTITIONS-2) //This safety margin is needed below!
 			break;
 		if((infoDirEnt.stat.attr & ATTR_SUB_PARTITION) 
 				|| (infoDirEnt.stat.mode == FS_TYPE_EMPTY))
@@ -86,54 +102,140 @@ void GetHddInfo(void)
 		sprintf(dbgtmp, "Processing \"%s\"", infoDirEnt.name);
 		drawMsg(dbgtmp);
 
-		if(!strncmp(infoDirEnt.name, "__", 2) &&
-			strcmp(infoDirEnt.name, "__boot") &&
-			strcmp(infoDirEnt.name, "__common"))
-			continue;  //Skip names beginning with '__' except for '__boot' and '__common'
+		if(infoDirEnt.stat.mode == 0x0001)  //New test of partition type by 'mode'
+			Treat = TREAT_SYSTEM;
+		else {
+			sprintf(tmp, "hdd0:%s", infoDirEnt.name);
+			partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+			if(partitionFd >= 0)  //if fileXioOpen was successful
+				fileXioClose(partitionFd);
+			//The test below is needed to work with Sony-style protected partitions
+			if(partitionFd < 0)  //if fileXioOpen gave error code ?
+				Treat = TREAT_NOACCESS;          //Skip this partition as fileXioOpen failed
+			else if(!strncmp(infoDirEnt.name,"PP.HDL.",7))
+				Treat = TREAT_HDL;
+			else
+				Treat = TREAT_PFS;
+		}
 
-		memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
-		memset(&PartyInfo[numParty+1], 0, sizeof(PARTYINFO));
-		strcpy(PartyInfo[numParty].Name, infoDirEnt.name);
+		//sprintf(dbgtmp, "Found \"%s\" at index %d", infoDirEnt.name, numParty);
+		//drawMsg(dbgtmp);
+		//do{	readpad_noRepeat(); } while (new_pad==0);
 
-		if((PartyInfo[numParty].Name[0] == '_') && (PartyInfo[numParty].Name[1] == '_'))
-			PartyInfo[numParty].FsGroup = FS_GROUP_SYSTEM;
-		else if(PartyInfo[numParty].Name[0] == FS_COMMON_PREFIX)
-			PartyInfo[numParty].FsGroup = FS_GROUP_COMMON;
-		else
-			PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;
+		if(CreateNew==1){ // Get Info After Creation Of New Partition
+			//starts clause for getting single main part info (eg: create)
 
-		sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
-		partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+			if(!strcmp(infoDirEnt.name, TmpInfo.Name)){
+				//starts clause for identified main part needing new part info
 
-//		sprintf(dbgtmp, "Party \"%s\" opened fd=%d", infoDirEnt.name, partitionFd);
-//		drawMsg(dbgtmp);
+				//printf("Create: Name:%s  Mode:%i  Num:%d\n", infoDirEnt.name, infoDirEnt.stat.mode, numParty);
 
-		if(partitionFd < 0){  //if fileXioOpen gave error code ?
+				memset(&TmpInfo, 0, sizeof(PARTYINFO));
+				strcpy(TmpInfo.Name, infoDirEnt.name);
+
+				if((TmpInfo.Name[0] == '_') && (TmpInfo.Name[1] == '_'))
+					TmpInfo.FsGroup = FS_GROUP_SYSTEM;
+				else if(TmpInfo.Name[0] == FS_COMMON_PREFIX)
+					TmpInfo.FsGroup = FS_GROUP_COMMON;
+				else
+					TmpInfo.FsGroup = FS_GROUP_APPLICATION;
+
+				TmpInfo.Count=numParty;
+				TmpInfo.Treatment = Treat;
+
+				if((Treat == TREAT_SYSTEM) || (Treat == TREAT_NOACCESS)){
+					TmpInfo.TotalSize =
+						((((s64)infoDirEnt.stat.hisize)<<32) + infoDirEnt.stat.size) / MB;
+					TmpInfo.FreeSize = 0;
+					TmpInfo.UsedSize = TmpInfo.TotalSize;
+				} else { //Starts clause for TREAT_PFS or TREAT_HDL
+					sprintf(tmp, "hdd0:%s", TmpInfo.Name);
+					partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+
+					for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
+					{
+						rv = fileXioIoctl2(partitionFd, HDDIO_GETSIZE, &i, 4, NULL, 0);
+						size += rv; //accumulate size (as sector count)
+					}
+					size = size/SECTORS_PER_MB; //Convert size to MB
+					TmpInfo.TotalSize=size;
+
+					fileXioClose(partitionFd);
+
+					//sprintf(dbgtmp, "Party \"%s\" size=%ld", infoDirEnt.name, size);
+					//drawMsg(dbgtmp);
+
+					mountParty(tmp);
+					zoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+					zoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+					TmpInfo.FreeSize  = zoneFree*zoneSize / MB;
+					TmpInfo.UsedSize  = TmpInfo.TotalSize-TmpInfo.FreeSize;
+
+					//if(Treat == TREAT_HDL){
+					//	loadHdlInfoModule();
+					//	HdlGetGameInfo(TmpInfo.Name, &TmpInfo.Game);
+					//}
+				} //Ends clause for TREAT_PFS or TREAT_HDL
+
+				//ends clause for identified main part needing new part info
+			}
+
+			//ends clause for getting single main part info (eg: create)
+		}else{ // Get Full Hdd Info
+	
 			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
 			memset(&PartyInfo[numParty+1], 0, sizeof(PARTYINFO));
-			continue;  //Skip this partition as fileXioOpen failed
-		}
+			strcpy(PartyInfo[numParty].Name, infoDirEnt.name);
+	
+			if((PartyInfo[numParty].Name[0] == '_') && (PartyInfo[numParty].Name[1] == '_'))
+				PartyInfo[numParty].FsGroup = FS_GROUP_SYSTEM;
+			else if(PartyInfo[numParty].Name[0] == FS_COMMON_PREFIX)
+				PartyInfo[numParty].FsGroup = FS_GROUP_COMMON;
+			else
+				PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;
 
-		for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
-		{
-			rv = fileXioIoctl2(partitionFd, HDDIO_GETSIZE, &i, 4, NULL, 0);
-			size += rv * 512 / 1024 / 1024;
-		}
-		PartyInfo[numParty].TotalSize=size;
+			PartyInfo[numParty].Count = numParty;
+			PartyInfo[numParty].Treatment = Treat;
 
-		fileXioClose(partitionFd);
+			if((Treat == TREAT_SYSTEM) || (Treat == TREAT_NOACCESS)){
+				PartyInfo[numParty].TotalSize =
+					((((s64) infoDirEnt.stat.hisize)<<32) + infoDirEnt.stat.size) / MB;
+				PartyInfo[numParty].FreeSize = 0;
+				PartyInfo[numParty].UsedSize = TmpInfo.TotalSize;
+			} else { //Starts clause for TREAT_PFS or TREAT_HDL
+				sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
+				partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+	
+		//		sprintf(dbgtmp, "Party \"%s\" opened fd=%d", infoDirEnt.name, partitionFd);
+		//		drawMsg(dbgtmp);
+	
+				for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
+				{
+					rv = fileXioIoctl2(partitionFd, HDDIO_GETSIZE, &i, 4, NULL, 0);
+					size += rv * 512 / 1024 / 1024;
+				}
+				PartyInfo[numParty].TotalSize=size;
+	
+				fileXioClose(partitionFd);
+	
+		//		sprintf(dbgtmp, "Party \"%s\" size=%ld", infoDirEnt.name, size);
+		//		drawMsg(dbgtmp);
+		
+				mountParty(tmp);
+				zoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+				zoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+				PartyInfo[numParty].FreeSize  = zoneFree*zoneSize / 1024 / 1024;
+				PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
+		
+				//if(!strncmp(PartyInfo[numParty].Name,"PP.HDL.",7)){
+				//	loadHdlInfoModule();
+				//	HdlGetGameInfo(PartyInfo[numParty].Name, &PartyInfo[numParty].Game);
+				//}
+			} //Ends clause for TREAT_PFS or TREAT_HDL
 
-//		sprintf(dbgtmp, "Party \"%s\" size=%ld", infoDirEnt.name, size);
-//		drawMsg(dbgtmp);
-
-		mountParty(tmp);
-		zoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
-		zoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
-		PartyInfo[numParty].FreeSize  = zoneFree*zoneSize / 1024 / 1024;
-		PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
-
+		} //ends clause for full HDD info
 		numParty++;
-
+		//----- End of main loop looking for main partitions -----
 	} //ends while
 	fileXioUmount("pfs0:");
 	fileXioDclose(hddFd);
@@ -142,10 +244,10 @@ end:
 	drawMsg("HDD Information Read");
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
 
-}
+} // ends GetHddInfo
 //--------------------------------------------------------------
 int sizeSelector(int size)
 {
@@ -247,7 +349,7 @@ int sizeSelector(int size)
 	return size;
 }//ends sizeSelector
 //--------------------------------------------------------------
-int MenuParty(PARTYINFO *Info)
+int MenuParty(PARTYINFO Info)
 {
 	uint64 color;
 	char enable[NUM_MENU], tmp[64];
@@ -267,15 +369,15 @@ int MenuParty(PARTYINFO *Info)
 
 	memset(enable, TRUE, NUM_MENU);
 
-	if(Info->FsGroup==FS_GROUP_SYSTEM){
+	if(Info.FsGroup==FS_GROUP_SYSTEM){
 		enable[REMOVE] = FALSE;
 		enable[RENAME] = FALSE;
 		enable[EXPAND] = FALSE;
 	}
-	if(Info->FsGroup==FS_GROUP_APPLICATION){
+	if(Info.FsGroup==FS_GROUP_APPLICATION){
 		enable[RENAME] = FALSE;
 	}
-	if(!strncmp(Info->Name,"PP.HDL.",7)){
+	if(!strncmp(Info.Name,"PP.HDL.",7)){
 		enable[REMOVE] = FALSE;
 		enable[RENAME] = FALSE;
 		enable[EXPAND] = FALSE;
@@ -359,150 +461,200 @@ int CreateParty(char *party, int size)
 	int  i, num=1, ret=0;
 	int  remSize = size-2048;
 	char tmpName[MAX_ENTRY];	
-	t_hddFilesystem hddFs[MAX_ENTRY];
+	t_hddFilesystem hddFs[MAX_PARTITIONS];
 
 	drawMsg("Creating New Partition...");
 
 	tmpName[0]=0;
 	sprintf(tmpName, "+%s", party);
-	for(i=0; i<MAX_ENTRY; i++){
+	for(i=0; i<MAX_PARTITIONS; i++){
 		if(!strcmp(PartyInfo[i].Name, tmpName)){
 			sprintf(tmpName, "+%s%d", party, num);
 			num++;
 		}
 	}
 	strcpy(party, tmpName+1);
-	if(remSize < 0)
+	if(remSize <= 0)
 		ret = hddMakeFilesystem(size, party, FS_GROUP_COMMON);
 	else{
 		ret = hddMakeFilesystem(2048, party, FS_GROUP_COMMON);
-		hddGetFilesystemList(hddFs, MAX_ENTRY);
-		for(i=0; i<MAX_ENTRY; i++){
+		hddGetFilesystemList(hddFs, MAX_PARTITIONS);
+		for(i=0; i<MAX_PARTITIONS; i++){
 			if(!strcmp(hddFs[i].name, party))
 				ret = hddExpandFilesystem(&hddFs[i], remSize);
 		}
 	}
 
 	if(ret>0){
+		memset(&TmpInfo, 0, sizeof(PARTYINFO));  // Temp PartyInfo Use To Get New Part Info
+		memcpy(&TmpInfo, &PartyInfo[0], sizeof(PARTYINFO));
+		strcpy(TmpInfo.Name, tmpName);
+
+		//printf("Number Of Partition Before GetInfo: %d\n", numParty);
+
+		GetHddInfo(1);
+
+		//printf("New Part Name: %s  Count:%d\n", TmpInfo.Name, TmpInfo.Count);
+		//printf("Number Of Partition After GetInfo: %d\n", numParty);
+
+		if(TmpInfo.Count==numParty-1){ //Created at end of current list ?
+			memset(&PartyInfo[numParty-1], 0, sizeof(PARTYINFO));
+			memcpy(&PartyInfo[numParty-1], &TmpInfo, sizeof(PARTYINFO));
+		}else{
+			for(i=numParty-2; i>TmpInfo.Count-1; i--){
+				memset(&PartyInfo[i+1], 0, sizeof(PARTYINFO));
+				memcpy(&PartyInfo[i+1], &PartyInfo[i], sizeof(PARTYINFO));
+			}
+			memset(&PartyInfo[TmpInfo.Count], 0, sizeof(PARTYINFO));
+			memcpy(&PartyInfo[TmpInfo.Count], &TmpInfo, sizeof(PARTYINFO));
+		}
 		drawMsg("New Partition Created");
 	}else{
 		drawMsg("Failed Creating New Partition");
 	}
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
-
-	GetHddInfo();
 
 	return ret;
 }
 //--------------------------------------------------------------
-int RemoveParty(char *party)
+int RemoveParty(PARTYINFO Info)
 {
 	int  i, ret=0;
 	char tmpName[MAX_ENTRY];	
 	
+	//printf("Remove Partition: %d\n", Info.Count);
+
 	drawMsg("Removing Current Partition...");
 
-	sprintf(tmpName, "hdd0:%s", party);
+	sprintf(tmpName, "hdd0:%s", Info.Name);
 	ret = fileXioRemove(tmpName);
 
 	if(ret==0){
+		hddUsed -= Info.TotalSize;
+		hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
+		hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
+		numParty--;
+		if(Info.Count==numParty){
+			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
+		}else{
+			for(i=Info.Count; i<numParty; i++){
+				memset(&PartyInfo[i], 0, sizeof(PARTYINFO));
+				memcpy(&PartyInfo[i], &PartyInfo[i+1], sizeof(PARTYINFO));
+				PartyInfo[i].Count--;
+			}
+			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
+		}
 		drawMsg("Partition Removed");
 	}else{
 		drawMsg("Failed Removing Current Partition");
 	}
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
-
-	GetHddInfo();
 
 	return ret;
 }
 //--------------------------------------------------------------
-int RenameParty(char *party, char *newName, int fsGroup)
+int RenameParty(PARTYINFO Info, char *newName)
 {
 	int  i, num=1, ret=0;
 	char in[MAX_ENTRY], out[MAX_ENTRY], tmpName[MAX_ENTRY];
 
+	//printf("Rename Partition: %d  group: %d\n", Info.Count, Info.FsGroup);
 	drawMsg("Renaming Partition...");
-
-	if(!strcmp(party, newName))
-		goto end;
 
 	in[0]=0;
 	out[0]=0;
 	tmpName[0]=0;
-	if(fsGroup==FS_GROUP_APPLICATION){
+	if(Info.FsGroup==FS_GROUP_APPLICATION){
 		sprintf(tmpName, "%s", newName);
-		for(i=0; i<MAX_ENTRY; i++){
+		if(!strcmp(Info.Name, tmpName))
+			goto end;
+		for(i=0; i<MAX_PARTITIONS; i++){
 			if(!strcmp(PartyInfo[i].Name, tmpName)){
 				sprintf(tmpName, "%s%d", newName, num);
 				num++;
 			}
 		}
 		strcpy(newName, tmpName);
-		sprintf(in, "hdd0:%s", party);
+		sprintf(in, "hdd0:%s", Info.Name);
 		sprintf(out, "hdd0:%s", newName);
 	}else{ // FS_GROUP_COMMON
 		sprintf(tmpName, "+%s", newName);
-		for(i=0; i<MAX_ENTRY; i++){
+		if(!strcmp(Info.Name, tmpName))
+			goto end;
+		for(i=0; i<MAX_PARTITIONS; i++){
 			if(!strcmp(PartyInfo[i].Name, tmpName)){
 				sprintf(tmpName, "+%s%d", newName, num);
 				num++;
 			}
 		}
 		strcpy(newName, tmpName+1);
-		sprintf(in, "hdd0:+%s", party);
+		sprintf(in, "hdd0:%s", Info.Name);
 		sprintf(out, "hdd0:+%s", newName);
 	}
 
 	ret = fileXioRename(in, out);
 
 	if(ret==0){
+		if(Info.FsGroup==FS_GROUP_APPLICATION)
+			strcpy(PartyInfo[Info.Count].Name, newName);
+		else // FS_GROUP_COMMON
+			sprintf(PartyInfo[Info.Count].Name, "+%s", newName);
 		drawMsg("Partition Renamed");
 	}else{
 		drawMsg("Failed Renaming Partition");
 	}
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
 
 end:
-	GetHddInfo();
-
 	return ret;
 }
 
 //--------------------------------------------------------------
-int ExpandParty(char *party, int size)
+int ExpandParty(PARTYINFO Info, int size)
 {
 	int i, ret=0;
-	t_hddFilesystem hddFs[MAX_ENTRY];
+	char tmpName[MAX_ENTRY];
+	t_hddFilesystem hddFs[MAX_PARTITIONS];
 	
 	drawMsg("Expanding Current Partition...");
+	//printf("Expand Partition: %d\n", Info.Count);
 
-	hddGetFilesystemList(hddFs, MAX_ENTRY);
-	for(i=0; i<MAX_ENTRY; i++){
-		if(!strcmp(hddFs[i].name, party))
+	if(Info.FsGroup==FS_GROUP_APPLICATION){
+		strcpy(tmpName, Info.Name);
+	}else{
+		strcpy(tmpName, Info.Name+1);
+	}
+
+	hddGetFilesystemList(hddFs, MAX_PARTITIONS);
+	for(i=0; i<MAX_PARTITIONS; i++){
+		if(!strcmp(hddFs[i].name, tmpName))
 			ret = hddExpandFilesystem(&hddFs[i], size);
 	}
 
 	if(ret>0){
+		hddUsed += size;
+		hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
+		hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
+
+		PartyInfo[Info.Count].TotalSize += size;
+		PartyInfo[Info.Count].FreeSize += size;
 		drawMsg("Partition Expanded");
 	}else{
 		drawMsg("Failed Expanding Current Partition");
 	}
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
-
-	GetHddInfo();
 
 	return ret;
 }
@@ -522,10 +674,10 @@ int FormatHdd(void)
 	}
 
 	i=0;
-	while(i<50000000) // print operation result during 1 sec
+	while(i<25000000) // print operation result during 1 sec
 	 i++;
 
-	GetHddInfo();
+	GetHddInfo(0);
 
 	return ret;
 }
@@ -546,11 +698,12 @@ void hddManager(void)
 	int    top=0, rows;
 	int    event, post_event=0;
 	int    browser_sel=0,	browser_nfiles=0;
+	int    Treat;
 
 	rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
 
 	loadHddModules();
-	GetHddInfo();
+	GetHddInfo(0);
 
 	event = 1;  //event = initial entry
 	while(1){
@@ -559,6 +712,7 @@ void hddManager(void)
 		waitPadReady(0, 0);
 		if(readpad()){
 			if(new_pad){
+				//printf("Selected Partition: %d\n", browser_sel);
 				event |= 2;  //event |= pad command
 			}
 			if(new_pad & PAD_UP)
@@ -570,63 +724,59 @@ void hddManager(void)
 			else if(new_pad & PAD_RIGHT)
 				browser_sel+=rows/2;
 			else if((new_pad & PAD_SELECT) || (new_pad & PAD_TRIANGLE)){
-				if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
-				if(mountedParty[1][0]!=0) fileXioUmount("pfs1:");
+				fileXioUmount("pfs0:");
+				fileXioUmount("pfs1:");
 				return;
-			}else if(new_pad & PAD_R1) {
-					ret = MenuParty(&PartyInfo[browser_sel]);
-					tmp[0]=0;
-					if(ret==CREATE){
-						drawMsg("Enter New Partition Name.");
-						drawMsg("Enter New Partition Name.");
-						if(keyboard(tmp, 36)>0){
-							partySize=128;
-							drawMsg("Select New Partition Size In MB.");
-							drawMsg("Select New Partition Size In MB.");
-							if((ret = sizeSelector(partySize))>0){
-								if(ynDialog("Create New Partition ?")==1){
-									CreateParty(tmp, ret);
-									nparties = 0; //Tell FileBrowser to refresh party list
-								}
-							}
-						}
-					} else if(ret==REMOVE){
-						if(ynDialog("Remove Current Partition ?")==1) {
-							RemoveParty(PartyInfo[browser_sel].Name);
-							nparties = 0; //Tell FileBrowser to refresh party list
-						}	
-					} else if(ret==RENAME){
-						drawMsg("Enter New Partition Name.");
-						drawMsg("Enter New Partition Name.");
-						strcpy(tmp, PartyInfo[browser_sel].Name+1);
-						if(keyboard(tmp, 36)>0){
-							if(ynDialog("Rename Current Partition ?")==1){
-								RenameParty(PartyInfo[browser_sel].Name+1, tmp, PartyInfo[browser_sel].FsGroup);
+			}else if(new_pad & PAD_R1) { //Starts clause for R1 menu
+				ret = MenuParty(PartyInfo[browser_sel]);
+				tmp[0]=0;
+				if(ret==CREATE){
+					drawMsg("Enter New Partition Name.");
+					drawMsg("Enter New Partition Name.");
+					if(keyboard(tmp, 36)>0){
+						partySize=128;
+						drawMsg("Select New Partition Size In MB.");
+						drawMsg("Select New Partition Size In MB.");
+						if((ret = sizeSelector(partySize))>0){
+							if(ynDialog("Create New Partition ?")==1){
+								CreateParty(tmp, ret);
 								nparties = 0; //Tell FileBrowser to refresh party list
 							}
 						}
-					} else if(ret==EXPAND){
-						drawMsg("Select New Partition Size In MB.");
-						drawMsg("Select New Partition Size In MB.");
-						partySize=PartyInfo[browser_sel].TotalSize;
-						if((ret=sizeSelector(partySize))>0){
-							if(ynDialog("Expand Current Partition ?")==1){
-								ret -= partySize;
-								if(PartyInfo[browser_sel].FsGroup==FS_GROUP_APPLICATION){
-									ExpandParty(PartyInfo[browser_sel].Name, ret);
-								}else{
-									ExpandParty(PartyInfo[browser_sel].Name+1, ret);
-								}
-								nparties = 0; //Tell FileBrowser to refresh party list
-							}
-						}
-					} else if(ret==FORMAT){
-						if(ynDialog("Format HDD ?")==1){
-							FormatHdd();
+					}
+				} else if(ret==REMOVE){
+					if(ynDialog("Remove Current Partition ?")==1) {
+						RemoveParty(PartyInfo[browser_sel]);
+						nparties = 0; //Tell FileBrowser to refresh party list
+					}	
+				} else if(ret==RENAME){
+					drawMsg("Enter New Partition Name.");
+					drawMsg("Enter New Partition Name.");
+					strcpy(tmp, PartyInfo[browser_sel].Name+1);
+					if(keyboard(tmp, 36)>0){
+						if(ynDialog("Rename Current Partition ?")==1){
+							RenameParty(PartyInfo[browser_sel], tmp);
 							nparties = 0; //Tell FileBrowser to refresh party list
 						}
 					}
-			}
+				} else if(ret==EXPAND){
+					drawMsg("Select New Partition Size In MB.");
+					drawMsg("Select New Partition Size In MB.");
+					partySize=PartyInfo[browser_sel].TotalSize;
+					if((ret=sizeSelector(partySize))>0){
+						if(ynDialog("Expand Current Partition ?")==1){
+							ret -= partySize;
+							ExpandParty(PartyInfo[browser_sel], ret);
+							nparties = 0; //Tell FileBrowser to refresh party list
+						}
+					}
+				} else if(ret==FORMAT){
+					if(ynDialog("Format HDD ?")==1){
+						FormatHdd();
+						nparties = 0; //Tell FileBrowser to refresh party list
+					}
+				}
+			} //Ends clause for R1 menu
 		}//ends pad response section
 
 		if(event||post_event){ //NB: We need to update two frame buffers per event
@@ -634,8 +784,8 @@ void hddManager(void)
 			//Display section
 			clrScr(setting->color[0]);
 
-			top=0;
 			browser_nfiles=numParty;
+			//printf("Number Of Partition: %d\n", numParty);
 
 			if(top > browser_nfiles-rows)	top=browser_nfiles-rows;
 			if(top < 0)				top=0;
@@ -644,8 +794,18 @@ void hddManager(void)
 			if(browser_sel >= top+rows)		top=browser_sel-rows+1;
 			if(browser_sel < top)			top=browser_sel;
 		
-			x = Menu_start_x+FONT_WIDTH;
 			y = Menu_start_y;
+
+			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("HDD STATUS")*FONT_WIDTH)/2;
+			printXY("HDD STATUS", x, y/2, setting->color[3], TRUE);
+
+			if(setting->TV_mode == TV_mode_NTSC) 
+				y += FONT_HEIGHT+10;
+			else
+				y += FONT_HEIGHT+11;
+
+			itoLine(setting->color[1], SCREEN_MARGIN, y/2-3, 0,
+				setting->color[1], SCREEN_WIDTH/2-20, y/2-3, 0);
 
 			if(hddConnected==0)
 				strcpy(c, "CONNECTED:  NO / FORMATED:  NO");
@@ -654,35 +814,26 @@ void hddManager(void)
 			else if(hddFormated==1)
 				strcpy(c, "CONNECTED: YES / FORMATED: YES");
 
-			printXY("HDD STATUS", x+(strlen(c)/2-strlen("HDD STATUS")/2)*FONT_WIDTH, y/2, setting->color[3], TRUE);
-
-			if(setting->TV_mode == TV_mode_NTSC) 
-				y += FONT_HEIGHT+10;
-			else
-				y += FONT_HEIGHT+11;
-
-			itoLine(setting->color[1], SCREEN_MARGIN, y/2-3, 0,
-				setting->color[1], SCREEN_WIDTH/2-30, y/2-3, 0);
-
+			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
 			printXY(c, x, y/2, setting->color[3], TRUE);
 
-			itoLine(setting->color[1], SCREEN_WIDTH/2-30, Frame_start_y/2, 0,
-				setting->color[1], SCREEN_WIDTH/2-30, Frame_end_y/2, 0);
-			itoLine(setting->color[1], SCREEN_WIDTH/2-29, Frame_start_y/2, 0,
-				setting->color[1], SCREEN_WIDTH/2-29, Frame_end_y/2, 0);
+			itoLine(setting->color[1], SCREEN_WIDTH/2-20, Frame_start_y/2, 0,
+				setting->color[1], SCREEN_WIDTH/2-20, Frame_end_y/2, 0);
+			itoLine(setting->color[1], SCREEN_WIDTH/2-21, Frame_start_y/2, 0,
+				setting->color[1], SCREEN_WIDTH/2-21, Frame_end_y/2, 0);
 
-			x = Menu_start_x+FONT_WIDTH*6;
 			if(setting->TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+11;
 			else
 				y += FONT_HEIGHT+12;
 
 			itoLine(setting->color[1], SCREEN_MARGIN, y/2-4, 0,
-				setting->color[1], SCREEN_WIDTH/2-30, y/2-4, 0);
+				setting->color[1], SCREEN_WIDTH/2-20, y/2-4, 0);
 
 			if(hddFormated==1){
 
 				sprintf(c, "HDD SIZE: %d MB", hddSize);
+				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
 				printXY(c, x, y/2, setting->color[3], TRUE);
 				y += FONT_HEIGHT;
 				sprintf(c, "HDD USED: %d MB", hddUsed);
@@ -696,7 +847,7 @@ void hddManager(void)
 				else
 					ray = 55;
 
-				x += FONT_WIDTH*9+FONT_WIDTH/2;
+				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x);
 				if(setting->TV_mode == TV_mode_NTSC) 
 					y += ray+20;
 				else
@@ -725,54 +876,88 @@ void hddManager(void)
 				sprintf(c, "%d%% FREE",hddFree);
 				printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
 
-				x = Menu_start_x+FONT_WIDTH*6;
 				if(setting->TV_mode == TV_mode_NTSC) 
 					y += ray+15;
 				else
 					y += ray+20;
 
 				itoLine(setting->color[1], SCREEN_MARGIN, y/2-4, 0,
-					setting->color[1], SCREEN_WIDTH/2-30, y/2-4, 0);
+					setting->color[1], SCREEN_WIDTH/2-20, y/2-4, 0);
 
-				sprintf(c, "PFS SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
-				printXY(c, x, y/2, setting->color[3], TRUE);
-				y += FONT_HEIGHT;
-				sprintf(c, "PFS USED: %d MB", (int)PartyInfo[browser_sel].UsedSize);
-				printXY(c, x, y/2, setting->color[3], TRUE);
-				y += FONT_HEIGHT;
-				sprintf(c, "PFS FREE: %d MB", (int)PartyInfo[browser_sel].FreeSize);
-				printXY(c, x, y/2, setting->color[3], TRUE);
+				Treat = PartyInfo[browser_sel].Treatment;
+				if(Treat == TREAT_SYSTEM){
+					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					strcpy(c, "Reserved for system");
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					pfsFree = 0;
+				} else if(Treat == TREAT_NOACCESS){
+					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					strcpy(c, "Inaccessible");
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					pfsFree = 0;
+				} else if(Treat == TREAT_HDL){ //starts clause for HDL
+					//---------- Start of clause for HDL game partitions ----------
+					//dlanor NB: Not properly implemented yet
+					sprintf(c, "HDL SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT*2;
+					pfsFree = 0;
+					//---------- End of clause for HDL game partitions ----------
+			  }else{ //ends clause for HDL, starts clause for normal partitions
+					//---------- Start of clause for normal partitions (not HDL games) ----------
 
-				pfsFree = (PartyInfo[browser_sel].FreeSize*100)/PartyInfo[browser_sel].TotalSize;
+					sprintf(c, "PFS SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					sprintf(c, "PFS USED: %d MB", (int)PartyInfo[browser_sel].UsedSize);
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT;
+					sprintf(c, "PFS FREE: %d MB", (int)PartyInfo[browser_sel].FreeSize);
+					printXY(c, x, y/2, setting->color[3], TRUE);
 
-				x += FONT_WIDTH*9+FONT_WIDTH/2;
-				if(setting->TV_mode == TV_mode_NTSC) 
-					y += ray+20;
-				else
-					y += ray+25;
+					pfsFree = (PartyInfo[browser_sel].FreeSize * 100) / PartyInfo[browser_sel].TotalSize;
 
-				Angle=0;
+					//---------- End of clause for normal partitions (not HDL games) ----------
+				} //ends clause for normal partitions
 
-				for(i=0; i<360; i++){
-					if((Angle = i-90) >= 360) Angle = i+270;
-					if(((i*100)/360) >= pfsFree)
-						Color = setting->color[5];
-					else
-						Color = setting->color[4];
-					x3 = ray*cosdgf(Angle);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x);
 					if(setting->TV_mode == TV_mode_NTSC) 
-						y3 = (ray-5)*sindgf(Angle);
+						y += ray+20;
 					else
-						y3 = (ray)*sindgf(Angle);
-					x2 = x+x3;
-					y2 = y/2+(y3/2);
-					itoLine(Color, x, y/2, 0, Color, x2, y2, 0);
-					itoLine(Color, x, y/2, 0, Color, x2+1, y2, 0);
-					itoLine(Color, x, y/2, 0, Color, x2, y2+1, 0);
-				}
+						y += ray+25;
 
-				sprintf(c, "%d%% FREE",pfsFree);
-				printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
+					Angle=0;
+
+					for(i=0; i<360; i++){
+						if((Angle = i-90) >= 360) Angle = i+270;
+						if(((i*100)/360) >= pfsFree)
+							Color = setting->color[5];
+						else
+							Color = setting->color[4];
+						x3 = ray*cosdgf(Angle);
+						if(setting->TV_mode == TV_mode_NTSC) 
+							y3 = (ray-5)*sindgf(Angle);
+						else
+							y3 = (ray)*sindgf(Angle);
+						x2 = x+x3;
+						y2 = y/2+(y3/2);
+						itoLine(Color, x, y/2, 0, Color, x2, y2, 0);
+						itoLine(Color, x, y/2, 0, Color, x2+1, y2, 0);
+						itoLine(Color, x, y/2, 0, Color, x2, y2+1, 0);
+					}
+
+					sprintf(c, "%d%% FREE",pfsFree);
+					printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
 
 				rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
 

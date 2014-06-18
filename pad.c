@@ -10,6 +10,34 @@ u32 old_pad = 0, old_pad_t[2] = {0, 0};
 u32 new_pad, new_pad_t[2];
 
 //---------------------------------------------------------------------------
+// read PAD, without KB, and allow no auto-repeat. This is needed in code
+// that is used regardless of VSync cycles, and where KB is not wanted.
+//---------------------------------------------------------------------------
+int readpad_noKBnoRepeat(void)
+{
+	int port, state, ret[2];
+
+	for(port=0; port<2; port++){
+		if((state=padGetState(port, 0))==PAD_STATE_STABLE
+			||(state == PAD_STATE_FINDCTP1)){
+			//Deal with cases where pad state is valid for padRead
+			ret[port] = padRead(port, 0, &buttons_t[port]);
+			if (ret[port] != 0){
+				paddata_t[port] = 0xffff ^ buttons_t[port].btns;
+				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];
+				old_pad_t[port] = paddata_t[port];
+			}
+		}else{
+			//Deal with cases where pad state is not valid for padRead
+			new_pad_t[port]=0;
+		}  //ends 'if' testing for state valid for padRead
+	}  //ends for
+	new_pad = new_pad_t[0]|new_pad_t[1];
+	return (ret[0]|ret[1]);
+}
+//------------------------------
+//endfunc readpad_noKBnoRepeat
+//---------------------------------------------------------------------------
 // read PAD, but ignore KB. This is needed in code with own KB handlers,
 // such as the virtual keyboard input routines for 'Rename' and 'New Dir'
 //---------------------------------------------------------------------------
@@ -58,17 +86,13 @@ int readpad_no_KB(void)
 //------------------------------
 //endfunc readpad_no_KB
 //---------------------------------------------------------------------------
-// readpad will call readpad_no_KB, and if no new pad buttons are found, it
-// will also attempt reading data from a USB keyboard, and map this as a
+// simPadKB attempts reading data from a USB keyboard, and map this as a
 // virtual gamepad. (Very improvised and sloppy, but it should work fine.)
 //---------------------------------------------------------------------------
-int readpad(void)
+int simPadKB(void)
 {
 	int	ret, command;
 	unsigned char KeyPress;
-
-	if((ret=readpad_no_KB()) && new_pad)
-		return ret;
 
 	if((!setting->usbkbd_used)||(!PS2KbdRead(&KeyPress)))
 		return 0;
@@ -192,7 +216,39 @@ int readpad(void)
 	return ret;
 }
 //------------------------------
+//endfunc simPadKB
+//---------------------------------------------------------------------------
+// readpad will call readpad_no_KB, and if no new pad buttons are found, it
+// will also attempt reading data from a USB keyboard, and map this as a
+// virtual gamepad. (Very improvised and sloppy, but it should work fine.)
+//---------------------------------------------------------------------------
+int readpad(void)
+{
+	int	ret;
+
+	if((ret=readpad_no_KB()) && new_pad)
+		return ret;
+
+	return simPadKB();
+}
+//------------------------------
 //endfunc readpad
+//---------------------------------------------------------------------------
+// readpad_noRepeat calls readpad_noKBnoRepeat, and if no new pad buttons are
+// found, it also attempts reading data from a USB keyboard, and map this as
+// a virtual gamepad. (Very improvised and sloppy, but it should work fine.)
+//---------------------------------------------------------------------------
+int readpad_noRepeat(void)
+{
+	int	ret;
+
+	if((ret=readpad_no_KB()) && new_pad)
+		return ret;
+
+	return simPadKB();
+}
+//------------------------------
+//endfunc readpad_noRepeat
 //---------------------------------------------------------------------------
 // Wait for specific PAD, but also accept disconnected state
 void waitPadReady(int port, int slot)
