@@ -68,6 +68,16 @@ const unsigned char sjis_lookup_82[256] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xF0
 };
 
+int log( int Value ){
+	int r = 0;
+	Value--;
+	while( Value > 0 )
+	{
+		Value = Value >> 1;
+		r++;
+	}
+	return r;
+}
 //--------------------------------------------------------------
 int *CreateCoeffInt( int nLen, int nNewLen, int bShrink ) {
 
@@ -371,7 +381,8 @@ void setScrTmp(const char *msg0, const char *msg1)
 	// バージョン表記
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
-	printXY(" ■ LaunchELF v3.52 ■",
+	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
+	printXY(" ■ LaunchELF v3.53 ■",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	
@@ -394,12 +405,19 @@ void setScrTmp(const char *msg0, const char *msg1)
 //--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
-	itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
-	0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-	0, ((SCREEN_MARGIN+FONT_HEIGHT+4)/2)*0.533333F,
-	SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
-	SCREEN_WIDTH, ((SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2)*0.533333F,
-	0);
+	if ( testskin == 1 ) {
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+		0);
+	}else{
+		itoSprite(setting->color[0],
+		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+		0);
+	}
 	printXY(msg, SCREEN_MARGIN, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
 		setting->color[2], TRUE);
 	drawScr();
@@ -481,9 +499,9 @@ void loadSkin(void)
 	if( File != NULL ) {
 
 		jpgData* Jpg;
-		u8*      Buf     = NULL;
-		u8*      ImgData = NULL;
-		u8*      ResData = NULL;
+		u8*      Buf;
+		u8*      ImgData;
+		u8*      ResData;
 		long     Size;
 
 		fseek ( File, 0, SEEK_END ); 
@@ -497,16 +515,19 @@ void loadSkin(void)
 				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
 					if( ( ImgData = malloc (  Jpg -> width * Jpg -> height * ( Jpg -> bpp / 8 ) ) ) > 0 ){
 						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
-							if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, 512, 128 ) ) != 0 ){
-						 		itoLoadTexture ( ResData, 0, 512, ITO_RGB24, 0, 0, 512, 128 );
-								jpgClose( Jpg );
+							if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, 240 ) ) != 0 ){
+						 		itoLoadTexture ( ResData, 0, SCREEN_WIDTH, ITO_RGB24, 0, 0, SCREEN_WIDTH, 240 );
+								free(ResData);
 								if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
 								testskin = 1;
 							} /* end if */
+							jpgClose( Jpg );
 						} /* end if */
 					} /* end if */
+					free(ImgData);
 				} /* end if */
 			} /* end if */
+			free(Buf);
 		} /* end if */
 	} /* end if */
 }
@@ -516,8 +537,8 @@ void clrScr(uint64 color)
 {
 	if ( testskin == 1 ) {
 		itoSprite(ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-		itoSetTexture(0, 512, ITO_RGB24, ITO_TEXTURE_512, ITO_TEXTURE_128);
-		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, 512, 240, 512, 128, 0);
+		itoSetTexture(0, 512, ITO_RGB24, log(SCREEN_WIDTH), log(240));
+		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, SCREEN_WIDTH, 240, SCREEN_WIDTH, 240, 0);
 	} else {
 		itoSprite(color, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	} /* end else */

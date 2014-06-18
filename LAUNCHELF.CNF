@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.03.27
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.03.28
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -109,7 +109,13 @@ NET_HOSTwrite = 0
 #The default value is an empty string, meaning that the colour set by
 #GUI_Col_1_ABGR above will be used for screen background instead.
 # ----------------------------------------------------------------------
-SKIN_FILE=
+SKIN_FILE =
+# ----------------------------------------------------------------------
+#Menu_Title is a string that will be displayed at the top left of the
+#screen. Its main purpose is to allow users to have different titles
+#for different config pages. It is editable in "STARTUP SETTINGS".
+# ----------------------------------------------------------------------
+Menu_Title =
 # ----------------------------------------------------------------------
 # End of file: LAUNCHELF.CNF
 # ----------------------------------------------------------------------

@@ -52,7 +52,8 @@ enum
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
 	MAX_ROWS = 21,
-	MAX_PARTITIONS=100
+	MAX_PARTITIONS=100,
+	MAX_TITLE = 40
 };
 
 typedef struct
@@ -60,6 +61,7 @@ typedef struct
 	char dirElf[15][MAX_PATH];
 	char usbd[MAX_PATH];
 	char skin[MAX_PATH];
+	char Menu_Title[MAX_TITLE+1];
 	int timeout;
 	int filename;
 	uint64 color[4];
@@ -93,6 +95,7 @@ void RunLoaderElf(char *filename, char *);
 
 /* draw.c */
 extern itoGsEnv screen_env;
+extern int      testskin;
 void setScrTmp(const char *msg0, const char *msg1);
 void drawMsg(const char *msg);
 void setupito(void);
@@ -119,7 +122,7 @@ unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
-
+int keyboard(char *out, int max);
 
 /* main.c */
 int swapKeys;

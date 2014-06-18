@@ -1,4 +1,9 @@
-Unofficial LaunchELF releases by EP + dlanor
+Unofficial LaunchELF releases by EP + dlanor + various contributors
+
+LaunchELF v3.53  (2006.03.28)
+-dlanor: Added user editable menu title (individual per menu page)
+-Polo35: Sealed some memory leaks in the JPG background skin implementation.
+-Polo35: Improved vertical resolution of JPG skin by 87.5% (240/128)
 
 LaunchELF v3.52  (2006.03.26)
 -Merged in JPG background implementation, contributed by 'Polo35' at PS2-Scene.
@@ -232,6 +237,7 @@ Mr. Mirakichi the original creator of the LaunchELF project, with special gratit
 
 dlanor who has also made various additions, fixes, and other work on the project.
 
+Polo35 for his work on the JPG skin implementation, and releated issues
 Drakonite for his help and advice on how to improve the ELF loader
 sincro for his USBD.IRX selector code
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.

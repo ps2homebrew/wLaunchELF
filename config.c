@@ -137,6 +137,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"USBD_FILE = %s\r\n"
 		"NET_HOSTwrite = %d\r\n"
 		"SKIN_FILE = %s\r\n"
+		"Menu_Title = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->dirElf[0],  //auto
 		setting->dirElf[1],  //Circle
@@ -151,7 +152,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->dirElf[10], //R3
 		setting->dirElf[11], //Start
 		setting->timeout,    //auto_Timer
-		setting->filename,   //Menu_Hide_Path
+		setting->filename,   //Menu_Hide_Paths
 		setting->color[0],   //Col_0
 		setting->color[1],   //Col_1
 		setting->color[2],   //Col_2
@@ -166,6 +167,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->usbd,       //USBD_FILE
 		setting->HOSTwrite,  //NET_HOST_write
 		setting->skin,       //SKIN_FILE
+		setting->Menu_Title, //Menu_Title
 		&CNF_size       // This variable measure the size of sprintf data
   );
 
@@ -228,10 +230,11 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting = (SETTING*)malloc(sizeof(SETTING));
 
 	for(i=0; i<12; i++)
-		setting->dirElf[i][0] = 0;
+		setting->dirElf[i][0] = '\0';
 	strcpy(setting->dirElf[1], "MISC/FileBrowser");
-	strcpy(setting->usbd, "\0");
-	strcpy(setting->skin, "\0");
+	setting->usbd[0] = '\0';
+	setting->skin[0] = '\0';
+	setting->Menu_Title[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
 	setting->filename = DEF_FILENAME;
 	setting->color[0] = DEF_COLOR1;
@@ -323,6 +326,10 @@ failed_load:
 		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd,value);
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
 		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
+		else if(!strcmp(name,"Menu_Title")){
+			strncpy(setting->Menu_Title, value, MAX_TITLE);
+			setting->Menu_Title[MAX_TITLE] = '\0';
+		}
 	}
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);
@@ -529,13 +536,14 @@ void setColor(void)
 // Other settings by EP
 // sincro: ADD USBD SELECTOR MENU
 // Polo: ADD Skin SELECTOR MENU
+// dlanor: Add Menu_Title config
 //---------------------------------------------------------------------------
 void setSettings(void)
 {
-	int s;
+	int s, max_s=7;
 	int x, y;
 	char c[MAX_PATH];
-	
+
 	s=1;
 	while(1)
 	{
@@ -545,21 +553,21 @@ void setSettings(void)
 			if(new_pad & PAD_UP)
 			{
 				if(s!=1) s--;
-				else s=6;
+				else s=max_s;
 			}
 			else if(new_pad & PAD_DOWN)
 			{
-				if(s!=6) s++;
+				if(s!=max_s) s++;
 				else s=1;
 			}
 			else if(new_pad & PAD_LEFT)
 			{
-				if(s!=6) s=6;
+				if(s!=max_s) s=max_s;
 				else s=1;
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
-				if(s!=6) s=6;
+				if(s!=max_s) s=max_s;
 				else s=1;
 			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
@@ -569,8 +577,9 @@ void setSettings(void)
 					if(setting->numCNF > 1)
 						setting->numCNF--;
 				}
-				else if(s==4) strcpy(setting->usbd,"\0");
-				else if(s==5) strcpy(setting->skin,"\0");
+				else if(s==4) setting->usbd[0] = '\0';
+				else if(s==5) setting->skin[0] = '\0';
+				else if(s==6) setting->Menu_Title[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -584,6 +593,12 @@ void setSettings(void)
 					getFilePath(setting->usbd, USBD_IRX_CNF);
 				else if(s==5)
 					getFilePath(setting->skin, SKIN_CNF);
+				else if(s==6){
+					char tmp[MAX_TITLE+1];
+					strcpy(tmp, setting->Menu_Title);
+					if(keyboard(tmp, 36)>=0)
+						strcpy(setting->Menu_Title, tmp);
+				}
 				else
 					return;
 			}
@@ -630,13 +645,20 @@ void setSettings(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 
+		if(setting->Menu_Title[0]=='\0')
+			sprintf(c, "  Menu Title: NULL");
+		else
+			sprintf(c, "  Menu Title: %s",setting->Menu_Title);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
 		y += FONT_HEIGHT / 2;
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		
+
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
 		
-		if(s>=6) y+=FONT_HEIGHT/2;
+		if(s>=max_s) y+=FONT_HEIGHT/2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
 		if (s == 1) {
@@ -654,16 +676,16 @@ void setSettings(void)
 				sprintf(c, "Å~:Change");
 			else
 				sprintf(c, "Åõ:Change");
-		} else if( s== 4) {
+		} else if((s== 4) || (s==5)) {
 			if (swapKeys)
 				sprintf(c, "Å~:Select Åõ:Clear");
 			else
 				sprintf(c, "Åõ:Select Å~:Clear");
-		} else if( s== 5) {
+		} else if((s==6)) {
 			if (swapKeys)
-				sprintf(c, "Å~:Select Åõ:Clear");
+				sprintf(c, "Å~:Edit Åõ:Clear");
 			else
-				sprintf(c, "Åõ:Select Å~:Clear");
+				sprintf(c, "Åõ:Edit Å~:Clear");
 		} else {
 			if (swapKeys)
 				strcpy(c, "Å~:OK");
