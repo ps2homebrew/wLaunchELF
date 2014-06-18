@@ -1,0 +1,12 @@
+Changes to usbhdfsd driver: Mirakichi, dlanor, EP, and radad.
+-NT adaption for LaunchELF that forces standard letters in name and extension to lower case.
+-Updated usbhdfsd driver with radad's change to fat_driver.c to detect last entry.
+-Added the ability of reading of day, month, and year from variable "mtime".
+-Added the ability of reading of hours, minutes, and seconds from variable "mtime".
+-Fixed a bug that caused a corrupt month timestamp with newly created files in fat_write.c
+-Updated the source package that fixes an inconsistency with created files/dirs hour timestamp for usb mass devices.
+-Changed usbhdfsd driver slightly to allow the reading of Date/Time Created, Date Accessed, and Date/Time Modified.
+-Modified a comment in fat_write.c to fix an IOP 3.2.2 compiler issue for the usbhdfsd driver.
+-Corrected a usbhdfsd bug (false error msg for folder creation in root directory)
+-Fixed a bug in usbhdfsd that prevented backup of MC saves using backslash in names.
+-Added other source compiler warning fixes included in the dlanor_changes_uLE_usbhdfsd.txt file.

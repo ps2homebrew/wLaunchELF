@@ -852,7 +852,7 @@ frame:
 			} //ends clause for scrollbar
 			msg0[0]='\0';
 			if(jpg_browser_pushed)
-				sprintf(msg0, "Jpg Viewer  Path: %s", path);
+				sprintf(msg0, "%s %s: %s", LNG(Jpg_Viewer), LNG(Path), path);
 
 			//Tooltip section
 			msg1[0]='\0';

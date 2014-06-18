@@ -10,8 +10,9 @@ int				SCREEN_WIDTH	= 640;
 int				SCREEN_HEIGHT = 448;
 int				SCREEN_X			= 632;
 int				SCREEN_Y			= 50;
-u64       BrightColor;
 //dlanor: values shown above are defaults for NTSC mode
+u64       BrightColor;
+u8        *FontBuffer;
 
 int updateScr_1;     //dlanor: flags screen updates for drawScr()
 int updateScr_2;     //dlanor: used for anti-flicker delay in drawScr()
@@ -444,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.01 ÿ4",
+	printXY(" ÿ4 LaunchELF v4.02 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -679,30 +680,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 		testthumb = 0;
 	}
 
-	strcpy(skinpath, "\0");
-	if(!strncmp(tmpPath, "mass", 4)){
-		loadUsbModules();
-		strcpy(skinpath, "mass:");
-		strcat(skinpath, tmpPath+6);
-	}else if(!strncmp(tmpPath, "hdd0:/", 6)){
-		char party[MAX_PATH];
-		char *p;
-
-		loadHddModules();
-		sprintf(party, "hdd0:%s", tmpPath+6);
-		p = strchr(party, '/');
-		sprintf(skinpath, "pfs0:%s", p);
-		*p = 0;
-		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
-	}else if(!strncmp(tmpPath, "cdfs", 4)){
-		loadCdModules();
-		strcpy(skinpath, tmpPath);
-		CDVD_FlushCache();
-		CDVD_DiskReady(0);
-	}else{
-		strcpy(skinpath,tmpPath);
-	}
-
+	genFixPath(tmpPath, skinpath);
 	FILE *File = fopen(skinpath, "r");
 	
 	PicW=0, PicH=0, PicCoeff=0;
@@ -862,6 +840,52 @@ void loadIcon(void)
 	free(TexIcon[1].Mem);
 }
 //--------------------------------------------------------------
+int loadFont(void)
+{
+	if(strlen(setting->font_file) != 0 ){
+	char FntPath[MAX_PATH];
+	genFixPath(setting->font_file, FntPath);
+	int fd = genOpen( FntPath, O_RDONLY );
+		if(fd < 0){
+			genClose( fd );
+			goto use_default;
+		} // end if failed open file
+		genLseek( fd, 0, SEEK_SET );
+		if(genLseek( fd, 0, SEEK_END ) > 4700){
+			genClose( fd );
+			goto use_default;
+		}
+		genLseek( fd, 0, SEEK_SET );
+		u8 FontHeader[100];
+		genRead( fd, FontHeader, 100 );
+		if((FontHeader[ 0]==0x00) &&
+		   (FontHeader[ 1]==0x02) &&
+		   (FontHeader[70]==0x60) &&
+		   (FontHeader[72]==0x60) &&
+		   (FontHeader[83]==0x90)){
+			genLseek( fd, 1018, SEEK_SET );
+			if(FontBuffer)
+				free(FontBuffer);
+			FontBuffer = malloc( 4096 + 1 );
+			genRead( fd, FontBuffer+32*16, 3584 ); // First 32 Chars Are Not Present In .fnt Files
+			genClose( fd );
+			free(FontHeader);
+			return 1;
+		}else{ // end if good fnt file
+			genClose( fd );
+			free(FontHeader);
+			goto use_default;
+		} // end else bad fnt file
+	}else{ // end if external font file
+use_default:
+		if(FontBuffer)
+			free(FontBuffer);
+		FontBuffer = malloc( 4096 + 1 );
+		memcpy( FontBuffer, &font_uLE, 4096 );
+	} // end else build-in font
+	return 0;
+}
+//--------------------------------------------------------------
 // Set Skin Brightness
 void setBrightness(int Brightness)
 {
@@ -940,7 +964,10 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
 	}
 
 	if(c >= FONT_COUNT) c = '_';
-	cm = &font_uLE[c*16]; //cm points to the character definition in the font
+	if(c > 0xFF)              //if char is beyond normal ascii range
+		cm = &font_uLE[c*16];   //  cm points to special char def in default font
+	else                      //else char is inside normal ascii range
+		cm = &FontBuffer[c*16]; //  cm points to normal char def in active font
 
 	pixMask = 0x80;
 	for(i=0; i<8; i++){	//for i == each pixel column

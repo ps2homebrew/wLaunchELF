@@ -1,5 +1,22 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.02 (2006.09.16)
+-Merged loadable font system contributed by Polo
+-Fixed memory leak for ELF launching (LNG buffer was not released)
+-Modified 'genFixPath' function slightly to allow more generic usage
+-Modified 'loadSkin' function to make better use of 'genFixPath' (as suggested by Polo)
+-Improved the LNG loader to ensure fallback to default language for any strings not included in the LNG file loaded (mainly for old LNG files used with new uLE versions)
+-Prepared bugfixed versions of old usb_mass drivers useful as external modules with either the old or the new uLE versions (the old drivers also work, but have more bugs, like showing wrong timestamps in uLE). These drivers are for users who find the new embedded usbhdfsd driver incompatible with their USB mass storage devices. The bugfixed versions of the old drivers are released separately, so look for them in the thread for uLE support files. Note also that 'bugfixed' does not mean that all bugs have been fixed, as that could also affect their compatibilities. Always use the newest driver that works for you, as the older ones have more bugs.
+
+LaunchELF v4.01c beta (2006.09.07)
+-Replaced old usb_mass driver with the new "usbhdfsd.irx" (now embedded)
+-Modified FileBrowser to allow display of timestamps on mass: and hdd0:
+-Modified FileBrowser to include original timestamps when pasting from most devices to MC, but in the present form, pasting a file from host: to MC will produce new timestamps.
+-Modified FileBrowser to include original timestamps when pasting to non-MC devices too, but due to lacking 'fioChstat' support in mass: and host: these are excepted from that usage, this means it's really applied only to HDD and as yet it has no effect there. The 'fileXioChStat' calls for files and folder on the pfs device seem to be ignored, at least when it comes to timestamps.
+-Patched gsKit to prevent 'lost' rectangle plots in non-interlace mode
+-Made ShowFont display font twice, with different row alignment. First even, then odd
+-Added earlier init of language arrays (setting default language)
+
 LaunchELF v4.01 (2006.09.01)
 -Fixed bug that caused the 'Back' tooltip to be duplicated in FileBrowser menu
 -Fixed bug in editor that caused it to scroll past every second 'page' without stopping

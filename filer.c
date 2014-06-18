@@ -77,7 +77,8 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"",    // cnfmode DIR_CNF
 	"JPG", // cnfmode JPG_CNF
 	"IRX",  // cnfmode USBMASS_IRX_CNF
-	"LNG"  // cnfmode LANG_CNF
+	"LNG", // cnfmode LANG_CNF
+	"FNT"  // cnfmode FONT_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
@@ -92,7 +93,8 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"",    // cnfmode DIR_CNF
 	"jpg", // cnfmode JPG_CNF
 	"irx",  // cnfmode USBMASS_IRX_CNF
-	"lng"  // cnfmode LANG_CNF
+	"lng", // cnfmode LANG_CNF
+	"fnt"  // cnfmode FONT_CNF
 };
 
 int host_ready   = 0;
@@ -585,15 +587,19 @@ int genFixPath(char *uLE_path, char *gen_path)
 	char loc_path[MAX_PATH], party[MAX_NAME], *p;
 	int part_ix;
 
-	if(!strncmp(uLE_path, "cdfs", 4)){
+	part_ix = 99;               //Assume valid non-HDD path
+	strcpy(gen_path, uLE_path); //Assume no path patching needed
+	if(!strncmp(uLE_path, "cdfs", 4)){          //if using CD or DVD disc path
 		loadCdModules();
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
-	} else if(!strncmp(uLE_path, "mass", 4)){
+	//end of clause for using a CD or DVD path
+	} else if(!strncmp(uLE_path, "mass", 4)){   //if using USB mass: path
 		loadUsbModules();
-	}
-
-	if(!strncmp(uLE_path, "hdd0:/", 6)){ //If using an HDD path
+		if(!strncmp(uLE_path+4, ":/", 2)) //if path needs patching
+			strcpy(gen_path+5, uLE_path+6); //patch it to suit driver
+	//end of clause for using a USB mass: path
+	} else if(!strncmp(uLE_path, "hdd0:/", 6)){ //If using HDD path
 		strcpy(loc_path, uLE_path+6);
 		if((p=strchr(loc_path, '/'))!=NULL){
 			sprintf(gen_path,"pfs0:%s", p);
@@ -608,12 +614,8 @@ int genFixPath(char *uLE_path, char *gen_path)
 		}
 		if((part_ix = mountParty(party)) >= 0)
 		  gen_path[3] = part_ix+'0';
-	//ends if clause for using an HDD path
-	} else { //not using an HDD path
-		strcpy(gen_path, uLE_path);
-		part_ix = 99;  //Flags non-HDD path
+	//end of clause for using an HDD path
 	}
-	//printf("genFixPath(\"%s\",\"%s\")=>%d on \"%s\"\r\n",uLE_path, gen_path, part_ix, party);
 	return part_ix;  //non-HDD Path => 99, Good HDD Path => 0/1, Bad HDD Path => negative
 }
 //------------------------------
@@ -815,17 +817,25 @@ int readHDD(const char *path, FILEINFO *info, int max)
 	
 	if((fd=fileXioDopen(dir)) < 0) return 0;
 	
-	while(fileXioDread(fd, &dirbuf)){
+	while(fileXioDread(fd, &dirbuf) > 0){
 		if(dirbuf.stat.mode & FIO_S_IFDIR &&
 		(!strcmp(dirbuf.name,".") || !strcmp(dirbuf.name,"..")))
 			continue;  //Skip pseudopaths "." and ".."
 		
-		clear_mcTable(&info[i].stats);
-		if(dirbuf.stat.mode & FIO_S_IFDIR)
-			info[i].stats.attrFile = MC_ATTR_norm_folder;
-		else if(dirbuf.stat.mode & FIO_S_IFDIR)
-			info[i].stats.attrFile = MC_ATTR_norm_file;
 		strcpy(info[i].name, dirbuf.name);
+		clear_mcTable(&info[i].stats);
+		if(dirbuf.stat.mode & FIO_S_IFDIR){
+			info[i].stats.attrFile = MC_ATTR_norm_folder;
+		}
+		else if(dirbuf.stat.mode & FIO_S_IFREG){
+			info[i].stats.attrFile = MC_ATTR_norm_file;
+			info[i].stats.fileSizeByte = dirbuf.stat.size;
+		}
+		else
+			continue; //Skip entry which is neither a file nor a folder
+		strncpy(info[i].stats.name, info[i].name, 32);
+		memcpy((void *) &info[i].stats._create, dirbuf.stat.ctime, 8);
+		memcpy((void *) &info[i].stats._modify, dirbuf.stat.mtime, 8);
 		i++;
 		if(i==max) break;
 	}
@@ -837,28 +847,37 @@ int readHDD(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readMASS(const char *path, FILEINFO *info, int max)
 {
-	fat_dir_record record;
-	int ret, n=0;
+	fio_dirent_t record;
+	int n=0, dd=-1;
 	
 	loadUsbModules();
 	
-	ret = usb_mass_getFirstDirentry((char*)path+5, &record);
-	while(ret > 0){
-		if(record.attr & 0x10 &&
-		(!strcmp(record.name,".") || !strcmp(record.name,".."))){
-			ret = usb_mass_getNextDirentry(&record);
-			continue;
-		}
-		
+	if ((dd = fioDopen(path)) < 0) goto exit;  //exit if error opening directory
+	while(fioDread(dd, &record) > 0){
+		if((FIO_SO_ISDIR(record.stat.mode))
+			&& (!strcmp(record.name,".") || !strcmp(record.name,".."))
+		) continue; //Skip entry if pseudo-folder "." or ".."
+
 		strcpy(info[n].name, record.name);
 		clear_mcTable(&info[n].stats);
-		if(record.attr & 0x10)
-			info[n++].stats.attrFile = MC_ATTR_norm_folder;
-		else if(record.attr & 0x20)
-			info[n++].stats.attrFile = MC_ATTR_norm_file;
-		ret = usb_mass_getNextDirentry(&record);
-	}
-	
+		if(FIO_SO_ISDIR(record.stat.mode)){
+			info[n].stats.attrFile = MC_ATTR_norm_folder;
+		}
+		else if(FIO_SO_ISREG(record.stat.mode)){
+			info[n].stats.attrFile = MC_ATTR_norm_file;
+			info[n].stats.fileSizeByte = record.stat.size;
+		}
+		else
+			continue; //Skip entry which is neither a file nor a folder
+		strncpy(info[n].stats.name, info[n].name, 32);
+		memcpy((void *) &info[n].stats._create, record.stat.ctime, 8);
+		memcpy((void *) &info[n].stats._modify, record.stat.mtime, 8);
+		n++;
+		if(n==max) break;
+	} //ends while
+
+exit:
+	if(dd >= 0) fioDclose(dd); //Close directory if opened above
 	return n;
 }
 //--------------------------------------------------------------
@@ -1614,6 +1633,8 @@ int newdir(const char *path, const char *name)
 int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
 	FILEINFO newfile, files[MAX_ENTRY];
+	fio_stat_t fio_stat;
+	iox_stat_t iox_stat;
 	char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH],
 		progress[MAX_PATH*4],
 		*buff=NULL, inParty[MAX_NAME], outParty[MAX_NAME];
@@ -1927,21 +1948,36 @@ PSU_error:
 			if(!strncmp(out, "mc", 2)){  //Handle folder copied to MC
 				mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 				mcSync(0, NULL, &dummy);
-				if(!strncmp(in, "mc", 2)){  //Handle folder copied from MC to MC
-					//For this case we set the entire mcTable struct like the original
-					mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 0xFFFF);
-					mcSync(0, NULL, &dummy);
-				} else {  //Handle folder copied from non-MC to MC
-					//For the present we only set the standard folder attributes here
-					file.stats.attrFile = MC_ATTR_norm_folder;
-					mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 4);
-					mcSync(0, NULL, &dummy);
-				}
+				ret = 0xFFFF; //default request for changing entire mcTable
+				if(strncmp(in, "mc", 2)){  //Handle file copied from non-MC to MC
+					file.stats.attrFile = MC_ATTR_norm_folder; //normalize MC folder attribute
+					if(!strncmp(in, "host", 4)){  //Handle folder copied from host: to MC
+						ret = 4;      //request change only of main attribute for host:
+					} //ends host: source clause
+				} //ends non-MC source clause
+				mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, ret);
+				mcSync(0, NULL, &dummy);
 			} else {  //Handle folder copied to non-MC
-				if(!strncmp(in, "mc", 2)){  //Handle folder copied from MC to non-MC
-					//For the present this case is ignored (new timestamps and attr)
-				} else {  //Handle folder copied from non-MC to non-MC
-					//For the present this case is ignored (new timestamps and attr)
+				if(!strncmp(out, "pfs", 3)){  //for pfs on HDD we use fileXio_ stuff
+					memcpy(iox_stat.ctime, (void *) &file.stats._create, 8);
+					memcpy(iox_stat.mtime, (void *) &file.stats._modify, 8);
+					memcpy(iox_stat.atime, iox_stat.mtime, 8);
+					ret = FIO_CST_CT|FIO_CST_AT|FIO_CST_MT;  //Request timestamp stat change
+					if(!strncmp(in, "host", 4)){  //Handle folder copied from host:
+						ret = 0;                               //Request NO stat change
+					}
+					dummy = fileXioChStat(out, &iox_stat, ret);
+				} else if(!strncmp(out, "host", 4)) { //for files copied to host: we skip Chstat
+				} else if(!strncmp(out, "mass", 4)) { //for files copied to mass: we skip Chstat
+				} else { //for other devices we use fio_ stuff
+					memcpy(fio_stat.ctime, (void *) &file.stats._create, 8);
+					memcpy(fio_stat.mtime, (void *) &file.stats._modify, 8);
+					memcpy(fio_stat.atime, fio_stat.mtime, 8);
+					ret = FIO_CST_CT|FIO_CST_AT|FIO_CST_MT;  //Request timestamp stat change
+					if(!strncmp(in, "host", 4)){  //Handle folder copied from host:
+						ret = 0;                               //Request NO stat change
+					}
+					dummy = fioChstat(out, &fio_stat, ret);
 				}
 			}
 		}
@@ -2174,21 +2210,36 @@ non_PSU_RESTORE_init:
 	if(!strncmp(out, "mc", 2)){  //Handle file copied to MC
 		mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 		mcSync(0, NULL, &dummy);
-		if(!strncmp(in, "mc", 2)){  //Handle file copied from MC to MC
-			//For this case we set the entire mcTable struct like the original
-			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 0xFFFF);
-			mcSync(0, NULL, &dummy);
-		} else {  //Handle file copied from non-MC to MC
-			//For the present we only set the standard file attributes here
-			file.stats.attrFile = MC_ATTR_norm_file;
-			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 4);
-			mcSync(0, NULL, &dummy);
-		}
+		ret = 0xFFFF; //default request for changing entire mcTable
+		if(strncmp(in, "mc", 2)){  //Handle file copied from non-MC to MC
+			file.stats.attrFile = MC_ATTR_norm_file; //normalize MC file attribute
+			if(!strncmp(in, "host", 4)){  //Handle folder copied from host: to MC
+				ret = 4;      //request change only of main attribute for host:
+			} //ends host: source clause
+		} //ends non-MC source clause
+		mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, ret);
+		mcSync(0, NULL, &dummy);
 	} else {  //Handle file copied to non-MC
-		if(!strncmp(in, "mc", 2)){  //Handle file copied from MC to non-MC
-			//For the present this case is ignored (new timestamps and attr)
-		} else {  //Handle file copied from non-MC to non-MC
-			//For the present this case is ignored (new timestamps and attr)
+		if(!strncmp(out, "pfs", 3)){  //for pfs on HDD we use fileXio_ stuff
+			memcpy(iox_stat.ctime, (void *) &file.stats._create, 8);
+			memcpy(iox_stat.mtime, (void *) &file.stats._modify, 8);
+			memcpy(iox_stat.atime, iox_stat.mtime, 8);
+			ret = FIO_CST_CT|FIO_CST_AT|FIO_CST_MT;  //Request timestamp stat change
+			if(!strncmp(in, "host", 4)){  //Handle file copied from host:
+				ret = 0;                               //Request NO stat change
+			}
+			dummy = fileXioChStat(out, &iox_stat, ret);
+		} else if(!strncmp(out, "host", 4)) { //for files copied to host: we skip Chstat
+		} else if(!strncmp(out, "mass", 4)) { //for files copied to mass: we skip Chstat
+		} else { //for other devices we use fio_ stuff
+			memcpy(fio_stat.ctime, (void *) &file.stats._create, 8);
+			memcpy(fio_stat.mtime, (void *) &file.stats._modify, 8);
+			memcpy(fio_stat.atime, fio_stat.mtime, 8);
+			ret = FIO_CST_CT|FIO_CST_AT|FIO_CST_MT;  //Request timestamp stat change
+			if(!strncmp(in, "host", 4)){  //Handle file copied from host:
+				ret = 0;                               //Request NO stat change
+			}
+			dummy = fioChstat(out, &fio_stat, ret);
 		}
 	}
 	if(PM_flag[recurses]==PM_PSU_BACKUP){

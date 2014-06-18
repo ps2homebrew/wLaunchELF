@@ -132,6 +132,12 @@ exit:
 }
 //Ends get_LANG_string
 //---------------------------------------------------------------------------
+void Init_Default_Language(void)
+{
+	memcpy(Lang_String, Lang_Default, sizeof(Lang_String));
+}
+//Ends Init_Default_Language
+//---------------------------------------------------------------------------
 void Load_External_Language(void)
 {
 	int error_id = -1;
@@ -191,6 +197,10 @@ void Load_External_Language(void)
  	 			lang_bp = (u8*) malloc(lang_size + 1); //allocate real language buffer
  	 			if(lang_bp == NULL)
  	 				goto release_1;
+
+				//We're ready to read language strings, but must first init all pointers
+				//to use default strings, for any indexes left undefined by the file
+				memcpy(Lang_Extern, Lang, sizeof(Lang_Extern));
 
  	 			file_tp = file_bp;
  	 			lang_tp = lang_bp;

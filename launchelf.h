@@ -29,7 +29,7 @@
 #include <dmaKit.h>
 #include <cdvd_rpc.h>
 #include "cd.h"
-#include "mass_rpc.h"
+//#include "mass_rpc.h" //disused in switch to usbhdfsd
 #include "iopmod_name.h"
 #include <libjpg.h>
 #include <libkbd.h>
@@ -54,6 +54,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   JPG_CNF,				 // Jpg viewer choice
 	USBMASS_IRX_CNF, // USB_MASS.IRX choice for startup
 	LANG_CNF,				 // Language file choise
+	FONT_CNF,				 // Font file choise ( .fnt )
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -101,6 +102,7 @@ typedef struct
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
 	char lang_file[MAX_PATH];
+	char font_file[MAX_PATH];
 	int  Menu_Frame;
 	int timeout;
 	int Hide_Paths;
@@ -181,6 +183,7 @@ extern int			Frame_end_y;
 extern int			Menu_tooltip_y;
 extern u64       BrightColor;
 extern int       PicRotate, FullScreen;
+extern u8       *FontBuffer;
 
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 );
@@ -201,6 +204,7 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 u8 *transcpy_sjis(u8 *d, u8 *s);
 void loadIcon(void);
+int loadFont(void);
 //Comment out WriteFont_C when not used (also requires patch in draw.c)
 //int	WriteFont_C(char *pathname);
 
@@ -298,7 +302,9 @@ enum {
 
 extern Language Lang_String[];
 extern Language Lang_Default[];
+extern Language *External_Lang_Buffer;
 
+void Init_Default_Language(void);
 void Load_External_Language(void);
 
 /* font_uLE.c */

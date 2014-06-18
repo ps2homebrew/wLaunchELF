@@ -666,7 +666,7 @@ int ExpandParty(PARTYINFO Info, int size)
 	return ret;
 }
 //------------------------------
-//endfunc EpandParty
+//endfunc ExpandParty
 //--------------------------------------------------------------
 int FormatHdd(void)
 {

@@ -228,6 +228,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"CNF_Path = %s\r\n"
 		"USBMASS_FILE = %s\r\n"
 		"LANG_FILE = %s\r\n"
+		"FONT_FILE = %s\r\n"
 		"JpgView_Timer = %d\r\n"
 		"JpgView_Trans = %d\r\n"
 		"JpgView_Full = %d\r\n"
@@ -269,6 +270,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->CNF_Path,     //CNF_Path
 		setting->usbmass_file,  //USBMASS_FILE
 		setting->lang_file,     //LANG_FILE
+		setting->font_file,     //FONT_FILE
 		setting->JpgView_Timer, //JpgView_Timer
 		setting->JpgView_Trans, //JpgView_Trans
 		setting->JpgView_Full,  //JpgView_Full
@@ -422,6 +424,7 @@ int loadConfig(char *mainMsg, char *CNF)
 	setting->Menu_Title[0] = '\0';
 	setting->CNF_Path[0] = '\0';
 	setting->lang_file[0] = '\0';
+	setting->font_file[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
 	setting->Hide_Paths = DEF_HIDE_PATHS;
 	setting->color[0] = DEF_COLOR1;
@@ -611,6 +614,7 @@ failed_load:
 		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
 		else if(!strcmp(name,"USBMASS_FILE")) strcpy(setting->usbmass_file,value);
 		else if(!strcmp(name,"LANG_FILE")) strcpy(setting->lang_file,value);
+		else if(!strcmp(name,"FONT_FILE")) strcpy(setting->font_file,value);
 		//----------
 		else if(!strcmp(name,"JpgView_Timer")) setting->JpgView_Timer = atoi(value);
 		else if(!strcmp(name,"JpgView_Trans")) setting->JpgView_Trans = atoi(value);
@@ -1161,7 +1165,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=13;		//define cursor index and its max value
+	int s, max_s=14;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -1213,6 +1217,10 @@ void Config_Startup(void)
 					setting->lang_file[0] = '\0';
 					Load_External_Language();
 				}
+				else if(s==13){
+					setting->font_file[0] = '\0';
+					loadFont();
+				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -1247,6 +1255,10 @@ void Config_Startup(void)
 				else if(s==12){
 					getFilePath(setting->lang_file, LANG_CNF);
 					Load_External_Language();
+				}else if(s==13){
+					getFilePath(setting->font_file, FONT_CNF);
+					if(loadFont()==0)
+						setting->font_file[0] = '\0';
 				}else if(s==max_s)
 					return;
 			}
@@ -1341,6 +1353,13 @@ void Config_Startup(void)
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
 
+			if(strlen(setting->font_file)==0)
+				sprintf(c, "  %s: %s", LNG(Font_File), LNG(DEFAULT));
+			else
+				sprintf(c, "  %s: %s", LNG(Font_File), setting->font_file);
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			sprintf(c, "  %s", LNG(RETURN));
 			printXY(c, x, y, setting->color[3], TRUE, 0);
@@ -1363,7 +1382,7 @@ void Config_Startup(void)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
 				else
 					sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
-			} else if((s==4)||(s==8)||(s==9)||(s==10)||(s==11)||(s==12)) {
+			} else if((s==4)||(s==8)||(s==9)||(s==10)||(s==11)||(s==12)||(s==13)) {
 			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Browse), LNG(Clear));
@@ -1823,6 +1842,7 @@ cancel_exit:
 				strcpy(setting->skin, skinSave);
 				loadSkin(BACKGROUND_PIC, 0, 0);
 				Load_External_Language();
+				loadFont();
 				mainMsg[0] = 0;
 				break;
 			}

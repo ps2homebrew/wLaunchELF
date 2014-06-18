@@ -670,14 +670,14 @@ void loadUsbDModule(void)
 //--------------------------------------------------------------
 void loadUsbModules(void)
 {
-	int ret;
+	//int ret;
 
 	loadUsbDModule();
 	if(	have_usbd
 	&&	!have_usb_mass
 	&&	loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx)){
 		delay(3);
-		ret = usb_mass_bindRpc();
+		//ret = usb_mass_bindRpc(); //dlanor: disused in switching to usbhdfsd
 		have_usb_mass = 1;
 	}
 }
@@ -854,16 +854,18 @@ int ReadCNF(char *LK_Path)
 //--------------------------------------------------------------
 void	ShowFont(void)
 {
+	int test_type=0;
+	int test_types=2;  //Patch test_types for number of test loops
 	int	i, j, event, post_event=0;
 	char Hex[18] = "0123456789ABCDEF";
 	int ch_x_stp = 1+FONT_WIDTH+1+LINE_THICKNESS;
 	int ch_y_stp = 2+FONT_HEIGHT+1+LINE_THICKNESS;
 	int	mat_w = LINE_THICKNESS+17*ch_x_stp;
 	int mat_h = LINE_THICKNESS+17*ch_y_stp;
-	int mat_x = (SCREEN_WIDTH-mat_w)/2;
-	int mat_y = (SCREEN_HEIGHT-mat_h)/2;
+	int mat_x = (((SCREEN_WIDTH-mat_w)/2) & -2);
+	int mat_y = (((SCREEN_HEIGHT-mat_h)/2) & -2);
 	int ch_x  = mat_x+LINE_THICKNESS+1;
-	int	ch_y  = mat_y+LINE_THICKNESS+2;
+//	int	ch_y  = mat_y+LINE_THICKNESS+2;
 	int px, ly, cy;
 	u64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
 
@@ -877,6 +879,34 @@ void	ShowFont(void)
 		if(event||post_event) { //NB: We need to update two frame buffers per event
 			drawOpSprite(col_0, mat_x, mat_y, mat_x+mat_w-1, mat_y+mat_h-1);
 			//Here the background rectangle has been prepared
+/* //Start of commented out section //Move this line as needed for tests
+			//Start of gsKit test section
+			if(test_type > 1) goto done_test;
+			gsKit_prim_point(gsGlobal, mat_x+16, mat_y+16, 1, col_3);
+			gsKit_prim_point(gsGlobal, mat_x+33, mat_y+16, 1, col_3);
+			gsKit_prim_point(gsGlobal, mat_x+33, mat_y+33, 1, col_3);
+			gsKit_prim_point(gsGlobal, mat_x+16, mat_y+33, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+48, mat_y+48, mat_x+65, mat_y+48, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+65, mat_y+48, mat_x+65, mat_y+65, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+65, mat_y+65, mat_x+48, mat_y+65, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+48, mat_y+65, mat_x+48, mat_y+48, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+80, mat_y+80, mat_x+97, mat_y+81, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+97, mat_y+80, mat_x+96, mat_y+97, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+97, mat_y+97, mat_x+80, mat_y+96, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+80, mat_y+97, mat_x+81, mat_y+80, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+80, mat_y+16, mat_x+81, mat_y+16, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+97, mat_y+16, mat_x+97, mat_y+17, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+97, mat_y+33, mat_x+96, mat_y+33, 1, col_3);
+			gsKit_prim_line(gsGlobal, mat_x+80, mat_y+33, mat_x+80, mat_y+32, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+16, mat_y+80, mat_x+17, mat_y+81, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+33, mat_y+80, mat_x+32, mat_y+81, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+33, mat_y+97, mat_x+32, mat_y+96, 1, col_3);
+			gsKit_prim_sprite(gsGlobal, mat_x+16, mat_y+97, mat_x+17, mat_y+96, 1, col_3);
+			goto end_display;
+done_test:
+			//End of gsKit test section
+*/ //End of commented out section  //Move this line as needed for tests
+			//Start of font display section
 			//Now we start to draw all vertical frame lines
 			px=mat_x;
 			drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);
@@ -887,8 +917,8 @@ void	ShowFont(void)
 			//Here all the vertical frame lines have been drawn
 			//Next we draw the top horizontal line
 			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w-1, mat_y+LINE_THICKNESS-1);
-			cy=ch_y;
-			ly=mat_y;
+			cy = mat_y+LINE_THICKNESS+2;
+			ly = mat_y;
 			for(i=0; i<17; i++) { //for each font row
 				px=ch_x;
 				if(!i) { //if top row (which holds the column indexes)
@@ -908,16 +938,24 @@ void	ShowFont(void)
 				drawOpSprite(col_1, mat_x, ly, mat_x+mat_w-1, ly+LINE_THICKNESS-1);
 				cy += ch_y_stp;
 			} //ends for each font row
-		}
+			//End of font display section
+		} //ends if(event||post_event)
+//end_display:
 		drawScr();
 		post_event = event;
 		event = 0;
 
 		//Pad response section
 		waitAnyPadReady();
-		if(readpad() && new_pad)
+		if(readpad() && new_pad){
+			event |= 2;
+			if((++test_type) < test_types){
+				mat_y++;
+				continue;
+			}
 			break;
-	}
+		}
+	} //ends while
 	//----- End of event loop -----
 }
 //------------------------------
@@ -1171,6 +1209,8 @@ void RunElf(char *path)
 	drawScr();
 	free(setting);
 	free(elisaFnt);
+	free(External_Lang_Buffer);
+	free(FontBuffer);
 	padPortClose(1,0);
 	padPortClose(0,0);
 	if(ps2kbd_opened) PS2KbdClose();
@@ -1234,7 +1274,7 @@ void Reset()
 //--------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-	char *p, tmp[MAX_PATH];
+	char *p, CNF_pathname[MAX_PATH];
 	int event, post_event=0, emergency;
 	int RunELF_index, nElfs=0;
 	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
@@ -1252,6 +1292,7 @@ int main(int argc, char *argv[])
 	loadBasicModules();
 	mcInit(MC_TYPE_MC);
 	genInit();
+	Init_Default_Language();
 
 	if	((argc > 0) && argv[0])
 	{	if	(!strncmp(argv[0], "mass", 4))
@@ -1313,6 +1354,11 @@ int main(int argc, char *argv[])
 
 	if(emergency) CNF_error = loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
 	else          CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+
+	if(CNF_error<0)
+		strcpy(CNF_pathname, mainMsg+strlen(LNG(Failed_To_Load)));
+	else
+		strcpy(CNF_pathname, mainMsg+strlen(LNG(Loaded_Config)));
 
 	init_delay = setting->Init_Delay*SCANRATE;
 	if(emergency && (init_delay < 2*SCANRATE))
@@ -1380,13 +1426,14 @@ int main(int argc, char *argv[])
 	WaitTime=0LL;
 
 	Load_External_Language();
+	loadFont();
 	loadSkin(BACKGROUND_PIC, 0, 0);
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
-	strcpy(tmp, mainMsg+7); //NB: relies on ps2sdk xprintf to change NULL to "(null)"
+
 	if(CNF_error<0)
-		sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), tmp);
+		sprintf(mainMsg, "%s%s", LNG(Failed_To_Load), CNF_pathname);
 	else
-		sprintf(mainMsg, "%s %s", LNG(Loaded_Config), tmp);
+		sprintf(mainMsg, "%s%s", LNG(Loaded_Config), CNF_pathname);
 
 	//Here nearly everything is ready for the main menu event loop
 	//But before we start that, we need to validate CNF_Path

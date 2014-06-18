@@ -1,7 +1,7 @@
 EE_BIN = BOOT.ELF
-EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o mass_rpc.o cd.o\
+EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o ps2ip.o ps2smap.o ps2hdd.o\
-	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
+	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
 	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o
 
@@ -22,8 +22,8 @@ reset: clean
 usbd.s:
 	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx
 
-usb_mass.s:
-	bin2s modules/usb_mass.irx usb_mass.s usb_mass_irx
+usbhdfsd.s:
+	bin2s modules/usbhdfsd.irx usbhdfsd.s usb_mass_irx
 
 cdvd.s:
 #	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx

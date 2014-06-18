@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.08.27
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.09.17
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -268,6 +268,14 @@ USBMASS_FILE =
 # identical to the contents of the file "English.lng" that we released.
 # ----------------------------------------------------------------------
 LANG_FILE =
+# ----------------------------------------------------------------------
+# From v4.02 the character font may be replaced by one loaded from an
+# external file, whose path is stored in the FONT_FILE entry. As usual
+# for file choices, the default is an empty string, causing the internal
+# font to be used. That will also be the result if a specified file is
+# missing or has an invalid format. (Fonts are released separately.)
+# ----------------------------------------------------------------------
+FONT_FILE =
 # ----------------------------------------------------------------------
 # From v3.84 two settings of JpgViewer are also saved here. These are
 # the slideshow interval timer (in seconds), and the picture transition

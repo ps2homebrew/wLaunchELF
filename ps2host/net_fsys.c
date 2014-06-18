@@ -234,7 +234,7 @@ static int fsysIoctl(iop_file_t* file, unsigned long request, void *data)
 
 		remove_flag = 0;
 
-		if (request == IOCTL_RENAME)
+		if (request == IOCTL_RENAME){
 		  if (lastopen_fd == remote_fd){
         WaitSema(fsys_sema);
         ret = pko_ioctl(remote_fd, request, data);
@@ -245,6 +245,7 @@ static int fsysIoctl(iop_file_t* file, unsigned long request, void *data)
         printf("Ioctl Rename function used incorrectly.\n");
         ret = -5;
 
+    	}
     } else {
       printf("Ioctl function called with invalid request code\n");
       ret = -5;
