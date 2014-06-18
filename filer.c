@@ -157,7 +157,7 @@ int	PSU_content;	//Used to count PSU content headers for the main header
 char	USB_mass_ix[10] = {'0',0,0,0,0,0,0,0,0,0};
 int		USB_mass_max_drives = USB_MASS_MAX_DRIVES;
 u64		USB_mass_scan_time = 0;
-int		USB_mass_scanned = 0;
+int		USB_mass_scanned = 0;   //0==Not_found_OR_No_Multi 1==found_Multi_mass_once
 int		USB_mass_loaded = 0;    //0==none, 1==internal, 2==external
 
 
@@ -1046,27 +1046,25 @@ int readHDD(const char *path, FILEINFO *info, int max)
 //endfunc readHDD
 //--------------------------------------------------------------
 void scan_USB_mass(void){
-	int i, dd;
+	int i;
+	fio_stat_t chk_stat;
 	char mass_path[8] = "mass0:/";
 
-	if(USB_mass_max_drives < 2)
-		goto done_scan;
-
-	if(USB_mass_scanned && ((Timer()-USB_mass_scan_time) < 5000))
+	if(	(USB_mass_max_drives < 2) //No need for dynamic lists with only one drive
+		||(USB_mass_scanned && ((Timer()-USB_mass_scan_time) < 5000))
+		)
 		return;
 
 	for(i=0; i<USB_mass_max_drives; i++){
 		mass_path[4] = '0'+i;
-		if((dd = fioDopen(mass_path)) < 0){
+		if(fioGetstat(mass_path, &chk_stat) < 0){
 			USB_mass_ix[i] = 0;
 			continue;
 		}
-		fioDclose(dd);
 		USB_mass_ix[i] = '0'+i;
-	}
-	USB_mass_scan_time = Timer();
-done_scan:
-	USB_mass_scanned =1;
+		USB_mass_scanned =1;
+		USB_mass_scan_time = Timer();
+	}//ends for loop
 }
 //------------------------------
 //endfunc scan_USB_mass
@@ -3000,14 +2998,14 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			&&(cnfmode!=USBKBD_IRX_CNF)
 			&&(cnfmode!=USBMASS_IRX_CNF)) {
 			//The condition above blocks selecting USB drivers from USB devices
-			for(i=0; i<10; i++){
+			if(USB_mass_ix[0] || !USB_mass_scanned){
+				strcpy(files[nfiles].name, "mass:");
+				files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+			}
+			for(i=1; i<10; i++){
 				if(USB_mass_ix[i]){
-					if(i == 0)
-						strcpy(files[nfiles].name, "mass:");
-					else{
-						strcpy(files[nfiles].name, "mass0:");
-						files[nfiles].name[4] = USB_mass_ix[i];
-					}
+					strcpy(files[nfiles].name, "mass0:");
+					files[nfiles].name[4] = USB_mass_ix[i];
 					files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 				}
 			}
@@ -3643,10 +3641,6 @@ int getFilePath(char *out, int cnfmode)
 					}
 				} else if(new_pad & PAD_SELECT){  //Leaving the browser ?
 					unmountAll();
-					if (stricmp(setting->GUI_skin, "\0") != 0) {
-						GUI_active = 1;
-						loadSkin(BACKGROUND_PIC, 0, 0);
-					}
 					return rv;
 				}
 			}

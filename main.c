@@ -227,8 +227,10 @@ void ShowDebugInfo(void)
 		if(event||post_event) { //NB: We need to update two frame buffers per event
 			clrScr(setting->color[0]);
 			PrintRow(0,"Debug Info Screen:");
+			sprintf(TextRow, "rom0:ROMVER == \"%s\"", ROMVER_data);
+			PrintRow(2,TextRow);
 			sprintf(TextRow, "argc == %d", boot_argc);
-			PrintRow(1,TextRow);
+			PrintRow(4,TextRow);
 			for(i=0; (i<boot_argc)&&(i<8); i++){
 				sprintf(TextRow, "argv[%d] == \"%s\"", i, boot_argv[i]);
 				PrintRow(-1, TextRow);
@@ -1458,7 +1460,6 @@ void	CleanUp(void)
 	free(setting);
 	free(elisaFnt);
 	free(External_Lang_Buffer);
-	free(FontBuffer);
 	padPortClose(1,0);
 	padPortClose(0,0);
 	if(ps2kbd_opened) PS2KbdClose();
@@ -1700,6 +1701,8 @@ Done_PS2Disc:
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
+			Load_External_Language();
+			loadFont(setting->font_file);
 		}
 		config(mainMsg, CNF);
 		return;
@@ -1821,6 +1824,7 @@ int main(int argc, char *argv[])
 {
 	char *p, CNF_pathname[MAX_PATH];
 	int event, post_event=0;
+	char RunPath[MAX_PATH];
 	int RunELF_index, nElfs=0;
 	CdvdDiscType_t old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
@@ -2003,6 +2007,7 @@ int main(int argc, char *argv[])
 	//But before we start that, we need to validate CNF_Path
 	Validate_CNF_Path();
 
+	RunPath[0] = 0; //Nothing to run yet
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state
 	event = 1;   //event = initial entry
@@ -2077,9 +2082,9 @@ int main(int argc, char *argv[])
 				else if(new_pad & PAD_R3)       RunELF_index = 10;
 				else if(new_pad & PAD_START)    RunELF_index = 11;
 				else if(new_pad & PAD_SELECT)   RunELF_index = 12;
-				else if((new_pad & PAD_LEFT) && (maxCNF > 1 || setting->LK_Flag[i]))
+				else if((new_pad & PAD_LEFT) && (maxCNF > 1 || setting->LK_Flag[13]))
 					RunELF_index = 13;
-				else if((new_pad & PAD_RIGHT) && (maxCNF > 1 || setting->LK_Flag[i]))
+				else if((new_pad & PAD_RIGHT) && (maxCNF > 1 || setting->LK_Flag[14]))
 					RunELF_index = 14;
 				else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
 					user_acted = 1;
@@ -2089,10 +2094,8 @@ int main(int argc, char *argv[])
 						mode=DPAD;
 					}
 				}
-				if(RunELF_index >= 0 && setting->LK_Path[RunELF_index][0]){
-					user_acted = 1;
-					RunElf(setting->LK_Path[RunELF_index]);
-				}
+				if(RunELF_index >= 0 && setting->LK_Path[RunELF_index][0])
+					strcpy(RunPath, setting->LK_Path[RunELF_index]);
 				break;
 			
 			case DPAD:
@@ -2110,19 +2113,30 @@ int main(int argc, char *argv[])
 				}else if((swapKeys && new_pad & PAD_CROSS)
 				      || (!swapKeys && new_pad & PAD_CIRCLE) ){
 					if(setting->LK_Path[menu_LK[selected]][0])
-						RunElf(setting->LK_Path[menu_LK[selected]]);
-					mode=BUTTON;
+						strcpy(RunPath, setting->LK_Path[menu_LK[selected]]);
 				}
 				break;
-			}
+			}//ends switch(mode)
 		}//ends Pad response section
 
 		if(timeout/SCANRATE==0 && setting->LK_Path[0][0] && mode==BUTTON && !user_acted){
-			RunElf(setting->LK_Path[0]);
-			user_acted = 1; //Halt timeout after default action, just as for user action
 			event |= 8;  //event |= visible timeout change
+			strcpy(RunPath, setting->LK_Path[0]);
 		}
-	}
+
+		if(RunPath[0]){
+			user_acted = 1;
+			mode=BUTTON;
+			RunElf(RunPath);
+			RunPath[0] = 0;
+			if (setting->GUI_skin[0]){
+				GUI_active = 1;
+				loadSkin(BACKGROUND_PIC, 0, 0);
+				//Load_External_Language();
+				//loadFont(setting->font_file);
+			}
+		}
+	}//ends while(1)
 	//----- End of main menu event loop -----
 }
 //------------------------------

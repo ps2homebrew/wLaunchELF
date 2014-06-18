@@ -12,7 +12,6 @@ int				SCREEN_X			= 632;
 int				SCREEN_Y			= 50;
 //dlanor: values shown above are defaults for NTSC mode
 u64       BrightColor;
-u8        *FontBuffer;
 
 int updateScr_1;     //dlanor: flags screen updates for drawScr()
 int updateScr_2;     //dlanor: used for anti-flicker delay in drawScr()
@@ -861,27 +860,22 @@ int loadFont(char *path_arg)
 		   (FontHeader[72]==0x60) &&
 		   (FontHeader[83]==0x90)){
 			genLseek( fd, 1018, SEEK_SET );
-			if(FontBuffer)
-				free(FontBuffer);
-			FontBuffer = malloc( 4096 + 1 );
-			genRead( fd, FontBuffer+32*16, 3584 ); // First 32 Chars Are Not Present In .fnt Files
+			memset( FontBuffer, 0, 32*16 );
+			genRead( fd, FontBuffer+32*16, 224*16 ); //.fnt files skip 1st 32 chars
 			genClose( fd );
-			free(FontHeader);
 			return 1;
 		}else{ // end if good fnt file
 			genClose( fd );
-			free(FontHeader);
 			goto use_default;
 		} // end else bad fnt file
 	}else{ // end if external font file
 use_default:
-		if(FontBuffer)
-			free(FontBuffer);
-		FontBuffer = malloc( 4096 + 1 );
 		memcpy( FontBuffer, &font_uLE, 4096 );
 	} // end else build-in font
 	return 0;
 }
+//------------------------------
+//endfunc loadFont
 //--------------------------------------------------------------
 // Set Skin Brightness
 void setBrightness(int Brightness)

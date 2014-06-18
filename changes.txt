@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.34 (2009.01.13)
+-Fixed some bugs that could sometimes prevent 'Left'/'Right' buttons from activating elf launches defined by user for those buttons
+-Changed to use fioGetstat instead of fioDopen+fioDclose to scan for USB drives
+-Restructured main menu event loop and centralized GUI screen redraws to it
+-Changed from dynamic to static font buffer allocation (as it's always needed)
+-Modified USBHDFSD to eliminate an irritating and unnecessary delay
+-Added rom0:ROMVER content to "MISC/Debug Info" screen (shows PS2 bios version)
+
 LaunchELF v4.33 (2009.01.12)
 -Raised a debug constant which limited v4.32 USB_mass drives to 4 instead of 10
 -Added a horizontal offset to the "About uLE" display

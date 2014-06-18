@@ -759,10 +759,6 @@ void hddManager(void)
 				unmountAll();    //unmount all uLE-used mountpoints
 				unmountParty(0); //unconditionally unmount primary mountpoint
 				unmountParty(1); //unconditionally unmount secondary mountpoint
-				if (stricmp(setting->GUI_skin, "\0") != 0) {
-					GUI_active = 1;
-					loadSkin(BACKGROUND_PIC, 0, 0);
-				}
 				return;
 			}else if(new_pad & PAD_SQUARE){
 				if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){

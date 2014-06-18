@@ -1,7 +1,7 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.33"
+#define ULE_VERSION "v4.34"
 #define ULE_VERDATE "2009.01.11"
 
 #include <stdio.h>
@@ -197,9 +197,9 @@ extern int			Menu_start_y;
 extern int			Menu_end_y;
 extern int			Frame_end_y;
 extern int			Menu_tooltip_y;
-extern u64       BrightColor;
-extern int       PicRotate, FullScreen;
-extern u8       *FontBuffer;
+extern u64      BrightColor;
+extern int      PicRotate, FullScreen;
+extern u8       FontBuffer[256*16];
 
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 );

@@ -1,6 +1,7 @@
 //---------------------------------------------------------------------------
-//File name:    font_uLE.c
+//File name:    font_uLE.c  //Holds FontBuffer and font_uLE (default font)
 //---------------------------------------------------------------------------
+unsigned char FontBuffer[256*16]; //This holds either default or external font
 unsigned char font_uLE[] = {
 //Font position 0x000
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, //char 0x000 == '_' (free for use)

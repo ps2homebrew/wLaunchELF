@@ -12,6 +12,9 @@ rm -fr usbhdfsd/.svn
 rmdir usbhdfsd
 echo copying new work copy of source from uLE_BUP
 cp -r uLE_BUP/usbhdfsd usbhdfsd
+echo updating files changed for uLE
+cd "$SRCDIR"
+cp -r usbhdfsd/* "$PS2DEV/usbhdfsd"
 echo compiling new usbhdfsd.irx
 cd $PS2DEV/usbhdfsd && make clean && make
 echo script work is now complete

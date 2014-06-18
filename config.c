@@ -2121,7 +2121,7 @@ void config(char *mainMsg, char *CNF)
 				{
 					free(tmpsetting);
 					saveConfig(mainMsg, CNF);
-					if (stricmp(setting->GUI_skin, "\0") != 0) {
+					if(setting->GUI_skin[0]) {
 						GUI_active = 1;
 						loadSkin(BACKGROUND_PIC, 0, 0);
 					}
@@ -2135,7 +2135,8 @@ cancel_exit:
 				free(setting);
 				setting = tmpsetting;
 				updateScreenMode(0);
-				if (stricmp(setting->GUI_skin, "\0") != 0) {GUI_active = 1;}
+				if (setting->GUI_skin[0])
+					GUI_active = 1;
 				loadSkin(BACKGROUND_PIC, 0, 0);
 				Load_External_Language();
 				loadFont(setting->font_file);
