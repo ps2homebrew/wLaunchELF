@@ -1,11 +1,16 @@
 /*
   Copyright 2009-2010, jimmikaelkael
   Licenced under Academic Free License version 3.0
-  Review OpenUsbLd README & LICENSE files for further details.
 */
 
-#ifndef __SMBMAN_H__
-#define __SMBMAN_H__
+#ifndef _PS2SMB_H
+#define _PS2SMB_H
+
+#include <tamtypes.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define NO_PASSWORD		-1
 #define PLAINTEXT_PASSWORD 	 0
@@ -67,5 +72,9 @@ typedef struct {		// size = 512
 	char ShareName[256];
 	char ShareComment[256];
 } ShareEntry_t;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

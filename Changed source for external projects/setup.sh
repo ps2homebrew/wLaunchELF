@@ -59,7 +59,7 @@ fi
 ####################
 if [ $DOWNLOAD -eq 1 ]; then
   cd $BUP_DIR
-	svn co http://svn.github.com/ps2dev/ps2sdk --revision 891 ps2sdksrc
+	svn co http://svn.github.com/ps2dev/ps2sdk --revision 911 ps2sdksrc
 	svn co http://psp.jim.sh/svn/ps2/trunk/gsKit --revision 1684 gsKit
 	svn co http://psp.jim.sh/svn/ps2/trunk/usbhdfsd --revision 1534 usbhdfsd
 	svn co http://psp.jim.sh/svn/ps2ware/trunk/ps2ftpd --revision 371 ps2ftpd

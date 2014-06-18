@@ -59,8 +59,6 @@ extern void mcserv_irx;
 extern int  size_mcserv_irx;
 extern void sior_irx;
 extern int  size_sior_irx;
-extern void kpatch_10K_elf;
-extern int  size_kpatch_10K_elf;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -2036,7 +2034,6 @@ int main(int argc, char *argv[])
 	for(i=0; (i<argc)&&(i<8); i++)
 		boot_argv[i] = argv[i];
 
-	sysApplyKernelPatches();
 	SifInitRpc(0);
 	CheckModules();
 	loadBasicModules();
