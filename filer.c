@@ -2806,7 +2806,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //This section is only for use while debugging
 ///*
-		strcpy(files[nfiles].name, "Debug Info");
+		strcpy(files[nfiles].name, LNG(Debug_Info));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //*/
 //End of section used only for debugging
@@ -2916,13 +2916,13 @@ int BrowserModePopup(void)
 			case PAD_SQUARE:
 				file_show = 2;
 				event |= 2;  //event |= valid pad command
-				if((file_show==2) && elisaFnt==NULL && elisa_failed==FALSE){
+				if((file_show==2) && (elisaFnt==NULL) && (elisa_failed==FALSE)){
 					int fd;
 
 					sprintf(tmp, "%s%s", LaunchElfDir, "ELISA100.FNT");
 					if(!strncmp(tmp, "cdrom", 5)) strcat(tmp, ";1");
 					fd = genOpen(tmp, O_RDONLY);
-					if(fd>0){
+					if(fd>=0){
 						test = genLseek(fd,0,SEEK_END);
 						if(test==55016){
 							elisaFnt = (char*)malloc(test);
@@ -3046,7 +3046,7 @@ void getFilePath(char *out, int cnfmode)
 	file_sort = 1;
 
 	font_height = FONT_HEIGHT;
-	if((file_show==2) && elisaFnt!=NULL)
+	if((file_show==2) && (elisaFnt!=NULL))
 		font_height = FONT_HEIGHT+2;
 	rows = (Menu_end_y-Menu_start_y)/font_height;
 
@@ -3103,7 +3103,11 @@ void getFilePath(char *out, int cnfmode)
 					browser_cd=TRUE;
 					vfreeSpace=FALSE;
 				}
+			} else if(new_pad & PAD_L1) {
+				browser_cd = BrowserModePopup();
 			}
+			//pad checks above are for commands common to all browser modes
+			//pad checks below are for commands that differ depending on cnfmode
 			if(cnfmode==DIR_CNF){
 				if(new_pad & PAD_START) {
 					strcpy(out, path);
@@ -3240,8 +3244,6 @@ void getFilePath(char *out, int cnfmode)
 							}
 						}
 					}
-				} else if(new_pad & PAD_L1) {
-					browser_cd = BrowserModePopup();
 				} else if(new_pad & PAD_SELECT){  //Leaving the browser ?
 					unmountAll();
 					return;
@@ -3320,7 +3322,7 @@ void getFilePath(char *out, int cnfmode)
 			x = Menu_start_x;
 			y = Menu_start_y;
 			font_height = FONT_HEIGHT;
-			if((file_show==2) && elisaFnt!=NULL){
+			if((file_show==2) && (elisaFnt!=NULL)){
 				y-=2;
 				font_height = FONT_HEIGHT+2;
 			}

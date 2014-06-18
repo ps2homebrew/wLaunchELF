@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.08 (2006.12.07)
+-Modified use of BrowserModePopup, to make it usable also for config browsing.
+-Fixed a bug in font loading of ELISA100.FNT
+-Fixed a bug that could crash if "Debug Info" screen was used with latest LNG files
+
 LaunchELF v4.07 (2006.11.30)
 -Modified MC attribute handling to ensure compatibility of PS1 gamesaves
 -Improved HddManager unmounting, to prevent failure of some partition commands
