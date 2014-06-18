@@ -50,10 +50,10 @@ extern void hdl_info_irx;
 extern int  size_hdl_info_irx;
 extern void chkesr_irx;
 extern int size_chkesr_irx;
-extern void mcman_irx;
-extern int  size_mcman_irx;
-extern void mcserv_irx;
-extern int  size_mcserv_irx;
+//extern void mcman_irx;
+//extern int  size_mcman_irx;
+//extern void mcserv_irx;
+//extern int  size_mcserv_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -810,11 +810,13 @@ void loadBasicModules(void)
 		have_sio2man = 1;
 	}
 	if	(!have_mcman) {
-		SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret);
+		//SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret); //Home
+		SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
 		have_mcman = 1;
 	}
 	if	(!have_mcserv) {
-		SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret);
+		//SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret); //Home
+		SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
 		have_mcserv = 1;
 	}
 	if	(!have_padman) {

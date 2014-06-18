@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.40h (2010.02.12)
+-Modified screen update delay methods, so as to avoid freezing in PCSX2 use due to their incomplete implementation of EE timers.
+-Reverted to use MCMAN and MCSERV modules from bios, as required not only for compatibility to PCSX2, but also for compatibility to v0 PS2 consoles. 
+
 LaunchELF v4.40g (2010.02.09)
 -Updated gsKit and existing source files to SVN rev 1664.
 -Readapted and added a few changes back to the gsKit to resolve issues with non-interlace mode.
