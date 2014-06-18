@@ -136,6 +136,7 @@ int have_ps2netfs = 0;
 ;
 int done_setupPowerOff = 0;
 int ps2kbd_opened = 0;
+
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
@@ -144,9 +145,9 @@ int ps2kbd_opened = 0;
 void	PrintRow(int row, char *text_p)
 {	int x = (Menu_start_x + 4);
 	int y = (Menu_start_y + FONT_HEIGHT*row);
-
-	printXY(text_p, x, y, setting->color[3], TRUE);
-}
+   
+	printXY(text_p, x, y, setting->color[3], TRUE, 0);
+}  
 //------------------------------
 //endfunc PrintRow
 //--------------------------------------------------------------
@@ -230,7 +231,7 @@ static void getIpConfig(void)
 	strncpy(if_conf+i, gw, 15);
 	i += strlen(gw) + 1;
 	if_conf_len = i;
-	sprintf(netConfig, "Net Config:  %-15s %-15s %-15s", ip, netmask, gw);
+	sprintf(netConfig, "%s:  %-15s %-15s %-15s", LNG(Net_Config), ip, netmask, gw);
 
 }
 //------------------------------
@@ -246,24 +247,24 @@ int drawMainScreen(void)
 	char *p;
 
 	if(!setting->LK_Flag[12])
-		strcpy(setting->LK_Path[12], "MISC/Configure");
+		strcpy(setting->LK_Path[12], setting->Misc_Configure);
 	if((maxCNF>1) && !setting->LK_Flag[13])
-		strcpy(setting->LK_Path[13], "MISC/Load CNF--");
+		strcpy(setting->LK_Path[13], setting->Misc_Load_CNFprev);
 	if((maxCNF>1) && !setting->LK_Flag[14])
-		strcpy(setting->LK_Path[14], "MISC/Load CNF++");
+		strcpy(setting->LK_Path[14], setting->Misc_Load_CNFnext);
 
 	clrScr(setting->color[0]);
 
 	x = Menu_start_x;
 	y = Menu_start_y;
 	c[0] = 0;
-	if(init_delay)    sprintf(c, "Init Delay: %d", init_delay/SCANRATE);
+	if(init_delay)    sprintf(c, "%s: %d", LNG(Init_Delay), init_delay/SCANRATE);
 	else if(setting->LK_Path[0][0]){
-		if(!user_acted) sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
-		else            sprintf(c, "TIMEOUT: Halted");
+		if(!user_acted) sprintf(c, "%s: %d", LNG(TIMEOUT), timeout/SCANRATE);
+		else            sprintf(c, "%s: %s", LNG(TIMEOUT), LNG(Halted));
 	}
 	if(c[0]){
-		printXY(c, x, y, setting->color[3], TRUE);
+		printXY(c, x, y, setting->color[3], TRUE, 0);
 		y += FONT_HEIGHT*2;
 	}
 	for(i=0; i<15; i++){
@@ -309,10 +310,10 @@ int drawMainScreen(void)
 				strcpy(c," SELECT: ");
 				break;
 			case 13:
-				strcpy(c,"   LEFT: ");
+				sprintf(c,"%s: ", LNG(LEFT));
 				break;
 			case 14:
-				strcpy(c,"  RIGHT: ");
+				sprintf(c,"%s: ", LNG(RIGHT));
 				break;
 			}
 			if(setting->Show_Titles) //Show Launch Titles ?
@@ -331,22 +332,41 @@ int drawMainScreen(void)
 					strcpy(f, setting->LK_Path[i]);
 				}
 			} //ends clause for No title
-			strcat(c, f);
 			if(nElfs++==selected && mode==DPAD)
 				color = setting->color[2];
 			else
 				color = setting->color[3];
-			printXY(c, x, y, color, TRUE);
+			int len = (strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)?
+				strlen(LNG(LEFT))+2:strlen(LNG(RIGHT))+2;
+			if(i==13){ // LEFT
+				if(strlen(LNG(RIGHT))+2>strlen(LNG(LEFT))+2)
+					printXY(c, x+(strlen(LNG(RIGHT))+2>9?
+						((strlen(LNG(RIGHT))+2)-(strlen(LNG(LEFT))+2))*FONT_WIDTH:
+						(9-(strlen(LNG(LEFT))+2))*FONT_WIDTH), y, color, TRUE, 0);
+				else
+					printXY(c, x+(strlen(LNG(LEFT))+2>9?
+						0:(9-(strlen(LNG(LEFT))+2))*FONT_WIDTH), y, color, TRUE, 0);
+			}else if (i==14){ // RIGHT
+				if(strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)
+					printXY(c, x+(strlen(LNG(LEFT))+2>9?
+						((strlen(LNG(LEFT))+2)-(strlen(LNG(RIGHT))+2))*FONT_WIDTH:
+						(9-(strlen(LNG(RIGHT))+2))*FONT_WIDTH), y, color, TRUE, 0);
+				else
+					printXY(c, x+(strlen(LNG(RIGHT))+2>9?
+						0:(9-(strlen(LNG(RIGHT))+2))*FONT_WIDTH), y, color, TRUE, 0);
+			}else
+				printXY(c, x+(len>9? (len-9)*FONT_WIDTH:0), y, color, TRUE, 0);
+			printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH), y, color, TRUE, 0);
 			y += FONT_HEIGHT;
 		} //ends clause for defined LK_Path[i]
 	} //ends for
 
-	if(mode==BUTTON)	sprintf(c, "PUSH ANY BUTTON or D-PAD!");
+	if(mode==BUTTON)	sprintf(c, "%s!", LNG(PUSH_ANY_BUTTON_or_DPAD));
 	else{
 		if(swapKeys) 
-			sprintf(c, "ÿ1:OK ÿ0:Cancel");
+			sprintf(c, "ÿ1:%s ÿ0:%s", LNG(OK), LNG(Cancel));
 		else
-			sprintf(c, "ÿ0:OK ÿ1:Cancel");
+			sprintf(c, "ÿ0:%s ÿ1:%s", LNG(OK), LNG(Cancel));
 	}
 	
 	setScrTmp(mainMsg, c);
@@ -679,7 +699,7 @@ void loadHdlInfoModule(void)
 	int ret;
 
 	if(!have_hdl_info){
-		drawMsg("Loading HDL Info Module...");
+		drawMsg(LNG(Loading_HDL_Info_Module));
 		SifExecModuleBuffer(&hdl_info_irx, size_hdl_info_irx, 0, NULL, &ret);
 		ret = Hdl_Info_BindRpc();
 		have_hdl_info = 1;
@@ -717,7 +737,7 @@ void setupPowerOff(void) {
 void loadHddModules(void)
 {
 	if(!have_HDD_modules) {
-		drawMsg("Loading HDD Modules...");
+		drawMsg(LNG(Loading_HDD_Modules));
 		setupPowerOff();
 		load_ps2atad(); //also loads ps2hdd & ps2fs
 		have_HDD_modules = TRUE;
@@ -733,7 +753,7 @@ void loadNetModules(void)
 	if(!have_NetModules){
 		loadHddModules();
 		loadUsbModules();
-		drawMsg("Loading NetFS and FTP Server Modules...");
+		drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 		
 		// getIpConfig(); //RA NB: I always get that info, early in init
 		// Also, my module checking makes some other tests redundant
@@ -935,10 +955,10 @@ void Set_CNF_Path(void)
 	Validate_CNF_Path();
 
 	if(!strcmp(setting->CNF_Path, LaunchElfDir))
-		strcpy(mainMsg, "Valid ");
+		sprintf(mainMsg, "%s ", LNG(Valid));
 	else
-		strcpy(mainMsg, "Bogus ");
-	sprintf(mainMsg+6, "CNF_Path = \"%s\"", setting->CNF_Path);
+		sprintf(mainMsg, "%s ", LNG(Bogus));
+	sprintf(mainMsg+6, "%s = \"%s\"", LNG(CNF_Path), setting->CNF_Path);
 
 }
 //------------------------------
@@ -956,7 +976,8 @@ void reloadConfig()
 	Validate_CNF_Path();
 	updateScreenMode(0);
 	loadSkin(BACKGROUND_PIC, 0, 0);
-	
+	Load_External_Language();
+
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
 		loadCdModules();
@@ -1016,14 +1037,14 @@ void RunElf(char *path)
 		} else {
 			strcpy(fullpath, path);
 			if(checkELFheader(fullpath)<=0){
-				sprintf(mainMsg, "%s is Not Found.", path);
+				sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
 				return;
 			} //coming here means the ELF on specified MC is fine
 		} //coming here means the ELF on  MC is fine
 	}else if(!strncmp(path, "hdd0:/", 6)){
 		loadHddModules();
 		if(checkELFheader(path)<=0){
-			sprintf(mainMsg, "%s is Not Found.", path);
+			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
 			return;
 		} //coming here means the ELF is fine
 		sprintf(party, "hdd0:%s", path+6);
@@ -1033,7 +1054,7 @@ void RunElf(char *path)
 	}else if(!strncmp(path, "mass:/", 6)){
 		loadUsbModules();
 		if(checkELFheader(path)<=0){
-			sprintf(mainMsg, "%s is Not Found.", path);
+			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
 			return;
 		} //coming here means the ELF is fine
 		party[0] = 0;
@@ -1046,17 +1067,17 @@ void RunElf(char *path)
 		strcat(fullpath, path+6);
 		makeHostPath(fullpath, fullpath);
 		if(checkELFheader(fullpath)<=0){
-			sprintf(mainMsg, "%s is Not Found.", path);
+			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
 			return;
 		} //coming here means the ELF is fine
-	}else if(!stricmp(path, "MISC/PS2Disc")){
-		drawMsg("Reading SYSTEM.CNF...");
-		strcpy(mainMsg, "Failed");
+	}else if(!stricmp(path, setting->Misc_PS2Disc)){
+		drawMsg(LNG(Reading_SYSTEMCNF));
+		strcpy(mainMsg, LNG(Failed));
 		party[0]=0;
 		trayopen=FALSE;
 		if(!ReadCNF(fullpath)) return;
 		//strcpy(mainMsg, "Success!"); return;
-	}else if(!stricmp(path, "MISC/FileBrowser")){
+	}else if(!stricmp(path, setting->Misc_FileBrowser)){
 		mainMsg[0] = 0;
 		tmp[0] = 0;
 		LastDir[0] = 0;
@@ -1064,7 +1085,7 @@ void RunElf(char *path)
 		if(tmp[0])
 			RunElf(tmp);
 		return;
-	}else if(!stricmp(path, "MISC/PS2Browser")){
+	}else if(!stricmp(path, setting->Misc_PS2Browser)){
 		__asm__ __volatile__(
 			"	li $3, 0x04;"
 			"	syscall;"
@@ -1075,61 +1096,45 @@ void RunElf(char *path)
 		//The method below was used earlier, but causes reset with new ELF loader
 		//party[0]=0;
 		//strcpy(fullpath,"rom0:OSDSYS");
-	}else if(!stricmp(path, "MISC/PS2Net")){
+	}else if(!stricmp(path, setting->Misc_PS2Net)){
 		mainMsg[0] = 0;
 		loadNetModules();
 		return;
-	}else if(!stricmp(path, "MISC/PS2PowerOff")){
+	}else if(!stricmp(path, setting->Misc_PS2PowerOff)){
 		mainMsg[0] = 0;
-		drawMsg("Powering Off Console...");
+		drawMsg(LNG(Powering_Off_Console));
 		setupPowerOff();
 		hddPowerOff();
 		poweroff_delay = SCANRATE/4; //trigger delay for those without net adapter
 		return;
-	}else if(!stricmp(path, "MISC/HddManager")){
+	}else if(!stricmp(path, setting->Misc_HddManager)){
 		hddManager();
 		return;
-	}else if(!stricmp(path, "MISC/TextEditor")){
+	}else if(!stricmp(path, setting->Misc_TextEditor)){
 		TextEditor();
 		return;
-	}else if(!stricmp(path, "MISC/JpgViewer")){
+	}else if(!stricmp(path, setting->Misc_JpgViewer)){
 		JpgViewer();
 		return;
-	}else if(!stricmp(path, "MISC/Configure")){
+	}else if(!stricmp(path, setting->Misc_Configure)){
 		config(mainMsg, CNF);
 		return;
-	}else if(!stricmp(path, "MISC/Load CNF--")){
+	}else if(!stricmp(path, setting->Misc_Load_CNFprev)){
 		decConfig();
 		return;
-	}else if(!stricmp(path, "MISC/Load CNF++")){
+	}else if(!stricmp(path, setting->Misc_Load_CNFnext)){
 		incConfig();
 		return;
-	}else if(!stricmp(path, "MISC/Set CNF_Path")){
+	}else if(!stricmp(path, setting->Misc_Set_CNF_Path)){
 		Set_CNF_Path();
 		return;
-	}else if(!stricmp(path, "MISC/Load CNF")){
+	}else if(!stricmp(path, setting->Misc_Load_CNF)){
 		reloadConfig();
 		return;
 //Next clause is for an optional font test routine
-	}else if(!stricmp(path, "MISC/ShowFont")){
+	}else if(!stricmp(path, setting->Misc_ShowFont)){
 		ShowFont();
 		return;
-//Next two clauses are only for debugging
-/*
-	}else if(!stricmp(path, "MISC/IOP Reset")){
-		mainMsg[0] = 0;
-		Reset();
-		if(!strncmp(LaunchElfDir, "mass:", 5))
-			loadUsbModules();
-		padReset();
-		setupPad();
-		return;
-	}else if(!stricmp(path, "MISC/Debug Screen")){
-		mainMsg[0] = 0;
-		ShowDebugScreen();
-		return;
-*/
-//end of two clauses used only for debugging
 	}else if(!strncmp(path, "cdfs", 4)){
 		loadCdModules();
 		CDVD_FlushCache();
@@ -1210,7 +1215,7 @@ void Reset()
 //--------------------------------------------------------------
 int main(int argc, char *argv[])
 {
-	char *p;
+	char *p, tmp[MAX_PATH];
 	int event, post_event=0, emergency;
 	int RunELF_index, nElfs=0;
 	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
@@ -1329,6 +1334,9 @@ int main(int argc, char *argv[])
 		}
 	}
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
+	Load_External_Language();
+	strcpy(tmp, mainMsg+7);
+	sprintf(mainMsg, "%s %s", LNG(Loaded_Config), tmp);
 	getIpConfig();
 	setupPad(); //Comment out this line when using early setupPad above
 	initsbv_patches();
@@ -1373,12 +1381,12 @@ int main(int argc, char *argv[])
 				event |= 4;  //event |= disc change detection
 			if(cdmode==CDVD_TYPE_NODISK){
 				trayopen = TRUE;
-				strcpy(mainMsg, "No Disc");
+				strcpy(mainMsg, LNG(No_Disc));
 			}else if(cdmode>=0x01 && cdmode<=0x04){
-				strcpy(mainMsg, "Detecting Disc");
+				strcpy(mainMsg, LNG(Detecting_Disc));
 			}else if(trayopen==TRUE){
 				trayopen=FALSE;
-				strcpy(mainMsg, "Stop Disc");
+				strcpy(mainMsg, LNG(Stop_Disc));
 			}
 		}
 

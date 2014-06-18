@@ -29,13 +29,34 @@ static void Command_List( void )
 {
 	int x, y;
 	int event, post_event=0;
+	
+	int command_len=strlen(LNG(Start_StartStop_Slideshow))>strlen(LNG(Start_StartStop_Slideshow))?
+		strlen(LNG(Start_StartStop_Slideshow)):strlen(LNG(Start_StartStop_Slideshow));
+	command_len=strlen(LNG(L1R1_Slideshow_Timer))>command_len?
+		strlen(LNG(L1R1_Slideshow_Timer)):command_len;
+	command_len=strlen(LNG(L2R2_Slideshow_Transition))>command_len?
+		strlen(LNG(L2R2_Slideshow_Transition)):command_len;
+	command_len=strlen(LNG(LeftRight_Pad_PrevNext_Picture))>command_len?
+		strlen(LNG(LeftRight_Pad_PrevNext_Picture)):command_len;
+	command_len=strlen(LNG(UpDown_Pad_Rotate_Picture))>command_len?
+		strlen(LNG(UpDown_Pad_Rotate_Picture)):command_len;
+	command_len=strlen(LNG(Left_Joystick_Panorama))>command_len?
+		strlen(LNG(Left_Joystick_Panorama)):command_len;
+	command_len=strlen(LNG(Right_Joystick_Vertical_Zoom))>command_len?
+		strlen(LNG(Right_Joystick_Vertical_Zoom)):command_len;
+	command_len=strlen(LNG(FullScreen_Mode))+3>command_len?
+		strlen(LNG(FullScreen_Mode))+3:command_len;
+	command_len=strlen(LNG(Exit_To_Jpg_Browser))+3>command_len?
+		strlen(LNG(Exit_To_Jpg_Browser))+3:command_len;
 
-	int Command_ch_w = 34; //Total characters in longest Command Name.
-	int Command_ch_h = 9;  //Total Command lines number.
+	int Command_ch_w = command_len+1; //Total characters in longest Command Name.
+	int Command_ch_h = 9;             //Total Command lines number.
 	int cSprite_Y1 = SCREEN_HEIGHT/2-((Command_ch_h+1)*FONT_HEIGHT)/2; //Top edge
 	int cSprite_X2 = SCREEN_WIDTH/2+((Command_ch_w+3)*FONT_WIDTH)/2;   //Right edge
 	int cSprite_X1 = cSprite_X2-(Command_ch_w+3)*FONT_WIDTH-4;         //Left edge
 	int cSprite_Y2 = cSprite_Y1+(Command_ch_h+1)*FONT_HEIGHT;          //Bottom edge
+	
+	char tmp[MAX_PATH];
 
 	event = 1;  //event = initial entry.
 	while(1){
@@ -57,26 +78,28 @@ static void Command_List( void )
 			y=cSprite_Y1+FONT_HEIGHT/2;
 			x=cSprite_X1+2*FONT_WIDTH;
 
-			printXY("Start: Start/Stop Slideshow", x, y, setting->color[3], TRUE);
+			printXY(LNG(Start_StartStop_Slideshow), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("L1/R1: Slideshow Timer", x, y, setting->color[3], TRUE);
+			printXY(LNG(L1R1_Slideshow_Timer), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("L2/R2: Slideshow Transition", x, y, setting->color[3], TRUE);
+			printXY(LNG(L2R2_Slideshow_Transition), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("Left/Right Pad: Prev/Next Picture", x, y, setting->color[3], TRUE);
+			printXY(LNG(LeftRight_Pad_PrevNext_Picture), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("Up/Down Pad: Rotate Picture", x, y, setting->color[3], TRUE);
+			printXY(LNG(UpDown_Pad_Rotate_Picture), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("Left Joystick: Panorama", x, y, setting->color[3], TRUE);
+			printXY(LNG(Left_Joystick_Panorama), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("Right Joystick Vertical: Zoom", x, y, setting->color[3], TRUE);
+			printXY(LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
 			if (swapKeys)
-				printXY("ÿ1: FullScreen Mode", x, y, setting->color[3], TRUE);
+				sprintf(tmp, "ÿ1: %s", LNG(FullScreen_Mode));
 			else
-				printXY("ÿ0: FullScreen Mode", x, y, setting->color[3], TRUE);
+				sprintf(tmp, "ÿ0: %s", LNG(FullScreen_Mode));
+			printXY(tmp, x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
-			printXY("ÿ3: Exit To Jpg Browser", x, y, setting->color[3], TRUE);
+			sprintf(tmp, "ÿ3: %s", LNG(Exit_To_Jpg_Browser));
+			printXY(tmp, x, y, setting->color[3], TRUE, 0);
 			y+=FONT_HEIGHT;
 
 		}//ends if(event||post_event).
@@ -161,23 +184,24 @@ static void View_Render( void ) {
 		name=strrchr(tmp, '/');
 		strcpy(name, name+1);
 		msg0[0]='\0';
-		sprintf(msg0, "Jpg Viewer  Picture: %s  Size: %d*%d ", name, (int)PicW, (int)PicH);
+		sprintf(msg0, "%s  %s: %s  %s: %d*%d ",
+			LNG(Jpg_Viewer), LNG(Picture), name, LNG(Size), (int)PicW, (int)PicH);
 		msg1[0]='\0';
-		sprintf(msg1, "Select: Command List  ");
+		sprintf(msg1, "Select: %s  ", LNG(Command_List));
 		tmp[0]='\0';
 		if(TimeRemain<60)
-			sprintf(tmp, "Timer: %d sec  Transition: ", TimeRemain);
+			sprintf(tmp, "%s: %d sec  %s: ", LNG(Timer), TimeRemain, LNG(Transition));
 		else
-			sprintf(tmp, "Timer: %d m %d sec  Transition: ", TimeRemain/60, TimeRemain%60);
+			sprintf(tmp, "%s: %d m %d sec  %s: ", LNG(Timer), TimeRemain/60, TimeRemain%60, LNG(Transition));
 		strcat(msg1, tmp);
 		if(SlideShowTrans==OFF)
-			strcat(msg1, "Off");
+			strcat(msg1, LNG(Off));
 		else if(SlideShowTrans==ZOOM)
-			strcat(msg1, "Zoom");
+			strcat(msg1, LNG(Zoom));
 		else if(SlideShowTrans==FADE)
-			strcat(msg1, "Fade");
+			strcat(msg1, LNG(Fade));
 		else if(SlideShowTrans==ZOOM_FADE)
-			strcat(msg1, "Zoom+Fade");
+			strcat(msg1, LNG(ZoomFade));
 		setScrTmp(msg0, msg1);
 	} /* end FullScreen */
 	drawScr();
@@ -744,7 +768,7 @@ list:
 
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 						strcat(tmp, "/");
-					printXY(tmp, x+4, y, color, TRUE);
+					printXY(tmp, x+4, y, color, TRUE, 0);
 					y += FONT_HEIGHT;
 
 				}else{
@@ -790,7 +814,7 @@ list:
 frame:
 					drawFrame(x, y, x+72, (y+55),color);
 
-					Len = printXY(tmp, 0, 0, 0, FALSE);
+					Len = printXY(tmp, 0, 0, 0, FALSE, 0);
 					if(Len>72 && top+i==jpg_browser_sel){
 						if(t%0x10==0){
 							strcpy(tmp1,tmp+print_name);
@@ -798,13 +822,13 @@ frame:
 							if(++print_name>(Len/FONT_WIDTH-10))
 								print_name=0;
 						}
-						Len = printXY(tmp1, 0, 0, 0, FALSE);
-						printXY(tmp1, x+72/2-Len/2, (y+58), color, TRUE);
+						Len = printXY(tmp1, 0, 0, 0, FALSE, 0);
+						printXY(tmp1, x+72/2-Len/2, (y+58), color, TRUE, 0);
 					}else if(Len>72){
 						tmp[7]='.'; tmp[8]='.'; tmp[9]='.'; tmp[10]='\0';
-						printXY(tmp, x-4, (y+58), color, TRUE);
+						printXY(tmp, x-4, (y+58), color, TRUE, 0);
 					}else
-						printXY(tmp, x+72/2-Len/2, (y+58), color, TRUE);
+						printXY(tmp, x+72/2-Len/2, (y+58), color, TRUE, 0);
 
 					if(TV_mode == TV_mode_NTSC)
 						y += 71+15;
@@ -831,23 +855,25 @@ frame:
 			//Tooltip section
 			msg1[0]='\0';
 			if (swapKeys)
-				strcpy(msg1, "ÿ1:View");
+				sprintf(msg1, "ÿ1:%s", LNG(View));
 			else
-				strcpy(msg1, "ÿ0:View");
+				sprintf(msg1, "ÿ0:%s", LNG(View));
 			if(jpg_browser_mode==LIST)
-				strcat(msg1, " ÿ3:Up ÿ2:Thumb");
+				sprintf(tmp, " ÿ3:%s ÿ2:%s", LNG(Up), LNG(Thumb));
 			else
-				strcat(msg1, " ÿ3:Up ÿ2:List");
-			sprintf(tmp, " Sel:Exit Start:SlideShow L1/R1:%dsec L2/R2:", SlideShowTime);
+				sprintf(tmp, " ÿ3:%s ÿ2:%s", LNG(Up), LNG(List));
+			strcat(msg1, tmp);
+			sprintf(tmp, " Sel:%s Start:%s L1/R1:%dsec L2/R2:",
+				LNG(Exit), LNG(SlideShow), SlideShowTime);
 			strcat(msg1, tmp);
 			if(SlideShowTrans==OFF)
-				strcat(msg1, "Off");
+				strcat(msg1, LNG(Off));
 			else if(SlideShowTrans==ZOOM)
-				strcat(msg1, "Zoom");
+				strcat(msg1, LNG(Zoom));
 			else if(SlideShowTrans==FADE)
-				strcat(msg1, "Fade");
+				strcat(msg1, LNG(Fade));
 			else if(SlideShowTrans==ZOOM_FADE)
-				strcat(msg1, "Zoom+Fade");
+				strcat(msg1, LNG(ZoomFade));
 			setScrTmp(msg0, msg1);
 		}//ends if(event||post_event)
 		drawScr();

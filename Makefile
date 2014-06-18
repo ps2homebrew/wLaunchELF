@@ -2,7 +2,7 @@ EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o mass_rpc.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o ps2ip.o ps2smap.o ps2hdd.o\
 	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
-	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o
+	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
@@ -12,7 +12,6 @@ EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 EE_LIBS = -lpad -lgsKit -ldmaKit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
-	rm -f hdl_info.s
 
 run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF

@@ -76,7 +76,8 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"*",   // cnfmode TEXT_CNF
 	"",    // cnfmode DIR_CNF
 	"JPG", // cnfmode JPG_CNF
-	"IRX"  // cnfmode USBMASS_IRX_CNF
+	"IRX",  // cnfmode USBMASS_IRX_CNF
+	"LNG"  // cnfmode LANG_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
@@ -90,7 +91,8 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"*",   // cnfmode TEXT_CNF
 	"",    // cnfmode DIR_CNF
 	"jpg", // cnfmode JPG_CNF
-	"irx"  // cnfmode USBMASS_IRX_CNF
+	"irx",  // cnfmode USBMASS_IRX_CNF
+	"lng"  // cnfmode LANG_CNF
 };
 
 int host_ready   = 0;
@@ -284,7 +286,7 @@ int ynDialog(const char *message)
 		}
 	}                             //loop back for next character pos
 	for(i=len=tw=0; i<n; i++){    //start with string 0, assume 0 length & width
-		ret = printXY(&msg[len], 0, 0, 0, FALSE);  //get width of current string
+		ret = printXY(&msg[len], 0, 0, 0, FALSE, 0);  //get width of current string
 		if(ret>tw) tw=ret;     //tw = largest text width of strings so far
 		len+=strlen(&msg[len])+1;    //len = pos of next string start
 	}
@@ -327,17 +329,21 @@ int ynDialog(const char *message)
 				dx+dw, (dy+dh));
 			drawFrame(dx, dy, dx+dw, (dy+dh), setting->color[1]);
 			for(i=len=0; i<n; i++){
-				printXY(&msg[len], dx+2+a,(dy+a+2+i*16), setting->color[3],TRUE);
+				printXY(&msg[len], dx+2+a,(dy+a+2+i*16), setting->color[3],TRUE,0);
 				len+=strlen(&msg[len])+1;
 			}
 
 			//Cursor positioning section
-			x=(tw-96)/2;
-			printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16), setting->color[3],TRUE);
+			x=(tw-96)/4;
+			printXY(LNG(OK), dx+a+x+FONT_WIDTH,
+				(dy+a+b+2+n*FONT_HEIGHT), setting->color[3],TRUE,0);
+			printXY(LNG(CANCEL), dx+dw-x-(strlen(LNG(CANCEL))+1)*FONT_WIDTH,
+				(dy+a+b+2+n*FONT_HEIGHT), setting->color[3],TRUE,0);
 			if(sel==0)
-				drawChar(127, dx+a+x,(dy+a+b+2+n*16), setting->color[3]);
+				drawChar(127, dx+a+x,(dy+a+b+2+n*FONT_HEIGHT), setting->color[3]);
 			else
-				drawChar(127,dx+a+x+40,(dy+a+b+2+n*16),setting->color[3]);
+				drawChar(127,dx+dw-x-(strlen(LNG(CANCEL))+2)*FONT_WIDTH-1,
+					(dy+a+b+2+n*FONT_HEIGHT),setting->color[3]);
 		}//ends if(event||post_event)
 		drawLastMsg();
 		post_event = event;
@@ -375,7 +381,7 @@ void nonDialog(char *message)
 		}
 	}                             //loop back for next character pos
 	for(i=len=tw=0; i<n; i++){    //start with string 0, assume 0 length & width
-		ret = printXY(&msg[len], 0, 0, 0, FALSE);  //get width of current string
+		ret = printXY(&msg[len], 0, 0, 0, FALSE,0);  //get width of current string
 		if(ret>tw) tw=ret;     //tw = largest text width of strings so far
 		len+=strlen(&msg[len])+1;    //len = pos of next string start
 	}
@@ -392,7 +398,7 @@ void nonDialog(char *message)
 		dx+dw, (dy+dh));
 	drawFrame(dx, dy, dx+dw, (dy+dh), setting->color[1]);
 	for(i=len=0; i<n; i++){
-		printXY(&msg[len], dx+2+a,(dy+a+2+i*FONT_HEIGHT), setting->color[3],TRUE);
+		printXY(&msg[len], dx+2+a,(dy+a+2+i*FONT_HEIGHT), setting->color[3],TRUE,0);
 		len+=strlen(&msg[len])+1;
 	}
 }
@@ -1100,11 +1106,21 @@ finish:
 int menu(const char *path, const char *file)
 {
 	u64 color;
-	char enable[NUM_MENU], tmp[64];
+	char enable[NUM_MENU], tmp[64], tmp1[64];
 	int x, y, i, sel, test;
 	int event, post_event=0;
+	
+	int menu_len=strlen(LNG(Copy))>strlen(LNG(Cut))?
+		strlen(LNG(Copy)):strlen(LNG(Cut));
+	menu_len=strlen(LNG(Paste))>menu_len? strlen(LNG(Paste)):menu_len;
+	menu_len=strlen(LNG(Delete))>menu_len? strlen(LNG(Delete)):menu_len;
+	menu_len=strlen(LNG(Rename))>menu_len? strlen(LNG(Rename)):menu_len;
+	menu_len=strlen(LNG(New_Dir))>menu_len? strlen(LNG(New_Dir)):menu_len;
+	menu_len=strlen(LNG(Get_Size))>menu_len? strlen(LNG(Get_Size)):menu_len;
+	menu_len=strlen(LNG(mcPaste))>menu_len? strlen(LNG(mcPaste)):menu_len;
+	menu_len=strlen(LNG(psuPaste))>menu_len? strlen(LNG(psuPaste)):menu_len;
 
-	int menu_ch_w = 8;             //Total characters in longest menu string
+	int menu_ch_w = menu_len+1;    //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
@@ -1225,20 +1241,20 @@ int menu(const char *path, const char *file)
 			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
 			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
-				if(i==COPY)			strcpy(tmp, "Copy");
-				else if(i==CUT)		strcpy(tmp, "Cut");
-				else if(i==PASTE)	strcpy(tmp, "Paste");
-				else if(i==DELETE)	strcpy(tmp, "Delete");
-				else if(i==RENAME)	strcpy(tmp, "Rename");
-				else if(i==NEWDIR)	strcpy(tmp, "New Dir");
-				else if(i==GETSIZE) strcpy(tmp, "Get Size");
-				else if(i==MCPASTE)	strcpy(tmp, "mcPaste");
-				else if(i==PSUPASTE)	strcpy(tmp, "psuPaste");
+				if(i==COPY)			strcpy(tmp, LNG(Copy));
+				else if(i==CUT)		strcpy(tmp, LNG(Cut));
+				else if(i==PASTE)	strcpy(tmp, LNG(Paste));
+				else if(i==DELETE)	strcpy(tmp, LNG(Delete));
+				else if(i==RENAME)	strcpy(tmp, LNG(Rename));
+				else if(i==NEWDIR)	strcpy(tmp, LNG(New_Dir));
+				else if(i==GETSIZE) strcpy(tmp, LNG(Get_Size));
+				else if(i==MCPASTE)	strcpy(tmp, LNG(mcPaste));
+				else if(i==PSUPASTE)	strcpy(tmp, LNG(psuPaste));
 
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE,0);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
@@ -1250,15 +1266,16 @@ int menu(const char *path, const char *file)
 			drawSprite(setting->color[0],
 				0, y,
 				SCREEN_WIDTH, y+FONT_HEIGHT);
-
 			if (swapKeys)
-				strcpy(tmp, "ÿ1:OK ÿ0:Cancel");
+				sprintf(tmp, "ÿ1:%s ÿ0:%s", LNG(OK), LNG(Cancel));
 			else
-				strcpy(tmp, "ÿ0:OK ÿ1:Cancel");
+				sprintf(tmp, "ÿ0:%s ÿ1:%s", LNG(OK), LNG(Cancel));
 			if(sel==PASTE)
-				strcat(tmp, " ÿ2:Paste+Rename");
-			strcat(tmp, " ÿ3:Back");
-			printXY(tmp, x, y, setting->color[2], TRUE);
+				sprintf(tmp1, " ÿ2:%s", LNG(PasteRename));
+			strcat(tmp, tmp1);
+			sprintf(tmp1, " ÿ3:%s", LNG(Back));
+			strcat(tmp, tmp1);
+			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1274,7 +1291,7 @@ char *PathPad_menu(const char *path)
 	int a=6, b=4, c=2, tw, th;
 	int i, sel_x, sel_y;
 	int event, post_event=0;
-	char textrow[80];
+	char textrow[80], tmp[64];
 
 	th = 10*FONT_HEIGHT; //Height in pixels of text area
 	tw = 68*FONT_WIDTH;  //Width in pixels of max text row
@@ -1349,7 +1366,7 @@ char *PathPad_menu(const char *path)
 				sprintf(textrow, "%02d=", (sel_x*10+i));
 				strncat(textrow, PathPad[sel_x*10+i], 64);
 				textrow[67] = '\0';
-				printXY(textrow, dx+2+a,(dy+a+2+i*FONT_HEIGHT), color,TRUE);
+				printXY(textrow, dx+2+a,(dy+a+2+i*FONT_HEIGHT), color,TRUE,0);
 			}
 
 			//Tooltip section
@@ -1358,16 +1375,21 @@ char *PathPad_menu(const char *path)
 			drawSprite(setting->color[0], 0, (y), SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if(swapKeys) {
-				strcpy(textrow, "ÿ1:Use ");
-				if(!setting->PathPad_Lock)
-					strcat(textrow, "ÿ0:Clear ÿ2:Set ");
+				sprintf(textrow, "ÿ1:%s ", LNG(Use));
+				if(!setting->PathPad_Lock){
+					sprintf(tmp, "ÿ0:%s ÿ2:%s ", LNG(Clear), LNG(Set));
+					strcat(textrow, tmp);
+				}
 			} else {
-				strcpy(textrow, "ÿ0:Use ");
-				if(!setting->PathPad_Lock)
-					strcat(textrow, "ÿ1:Clear ÿ2:Set ");
+				sprintf(textrow, "ÿ0:%s ", LNG(Use));
+				if(!setting->PathPad_Lock){
+					sprintf(tmp, "ÿ1:%s ÿ2:%s ", LNG(Clear), LNG(Set));
+					strcat(textrow, tmp);
+				}
 			}
-			strcat(textrow, "ÿ3:Back L1/R1:Page_left/right");
-			printXY(textrow, x, y, setting->color[2], TRUE);
+			sprintf(tmp, "ÿ3:%s L1/R1:%s", LNG(Back), LNG(Page_leftright));
+			strcat(textrow, tmp);
+			printXY(textrow, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1739,15 +1761,17 @@ PSU_error:
 				ret = getGameTitle(outPath, &newfile, newfile.title);
 				transcpy_sjis(tmp, newfile.title);
 				sprintf(progress,
-					"Name conflict for this folder:\n"
+					"%s:\n"
 					"%s%s/\n"
 					"\n"
-					"With gamesave title:\n", outPath, newfile.name);
+					"%s:\n",
+					LNG(Name_conflict_for_this_folder), outPath, file.name, LNG(With_gamesave_title));
 				if(tmp[0])
 					strcat(progress, tmp);
 				else
-					strcat(progress, "Undefined (Not a gamesave)");
-				strcat(progress, "\n\nDo you wish to overwrite it ?");
+					strcat(progress, LNG(Undefined_Not_a_gamesave));
+				sprintf(tmp, "\n\n%s ?", LNG(Do_you_wish_to_overwrite_it));
+				strcat(progress, tmp);
 				if(ynDialog(progress)<0) return -1;
 				if(	(PasteMode == PM_MC_BACKUP)
 				||	(PasteMode == PM_MC_RESTORE)
@@ -1757,7 +1781,7 @@ PSU_error:
 					if(ret < 0) return -1;
 					if(newdir(outPath, newfile.name) < 0) return -1;
 				}
-				drawMsg("Pasting...");
+				drawMsg(LNG(Pasting));
 			} else if(ret < 0){
 				return -1;  //return error for failure to create destination folder
 			}
@@ -2058,27 +2082,30 @@ non_PSU_RESTORE_init:
 			remain_time = -1;                     //set time remaining as unknown
 		}
 
-		sprintf(progress, "Pasting file : %s", file.name);
+		sprintf(progress, "%s : %s", LNG(Pasting_file), file.name);
 
-		strcat(progress, "\nRemain  Size : ");
+		sprintf(tmp, "\n%s : ", LNG(Remain_Size));
+		strcat(progress, tmp);
 		if(size<=1024)
-			sprintf(tmp, "%lu bytes", (long)size); // bytes
+			sprintf(tmp, "%lu %s", (long)size, LNG(bytes)); // bytes
 		else
-			sprintf(tmp, "%lu Kbytes", (long)size/1024); // Kbytes
+			sprintf(tmp, "%lu %s", (long)size/1024, LNG(Kbytes)); // Kbytes
 		strcat(progress, tmp);
 
-		strcat(progress, "\nCurrent Speed: ");
+		sprintf(tmp, "\n%s: ", LNG(Current_Speed));
+		strcat(progress, tmp);
 		if(speed==-1)
-			strcpy(tmp, "Unknown");
+			strcpy(tmp, LNG(Unknown));
 		else if(speed<=1024)
-			sprintf(tmp, "%d bytes/sec", speed); // bytes/sec
+			sprintf(tmp, "%d %s/sec", speed, LNG(bytes)); // bytes/sec
 		else
-			sprintf(tmp, "%d Kbytes/sec", speed/1024); //Kbytes/sec
+			sprintf(tmp, "%d %s/sec", speed/1024, LNG(Kbytes)); //Kbytes/sec
 		strcat(progress, tmp);
 
-		strcat(progress, "\nRemain  Time : ");
+		sprintf(tmp, "\n%s : ", LNG(Remain_Time));
+		strcat(progress, tmp);
 		if(remain_time==-1)
-			strcpy(tmp, "Unknown");
+			strcpy(tmp, LNG(Unknown));
 		else if(remain_time<60)
 			sprintf(tmp, "%d sec", remain_time); // sec
 		else if(remain_time<3600)
@@ -2087,20 +2114,22 @@ non_PSU_RESTORE_init:
 			sprintf(tmp, "%d h %d m %d sec", remain_time/3600, (remain_time%3600)/60, remain_time%60); // hour,min,sec
 		strcat(progress, tmp);
 
-		strcat(progress, "\n\nWritten Total: ");
-		sprintf(tmp, "%ld Kbytes", written_size/1024); //Kbytes
+		sprintf(tmp, "\n\n%s: ", LNG(Written_Total));
+		strcat(progress, tmp);
+		sprintf(tmp, "%ld %s", written_size/1024, LNG(Kbytes)); //Kbytes
 		strcat(progress, tmp);
 
-		strcat(progress, "\nAverage Speed: ");
+		sprintf(tmp, "\n%s: ", LNG(Average_Speed));
+		strcat(progress, tmp);
 		TimeDiff = Timer()-PasteTime;
 		if(TimeDiff == 0)
-			strcpy(tmp, "Unknown");
+			strcpy(tmp, LNG(Unknown));
 		else {
 			speed = (written_size * 1000)/TimeDiff;   //calc real speed
 			if(speed<=1024)
-				sprintf(tmp, "%d bytes/sec", speed); // bytes/sec
+				sprintf(tmp, "%d %s/sec", speed, LNG(bytes)); // bytes/sec
 			else
-				sprintf(tmp, "%d Kbytes/sec", speed/1024); //Kbytes/sec
+				sprintf(tmp, "%d %s/sec", speed/1024, LNG(Kbytes)); //Kbytes/sec
 		}
 		strcat(progress, tmp);
 
@@ -2110,7 +2139,7 @@ non_PSU_RESTORE_init:
 		PasteProgress_f = 1; //and note that it was done for next time
 		drawMsg(file.name);
 		if(readpad() && new_pad){
-			if(-1 == ynDialog("Continue transfer ?")) {
+			if(-1 == ynDialog(LNG(Continue_transfer))) {
 				genClose(out_fd); out_fd=-1;
 				if(PM_flag[recurses]!=PM_PSU_BACKUP)
 					genRemove(out);
@@ -2279,6 +2308,8 @@ int keyboard(char *out, int max)
 					break;                        //break out of loop with i==strlen
 				}else  //Must be 'CANCEL' exit-button
 					return -1;
+			}else if(new_pad & PAD_TRIANGLE){
+				return -1;
 			}
 		}
 
@@ -2353,7 +2384,7 @@ int keyboard(char *out, int max)
 			drawOpSprite(setting->color[1],
 				KEY_X, KEY_Y+LINE_THICKNESS+1+FONT_HEIGHT+1,
 				KEY_X+KEY_W-1, KEY_Y+LINE_THICKNESS+1+FONT_HEIGHT+1+LINE_THICKNESS-1);
-			printXY(out, KEY_X+LINE_THICKNESS+3, KEY_Y+LINE_THICKNESS+1, setting->color[3], TRUE);
+			printXY(out, KEY_X+LINE_THICKNESS+3, KEY_Y+LINE_THICKNESS+1, setting->color[3], TRUE, 0);
 			if(((event|post_event)&4) && (t & 0x10)){
 				drawOpSprite(setting->color[2],
 					KEY_X + LINE_THICKNESS + 1 + cur*8,
@@ -2366,16 +2397,20 @@ int keyboard(char *out, int max)
 					KEY_X + LINE_THICKNESS + 12 + (i%WFONTS)*(FONT_WIDTH+12),
 					KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
 					      + LINE_THICKNESS + 8 + (i/WFONTS)*FONT_HEIGHT, setting->color[3]);
-			printXY("OK                       CANCEL",
+			printXY(LNG(OK),
 				KEY_X + LINE_THICKNESS + 12,
 				KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
-				      + LINE_THICKNESS + 8 + HFONTS*FONT_HEIGHT, setting->color[3], TRUE);
+				      + LINE_THICKNESS + 8 + HFONTS*FONT_HEIGHT, setting->color[3], TRUE, 0);
+			printXY(LNG(CANCEL),
+				KEY_X + KEY_W - 1 - (strlen(LNG(CANCEL))+2)*FONT_WIDTH,
+				KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
+				      + LINE_THICKNESS + 8 + HFONTS*FONT_HEIGHT, setting->color[3], TRUE, 0);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
 				x = KEY_X + LINE_THICKNESS + 12 + (sel%WFONTS)*(FONT_WIDTH+12) - 8;
 			else
-				x = KEY_X + LINE_THICKNESS + 12 + 10*(FONT_WIDTH+12) - 8;
+				x = KEY_X + KEY_W - 2 - (strlen(LNG(CANCEL))+3)*FONT_WIDTH;
 			y = KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
 			          + LINE_THICKNESS + 8 + (sel/WFONTS)*FONT_HEIGHT;
 			drawChar(127, x, y, setting->color[2]);
@@ -2385,12 +2420,15 @@ int keyboard(char *out, int max)
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+FONT_HEIGHT);
 
-			if (swapKeys) 
-				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE);
-			else
-				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE);
+			if (swapKeys){
+				sprintf(tmp, "ÿ1:%s ÿ0:%s L1:%s R1:%s START:%s",
+				LNG(OK), LNG(Back), LNG(Left), LNG(Right), LNG(Enter));
+				printXY(tmp, x, y, setting->color[2], TRUE, 0);
+			}else{
+				sprintf(tmp, "ÿ0:%s ÿ1:%s L1:%s R1:%s START:%s",
+				LNG(OK), LNG(Back), LNG(Left), LNG(Right), LNG(Enter));
+				printXY(tmp, x, y, setting->color[2], TRUE, 0);
+			}
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2527,10 +2565,10 @@ int keyboard2(char *out, int max)
 			drawOpSprite(setting->color[1],
 				KEY_X, KEY_Y+20,
 				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
-			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
+			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE, 0);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
-					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE);
+					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE, 0);
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
@@ -2538,7 +2576,7 @@ int keyboard2(char *out, int max)
 					KEY_Y+28 + (i/WFONTS)*16,
 					setting->color[3]);
 			printXY("OK                       CANCEL",
-				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE);
+				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE, 0);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
@@ -2555,10 +2593,10 @@ int keyboard2(char *out, int max)
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE, 0);
 			else
 				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2601,7 +2639,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		if(cnfmode<2) {
 			//This condition blocks use of MISC pseudo-device for drivers and skins
 			//And allows this device only for launch keys and for normal browsing
-			strcpy(files[nfiles].name, "MISC");
+			strcpy(files[nfiles].name, LNG(MISC));
 			files[nfiles].stats.attrFile = MC_ATTR_SUBDIR;
 			nfiles++;
 		}
@@ -2609,41 +2647,41 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			files[i].title[0]=0;
 		vfreeSpace=FALSE;
 		//-- End case for browser root pseudo folder with device links --
-	}else if(!strcmp(path, "MISC/")){
+	}else if(!strcmp(path, setting->Misc)){
 		//-- Start case for MISC command pseudo folder with function links --
 		nfiles = 0;
 		strcpy(files[nfiles].name, "..");
 		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		if(cnfmode) { //Stop recursive FileBrowser entry, only allow it for launch keys
-			strcpy(files[nfiles].name, "FileBrowser");
+			strcpy(files[nfiles].name, LNG(FileBrowser));
 			files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		}
-		strcpy(files[nfiles].name, "PS2Browser");
+		strcpy(files[nfiles].name, LNG(PS2Browser));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "PS2Disc");
+		strcpy(files[nfiles].name, LNG(PS2Disc));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "PS2Net");
+		strcpy(files[nfiles].name, LNG(PS2Net));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "PS2PowerOff");
+		strcpy(files[nfiles].name, LNG(PS2PowerOff));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "HddManager");
+		strcpy(files[nfiles].name, LNG(HddManager));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "TextEditor");
+		strcpy(files[nfiles].name, LNG(TextEditor));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "JpgViewer");
+		strcpy(files[nfiles].name, LNG(JpgViewer));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Configure");
+		strcpy(files[nfiles].name, LNG(Configure));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Load CNF--");
+		strcpy(files[nfiles].name, LNG(Load_CNFprev));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Load CNF++");
+		strcpy(files[nfiles].name, LNG(Load_CNFnext));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Set CNF_Path");
+		strcpy(files[nfiles].name, LNG(Set_CNF_Path));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[nfiles].name, "Load CNF");
+		strcpy(files[nfiles].name, LNG(Load_CNF));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //Next 2 lines add an optional font test routine
-		strcpy(files[nfiles].name, "ShowFont");
+		strcpy(files[nfiles].name, LNG(ShowFont));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //Next 4 line section is only for use while debugging
 /*
@@ -2713,7 +2751,7 @@ void getFilePath(char *out, int cnfmode)
 {
 	char path[MAX_PATH], cursorEntry[MAX_PATH],
 		msg0[MAX_PATH], msg1[MAX_PATH],
-		tmp[MAX_PATH], ext[8], *p;
+		tmp[MAX_PATH], tmp1[MAX_PATH], ext[8], *p;
 	u64 color;
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
@@ -2735,7 +2773,7 @@ void getFilePath(char *out, int cnfmode)
 	if(	(cnfmode==USBD_IRX_CNF)
 		||(cnfmode==USBKBD_IRX_CNF)
 		||(cnfmode==USBMASS_IRX_CNF)
-		||(	(!strncmp(LastDir, "MISC/", 5)) && (cnfmode > LK_ELF_CNF)))
+		||(	(!strncmp(LastDir,setting->Misc,strlen(setting->Misc))) && (cnfmode>LK_ELF_CNF)))
 		path[0] = '\0';			    //start in main root if recent folder unreasonable
 	else
 		strcpy(path, LastDir);	//If reasonable, start in recent folder
@@ -2790,7 +2828,7 @@ void getFilePath(char *out, int cnfmode)
 					if( ((cnfmode==LK_ELF_CNF) || (cnfmode==NON_CNF))
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
-						sprintf(msg0, "This file isn't an ELF.");
+						sprintf(msg0, "%s.", LNG(This_file_isnt_an_ELF));
 						out[0] = 0;
 					}else{
 						strcpy(LastDir, path);
@@ -2834,7 +2872,7 @@ void getFilePath(char *out, int cnfmode)
 							clipFiles[0]=files[browser_sel];
 							nclipFiles = 1;
 						}
-						sprintf(msg0, "Copied to the Clipboard");
+						sprintf(msg0, "%s", LNG(Copied_to_the_Clipboard));
 						browser_pushed=FALSE;
 						if(ret==CUT)	browser_cut=TRUE;
 						else			browser_cut=FALSE;
@@ -2843,17 +2881,19 @@ void getFilePath(char *out, int cnfmode)
 							sprintf(tmp,"%s",files[browser_sel].name);
 							if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
 								strcat(tmp,"/");
-							strcat(tmp, "\nDelete ?");
+							sprintf(tmp1, "\n%s ?", LNG(Delete));
+							strcat(tmp, tmp1);
 							ret = ynDialog(tmp);
 						}else
-							ret = ynDialog("Mark Files Delete?");
+							ret = ynDialog(LNG(Mark_Files_Delete));
 						
 						if(ret>0){
 							int first_deleted = 0;
 							if(nmarks==0){
 								strcpy(tmp, files[browser_sel].name);
 								if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR) strcat(tmp,"/");
-								strcat(tmp, " deleting");
+								sprintf(tmp1, " %s", LNG(deleting));
+								strcat(tmp, tmp1);
 								drawMsg(tmp);
 								ret=delete(path, &files[browser_sel]);
 							}else{
@@ -2863,7 +2903,8 @@ void getFilePath(char *out, int cnfmode)
 											first_deleted = i; //then memorize it for cursor positioning
 										strcpy(tmp, files[i].name);
 										if(files[i].stats.attrFile & MC_ATTR_SUBDIR) strcat(tmp,"/");
-										strcat(tmp, " deleting");
+										sprintf(tmp1, " %s", LNG(deleting));
+										strcat(tmp, tmp1);
 										drawMsg(tmp);
 										ret=delete(path, &files[i]);
 										if(ret<0) break;
@@ -2877,7 +2918,7 @@ void getFilePath(char *out, int cnfmode)
 									strcpy(cursorEntry, files[first_deleted-1].name);
 							} else {
 								strcpy(cursorEntry, files[browser_sel].name);
-								strcpy(msg0, "Delete Failed");
+								strcpy(msg0, LNG(Delete_Failed));
 								browser_pushed = FALSE;
 							}
 							browser_cd=TRUE;
@@ -2888,7 +2929,7 @@ void getFilePath(char *out, int cnfmode)
 						if(keyboard(tmp, 36)>0){
 							if(Rename(path, &files[browser_sel], tmp)<0){
 								browser_pushed=FALSE;
-								strcpy(msg0, "Rename Failed");
+								strcpy(msg0, LNG(Rename_Failed));
 							}else
 								browser_cd=TRUE;
 						}
@@ -2900,13 +2941,13 @@ void getFilePath(char *out, int cnfmode)
 						if(keyboard(tmp, 36)>0){
 							ret = newdir(path, tmp);
 							if(ret == -17){
-								strcpy(msg0, "directory already exists");
+								strcpy(msg0, LNG(directory_already_exists));
 								browser_pushed=FALSE;
 							}else if(ret < 0){
-								strcpy(msg0, "NewDir Failed");
+								strcpy(msg0, LNG(NewDir_Failed));
 								browser_pushed=FALSE;
 							}else{ //dlanor: modified for similarity to PC browsers
-								strcpy(msg0, "Created folder: ");
+								sprintf(msg0, "%s: ", LNG(Created_folder));
 								strcat(msg0, tmp);
 								browser_pushed=FALSE;
 								strcpy(cursorEntry, tmp);
@@ -3064,7 +3105,7 @@ void getFilePath(char *out, int cnfmode)
 				if(title_flag)
 					printXY_sjis(tmp, x+4, y, color, TRUE);
 				else
-					printXY(tmp, x+4, y, color, TRUE);
+					printXY(tmp, x+4, y, color, TRUE, 0);
 				if(marks[top+i]) drawChar('*', x-6, y, setting->color[3]);
 				y += font_height;
 			} //ends for, so all browser rows were fixed above
@@ -3089,52 +3130,62 @@ void getFilePath(char *out, int cnfmode)
 				drawOpSprite(LED_colour, x1+RIM_w, y1+RIM_w, x2-RIM_w, y2-RIM_w);
 			} //ends clause for clipboard indicator
 			if(browser_pushed)
-				sprintf(msg0, "Path: %s", path);
+				sprintf(msg0, "%s: %s", LNG(Path), path);
 
 			//Tooltip section
 			if(cnfmode==DIR_CNF) {//cnfmode Directory Add Start to select dir
 				if (swapKeys)
-					strcpy(msg1, "ÿ1:OK ÿ0:Cancel ÿ3:Up ÿ2:");
+					sprintf(msg1, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
 				else
-					strcpy(msg1, "ÿ0:OK ÿ1:Cancel ÿ3:Up ÿ2:");
+					sprintf(msg1, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
 				if(ext[0] == '*')
 					strcat(msg1, "*->");
 				strcat(msg1, cnfmode_extU[cnfmode]);
 				if(ext[0] != '*')
 					strcat(msg1, "->*");
-				strcat(msg1, " R2:PathPad Start:Choose");
+				sprintf(tmp, " R2:%s Start:%s", LNG(PathPad), LNG(Choose));
+				strcat(msg1, tmp);
 			}else if(cnfmode) {//cnfmode indicates configurable file selection
 				if (swapKeys)
-					strcpy(msg1, "ÿ1:OK ÿ0:Cancel ÿ3:Up ÿ2:");
+					sprintf(msg1, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
 				else
-					strcpy(msg1, "ÿ0:OK ÿ1:Cancel ÿ3:Up ÿ2:");
+					sprintf(msg1, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
 				if(ext[0] == '*')
 					strcat(msg1, "*->");
 				strcat(msg1, cnfmode_extU[cnfmode]);
 				if(ext[0] != '*')
 					strcat(msg1, "->*");
-				strcat(msg1, " R2:PathPad");
+				sprintf(tmp, " R2:%s", LNG(PathPad));
+				strcat(msg1, tmp);
 			}else{ // cnfmode == FALSE
 				if(title_show) {
 					if (swapKeys) 
-						sprintf(msg1, "ÿ1:OK ÿ3:Up ÿ0:Mark ÿ2:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
+							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+							LNG(TitleOFF), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
 					else
-						sprintf(msg1, "ÿ0:OK ÿ3:Up ÿ1:Mark ÿ2:RevMark L1/L2:TitleOFF R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
+							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+							LNG(TitleOFF), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
 				} else {
 					if (swapKeys) 
-						sprintf(msg1, "ÿ1:OK ÿ3:Up ÿ0:Mark ÿ2:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
+							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+							LNG(TitleON), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
 					else
-						sprintf(msg1, "ÿ0:OK ÿ3:Up ÿ1:Mark ÿ2:RevMark L1/L2:TitleON  R1:Menu R2:PathPad Sel:Exit");
+						sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1/L2:%s R1:%s R2:%s %s:%s",
+							LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
+							LNG(TitleON), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
 				}
 			}
 			setScrTmp(msg0, msg1);
 			if(vfreeSpace){
 				if(freeSpace >= 1024*1024)
-					sprintf(tmp, "[%.1fMB free]", (double)freeSpace/1024/1024);
+					sprintf(tmp, "[%.1fMB %s]", (double)freeSpace/1024/1024, LNG(free));
 				else if(freeSpace >= 1024)
-					sprintf(tmp, "[%.1fKB free]", (double)freeSpace/1024);
+					sprintf(tmp, "[%.1fKB %s]", (double)freeSpace/1024, LNG(free));
 				else
-					sprintf(tmp, "[%dB free]", (int) freeSpace);
+					sprintf(tmp, "[%dB %s]", (int) freeSpace, LNG(free));
 				ret=strlen(tmp);
 				drawSprite(setting->color[0],
 					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y),
@@ -3142,7 +3193,7 @@ void getFilePath(char *out, int cnfmode)
 				printXY(tmp,
 					SCREEN_WIDTH-SCREEN_MARGIN-ret*FONT_WIDTH,
 					(Menu_message_y),
-					setting->color[2], TRUE);
+					setting->color[2], TRUE, 0);
 			}
 		}//ends if(event||post_event)
 		drawScr();
@@ -3169,7 +3220,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 	PS2TIME *time;
 */
 
-	drawMsg("Checking Size...");
+	drawMsg(LNG(Checking_Size));
 	if(nmarks==0){
 		size = getFileSize(path, &files[browser_sel]);
 		sel = browser_sel; //for stat checking
@@ -3184,16 +3235,16 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 	}
 	printf("size result = %ld\r\n", size);
 	if(size<0){
-		strcpy(mess, "Size test Failed");
+		strcpy(mess, LNG(Size_test_Failed));
 	}else{
 		text_pos = 0;
 
 		if(size >= 1024*1024)
-			sprintf(mess, "SIZE = %.1fMB%n", (double)size/1024/1024, &text_inc);
+			sprintf(mess, "%s = %.1fMB%n", LNG(SIZE), (double)size/1024/1024, &text_inc);
 		else if(size >= 1024)
-			sprintf(mess, "SIZE = %.1fKB%n", (double)size/1024, &text_inc);
+			sprintf(mess, "%s = %.1fKB%n", LNG(SIZE), (double)size/1024, &text_inc);
 		else
-			sprintf(mess, "SIZE = %ldB%n", size, &text_inc);
+			sprintf(mess, "%s = %ldB%n", LNG(SIZE), size, &text_inc);
 
 		text_pos += text_inc;
 //----- Comment out this section to skip attributes entirely -----
@@ -3241,7 +3292,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 			if(!strncmp(path, "mc", 2)){
 				mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
 				mcSync(0, NULL, &ret);
-				sprintf(mess+text_pos, " mctype=%d%n", mctype_PSx, &text_inc);
+				sprintf(mess+text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
 				text_pos += text_inc;
 			}
 		}
@@ -3254,22 +3305,22 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 //--------------------------------------------------------------
 void subfunc_Paste(char *mess, char *path)
 {
-	char tmp[MAX_PATH];
+	char tmp[MAX_PATH], tmp1[MAX_PATH];
 	int i, ret=-1;
 	
 	written_size = 0;
 	PasteTime = Timer();	      //Note initial pasting time
-	drawMsg("Pasting...");
-	if(!strcmp(path,clipPath) && PasteMode!=PM_RENAME) goto finished;
+	drawMsg(LNG(Pasting));
+	if(!strcmp(path,clipPath)) goto finished;
 	
 	for(i=0; i<nclipFiles; i++){
 		strcpy(tmp, clipFiles[i].name);
 		if(clipFiles[i].stats.attrFile & MC_ATTR_SUBDIR) strcat(tmp,"/");
-		strcat(tmp, " pasting");
+		sprintf(tmp1, " %s", LNG(pasting));
+		strcat(tmp, tmp1);
 		drawMsg(tmp);
 		PM_flag[0] = PM_NORMAL; //Always use normal mode at top level
 		PM_file[0] = -1;        //Thus no attribute file is used here
-		PasteProgress_f = 0;    //Note that next progress report is the first one
 		ret=copy(path, clipPath, clipFiles[i], 0);
 		if(ret < 0) break;
 		if(browser_cut){
@@ -3282,7 +3333,7 @@ void subfunc_Paste(char *mess, char *path)
 
 finished:
 	if(ret < 0){
-		strcpy(mess, "Paste Failed");
+		strcpy(mess, LNG(Paste_Failed));
 		browser_pushed = FALSE;
 	}else
 		if(browser_cut) nclipFiles=0;

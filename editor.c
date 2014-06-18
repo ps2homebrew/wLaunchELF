@@ -106,7 +106,15 @@ int MenuEditor(void)
 	int x, y, i, Menu_Sel;
 	int event, post_event=0;
 
-	int menu_ch_w = 7;             //Total characters in longest menu string.
+	int menu_len=strlen(LNG(New))>strlen(LNG(Open))?
+		strlen(LNG(New)):strlen(LNG(Open));
+	menu_len=strlen(LNG(Close))>menu_len? strlen(LNG(Close)):menu_len;
+	menu_len=strlen(LNG(Save))>menu_len? strlen(LNG(Save)):menu_len;
+	menu_len=strlen(LNG(Save_As))>menu_len? strlen(LNG(Save_As)):menu_len;
+	menu_len=strlen(LNG(Windows))>menu_len? strlen(LNG(Windows)):menu_len;
+	menu_len=strlen(LNG(Exit))>menu_len? strlen(LNG(Exit)):menu_len;
+
+	int menu_ch_w = menu_len+1;    //Total characters in longest menu string.
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines.
 	int mSprite_Y1 = 64;           //Top edge of sprite.
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite.
@@ -166,18 +174,18 @@ int MenuEditor(void)
 			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
 			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
-				if(i==NEW)			strcpy(tmp, "New");
-				else if(i==OPEN)			strcpy(tmp, "Open");
-				else if(i==CLOSE)		strcpy(tmp, "Close");
-				else if(i==SAVE)		strcpy(tmp, "Save");
-				else if(i==SAVE_AS)	strcpy(tmp, "Save_As");
-				else if(i==WINDOWS)	strcpy(tmp, "Windows");
-				else if(i==EXIT)	strcpy(tmp, "Exit");
+				if(i==NEW)			strcpy(tmp, LNG(New));
+				else if(i==OPEN)			strcpy(tmp, LNG(Open));
+				else if(i==CLOSE)		strcpy(tmp, LNG(Close));
+				else if(i==SAVE)		strcpy(tmp, LNG(Save));
+				else if(i==SAVE_AS)	strcpy(tmp, LNG(Save_As));
+				else if(i==WINDOWS)	strcpy(tmp, LNG(Windows));
+				else if(i==EXIT)	strcpy(tmp, LNG(Exit));
 
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE, 0);
 				y+=FONT_HEIGHT;
 			}
 			if(Menu_Sel<NUM_MENU)
@@ -190,9 +198,10 @@ int MenuEditor(void)
 				0, y,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event).
 		drawScr();
 		post_event = event;
@@ -844,6 +853,8 @@ int Windows_Selector(void)
 	int wSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite.
 	int wSprite_X1 = wSprite_X2-(Window_ch_w+3)*FONT_WIDTH-3;  //Left edge of sprite.
 	int wSprite_Y2 = wSprite_Y1+(Window_ch_h+1)*FONT_HEIGHT+3; //Bottom edge of sprite.
+	
+	char tmp[64];
 
 	event = 1;  //event = initial entry.
 	while(1){
@@ -884,11 +895,11 @@ int Windows_Selector(void)
 					color = setting->color[3];
 
 				if(!Window[i][OPENED])
-					printXY("Free Window", wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY(LNG(Free_Window), wSprite_X1+2*FONT_WIDTH, y, color, TRUE, 0);
 				else if(Window[i][CREATED])
-					printXY("Window Not Yet Saved", wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY(LNG(Window_Not_Yet_Saved), wSprite_X1+2*FONT_WIDTH, y, color, TRUE, 0);
 				else if(Window[i][OPENED])				
-					printXY(Path[i], wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY(Path[i], wSprite_X1+2*FONT_WIDTH, y, color, TRUE, 0);
 
 				y+=FONT_HEIGHT;
 			}
@@ -903,9 +914,10 @@ int Windows_Selector(void)
 				0, y,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event).
 		drawScr();
 		post_event = event;
@@ -963,9 +975,9 @@ int New(int Win)
 	}
 
 	if(ret){
-		drawMsg("File Created");
+		drawMsg(LNG(File_Created));
 	}else{
-		drawMsg("Failed Creating File");
+		drawMsg(LNG(Failed_Creating_File));
 	}
 
 	WaitTime=Timer();
@@ -1022,11 +1034,11 @@ int Open(int Win)
 	genClose( fd );
 
 	if(ret){
-		drawMsg("File Opened");
+		drawMsg(LNG(File_Opened));
 	}else{
 abort:
 		TextSize[Win]=0;
-		drawMsg("Failed Opening File");
+		drawMsg(LNG(Failed_Opening_File));
 	}
 
 	WaitTime=Timer();
@@ -1043,9 +1055,9 @@ void Close(int Win)
 	free(TextBuffer[Win]);
 
 	if(Window[Win][CREATED])
-		strcpy(msg, "File Not Yet Saved Closed");
+		strcpy(msg, LNG(File_Not_Yet_Saved_Closed));
 	else
-		sprintf(msg, "File %s Closed", Path[Win]);
+		sprintf(msg, LNG(File_Closed), Path[Win]);
 
 	Path[Win][0]='\0';
 
@@ -1085,10 +1097,10 @@ void Save(int Win)
 		unmountParty(filePath[3]-'0');
 
 	if(ret){
-		drawMsg("File Saved");
+		drawMsg(LNG(File_Saved));
 	}else{
 abort:
-		drawMsg("Failed Saving File");
+		drawMsg(LNG(Failed_Saving_File));
 	}
 
 	WaitTime=Timer();
@@ -1114,8 +1126,8 @@ void Save_As(int Win)
 	if(Path[0] == '\0')
 		goto abort;
 
-	drawMsg("Enter File Name.");
-	drawMsg("Enter File Name.");
+	drawMsg(LNG(Enter_File_Name));
+	drawMsg(LNG(Enter_File_Name));
 
 	if(keyboard(tmp, 36)>0)
 		strcat(Path[Win], tmp);
@@ -1142,12 +1154,12 @@ void Save_As(int Win)
 		unmountParty(filePath[3]-'0');
 
 	if(ret){
-		drawMsg("File Saved");
+		drawMsg(LNG(File_Saved));
 	}else{
 abort:
 		if(oldPath[0]!='\0')
 			strcpy(Path[Win], oldPath);
-		drawMsg("Failed Saving File");
+		drawMsg(LNG(Failed_Saving_File));
 	}
 
 	WaitTime=Timer();
@@ -1156,7 +1168,7 @@ abort:
 //--------------------------------------------------------------
 void TextEditor(void)
 {
-	char   tmp[MAX_PATH], tmp1[MAX_PATH], c[2];
+	char   tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH], c[2];
 	int    x, y, y0, y1;
 	int    i=0, j, ret=0;
 	int    tmpLen=0;
@@ -1235,7 +1247,7 @@ void TextEditor(void)
 
 			if(new_pad & PAD_TRIANGLE){ // General Pad Response.
 exit:
-				drawMsg("Exiting Editor.");
+				drawMsg(LNG(Exiting_Editor));
 				for(i=0; i<10; i++){
 					if(!Window[i][SAVED])
 						goto unsave;
@@ -1255,7 +1267,7 @@ force:
 
 				return;
 unsave:
-				if(ynDialog("Exit Without Saving ?")!=1)
+				if(ynDialog(LNG(Exit_Without_Saving))!=1)
 					goto abort;
 				else
 					goto force;
@@ -1286,8 +1298,8 @@ menu:
 							Num_Window++;
 					}
 				} else if(ret==OPEN){
-					drawMsg("Select A File For Editing.");
-					drawMsg("Select A File For Editing.");
+					drawMsg(LNG(Select_A_File_For_Editing));
+					drawMsg(LNG(Select_A_File_For_Editing));
 					Num_Window=0;
 					for(i=0; i<10; i++){
 						if(Window[i][OPENED])
@@ -1312,7 +1324,7 @@ menu:
 					}
 				} else if(ret==CLOSE){
 					if(!Window[Active_Window][SAVED]){
-						if(ynDialog("Close Without Saving ?")!=1)
+						if(ynDialog(LNG(Close_Without_Saving))!=1)
 							goto abort;
 					}
 					Close(Active_Window);
@@ -1391,8 +1403,8 @@ abort:
 					SCREEN_MARGIN, KEY_Y+6,
 					SCREEN_WIDTH-SCREEN_MARGIN, KEY_Y+6+LINE_THICKNESS-1);
 				drawOpSprite(setting->color[1],
-					KEY_X-64, KEY_Y+6,
-					KEY_X-64+LINE_THICKNESS-1, Frame_end_y);
+					KEY_X-48, KEY_Y+6,
+					KEY_X-48+LINE_THICKNESS-1, Frame_end_y);
 				drawOpSprite(setting->color[1],
 					KEY_X+32, KEY_Y+6,
 					KEY_X+32+LINE_THICKNESS-1, Frame_end_y);
@@ -1404,52 +1416,56 @@ abort:
 					color=setting->color[2];
 				else
 					color=setting->color[3];
-				printXY("MARK",
-					KEY_X+2+4 - 120, KEY_Y+12, color, TRUE);
-				printXY("        LINE UP",
-					KEY_X+2+4 - 120, KEY_Y+12, setting->color[3], TRUE);
+				printXY(LNG(MARK), KEY_X+2+4-120, KEY_Y+12,
+					color, TRUE, ((KEY_X-48)-SCREEN_MARGIN-3*FONT_WIDTH));
+				printXY(LNG(LINE_UP), KEY_X+2+4-120+10*FONT_WIDTH, KEY_Y+12,
+					setting->color[3], TRUE, ((KEY_X+32)-(KEY_X-48)-3*FONT_WIDTH));
 				if(Mark[MARK_COPY])
 					color=setting->color[2];
 				else
 					color=setting->color[3];
-				printXY("COPY",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT+2, color, TRUE);
-				printXY("        LINE DOWN",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT+2, setting->color[3], TRUE);
+				printXY(LNG(COPY), KEY_X+2+4-120, KEY_Y+12+FONT_HEIGHT+2,
+					color, TRUE, ((KEY_X-48)-SCREEN_MARGIN-3*FONT_WIDTH));
+				printXY(LNG(LINE_DOWN), KEY_X+2+4-120+10*FONT_WIDTH, KEY_Y+12+FONT_HEIGHT+2,
+					setting->color[3], TRUE, ((KEY_X+32)-(KEY_X-48)-3*FONT_WIDTH));
 				if(Mark[MARK_CUT])
 					color=setting->color[2];
 				else
 					color=setting->color[3];
-				printXY("CUT",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT*2+4, color, TRUE);
-				printXY("        PAGE UP",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT*2+4, setting->color[3], TRUE);
-				printXY("PASTE   PAGE DOWN",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT*3+6, setting->color[3], TRUE);
-				printXY("HOME    END",
-					KEY_X+2+4 - 120, KEY_Y+12+FONT_HEIGHT*4+8, setting->color[3], TRUE);
+				printXY(LNG(CUT), KEY_X+2+4-120, KEY_Y+12+FONT_HEIGHT*2+4,
+					color, TRUE, ((KEY_X-48)-SCREEN_MARGIN-3*FONT_WIDTH));
+				printXY(LNG(PAGE_UP), KEY_X+2+4-120+10*FONT_WIDTH, KEY_Y+12+FONT_HEIGHT*2+4,
+					setting->color[3], TRUE, ((KEY_X+32)-(KEY_X-48)-3*FONT_WIDTH));
+				printXY(LNG(PASTE), KEY_X+2+4-120, KEY_Y+12+FONT_HEIGHT*3+6,
+					setting->color[3], TRUE, ((KEY_X-48)-SCREEN_MARGIN-3*FONT_WIDTH));
+				printXY(LNG(PAGE_DOWN), KEY_X+2+4-120+10*FONT_WIDTH, KEY_Y+12+FONT_HEIGHT*3+6,
+					setting->color[3], TRUE, ((KEY_X+32)-(KEY_X-48)-3*FONT_WIDTH));
+				printXY(LNG(HOME), KEY_X+2+4-120, KEY_Y+12+FONT_HEIGHT*4+8,
+					setting->color[3], TRUE, ((KEY_X-48)-SCREEN_MARGIN-3*FONT_WIDTH));
+				printXY(LNG(END), KEY_X+2+4-120+10*FONT_WIDTH, KEY_Y+12+FONT_HEIGHT*4+8,
+					setting->color[3], TRUE, ((KEY_X+32)-(KEY_X-48)-3*FONT_WIDTH));
 
 				if(Editor_Insert)
 					color=setting->color[2];
 				else
 					color=setting->color[3];
-				printXY("INSERT",
-					KEY_X+2+4 + 392, KEY_Y+12, color, TRUE);
+				printXY(LNG(INSERT), KEY_X+2+4+392, KEY_Y+12,
+					color, TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
 				tmp[0]='\0';
 				if(Editor_RetMode==OTHER)
-					strcpy(tmp, "RET CR/LF");
+					strcpy(tmp, LNG(RET_CRLF));
 				else if(Editor_RetMode==UNIX)
-					strcpy(tmp, "RET CR");
+					strcpy(tmp, LNG(RET_CR));
 				else if(Editor_RetMode==MAC)
-					strcpy(tmp, "RET LF");
-				printXY(tmp,
-					KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT+2, setting->color[3], TRUE);
-				printXY("TAB",
-					KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*2+4, setting->color[3], TRUE);
-				printXY("SPACE",
-					KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*3+6, setting->color[3], TRUE);
-				printXY("RETURN",
-					KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*4+8, setting->color[3], TRUE);
+					strcpy(tmp, LNG(RET_LF));
+				printXY(tmp, KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT+2,
+					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
+				printXY(LNG(TAB), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*2+4,
+					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
+				printXY(LNG(SPACE), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*3+6,
+					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
+				printXY(LNG(RETURN), KEY_X+2+4 + 392, KEY_Y+12+FONT_HEIGHT*4+8,
+					setting->color[3], TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(KEY_X+KEY_W+32)-3*FONT_WIDTH));
 
 				for(i=0; i<KEY_LEN; i++){
 					drawChar(KEY[i],
@@ -1462,7 +1478,7 @@ abort:
 				if(!KeyBoard_Cur || KeyBoard_Cur%WFONTS==0)
 					x = KEY_X+2+4 - 128;
 				else if(KeyBoard_Cur==1 || (KeyBoard_Cur-1)%WFONTS==0)
-					x = KEY_X+2+4 - 64;
+					x = KEY_X+2+4 - 48;
 				else if((KeyBoard_Cur+1)%WFONTS==0)
 					x = KEY_X+2+4 + 384;
 				else
@@ -1508,7 +1524,7 @@ abort:
 						else
 							color = COL_CUR_OVERWR;
 						if(((event|post_event)&4) && (t & 0x10))
-							printXY("|", x-4, y, color, TRUE);
+							printXY("|", x-4, y, color, TRUE, 0);
 					}
 
 					if(TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\n'){ // Line Feed.
@@ -1533,7 +1549,7 @@ abort:
 					}
 
 					c[1]='\0';
-					printXY(c, x, y, color, TRUE);
+					printXY(c, x, y, color, TRUE, 0);
 
 					if(Editor_TextEnd)
 						goto end;
@@ -1569,43 +1585,52 @@ end:
 			} //ends clause for scrollbar.
 
 			//Tooltip section.
-			tmp[0]='\0', tmp1[0]='\0';
+			tmp[0]='\0', tmp1[0]='\0', tmp2[0]='\0';
 			if(KeyBoard_Active){ //Display Virtual KeyBoard Tooltip.
 				if(swapKeys) 
-					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ1:Sel ÿ0:BackSpace L2:Left R2:Right SEL:Close KB");
+					sprintf(tmp1, "R1:%s ÿ3:%s ÿ1:%s ÿ0:%s L2:%s R2:%s SEL:%s",
+						LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
+						LNG(Left), LNG(Right), LNG(Close_KB));
 				else
-					strcpy(tmp1, "R1:Menu ÿ3:Exit ÿ0:Sel ÿ1:BackSpace L2:Left R2:Right SEL:Close KB");
+					sprintf(tmp1, "R1:%s ÿ3:%s ÿ0:%s ÿ1:%s L2:%s R2:%s SEL:%s",
+						LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
+						LNG(Left), LNG(Right), LNG(Close_KB));
 			}else if(setting->usbkbd_used){ //Display KeyBoard Tooltip.
 				if(Window[Active_Window][OPENED]){
 					if(Mark[MARK_ON])
-						strcpy(tmp1, "F1/R1:Menu Esc/ÿ3:Exit Ctrl+ b:Mark On ");
+						sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s Ctrl+ b:%s: %s ",
+							LNG(Menu), LNG(Exit), LNG(Mark), LNG(On));
 					else
-						strcpy(tmp1, "F1/R1:Menu Esc/ÿ3:Exit Ctrl+ b:Mark Off ");
-					strcat(tmp1, "x:Cut c:Copy v:Paste ");
+						sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s Ctrl+ b:%s: %s ",
+							LNG(Menu), LNG(Exit), LNG(Mark), LNG(Off));
+					sprintf(tmp2, "x:%s c:%s v:%s ", LNG(Cut), LNG(Copy), LNG(Paste));
+					strcat(tmp1, tmp2);
 					if(Editor_RetMode==OTHER)
-						strcat(tmp1, "r:Cr/Lf ");
+						sprintf(tmp2, "r:%s ", LNG(CrLf));
 					else if(Editor_RetMode==UNIX)
-						strcat(tmp1, "r:Cr ");
+						sprintf(tmp2, "r:%s ", LNG(Cr));
 					else if(Editor_RetMode==MAC)
-						strcat(tmp1, "r:Lf ");
+						sprintf(tmp2, "r:%s ", LNG(Lf));
+					strcat(tmp1, tmp2);
 					if(Editor_Insert)
-						strcat(tmp1, "Ins:On");
+						sprintf(tmp2, "%s:%s", LNG(Ins), LNG(On));
 					else
-						strcat(tmp1, "Ins:Off");
+						sprintf(tmp2, "%s:%s", LNG(Ins), LNG(Off));
+					strcat(tmp1, tmp2);
 				}else
-					strcpy(tmp1, "F1/R1:Menu Esc/ÿ3:Exit");
+					sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s", LNG(Menu), LNG(Exit));
 			}else{ //Display Basic Tooltip.
 				if(Window[Active_Window][OPENED]) 
-					strcpy(tmp1, "R1:Menu ÿ3:Exit SELECT:Open KeyBoard");
+					sprintf(tmp1, "R1:%s ÿ3:%s %s:%s", LNG(Menu), LNG(Exit), LNG(Select), LNG(Open_KeyBoard));
 				else
-					strcpy(tmp1, "R1:Menu ÿ3:Exit");
+					sprintf(tmp1, "R1:%s ÿ3:%s", LNG(Menu), LNG(Exit));
 			}
 			if(Window[Active_Window][CREATED])
-				strcpy(tmp, "PS2 TEXT EDITOR : File Not Yet Saved");
+				sprintf(tmp, "%s : %s", LNG(PS2_TEXT_EDITOR), LNG(File_Not_Yet_Saved));
 			else if(Window[Active_Window][OPENED])
-				sprintf(tmp, "PS2 TEXT EDITOR : %s", Path[Active_Window]);
+				sprintf(tmp, "%s : %s", LNG(PS2_TEXT_EDITOR), Path[Active_Window]);
 			else
-				strcpy(tmp, "PS2 TEXT EDITOR");
+				strcpy(tmp, LNG(PS2_TEXT_EDITOR));
 			setScrTmp(tmp, tmp1);
 		}//ends if(event||post_event).
 		drawScr();

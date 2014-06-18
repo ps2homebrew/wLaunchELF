@@ -102,7 +102,7 @@ void GetHddInfo(void)
 	hddConnected=0, hddFormated=0;
 	numParty=0;
 	
-	drawMsg("Reading HDD Information...");
+	drawMsg(LNG(Reading_HDD_Information));
 
 	if(hddCheckPresent() < 0){
 		hddConnected=0;
@@ -136,7 +136,7 @@ void GetHddInfo(void)
 		if(i<numParty) { //found another reference to an old name
 			PartyInfo[i].RawSize += found_size; //Add new segment to old size
 		} else { //Starts clause for finding brand new name for PartyInfo[numParty]
-			sprintf(dbgtmp, "Found \"%s\"", infoDirEnt.name);
+			sprintf(dbgtmp, "%s \"%s\"", LNG(Found), infoDirEnt.name);
 			drawMsg(dbgtmp);
 
 			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
@@ -198,7 +198,7 @@ void GetHddInfo(void)
 	hddFree = (hddFreeSpace*100)/hddSize;            //free space percentage
 
 end:
-	drawMsg("HDD Information Read");
+	drawMsg(LNG(HDD_Information_Read));
 
 	WaitTime=Timer();
 	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
@@ -263,14 +263,14 @@ int sizeSelector(int size)
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
-			sprintf(c, "%d MB", size);
+			sprintf(c, "%d %s", size, LNG(MB));
 			printXY(c, mSprite_X1+12*FONT_WIDTH-(strlen(c)*FONT_WIDTH)/2,
-				mSprite_Y1+FONT_HEIGHT, setting->color[3], TRUE);
+				mSprite_Y1+FONT_HEIGHT, setting->color[3], TRUE, 0);
 			drawFrame(mSprite_X1+7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT/2,
 				mSprite_X2-7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT*2+FONT_HEIGHT/2, setting->color[1]);
 
-			printXY("128MB             32GB", mSprite_X1+FONT_WIDTH,
-				mSprite_Y1+FONT_HEIGHT*3, setting->color[3], TRUE);
+			sprintf(c, "128%s             32%s", LNG(MB), LNG(GB));
+			printXY(c, mSprite_X1+FONT_WIDTH, mSprite_Y1+FONT_HEIGHT*3, setting->color[3], TRUE, 0);
 
 			drawOpSprite(setting->color[1],
 				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-LINE_THICKNESS+1,
@@ -291,9 +291,14 @@ int sizeSelector(int size)
 				0, y,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y, setting->color[2], TRUE);
+				sprintf(c, "ÿ1:%s ÿ0:%s ÿ3:%s %s:+128%s Left:-128%s R1:+1024%s L1:-1024%s",
+					LNG(OK), LNG(Cancel), LNG(Back), LNG(Right),
+					LNG(MB), LNG(MB), LNG(MB), LNG(MB));
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y, setting->color[2], TRUE);
+				sprintf(c, "ÿ0:%s ÿ1:%s ÿ3:%s %s:+128%s Left:-128%s R1:+1024%s L1:-1024%s",
+					LNG(OK), LNG(Cancel), LNG(Back), LNG(Right),
+					LNG(MB), LNG(MB), LNG(MB), LNG(MB));
+			printXY(c, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -310,8 +315,14 @@ int MenuParty(PARTYINFO Info)
 	char enable[NUM_MENU], tmp[64];
 	int x, y, i, sel;
 	int event, post_event=0;
+	
+	int menu_len=strlen(LNG(Create))>strlen(LNG(Remove))?
+		strlen(LNG(Create)):strlen(LNG(Remove));
+	menu_len=strlen(LNG(Rename))>menu_len? strlen(LNG(Rename)):menu_len;
+	menu_len=strlen(LNG(Expand))>menu_len? strlen(LNG(Expand)):menu_len;
+	menu_len=strlen(LNG(Format))>menu_len? strlen(LNG(Format)):menu_len;
 
-	int menu_ch_w = 8;             //Total characters in longest menu string
+	int menu_ch_w = menu_len+1;    //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
@@ -377,16 +388,16 @@ int MenuParty(PARTYINFO Info)
 			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
 			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
-				if(i==CREATE)			strcpy(tmp, "Create");
-				else if(i==REMOVE)		strcpy(tmp, "Remove");
-				else if(i==RENAME)	strcpy(tmp, "Rename");
-				else if(i==EXPAND)	strcpy(tmp, "Expand");
-				else if(i==FORMAT)	strcpy(tmp, "Format");
+				if(i==CREATE)			strcpy(tmp, LNG(Create));
+				else if(i==REMOVE)		strcpy(tmp, LNG(Remove));
+				else if(i==RENAME)	strcpy(tmp, LNG(Rename));
+				else if(i==EXPAND)	strcpy(tmp, LNG(Expand));
+				else if(i==FORMAT)	strcpy(tmp, LNG(Format));
 
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE, 0);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
@@ -399,9 +410,10 @@ int MenuParty(PARTYINFO Info)
 				0, y,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -419,7 +431,7 @@ int CreateParty(char *party, int size)
 	char tmpName[MAX_ENTRY];	
 	t_hddFilesystem hddFs[MAX_PARTITIONS];
 
-	drawMsg("Creating New Partition...");
+	drawMsg(LNG(Creating_New_Partition));
 
 	tmpName[0]=0;
 	sprintf(tmpName, "+%s", party);
@@ -443,9 +455,9 @@ int CreateParty(char *party, int size)
 
 	if(ret>0){
 		GetHddInfo();
-		drawMsg("New Partition Created");
+		drawMsg(LNG(New_Partition_Created));
 	}else{
-		drawMsg("Failed Creating New Partition");
+		drawMsg(LNG(Failed_Creating_New_Partition));
 	}
 
 	WaitTime=Timer();
@@ -463,7 +475,7 @@ int RemoveParty(PARTYINFO Info)
 	
 	//printf("Remove Partition: %d\n", Info.Count);
 
-	drawMsg("Removing Current Partition...");
+	drawMsg(LNG(Removing_Current_Partition));
 
 	sprintf(tmpName, "hdd0:%s", Info.Name);
 	ret = fileXioRemove(tmpName);
@@ -483,9 +495,9 @@ int RemoveParty(PARTYINFO Info)
 			}
 			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
 		}
-		drawMsg("Partition Removed");
+		drawMsg(LNG(Partition_Removed));
 	}else{
-		drawMsg("Failed Removing Current Partition");
+		drawMsg(LNG(Failed_Removing_Current_Partition));
 	}
 
 	WaitTime=Timer();
@@ -502,7 +514,7 @@ int RenameParty(PARTYINFO Info, char *newName)
 	char in[MAX_ENTRY], out[MAX_ENTRY], tmpName[MAX_ENTRY];
 
 	//printf("Rename Partition: %d  group: %d\n", Info.Count, Info.FsGroup);
-	drawMsg("Renaming Partition...");
+	drawMsg(LNG(Renaming_Partition));
 
 	in[0]=0;
 	out[0]=0;
@@ -542,9 +554,9 @@ int RenameParty(PARTYINFO Info, char *newName)
 			strcpy(PartyInfo[Info.Count].Name, newName);
 		else // FS_GROUP_COMMON
 			sprintf(PartyInfo[Info.Count].Name, "+%s", newName);
-		drawMsg("Partition Renamed");
+		drawMsg(LNG(Partition_Renamed));
 	}else{
-		drawMsg("Failed Renaming Partition");
+		drawMsg(LNG(Failed_Renaming_Partition));
 	}
 
 	WaitTime=Timer();
@@ -562,9 +574,8 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	int  i, fd, num=1, ret=0;
 	char tmpName[MAX_ENTRY];
-	char tmpPath[MAX_PATH];
 
-	drawMsg("Renaming Game...");
+	drawMsg(LNG(Renaming_Game));
 
 	if(!strcmp(Info.Game.Name, newName))
 		goto end1;
@@ -585,12 +596,10 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	if(ret==0){
 		strcpy(PartyInfo[Info.Count].Game.Name, newName);
-		if(mountParty("hdd0:HDLoader Settings")>=0){
-			strcpy(tmpPath, "pfs0:/gamelist.log");
-			tmpPath[3] += latestMount;
-			if((fd=genOpen(tmpPath, O_RDONLY)) >= 0){
+		if(mountParty("hdd0:HDLoader Settings")==0){
+			if((fd=genOpen("pfs0:/gamelist.log", O_RDONLY)) >= 0){
 				genClose(fd);
-				if(fileXioRemove(tmpPath)!=0)
+				if(fileXioRemove("pfs0:/gamelist.log")!=0)
 					ret=0;
 			}
 		}
@@ -603,10 +612,10 @@ int RenameGame(PARTYINFO Info, char *newName)
 
 	if(ret!=0){
 		strcpy(PartyInfo[Info.Count].Game.Name, newName);
-		drawMsg("Game Renamed");
+		drawMsg(LNG(Game_Renamed));
 	}else{
 end2:
-		drawMsg("Failed Renaming Game");
+		drawMsg(LNG(Failed_Renaming_Game));
 	}
 
 	WaitTime=Timer();
@@ -624,7 +633,7 @@ int ExpandParty(PARTYINFO Info, int size)
 	char tmpName[MAX_ENTRY];
 	t_hddFilesystem hddFs[MAX_PARTITIONS];
 	
-	drawMsg("Expanding Current Partition...");
+	drawMsg(LNG(Expanding_Current_Partition));
 	//printf("Expand Partition: %d\n", Info.Count);
 
 	if(Info.FsGroup==FS_GROUP_APPLICATION){
@@ -646,9 +655,9 @@ int ExpandParty(PARTYINFO Info, int size)
 
 		PartyInfo[Info.Count].TotalSize += size;
 		PartyInfo[Info.Count].FreeSize += size;
-		drawMsg("Partition Expanded");
+		drawMsg(LNG(Partition_Expanded));
 	}else{
-		drawMsg("Failed Expanding Current Partition");
+		drawMsg(LNG(Failed_Expanding_Current_Partition));
 	}
 
 	WaitTime=Timer();
@@ -663,14 +672,14 @@ int FormatHdd(void)
 {
 	int ret=0;
 	
-	drawMsg("Formating HDD...");
+	drawMsg(LNG(Formating_HDD));
 
 	ret = hddFormat();
 
 	if(ret==0){
-		drawMsg("HDD Formated");
+		drawMsg(LNG(HDD_Formated));
 	}else{
-		drawMsg("HDD Format Failed");
+		drawMsg(LNG(HDD_Format_Failed));
 	}
 
 	WaitTime=Timer();
@@ -743,55 +752,55 @@ void hddManager(void)
 				ret = MenuParty(PartyInfo[browser_sel]);
 				tmp[0]=0;
 				if(ret==CREATE){
-					drawMsg("Enter New Partition Name.");
-					drawMsg("Enter New Partition Name.");
+					drawMsg(LNG(Enter_New_Partition_Name));
+					drawMsg(LNG(Enter_New_Partition_Name));
 					if(keyboard(tmp, 36)>0){
 						partySize=128;
-						drawMsg("Select New Partition Size In MB.");
-						drawMsg("Select New Partition Size In MB.");
+						drawMsg(LNG(Select_New_Partition_Size_In_MB));
+						drawMsg(LNG(Select_New_Partition_Size_In_MB));
 						if((ret = sizeSelector(partySize))>0){
-							if(ynDialog("Create New Partition ?")==1){
+							if(ynDialog(LNG(Create_New_Partition))==1){
 								CreateParty(tmp, ret);
 								nparties = 0; //Tell FileBrowser to refresh party list
 							}
 						}
 					}
 				} else if(ret==REMOVE){
-					if(ynDialog("Remove Current Partition ?")==1) {
+					if(ynDialog(LNG(Remove_Current_Partition))==1) {
 						RemoveParty(PartyInfo[browser_sel]);
 						nparties = 0; //Tell FileBrowser to refresh party list
 					}	
 				} else if(ret==RENAME){
-					drawMsg("Enter New Partition Name.");
-					drawMsg("Enter New Partition Name.");
+					drawMsg(LNG(Enter_New_Partition_Name));
+					drawMsg(LNG(Enter_New_Partition_Name));
 					if(PartyInfo[browser_sel].Treatment == TREAT_HDL_GAME){//Rename HDL Game
 						strcpy(tmp, PartyInfo[browser_sel].Game.Name);
 						if(keyboard(tmp, 32)>0){
-							if(ynDialog("Rename Current Game ?")==1)
+							if(ynDialog(LNG(Rename_Current_Game))==1)
 								RenameGame(PartyInfo[browser_sel], tmp);
 						}
 					}else{//starts clause for normal partition RENAME
 						strcpy(tmp, PartyInfo[browser_sel].Name+1);
 						if(keyboard(tmp, 36)>0){
-							if(ynDialog("Rename Current Partition ?")==1){
+							if(ynDialog(LNG(Rename_Current_Partition))==1){
 								RenameParty(PartyInfo[browser_sel], tmp);
 								nparties = 0; //Tell FileBrowser to refresh party list
 							}
 						}
 					}//ends clause for normal partition RENAME
 				} else if(ret==EXPAND){
-					drawMsg("Select New Partition Size In MB.");
-					drawMsg("Select New Partition Size In MB.");
+					drawMsg(LNG(Select_New_Partition_Size_In_MB));
+					drawMsg(LNG(Select_New_Partition_Size_In_MB));
 					partySize=PartyInfo[browser_sel].TotalSize;
 					if((ret=sizeSelector(partySize))>0){
-						if(ynDialog("Expand Current Partition ?")==1){
+						if(ynDialog(LNG(Expand_Current_Partition))==1){
 							ret -= partySize;
 							ExpandParty(PartyInfo[browser_sel], ret);
 							nparties = 0; //Tell FileBrowser to refresh party list
 						}
 					}
 				} else if(ret==FORMAT){
-					if(ynDialog("Format HDD ?")==1){
+					if(ynDialog(LNG(Format_HDD))==1){
 						FormatHdd();
 						nparties = 0; //Tell FileBrowser to refresh party list
 					}
@@ -816,8 +825,8 @@ void hddManager(void)
 		
 			y = Menu_start_y;
 
-			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("HDD STATUS")*FONT_WIDTH)/2;
-			printXY("HDD STATUS", x, y, setting->color[3], TRUE);
+			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(LNG(HDD_STATUS))*FONT_WIDTH)/2;
+			printXY(LNG(HDD_STATUS), x, y, setting->color[3], TRUE, 0);
 
 			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+10;
@@ -826,21 +835,24 @@ void hddManager(void)
 
 			drawOpSprite(setting->color[1],
 				SCREEN_MARGIN, y-6,
-				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
+				SCREEN_WIDTH/2-20, y-4);
 
 			if(hddConnected==0)
-				strcpy(c, "CONNECTED:  NO / FORMATED:  NO");
+				sprintf(c, "%s:  %s / %s:  %s",
+				LNG(CONNECTED), LNG(NO), LNG(FORMATED), LNG(NO));
 			else if((hddConnected==1)&&(hddFormated==0))
-				strcpy(c, "CONNECTED: YES / FORMATED:  NO");
+				sprintf(c, "%s:  %s / %s:  %s",
+				LNG(CONNECTED), LNG(YES), LNG(FORMATED), LNG(NO));
 			else if(hddFormated==1)
-				strcpy(c, "CONNECTED: YES / FORMATED: YES");
+				sprintf(c, "%s:  %s / %s:  %s",
+				LNG(CONNECTED), LNG(YES), LNG(FORMATED), LNG(YES));
 
 			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-			printXY(c, x, y, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 			drawOpSprite(setting->color[1],
-				SCREEN_WIDTH/2-20-LINE_THICKNESS+1, Frame_start_y,
-				SCREEN_WIDTH/2-20, Frame_end_y);
+				SCREEN_WIDTH/2-21, Frame_start_y,
+				SCREEN_WIDTH/2-19, Frame_end_y);
 
 			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+11;
@@ -849,19 +861,19 @@ void hddManager(void)
 
 			drawOpSprite(setting->color[1],
 				SCREEN_MARGIN, y-6,
-				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
+				SCREEN_WIDTH/2-20, y-4);
 
 			if(hddFormated==1){
 
-				sprintf(c, "HDD SIZE: %d MB", hddSize);
+				sprintf(c, "%s: %d %s", LNG(HDD_SIZE), hddSize, LNG(MB));
 				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-				printXY(c, x, y, setting->color[3], TRUE);
+				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 				y += FONT_HEIGHT;
-				sprintf(c, "HDD USED: %d MB", hddUsed);
-				printXY(c, x, y, setting->color[3], TRUE);
+				sprintf(c, "%s: %d %s", LNG(HDD_USED), hddUsed, LNG(MB));
+				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 				y += FONT_HEIGHT;
-				sprintf(c, "HDD FREE: %d MB", hddFreeSpace);
-				printXY(c, x, y, setting->color[3], TRUE);
+				sprintf(c, "%s: %d %s", LNG(HDD_FREE), hddFreeSpace, LNG(MB));
+				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 				if(TV_mode == TV_mode_NTSC) 
 					ray = 45;
@@ -894,86 +906,95 @@ void hddManager(void)
 					gsKit_prim_line(gsGlobal, x, y, x2, y2+1, 1, Color);
 				}
 
-				sprintf(c, "%d%% FREE",hddFree);
-				printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/4, setting->color[3], TRUE);
+				sprintf(c, "%d%% %s",hddFree, LNG(FREE));
+				printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/4, setting->color[3], TRUE, 0);
 
 				if(TV_mode == TV_mode_NTSC) 
 					y += ray+15;
 				else
 					y += ray+20;
 
-			drawOpSprite(setting->color[1],
-				SCREEN_MARGIN, y-6,
-				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
+				drawOpSprite(setting->color[1],
+					SCREEN_MARGIN, y-6,
+					SCREEN_WIDTH/2-20, y-4);
 
 				Treat = PartyInfo[browser_sel].Treatment;
 				if(Treat == TREAT_SYSTEM){
-					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
+					sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
-					strcpy(c, "Reserved for system");
-					printXY(c, x, y, setting->color[3], TRUE);
+					strcpy(c, LNG(Reserved_for_system));
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
 					pfsFree = 0;
 				} else if(Treat == TREAT_NOACCESS){
-					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
+					sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
-					strcpy(c, "Inaccessible");
-					printXY(c, x, y, setting->color[3], TRUE);
+					strcpy(c, LNG(Inaccessible));
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
 					pfsFree = 0;
 				} else if(Treat == TREAT_HDL_RAW){ //starts clause for HDL without GameInfo
 					//---------- Start of clause for HDL game partitions ----------
 					//dlanor NB: Not properly implemented yet
-					sprintf(c, "HDL SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
+					sprintf(c, "%s: %d %s", LNG(HDL_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT*4;
-					strcpy(c, "Info not loaded");
-					printXY(c, x, y, setting->color[3], TRUE);
+					strcpy(c, LNG(Info_not_loaded));
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					pfsFree = -1; //Disable lower pie chart display
 				} else if(Treat == TREAT_HDL_GAME){ //starts clause for HDL with GameInfo
 					y += FONT_HEIGHT/4;
 
-					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("GAME INFORMATION")*FONT_WIDTH)/2;
-					printXY("GAME INFORMATION", x, y, setting->color[3], TRUE);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-
+						(strlen(LNG(GAME_INFORMATION))*FONT_WIDTH)/2;
+					printXY(LNG(GAME_INFORMATION), x, y,
+						setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)
 						-(strlen(PartyInfo[browser_sel].Game.Name)*FONT_WIDTH)/2;
 					y += FONT_HEIGHT*2;
-					printXY(PartyInfo[browser_sel].Game.Name, x, y, setting->color[3], TRUE);
+					printXY(PartyInfo[browser_sel].Game.Name, x, y,
+						setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 					y += FONT_HEIGHT+FONT_HEIGHT/2+FONT_HEIGHT/4;
-					sprintf(c, "STARTUP: %s", PartyInfo[browser_sel].Game.Startup);
+					sprintf(c, "%s: %s", LNG(STARTUP), PartyInfo[browser_sel].Game.Startup);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT+FONT_HEIGHT/2;
-					sprintf(c, "SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
+					sprintf(c, "%s: %d %s", LNG(SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT+FONT_HEIGHT/2;
-					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("TYPE: DVD GAME")*FONT_WIDTH)/2;
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-
+						(strlen(LNG(TYPE_DVD_GAME))*FONT_WIDTH)/2;
 					if(PartyInfo[browser_sel].Game.Is_Dvd==1)
-						printXY("TYPE: DVD GAME", x, y, setting->color[3], TRUE);
+						printXY(LNG(TYPE_DVD_GAME), x, y,
+							setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					else
-						printXY("TYPE: CD  GAME", x, y, setting->color[3], TRUE);
+						printXY(LNG(TYPE_CD_GAME), x, y,
+							setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					pfsFree = -1; //Disable lower pie chart display
 					//---------- End of clause for HDL game partitions ----------
 			  }else{ //ends clause for HDL, starts clause for normal partitions
 					//---------- Start of clause for PFS partitions ----------
 
-					sprintf(c, "PFS SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
+					sprintf(c, "%s: %d %s", LNG(PFS_SIZE), (int)PartyInfo[browser_sel].TotalSize, LNG(MB));
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
-					sprintf(c, "PFS USED: %d MB", (int)PartyInfo[browser_sel].UsedSize);
-					printXY(c, x, y, setting->color[3], TRUE);
+					sprintf(c, "%s: %d %s", LNG(PFS_USED), (int)PartyInfo[browser_sel].UsedSize, LNG(MB));
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 					y += FONT_HEIGHT;
-					sprintf(c, "PFS FREE: %d MB", (int)PartyInfo[browser_sel].FreeSize);
-					printXY(c, x, y, setting->color[3], TRUE);
+					sprintf(c, "%s: %d %s", LNG(PFS_FREE), (int)PartyInfo[browser_sel].FreeSize, LNG(MB));
+					printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 					pfsFree = (PartyInfo[browser_sel].FreeSize * 100) / PartyInfo[browser_sel].TotalSize;
 
@@ -1007,8 +1028,8 @@ void hddManager(void)
 						gsKit_prim_line(gsGlobal, x, y, x2, y2+1, 1, Color);
 					}
 
-					sprintf(c, "%d%% FREE",pfsFree);
-					printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/2, setting->color[3], TRUE);
+					sprintf(c, "%d%% %s",pfsFree, LNG(FREE));
+					printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/2, setting->color[3], TRUE, 0);
 				}
 
 				rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
@@ -1023,7 +1044,7 @@ void hddManager(void)
 					else			 Color = setting->color[3];
 
 					strcpy(tmp,PartyInfo[top+i].Name);
-					printXY(tmp, x+4, y, Color, TRUE);
+					printXY(tmp, x+4, y, Color, TRUE, ((SCREEN_WIDTH-SCREEN_MARGIN)-(SCREEN_WIDTH/2-FONT_WIDTH)));
 					y += FONT_HEIGHT;
 				} //ends for, so all browser rows were fixed above
 				if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
@@ -1037,10 +1058,12 @@ void hddManager(void)
 				} //ends clause for scrollbar
 			} //ends hdd formated
 			//Tooltip section
-			strcpy(tooltip, "R1:MENU  ÿ3:Exit");
-			if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW)
-				strcat(tooltip, "  ÿ2:Load HDL Game Info");
-			setScrTmp("PS2 HDD MANAGER", tooltip);
+			sprintf(tooltip, "R1:%s  ÿ3:%s", LNG(MENU), LNG(Exit));
+			if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){
+				sprintf(tmp, " ÿ2:%s", LNG(Load_HDL_Game_Info));
+				strcat(tooltip, tmp);
+			}
+			setScrTmp(LNG(PS2_HDD_MANAGER), tooltip);
 
 		}//ends if(event||post_event)
 		drawScr();

@@ -444,19 +444,19 @@ void setScrTmp(const char *msg0, const char *msg1)
 	
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
-	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.94 ÿ4",
-		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
+	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
+	printXY(" ÿ4 LaunchELF v3.95 ÿ4",
+		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';
-	printXY(msg0, x, Menu_message_y, setting->color[2], TRUE);
+	printXY(msg0, x, Menu_message_y, setting->color[2], TRUE, 0);
 
 	if(setting->Menu_Frame)
 		drawFrame(SCREEN_MARGIN, Frame_start_y,
 			SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 	
-	printXY(msg1, x, Menu_tooltip_y, setting->color[2], TRUE);
+	printXY(msg1, x, Menu_tooltip_y, setting->color[2], TRUE, 0);
 }
 //--------------------------------------------------------------
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
@@ -507,7 +507,7 @@ void drawMsg(const char *msg)
 	LastMessage[MAX_TEXT_LINE] = '\0';
 	drawSprite(setting->color[0], 0, Menu_message_y,
 		SCREEN_WIDTH, Frame_start_y);
-	printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE);
+	printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
 }
 //--------------------------------------------------------------
@@ -515,7 +515,7 @@ void drawLastMsg(void)
 {
 	drawSprite(setting->color[0], 0, Menu_message_y,
 		SCREEN_WIDTH, Frame_start_y);
-	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE);
+	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
 }
 //--------------------------------------------------------------
@@ -986,16 +986,27 @@ void drawChar2(int n, int x, int y, u64 colour)
 //endfunc drawChar2
 //--------------------------------------------------------------
 // draw a string of characters, without shift-JIS support
-int printXY(const unsigned char *s, int x, int y, u64 colour, int draw)
+int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space)
 {
 	unsigned char c1, c2;
 	int i;
+	int text_spacing=8;
 	
+	if(space>0){
+		while((strlen(s)*text_spacing) > space)
+			if(--text_spacing<=5)
+				break;
+	}else{
+		while((strlen(s)*text_spacing) > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*2)
+			if(--text_spacing<=5)
+				break;
+	}
+
 	i=0;
 	while((c1=s[i++])!=0) {
 		if(c1 != 0xFF) { // Normal character
 			if(draw) drawChar(c1, x, y, colour);
-			x += 8;
+			x += text_spacing;
 			if(x > SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH)
 				break;
 			continue;

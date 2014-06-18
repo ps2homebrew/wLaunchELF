@@ -53,6 +53,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   DIR_CNF,         // Directory choice 
   JPG_CNF,				 // Jpg viewer choice
 	USBMASS_IRX_CNF, // USB_MASS.IRX choice for startup
+	LANG_CNF,				 // Language file choise
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -78,12 +79,28 @@ typedef struct
 	char LK_Path[15][MAX_PATH];
 	char LK_Title[15][MAX_ELF_TITLE];
 	int  LK_Flag[15];
+	char Misc[64];
+	char Misc_PS2Disc[64];
+	char Misc_FileBrowser[64];
+	char Misc_PS2Browser[64];
+	char Misc_PS2Net[64];
+	char Misc_PS2PowerOff[64];
+	char Misc_HddManager[64];
+	char Misc_TextEditor[64];
+	char Misc_JpgViewer[64];
+	char Misc_Configure[64];
+	char Misc_Load_CNFprev[64];
+	char Misc_Load_CNFnext[64];
+	char Misc_Set_CNF_Path[64];
+	char Misc_Load_CNF[64];
+	char Misc_ShowFont[64];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
 	char usbmass_file[MAX_PATH];
 	char kbdmap_file[MAX_PATH];
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
+	char lang_file[MAX_PATH];
 	int  Menu_Frame;
 	int timeout;
 	int Hide_Paths;
@@ -179,7 +196,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, u64 color);
 void drawChar(unsigned char c, int x, int y, u64 colour);
-int printXY(const unsigned char *s, int x, int y, u64 colour, int);
+int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space);
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 u8 *transcpy_sjis(u8 *d, u8 *s);
 void loadIcon(void);
@@ -260,5 +277,25 @@ void TimerEnd(void);
 
 /* jpgviewer.c */
 void JpgViewer(void);
+
+/* lang.c */
+typedef struct Language{
+	u8* String;
+} Language;
+
+enum {
+#define lang(id, name, value) LANG_##name,
+#include "lang.h"
+#undef lang
+	LANG_COUNT
+};
+
+#define LNG(name) Lang_String[LANG_##name].String
+#define LNG_DEF(name) Lang_Default[LANG_##name].String
+
+extern Language Lang_String[];
+extern Language Lang_Default[];
+
+void Load_External_Language(void);
 
 #endif

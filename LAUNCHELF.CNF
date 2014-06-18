@@ -24,6 +24,31 @@ CNF_version = 3
 # with a CNF file having lower CNF_version value than 3, then the old
 # screen offsets will be converted to ones suitable for gsKit.
 # ----------------------------------------------------------------------
+# In v3.95 Multi-language support was added, which caused the built-in
+# MISC/ device and its subprograms to be named according to the language
+# file activated. But CNF files won't work unless the strings used in a
+# launch key match existing device and program names. This now made it
+# necessary to add the device and subprogram strings to the CNF format.
+# They will still be altered when a new language is loaded, but if you
+# then revert from that change, the names should also revert properly.
+# (Which is what failed to work without having this stuff in the CNF.)
+# ----------------------------------------------------------------------
+Misc = MISC/
+Misc_PS2Disc = PS2Disc
+Misc_FileBrowser = FileBrowser
+Misc_PS2Browser = PS2Browser
+Misc_PS2Net = PS2Net
+Misc_PS2PowerOff = PS2PowerOff
+Misc_HddManager = HddManager
+Misc_TextEditor = TextEditor
+Misc_JpgViewer = JpgViewer
+Misc_Configure = Configure
+Misc_Load_CNFprev = Load CNF--
+Misc_Load_CNFnext = Load CNF++
+Misc_Set_CNF_Path = Set CNF_Path
+Misc_Load_CNF = Load CNF
+Misc_ShowFont = ShowFont
+# ----------------------------------------------------------------------
 # Next follows the 12 (as yet) launching links, here kept in traditional
 # order, though users are allowed to vary the order at will. For these
 # 12 variables the following name conventions apply:

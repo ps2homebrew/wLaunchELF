@@ -1,5 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.95 (2006.08.26)
+-Merged multi-language support contributed by Polo (but not ready for public release)
+-Rewrote large parts of the Multi-language support for better coding efficiency etc.
+-Extended the 'setting' struct and CNF, to add 15 MISC/ device and subprogram names
+-Modified various parts of configuration management, to improve multi-language safety
+-Improved text symmetry of ynDialog boxes (most of the ones with OK/CANCEL choice)
+
 LaunchELF v3.94 (2006.08.19)
 -Fixed a bug of v3.93 that made PSU restore use incorrect gamesave folder names
 
