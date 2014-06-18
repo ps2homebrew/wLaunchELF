@@ -1,5 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.13c beta (2008.06.11)
+-Fixed a bug in cursor movement for colours in "Screen Settings"
+-Implemented uLE-related file selection. Using R3 on a file in FileBrowser will return a pathname like "uLE:/filename.ext" (assuming "filename.ext" was selected). Reference to a file with the "uLE:/" prefix will cause a search for that file in some uLE-related folders. First the active CNF folder, then the SYS-CONF folders of memory cards, starting with mc0 unless the active CNF folder is on mc1. Using R3 on a folder in FileBrowser will navigate to active CNF folder.
+
+LaunchELF v4.13b beta (2008.06.01)
+-Compiled with an older lib setup, but using exactly the same sources as v4.13. This cures a bug of v4.13 making it unable to load JPG files from HDD.
+
 LaunchELF v4.13 (2008.05.30)
 -Fixed Linux issues with the makefile do to case sensitivity.
 -Changed draw.c and updated gskit source files to fix issues with the newer gsKit.

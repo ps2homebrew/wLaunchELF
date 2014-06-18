@@ -143,6 +143,7 @@ void Load_External_Language(void)
 	int error_id = -1;
 	int test = 0;
 	u32 index = 0;
+	char filePath[MAX_PATH];
 	u8 *file_bp, *file_tp, *lang_bp, *lang_tp, *oldf_tp=NULL;
 	u8 *id_p, *value_p;
 	int lang_size = 0;
@@ -157,7 +158,6 @@ void Load_External_Language(void)
 	memcpy(Lang_String, Lang, sizeof(Lang_String));
 
 	if(strlen(setting->lang_file)!=0){ //if language file string set
-		char filePath[MAX_PATH];
 
 		error_id = -2;
 		genFixPath(setting->lang_file, filePath);
@@ -233,6 +233,13 @@ aborted_1:
 			, error_id, test, index, &stp
 		);
 		pos += stp;
+		if(error_id==-2) {//if file open failure
+			sprintf(tmp_s+pos,
+				"This was a failure to open the file:\n"
+				"\"%s\"\n"
+				, filePath
+			);
+		}
 		if(error_id==-6) {//if parsing error
 			strncpy(t1_s, oldf_tp, 100);
 			t1_s[100] = '\0';

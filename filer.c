@@ -663,12 +663,14 @@ limited:
 //------------------------------
 //endfunc genLimObjName
 //--------------------------------------------------------------
-int genFixPath(char *uLE_path, char *gen_path)
+int genFixPath(char *inp_path, char *gen_path)
 {
-	char loc_path[MAX_PATH], party[MAX_NAME], *p;
+	char uLE_path[MAX_PATH], loc_path[MAX_PATH], party[MAX_NAME], *p;
 	int part_ix;
 
 	part_ix = 99;               //Assume valid non-HDD path
+	if( !uLE_related(uLE_path, inp_path) )
+		part_ix = -99; //Assume invalid uLE_related path
 	strcpy(gen_path, uLE_path); //Assume no path patching needed
 	if(!strncmp(uLE_path, "cdfs", 4)){          //if using CD or DVD disc path
 		loadCdModules();
@@ -3161,6 +3163,26 @@ void getFilePath(char *out, int cnfmode)
 						out[0] = 0;
 					}else{
 						strcpy(LastDir, path);
+						break;
+					}
+				}
+			}else if(new_pad & PAD_R3){ //New clause for uLE-relative paths
+				if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
+					//pushed R3 for a folder (navigate to uLE CNF folder)
+					strcpy(path, LaunchElfDir);
+					browser_cd=TRUE;
+				}else{
+					//pushed R3 for a file (treat as uLE-related)
+					sprintf(out, "%s%s", path, files[browser_sel].name);
+					// Must to include a function for check IRX Header 
+					if( ((cnfmode==LK_ELF_CNF) || (cnfmode==NON_CNF))
+						&&(checkELFheader(out)<0)){
+						browser_pushed=FALSE;
+						sprintf(msg0, "%s.", LNG(This_file_isnt_an_ELF));
+						out[0] = 0;
+					}else{
+						strcpy(LastDir, path);
+						sprintf(out, "%s%s", "uLE:/", files[browser_sel].name);
 						break;
 					}
 				}

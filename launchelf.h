@@ -153,6 +153,7 @@ void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
+int uLE_related(char *pathout, char *pathin);
 
 /* elf.c */
 int checkELFheader(char *filename);

@@ -1070,10 +1070,8 @@ void Config_Screen(void)
 			clrScr(setting->color[0]);
 
 			x = Menu_start_x;
-			y = Menu_start_y;
 
 			for(i=0; i<8; i++){
-				x = Menu_start_x;
 				y = Menu_start_y;
 				sprintf(c, "%s%d", LNG(Color), i+1);
 				printXY(c, x+(space*(i+1))-(printXY(c, 0, 0, 0, FALSE, space-FONT_WIDTH/2)/2), y,
@@ -1093,18 +1091,18 @@ void Config_Screen(void)
 				y += FONT_HEIGHT*2;
 				printXY("R:", x, y, setting->color[3], TRUE, 0);
 				sprintf(c, "%02lX", rgb[i][0]);
-				printXY(c, x+(space*(i+1))-(strlen(c)/2)*FONT_WIDTH, y, setting->color[3], TRUE, 0);
+				printXY(c, x+(space*(i+1))-FONT_WIDTH, y, setting->color[3], TRUE, 0);
 				y += FONT_HEIGHT;
 				printXY("G:", x, y, setting->color[3], TRUE, 0);
 				sprintf(c, "%02lX", rgb[i][1]);
-				printXY(c, x+(space*(i+1))-(strlen(c)/2)*FONT_WIDTH, y, setting->color[3], TRUE, 0);
+				printXY(c, x+(space*(i+1))-FONT_WIDTH, y, setting->color[3], TRUE, 0);
 				y += FONT_HEIGHT;
 				printXY("B:", x, y, setting->color[3], TRUE, 0);
 				sprintf(c, "%02lX", rgb[i][2]);
-				printXY(c, x+(space*(i+1))-(strlen(c)/2)*FONT_WIDTH, y, setting->color[3], TRUE, 0);
+				printXY(c, x+(space*(i+1))-FONT_WIDTH, y, setting->color[3], TRUE, 0);
 				y += FONT_HEIGHT;
 				sprintf(c, "ÿ4");
-				printXY(c, x+(space*(i+1))-(strlen(c)/2)*FONT_WIDTH, y, setting->color[i], TRUE, 0);
+				printXY(c, x+(space*(i+1))-FONT_WIDTH, y, setting->color[i], TRUE, 0);
 			}
 			y += FONT_HEIGHT*2;
 			sprintf(c, "  %s: ", LNG(TV_mode));
@@ -1176,7 +1174,7 @@ void Config_Screen(void)
 			if(s<24){  //if cursor indicates a colour component
 				int colnum = s/3;
 				int comnum = s-colnum*3;
-				x += (4+colnum*8)*FONT_WIDTH;
+				x += (space*(colnum+1))-(FONT_WIDTH*4);
 				y += (2+comnum)*FONT_HEIGHT;
 			} else {  //if cursor indicates anything after colour components
 				y += (s-24+6)*FONT_HEIGHT+FONT_HEIGHT/2;  //adjust y for cursor beyond colours

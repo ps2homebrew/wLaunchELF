@@ -167,8 +167,11 @@ int	PrintRow(int row_f, char *text_p)
 //Function to show a screen with debugging info
 //------------------------------
 void ShowDebugInfo(void)
-{	char TextRow[256];
+{	char uLE_rel_path[MAX_PATH], uLE_gen_path[MAX_PATH], TextRow[256];
 	int	i, event, post_event=0;
+
+	i = uLE_related(uLE_rel_path, "uLE:/LAUNCHELF.CNF");
+	genFixPath("uLE:/LAUNCHELF.CNF", uLE_gen_path);
 
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
@@ -197,6 +200,10 @@ void ShowDebugInfo(void)
 			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "rel \"uLE:/LAUNCHELF.CNF\" => \"%s\"", uLE_rel_path);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "gen \"uLE:/LAUNCHELF.CNF\" => \"%s\"", uLE_gen_path);
 			PrintRow(-1, TextRow);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1263,17 +1270,66 @@ void incConfig()
 //------------------------------
 //endfunc incConfig
 //--------------------------------------------------------------
+//exists.  Tests if a file exists or not
+//------------------------------
+int exists(char *path)
+{
+	int fd;
+
+	fd = genOpen(path, O_RDONLY);
+	if( fd < 0 )
+		return 0;
+	genClose(fd);
+	return 1;
+}
+//------------------------------
+//endfunc exists
+//--------------------------------------------------------------
+//uLE_related.  Tests if an uLE_related file exists or not
+// Returns:
+//  1 == uLE related path with file present
+//  0 == uLE related path with file missing
+// -1 == Not uLE related path
+//------------------------------
+int uLE_related(char *pathout, char *pathin)
+{
+	int ret;
+
+	if(!strncmp(pathin, "uLE:/", 5)){
+		sprintf(pathout, "%s%s", LaunchElfDir, pathin+5);
+		if( exists(pathout) )
+			return 1;
+		sprintf(pathout, "%s%s", "mc0:/SYS-CONF/", pathin+5);
+		if( !strncmp(LaunchElfDir, "mc1", 3) )
+			pathout[2] = '1';
+		if( exists(pathout) )
+			return 1;
+		pathout[2] ^= 1;  //switch between mc0 and mc1
+		if( exists(pathout) )
+			return 1;
+		ret = 0;
+	} else
+		ret = -1;
+	strcpy(pathout, pathin);
+	return ret;
+}
+//------------------------------
+//endfunc uLE_related
+//--------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
-void RunElf(char *path)
+void RunElf(char *pathin)
 {
 	char tmp[MAX_PATH];
+	static char path[MAX_PATH];
 	static char fullpath[MAX_PATH];
 	static char party[40];
 	char *p;
 	
-	if(path[0]==0) return;
+	if(pathin[0]==0) return;
 	
+	if( !uLE_related(path, pathin) ) //1==uLE_rel 0==missing, -1==other dev
+		return;
 	if(!strncmp(path, "mc", 2)){
 		party[0] = 0;
 		if(path[2]==':'){
@@ -1282,33 +1338,30 @@ void RunElf(char *path)
 			if(checkELFheader(fullpath)<=0){
 				fullpath[2]='1';
 				if(checkELFheader(fullpath)<=0){
-					sprintf(mainMsg, "%s is Not Found.", path);
-					return;
+ELFnotFound:
+					sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
 				}
 			} //coming here means the ELF on unspecified MC is fine
 		} else {
 			strcpy(fullpath, path);
-			if(checkELFheader(fullpath)<=0){
-				sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
-				return;
-			} //coming here means the ELF on specified MC is fine
+			if(checkELFheader(fullpath)<=0)
+				goto ELFnotFound;
+			//coming here means the ELF on specified MC is fine
 		} //coming here means the ELF on  MC is fine
 	}else if(!strncmp(path, "hdd0:/", 6)){
 		loadHddModules();
-		if(checkELFheader(path)<=0){
-			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
-			return;
-		} //coming here means the ELF is fine
+		if(checkELFheader(path)<=0)
+			goto ELFnotFound;
+		//coming here means the ELF is fine
 		sprintf(party, "hdd0:%s", path+6);
 		p = strchr(party, '/');
 		sprintf(fullpath, "pfs0:%s", p);
 		*p = 0;
 	}else if(!strncmp(path, "mass:/", 6)){
 		loadUsbModules();
-		if(checkELFheader(path)<=0){
-			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
-			return;
-		} //coming here means the ELF is fine
+		if(checkELFheader(path)<=0)
+			goto ELFnotFound;
+		//coming here means the ELF is fine
 		party[0] = 0;
 		strcpy(fullpath, "mass:");
 		strcat(fullpath, path+6);
@@ -1318,10 +1371,9 @@ void RunElf(char *path)
 		strcpy(fullpath, "host:");
 		strcat(fullpath, path+6);
 		makeHostPath(fullpath, fullpath);
-		if(checkELFheader(fullpath)<=0){
-			sprintf(mainMsg, "%s %s.", path, LNG(is_Not_Found));
-			return;
-		} //coming here means the ELF is fine
+		if(checkELFheader(fullpath)<=0)
+				goto ELFnotFound;
+		//coming here means the ELF is fine
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		strcpy(mainMsg, LNG(Failed));
