@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.72 (2006.05.24)
+-Fixed a bug that sometimes caused incorrect display of free MC space
+-Fixed a bug that prevented correct display of file size sums of 4GB or more
+-Fixed a bug that prevented correct display of free size for HDD partitions > 4GB
+-Changed various configuration menus for better consistency and appearance
+
 LaunchELF v3.71 (2006.05.21)
 -Changed browser to allow MISC/ pseudodevice for manual browsing (except 'FileBrowser')
 -Changed browser to select folder created by 'New Dir' command

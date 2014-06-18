@@ -53,10 +53,10 @@ int PM_fXio[MAX_RECURSE]; //Flags fileXio device usage for PasteMode attribute f
 int PM_Indx[MAX_RECURSE]; //Attribute entry index for PasteMode attribute files
 
 unsigned char *elisaFnt=NULL;
-size_t freeSpace;
+s64 freeSpace;
 int mcfreeSpace;
 int mctype_PSx;  //dlanor: Needed for proper scaling of mcfreespace
-int vfreeSpace;
+int vfreeSpace;  //flags validity of freespace value
 int browser_cut;
 int nclipFiles, nmarks, nparties;
 int title_show;
@@ -1072,11 +1072,13 @@ char *PathPad_menu(const char *path)
 		post_event = event;
 		event = 0;
 	}//ends while
-}//ends PathPad_menu
+}
+//------------------------------
+//endfunc PathPad_menu
 //--------------------------------------------------------------
-size_t getFileSize(const char *path, const FILEINFO *file)
+s64 getFileSize(const char *path, const FILEINFO *file)
 {
-	size_t size;
+	s64 size, filesize;
 	FILEINFO files[MAX_ENTRY];
 	char dir[MAX_PATH], party[MAX_NAME];
 	int nfiles, i, ret, fd;
@@ -1085,9 +1087,9 @@ size_t getFileSize(const char *path, const FILEINFO *file)
 		sprintf(dir, "%s%s/", path, file->name);
 		nfiles = getDir(dir, files);
 		for(i=size=0; i<nfiles; i++){
-			ret=getFileSize(dir, &files[i]);
-			if(ret < 0) size = -1;
-			else		size+=ret;
+			filesize=getFileSize(dir, &files[i]);
+			if(filesize < 0) return -1;
+			else		size += filesize;
 		}
 	} else {
 		if(!strncmp(path, "hdd", 3)){
@@ -1111,6 +1113,8 @@ size_t getFileSize(const char *path, const FILEINFO *file)
 	}
 	return size;
 }
+//------------------------------
+//endfunc getFileSize
 //--------------------------------------------------------------
 int delete(const char *path, const FILEINFO *file)
 {
@@ -2387,9 +2391,14 @@ void getFilePath(char *out, int cnfmode)
 				if(!strncmp(path, "mc", 2)){
 					mcGetInfo(path[2]-'0', 0, &mctype_PSx, &mcfreeSpace, NULL);
 					mcSync(0, NULL, &ret);
+					freeSpace = mcfreeSpace*((mctype_PSx==1) ? 8192 : 1024);
+					vfreeSpace=TRUE;
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
-					freeSpace = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0)
-					          * fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+					s64 ZoneFree, ZoneSize;
+					ZoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+					ZoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+					//printf("ZoneFree==%d  ZoneSize==%d\r\n", ZoneFree, ZoneSize);
+					freeSpace = ZoneFree*ZoneSize;
 					vfreeSpace=TRUE;
 				}
 			}
@@ -2511,19 +2520,13 @@ void getFilePath(char *out, int cnfmode)
 				}
 			}
 			setScrTmp(msg0, msg1);
-			if(!strncmp(path, "mc", 2) && !vfreeSpace && !cnfmode){
-				if(mcSync(1,NULL,NULL)!=0){
-					freeSpace = mcfreeSpace*((mctype_PSx==1) ? 8192 : 1024);
-					vfreeSpace=TRUE;
-				}
-			}
 			if(vfreeSpace){
 				if(freeSpace >= 1024*1024)
 					sprintf(tmp, "[%.1fMB free]", (double)freeSpace/1024/1024);
 				else if(freeSpace >= 1024)
 					sprintf(tmp, "[%.1fKB free]", (double)freeSpace/1024);
 				else
-					sprintf(tmp, "[%dB free]", freeSpace);
+					sprintf(tmp, "[%dB free]", (int) freeSpace);
 				ret=strlen(tmp);
 				drawSprite(setting->color[0],
 					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y)/2,
@@ -2543,10 +2546,12 @@ void getFilePath(char *out, int cnfmode)
 	if(mountedParty[1][0]!=0) fileXioUmount("pfs1:");
 	return;
 }
+//------------------------------
+//endfunc getFilePath
 //--------------------------------------------------------------
 void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 {
-	size_t size;
+	s64 size;
 	int	ret, i, text_pos, text_inc, sel=-1;
 	char filepath[MAX_PATH];
 
@@ -2558,18 +2563,18 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 
 	drawMsg("Checking Size...");
 	if(nmarks==0){
-		size=getFileSize(path, &files[browser_sel]);
+		size = getFileSize(path, &files[browser_sel]);
 		sel = browser_sel; //for stat checking
 	}else{
 		for(i=size=0; i<browser_nfiles; i++){
 			if(marks[i]){
-				size+=getFileSize(path, &files[i]);
+				size += getFileSize(path, &files[i]);
 				sel = i; //for stat checking
 			}
 			if(size<0) size=-1;
 		}
 	}
-	printf("size result = %d\r\n", size);
+	printf("size result = %ld\r\n", size);
 	if(size<0){
 		strcpy(mess, "Size test Failed");
 	}else{
@@ -2579,7 +2584,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 		else if(size >= 1024)
 			sprintf(mess, "SIZE = %.1fKB%n", (double)size/1024, &text_inc);
 		else
-			sprintf(mess, "SIZE = %dB%n", size, &text_inc);
+			sprintf(mess, "SIZE = %ldB%n", size, &text_inc);
 		text_pos += text_inc;
 //----- Comment out this section to skip attributes entirely -----
 		if((nmarks<2) && (sel>=0)){
@@ -2634,7 +2639,8 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 	}
 	browser_pushed = FALSE;
 }
-//End of submenu_func_GetSize
+//------------------------------
+//endfunc submenu_func_GetSize
 //--------------------------------------------------------------
 void subfunc_Paste(char *mess, char *path)
 {
@@ -2676,14 +2682,16 @@ finished:
 		if(browser_cut) nclipFiles=0;
 	browser_cd=TRUE;
 }
-//End of subfunc_Paste
+//------------------------------
+//endfunc subfunc_Paste
 //--------------------------------------------------------------
 void submenu_func_Paste(char *mess, char *path)
 {
 	PasteMode = PM_NORMAL;
 	subfunc_Paste(mess, path);
 }
-//End of submenu_func_Paste
+//------------------------------
+//endfunc submenu_func_Paste
 //--------------------------------------------------------------
 void submenu_func_mcPaste(char *mess, char *path)
 {
@@ -2694,7 +2702,8 @@ void submenu_func_mcPaste(char *mess, char *path)
 	}
 	subfunc_Paste(mess, path);
 }
-//End of submenu_func_Paste
+//------------------------------
+//endfunc submenu_func_mcPaste
 //--------------------------------------------------------------
 //End of file: filer.c
 //--------------------------------------------------------------

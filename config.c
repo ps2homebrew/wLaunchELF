@@ -549,18 +549,18 @@ void Config_Skin(void)
 			y += FONT_HEIGHT/2;
 
 			if(strlen(setting->skin)==0)
-				sprintf(c, "  SKIN PATH: NULL");
+				sprintf(c, "  Skin Path: NULL");
 			else
-				sprintf(c, "  SKIN PATH: %s",setting->skin);
+				sprintf(c, "  Skin Path: %s",setting->skin);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT/2;
 
-			printXY("  APPLY NEW SKIN", x, y/2, setting->color[3], TRUE);
+			printXY("  Apply New Skin", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT/2;
 
-			sprintf(c, "  BRIGHTNESS: %d", Brightness);
+			sprintf(c, "  Brightness: %d", Brightness);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
@@ -797,23 +797,23 @@ void Config_Screen(void)
 
 			y += FONT_HEIGHT/2;
 
-			sprintf(c, "  SCREEN X: %d", setting->screen_x);
+			sprintf(c, "  Screen X offset: %d", setting->screen_x);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "  SCREEN Y: %d", setting->screen_y);
+			sprintf(c, "  Screen Y offset: %d", setting->screen_y);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 		
 			if(setting->interlace)
-				sprintf(c, "  INTERLACE: ON");
+				sprintf(c, "  Interlace: ON");
 			else
-				sprintf(c, "  INTERLACE: OFF");
+				sprintf(c, "  Interlace: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
-			printXY("  SKIN SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("  Skin Settings...", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
@@ -842,7 +842,7 @@ void Config_Screen(void)
 
 			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  DEFAULT SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("  Use Default Screen Settings", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			//Cursor positioning section
@@ -1005,20 +1005,20 @@ void Config_Startup(void)
 			y += FONT_HEIGHT / 2;
 
 			if(setting->resetIOP)
-				sprintf(c, "  RESET IOP: ON");
+				sprintf(c, "  Reset IOP: ON");
 			else
-				sprintf(c, "  RESET IOP: OFF");
+				sprintf(c, "  Reset IOP: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			sprintf(c, "  NUMBER OF CNF'S: %d", setting->numCNF);
+			sprintf(c, "  Number of CNF's: %d", setting->numCNF);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->swapKeys)
-				sprintf(c, "  KEY MAPPING: ÿ1:OK ÿ0:CANCEL");
+				sprintf(c, "  Pad mapping: ÿ1:OK ÿ0:CANCEL");
 			else
-				sprintf(c, "  KEY MAPPING: ÿ0:OK ÿ1:CANCEL");
+				sprintf(c, "  Pad mapping: ÿ0:OK ÿ1:CANCEL");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1043,7 +1043,7 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			sprintf(c, "  TIMEOUT: %d", setting->timeout);
+			sprintf(c, "  'Default' Timeout: %d", setting->timeout);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1374,21 +1374,21 @@ void Config_Network(void)
 
 			y += FONT_HEIGHT / 2;
 
-			sprintf(c, "  IP ADDRESS:  %.3i . %.3i . %.3i . %.3i",ipdata.ip[0],ipdata.ip[1],ipdata.ip[2],ipdata.ip[3]);
+			sprintf(c, "  IP Address:  %.3i . %.3i . %.3i . %.3i",ipdata.ip[0],ipdata.ip[1],ipdata.ip[2],ipdata.ip[3]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			sprintf(c, "  NETMASK:     %.3i . %.3i . %.3i . %.3i",ipdata.nm[0],ipdata.nm[1],ipdata.nm[2],ipdata.nm[3]);
+			sprintf(c, "  Netmask:     %.3i . %.3i . %.3i . %.3i",ipdata.nm[0],ipdata.nm[1],ipdata.nm[2],ipdata.nm[3]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			sprintf(c, "  GATEWAY:     %.3i . %.3i . %.3i . %.3i",ipdata.gw[0],ipdata.gw[1],ipdata.gw[2],ipdata.gw[3]);
+			sprintf(c, "  Gateway:     %.3i . %.3i . %.3i . %.3i",ipdata.gw[0],ipdata.gw[1],ipdata.gw[2],ipdata.gw[3]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			y += FONT_HEIGHT / 2;
 
-			sprintf(c, "  SAVE");
+			sprintf(c, "  Save to \"mc0:/SYS-CONF/IPCONFIG.DAT\"");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
