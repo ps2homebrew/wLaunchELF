@@ -37,6 +37,8 @@ extern u8 *usb_mass_irx;
 extern int size_usb_mass_irx;
 extern u8 *cdvd_irx;
 extern int size_cdvd_irx;
+extern u8 *ps2kbd_irx;
+extern int size_ps2kbd_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -104,6 +106,7 @@ int	have_usb_mass = 0;
 int	have_ps2smap  = 0;
 int	have_ps2host  = 0;
 int	have_ps2ftpd  = 0;
+int	have_ps2kbd   = 0;
 //State of Checkable Modules (valid header)
 int have_urgent   = 0;	//flags presence of urgently needed modules
 int	have_sio2man  = 0;
@@ -592,6 +595,18 @@ void loadNetModules(void)
 //------------------------------
 //endfunc loadNetModules
 //--------------------------------------------------------------
+void loadKbdModules(void)
+{
+	int ret;
+	
+	if	(!have_ps2kbd)
+	{	SifExecModuleBuffer(&ps2kbd_irx, size_ps2kbd_irx, 0, NULL, &ret);
+		have_ps2kbd = 1;
+	}
+}
+//------------------------------
+//endfunc loadKbdModules
+//--------------------------------------------------------------
 // Read SYSTEM.CNF for MISC/PS2Disc launch command
 int ReadCNF(char *LK_Path)
 {
@@ -764,6 +779,7 @@ void RunElf(const char *path)
 	free(elisaFnt);
 	padPortClose(1,0);
 	padPortClose(0,0);
+	PS2KbdClose();
 	RunLoaderElf(fullpath, party);
 }
 //------------------------------
@@ -854,6 +870,7 @@ void Reset()
 	have_ps2smap  = 0;
 	have_ps2host  = 0;
 	have_ps2ftpd  = 0;
+	have_ps2kbd   = 0;
 	have_NetModules = 0;
 	have_HDD_modules = 0;
 	have_sbv_patches = 0;
@@ -995,6 +1012,9 @@ int main(int argc, char *argv[])
 */
 	setupito(ito_vmode);
 	loadSkin(BACKGROUND_PIC);
+
+	loadKbdModules();
+	PS2KbdInit();
 
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state

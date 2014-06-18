@@ -31,6 +31,7 @@
 #include "mass_rpc.h"
 #include "iopmod_name.h"
 #include <libjpg.h>
+#include <libkbd.h>
 
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
@@ -139,6 +140,7 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
 extern u32 new_pad;
 int setupPad(void);
 int readpad(void);
+int readpad_no_KB(void);
 void waitPadReady(int port, int slot);
 void waitAnyPadReady(void);
 

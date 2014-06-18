@@ -1,0 +1,47 @@
+//--------------------------------------------------------------
+// File name:   keyboard.txt
+//--------------------------------------------------------------
+From version v3.65 uLaunchELF supports use of USB keyboard, both for entry of
+file and folder names, and for general control and navigation, in which the
+keyboard can be used as a replacement for the gamepad. In fact you can use
+either gamepad in parallel with the keyboard too. That's entirely up to you,
+as all three controllers remain active at once in uLaunchELF.
+
+When used for entry of file/folder names, the following 'mapping' applies:
+
+KB_Left      => Move cursor left
+KB_Right     => Move cursor right
+KB_Backspace => Delete character to the left (if any) and move cursor there
+KB_Delete    => Delete character to the right (if any)
+KB_Home      => Move cursor to start of string
+KB_End       => Move cursor to end of string
+KB_Escape    => End entry dialog as Canceled (new string will not be used)
+KB_Enter     => End entry dialog as OK (new string will be used)
+
+The mapping described above takes precedence over the one described below,
+so when entering file/folder names the mapping described below is not used.
+
+When used as generic controller most gamepad buttons have more than one
+equivalent key on the keyboard. This is because many different keyboard
+types exist, and different users have different preferences. Hopefully
+most users will find at least one of the available button sets convenient.
+
+L1    == KB_F1    or '1'      R1      == KB_F12  or '0'
+L2    == KB_F2    or '2'      R2      == KB_F11  or '9'
+L3    == KB_F3    or '3'      R3      == KB_F10  or '8'
+Up    == KB_Up    or 'w'      Triangle== KB_Home or 'i' or KB_Escape
+Left  == KB_Left  or 'a'      Square  == KB_End  or 'j'
+Right == KB_Right or 's'      Circle  == KB_PgUp or 'k'
+Down  == KB_Down  or 'z'      Cross   == KB_PgDn or 'm'
+Select== KB_Insert            Start   == KB_Delete
+
+In addition to the above, two keys are mapped differently depending on
+the button mapping you have chosen for Circle/Cross in uLaunchELF.
+
+KB_Enter will mean OK/Activate
+KB_Space will mean Cancel/Mark
+
+//--------------------------------------------------------------
+// End of file: keyboard.txt
+//--------------------------------------------------------------
+

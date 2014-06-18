@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.65 (2006.05.09)
+-Implemented 'Rename' for PS1 MC files (still not possible for PS2 MC)
+-Merged support for USB keyboard in filename entry, contributed by Polo
+-Added support for USB keyboard as alternate gamepad in uLaunchELF.
+NB: See separate file "keyboard.txt" for additional details.
+
 LaunchELF v3.64 (2006.05.08)
 -Fixed some bugs in launch key title management.
 

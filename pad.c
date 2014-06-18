@@ -10,8 +10,10 @@ u32 old_pad = 0, old_pad_t[2] = {0, 0};
 u32 new_pad, new_pad_t[2];
 
 //---------------------------------------------------------------------------
-// read PAD
-int readpad(void)
+// read PAD, but ignore KB. This is needed in code with own KB handlers,
+// such as the virtual keyboard input routines for 'Rename' and 'New Dir'
+//---------------------------------------------------------------------------
+int readpad_no_KB(void)
 {
 	static int n[2]={0,0}, nn[2]={0,0};
 	int port, state, ret[2];
@@ -53,6 +55,144 @@ int readpad(void)
 	new_pad = new_pad_t[0]|new_pad_t[1];
 	return (ret[0]|ret[1]);
 }
+//------------------------------
+//endfunc readpad_no_KB
+//---------------------------------------------------------------------------
+// readpad will call readpad_no_KB, and if no new pad buttons are found, it
+// will also attempt reading data from a USB keyboard, and map this as a
+// virtual gamepad. (Very improvised and sloppy, but it should work fine.)
+//---------------------------------------------------------------------------
+int readpad(void)
+{
+	int	ret, command;
+	unsigned char KeyPress;
+
+	if((ret=readpad_no_KB()) && new_pad)
+		return ret;
+
+	if(!PS2KbdRead(&KeyPress))
+		return 0;
+	if(KeyPress != PS2KBD_ESCAPE_KEY)
+		command = KeyPress;
+	else {
+		PS2KbdRead(&KeyPress);
+		command = 0x100+KeyPress;
+	}
+	ret = 1;  //Assume that the entered key is a valid command
+	switch(command) {
+		case 0x11B:                 //Escape == Triangle
+			new_pad = PAD_TRIANGLE;
+			break;
+		case 0x00A:                 //Enter == OK
+		  if(!swapKeys)
+		  	new_pad = PAD_CIRCLE;
+		  else
+		  	new_pad = PAD_CROSS;
+		  break;
+		case 0x020:                 //Space == Cancel/Mark
+		  if(!swapKeys)
+		  	new_pad = PAD_CROSS;
+		  else
+		  	new_pad = PAD_CIRCLE;
+		  break;
+		case 0x031:                 //'1' == L1
+			new_pad = PAD_L1;
+			break;
+		case 0x032:                 //'2' == L2
+			new_pad = PAD_L2;
+			break;
+		case 0x033:                 //'3' == L3
+			new_pad = PAD_L3;
+			break;
+		case 0x077:                 //'w' == Up
+			new_pad = PAD_UP;
+			break;
+		case 0x061:                 //'a' == Left
+			new_pad = PAD_LEFT;
+			break;
+		case 0x073:                 //'s' == Right
+			new_pad = PAD_RIGHT;
+			break;
+		case 0x07A:                 //'z' == Down
+			new_pad = PAD_DOWN;
+			break;
+		case 0x030:                 //'0' == R1
+			new_pad = PAD_R1;
+			break;
+		case 0x039:                 //'9' == R2
+			new_pad = PAD_R2;
+			break;
+		case 0x038:                 //'8' == R3
+			new_pad = PAD_R3;
+			break;
+		case 0x069:                 //'i' == Triangle
+			new_pad = PAD_TRIANGLE;
+			break;
+		case 0x06A:                 //'j' == Square
+			new_pad = PAD_SQUARE;
+			break;
+		case 0x06B:                 //'k' == Circle
+			new_pad = PAD_CIRCLE;
+			break;
+		case 0x06D:                 //'m' == Cross
+			new_pad = PAD_CROSS;
+			break;
+		case 0x101:                 //F1 == L1
+			new_pad = PAD_L1;
+			break;
+		case 0x102:                 //F2 == L2
+			new_pad = PAD_L2;
+			break;
+		case 0x103:                 //F3 == L3
+			new_pad = PAD_L3;
+			break;
+		case 0x12C:                 //Up == Up
+			new_pad = PAD_UP;
+			break;
+		case 0x12A:                 //Left == Left
+			new_pad = PAD_LEFT;
+			break;
+		case 0x129:                 //Right == Right
+			new_pad = PAD_RIGHT;
+			break;
+		case 0x12B:                 //Down == Down
+			new_pad = PAD_DOWN;
+			break;
+		case 0x123:                 //Insert == Select
+			new_pad = PAD_SELECT;
+			break;
+		case 0x10C:                 //F12 == R1
+			new_pad = PAD_R1;
+			break;
+		case 0x10B:                 //F11 == R2
+			new_pad = PAD_R2;
+			break;
+		case 0x10A:                 //F10 == R3
+			new_pad = PAD_R3;
+			break;
+		case 0x124:                 //Home == Triangle
+			new_pad = PAD_TRIANGLE;
+			break;
+		case 0x127:                 //End == Square
+			new_pad = PAD_SQUARE;
+			break;
+		case 0x125:                 //PgUp == Circle
+			new_pad = PAD_CIRCLE;
+			break;
+		case 0x128:                 //PgDn == Cross
+			new_pad = PAD_CROSS;
+			break;
+		case 0x126:                 //Delete == Start
+			new_pad = PAD_START;
+			break;
+		default:                    //Unrecognized key => no pad button
+			ret = 0;
+			break;
+	}
+	return ret;
+}
+//------------------------------
+//endfunc readpad
 //---------------------------------------------------------------------------
 // Wait for specific PAD, but also accept disconnected state
 void waitPadReady(int port, int slot)

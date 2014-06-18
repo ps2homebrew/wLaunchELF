@@ -400,7 +400,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.64 ¡",
+	printXY(" ¡ LaunchELF v3.65 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);

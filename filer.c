@@ -788,7 +788,7 @@ int menu(const char *path, const char *file)
 {
 	uint64 color;
 	char enable[NUM_MENU], tmp[64];
-	int x, y, i, sel;
+	int x, y, i, sel, test;
 	int event, post_event=0;
 
 	int menu_ch_w = 8;             //Total characters in longest menu string
@@ -837,8 +837,12 @@ int menu(const char *path, const char *file)
 		enable[RENAME] = FALSE;
 		//enable[NEWDIR] = FALSE;
 	}
-	if(!strncmp(path, "mc", 2))
-		enable[RENAME] = FALSE;
+	if(!strncmp(path, "mc", 2)){
+		mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
+		mcSync(0, NULL, &test);
+		if (mctype_PSx == 2) //PS2 MC ?
+			enable[RENAME] = FALSE;
+	}
 	if(nmarks==0){
 		if(!strcmp(file, "..")){
 			enable[COPY] = FALSE;
@@ -1134,7 +1138,7 @@ int delete(const char *path, const FILEINFO *file)
 int Rename(const char *path, const FILEINFO *file, const char *name)
 {
 	char party[MAX_NAME], oldPath[MAX_PATH], newPath[MAX_PATH];
-	int ret=0;
+	int test, ret=0;
 	
 	if(!strncmp(path, "hdd", 3)){
 		sprintf(party, "hdd0:%s", &path[6]);
@@ -1149,14 +1153,27 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		
 		ret=fileXioRename(oldPath, newPath);
 	}else if(!strncmp(path, "mc", 2)){
-		sprintf(oldPath, "%s%s", path+2, file->name);
-		sprintf(newPath, "%s%s", path+2, name);
-		mcGetInfo(path[2]-'0', 0, &ret, &ret, &ret);  //Wakeup call
-		mcSync(0, NULL, &ret);
-		mcRename(path[2]-'0', 0, oldPath, newPath);
-		mcSync(0, NULL, &ret);
-		if(ret == -4)
+		sprintf(oldPath, "%s%s", path, file->name);
+		sprintf(newPath, "%s%s", path, name);
+		if((test=fioDopen(newPath))>=0){ //Does folder of same name exist ?
+			fioDclose(test);
 			ret = -17;
+		}else if((test=fioOpen(newPath, O_RDONLY))>=0){ //Does file of same name exist ?
+			fioClose(test);
+			ret = -17;
+		}else{ //No file/folder of the same name exists
+			mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
+			mcSync(0, NULL, &test);
+			if (mctype_PSx == 2) //PS2 MC ?
+				ret = -1;
+			else{               //PS1 MC !
+				strncpy((void *)file->stats.name, name, 32);
+				mcSetFileInfo(path[2]-'0', 0, oldPath+4, &file->stats, 0x0010); //Fix file stats
+				mcSync(0, NULL, &test);
+				if(ret == -4)
+					ret = -17;
+			}
+		}
 	}else if(!strncmp(path, "host", 4)){
 		int temp_fd;
 
@@ -1581,8 +1598,9 @@ int keyboard(char *out, int max)
 	          "()[]!#$%&@;  "
 	          "=+-'^.,_     ";
 	int KEY_LEN;
-	int cur=0, sel=0, i, x, y, t=0;
+	int cur=0, sel=0, i=0, x, y, t=0;
 	char tmp[256], *p;
+	unsigned char KeyPress;
 	
 	p=strrchr(out, '.');
 	if(p==NULL)	cur=strlen(out);
@@ -1593,7 +1611,7 @@ int keyboard(char *out, int max)
 	while(1){
 		//Pad response section
 		waitPadReady(0, 0);
-		if(readpad()){
+		if(readpad_no_KB()){
 			if(new_pad)
 				event |= 2;  //event |= pad command
 			if(new_pad & PAD_UP){
@@ -1648,8 +1666,221 @@ int keyboard(char *out, int max)
 			}
 		}
 
+		//Kbd response section
+		if(PS2KbdRead(&KeyPress)) {
+
+			event |= 2;  //event |= pad command
+
+			if(KeyPress == PS2KBD_ESCAPE_KEY) {
+				PS2KbdRead(&KeyPress);
+				if(KeyPress == 0x29){ // Key Right;
+					if(cur<strlen(out)) cur++;
+					t=0;
+				}else if(KeyPress == 0x2a){ // Key Left;
+					if(cur>0) cur--;
+					t=0;
+				}else if(KeyPress == 0x24){ // Key Home;
+					cur=0;
+					t=0;
+				}else if(KeyPress == 0x27){ // Key End;
+					cur=strlen(out);
+					t=0;
+				}else if(KeyPress == 0x26){ // Key Delete;
+					if(strlen(out)>cur){
+						strcpy(tmp, out);
+						out[cur]=0;
+						strcat(out, &tmp[cur+1]);
+						t=0;
+					}
+				}else if(KeyPress == 0x1b){ // Key Escape;
+					return -1;
+				}
+			}else{
+				if(KeyPress == 0x07){ // Key BackSpace;
+					if(cur>0){
+						strcpy(tmp, out);
+						out[cur-1]=0;
+						strcat(out, &tmp[cur]);
+						cur--;
+						t=0;
+					}
+				}else if(KeyPress == 0x0a){ // Key Return;
+					break;
+				}else{ // All Other Keys;
+					i=strlen(out);
+					if(i<max && i<33){
+						strcpy(tmp, out);
+						out[cur]=KeyPress;
+						out[cur+1]=0;
+						strcat(out, &tmp[cur]);
+						cur++;
+						t=0;
+					}
+				}
+			}
+			KeyPress = '\0';
+		} //ends if(PS2KbdRead(&KeyPress))
+
 		t++;
-		
+
+		if(t & 0x0F) event |= 4;  //repetitive timer event
+
+		if(event||post_event){ //NB: We need to update two frame buffers per event
+
+			//Display section
+			drawPopSprite(setting->color[0],
+				KEY_X, KEY_Y,
+				KEY_X+KEY_W, KEY_Y+KEY_H);
+			drawFrame(
+				KEY_X, KEY_Y,
+				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
+			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
+				setting->color[1], KEY_X+KEY_W-1, KEY_Y+11, 0);
+			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
+			if(((event|post_event)&4) && (t & 0x10)){
+				printXY("|",
+					KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
+			}
+			for(i=0; i<KEY_LEN; i++)
+				drawChar(KEY[i],
+					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
+					KEY_Y+16 + (i/WFONTS)*8,
+					setting->color[3]);
+			printXY("OK                       CANCEL",
+				KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
+
+			//Cursor positioning section
+			if(sel<=WFONTS*HFONTS)
+				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
+			else
+				x = KEY_X+2+4 + 25*8;
+			y = KEY_Y+16 + (sel/WFONTS)*8;
+			drawChar(127, x, y, setting->color[3]);
+
+			//Tooltip section
+			x = SCREEN_MARGIN;
+			y = Menu_tooltip_y;
+			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
+
+			if (swapKeys) 
+				printXY("~:OK ›:Back L1:Left R1:Right START:Enter",
+					x, y/2, setting->color[2], TRUE);
+			else
+				printXY("›:OK ~:Back L1:Left R1:Right START:Enter",
+					x, y/2, setting->color[2], TRUE);
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	}//ends while
+	return strlen(out);
+}
+//------------------------------
+//endfunc keyboard
+//--------------------------------------------------------------
+//keyboard2 below is used for testing output from a USB keyboard
+//it can be commented out when not used by the programmer
+//--------------------------------------------------------------
+/*
+int keyboard2(char *out, int max)
+{
+	int event, post_event=0;
+	const int	KEY_W=276,
+				KEY_H=84,  //NB: This is not real height, but height/2
+				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
+				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2)/2,
+				WFONTS=13,
+				HFONTS=7;
+	char *KEY="ABCDEFGHIJKLM"
+	          "NOPQRSTUVWXYZ"
+	          "abcdefghijklm"
+	          "nopqrstuvwxyz"
+	          "0123456789   "
+	          "()[]!#$%&@;  "
+	          "=+-'^.,_     ";
+	int KEY_LEN;
+	int cur=0, sel=0, i=0, x, y, t=0;
+	char tmp[256], *p;
+	unsigned char KeyPress;
+	
+	p=strrchr(out, '.');
+	if(p==NULL)	cur=strlen(out);
+	else		cur=(int)(p-out);
+	KEY_LEN = strlen(KEY);
+
+	event = 1;  //event = initial entry
+	while(1){
+		//Pad response section
+		waitPadReady(0, 0);
+		if(readpad_no_KB()){
+			if(new_pad)
+				event |= 2;  //event |= pad command
+			if(new_pad & PAD_UP){
+				if(sel<=WFONTS*HFONTS){
+					if(sel>=WFONTS) sel-=WFONTS;
+				}else{
+					sel-=4;
+				}
+			}else if(new_pad & PAD_DOWN){
+				if(sel/WFONTS == HFONTS-1){
+					if(sel%WFONTS < 5)	sel=WFONTS*HFONTS;
+					else				sel=WFONTS*HFONTS+1;
+				}else if(sel/WFONTS <= HFONTS-2)
+					sel+=WFONTS;
+			}else if(new_pad & PAD_LEFT){
+				if(sel>0) sel--;
+			}else if(new_pad & PAD_RIGHT){
+				if(sel<=WFONTS*HFONTS) sel++;
+			}else if(new_pad & PAD_START){
+				sel = WFONTS*HFONTS;
+			}else if(new_pad & PAD_L1){
+				if(cur>0) cur--;
+				t=0;
+			}else if(new_pad & PAD_R1){
+				if(cur<strlen(out)) cur++;
+				t=0;
+			}else if((!swapKeys && new_pad & PAD_CROSS)
+			      || (swapKeys && new_pad & PAD_CIRCLE) ){
+				if(cur>0){
+					strcpy(tmp, out);
+					out[cur-1]=0;
+					strcat(out, &tmp[cur]);
+					cur--;
+					t=0;
+				}
+			}else if((swapKeys && new_pad & PAD_CROSS)
+			      || (!swapKeys && new_pad & PAD_CIRCLE) ){
+				i=strlen(out);
+				if(sel < WFONTS*HFONTS){  //Any char in matrix selected ?
+					if(i<max && i<33){
+						strcpy(tmp, out);
+						out[cur]=KEY[sel];
+						out[cur+1]=0;
+						strcat(out, &tmp[cur]);
+						cur++;
+						t=0;
+					}
+				}else if(sel == WFONTS*HFONTS){ //'OK' exit-button selected ?
+					break;                        //break out of loop with i==strlen
+				}else  //Must be 'CANCEL' exit-button
+					return -1;
+			}
+		}
+
+		//Kbd response section
+		if(PS2KbdRead(&KeyPress)) {
+			strcpy(tmp, out);
+			sprintf(out+cur," %02X %n",KeyPress, &x);
+			if(cur+x < strlen(tmp))
+				strcat(out, tmp+cur+x);
+			cur+=x;
+			if(cur>=31)
+				cur=0;
+			t=0;
+		} //ends if(PS2KbdRead(&KeyPress))
+
+		t++;
+
 		if(t & 0x0F) event |= 4;  //repetitive timer event
 
 		if(event||post_event){ //NB: We need to update two frame buffers per event
@@ -1702,6 +1933,9 @@ int keyboard(char *out, int max)
 	}//ends while
 	return i;
 }
+*/
+//------------------------------
+//endfunc keyboard2  (commented out except in testing)
 //--------------------------------------------------------------
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 {
@@ -1791,7 +2025,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 	
 	return nfiles;
 }
-
+//------------------------------
+//endfunc setFileList
 //--------------------------------------------------------------
 // get_FilePath is the main browser function.
 // It also contains the menu handler for the R1 submenu
