@@ -609,7 +609,7 @@ end:
 						loadSkin(BACKGROUND_PIC, 0, 0);
 						loadIcon();
 					}
-					FullScreen=SlideShowStart=SlideShowStop=CountJpg=PicRotate=0;
+					SlideShowStart=SlideShowStop=CountJpg=PicRotate=0;
 					thumb_load=TRUE;
 				} /* end else file */
 			} else if(new_pad & PAD_SELECT){

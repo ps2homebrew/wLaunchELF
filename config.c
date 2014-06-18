@@ -373,8 +373,9 @@ unsigned long hextoul(char *string)
 // Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD load USBD_FILE string
 // polo: ADD load SKIN_FILE string
+// dlanor: added error flag return value 0==OK, -1==failure
 //---------------------------------------------------------------------------
-void loadConfig(char *mainMsg, char *CNF)
+int loadConfig(char *mainMsg, char *CNF)
 {
 	int i, fd, tst, len, mcport, var_cnt, CNF_version;
 	size_t CNF_size;
@@ -492,7 +493,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	if(fd<0) {
 failed_load:
 		sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), CNF);
-		return;
+		return -1;
 	}
 	// This point is only reached after succefully opening CNF
 
@@ -649,7 +650,7 @@ failed_load:
 	if((setting->JpgView_Trans < 1) || (setting->JpgView_Trans > 4))
 		setting->JpgView_Trans = DEF_JPGVIEW_TRANS;
 	sprintf(mainMsg, "%s (%s)", LNG(Loaded_Config), path);
-	return;
+	return 0;
 }
 //---------------------------------------------------------------------------
 // Polo: ADD Skin Menu with Skin preview
@@ -794,7 +795,7 @@ void Config_Skin(void)
 			if(s>=2) y+=FONT_HEIGHT/2;
 			if(s>=3) y+=FONT_HEIGHT/2;
 			if(s>=4) y+=FONT_HEIGHT/2;
-			drawChar(127, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
 			if (s == 1) {
@@ -813,7 +814,7 @@ void Config_Skin(void)
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
 			}
-			sprintf(tmp, "ÿ3:%s", LNG(Return));
+			sprintf(tmp, " ÿ3:%s", LNG(Return));
 			strcat(c, tmp);
 			setScrTmp("", c);
 		}//ends if(event||post_event)
@@ -1113,7 +1114,7 @@ void Config_Screen(void)
 				if(s>=max_s-1)            //if cursor at or beyond 'RETURN'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Popups Opaque'
 			}
-			drawChar(127, x, y, setting->color[3]);  //draw cursor
+			drawChar(LEFT_CUR, x, y, setting->color[3]);  //draw cursor
 
 			//Tooltip section
 			if (s<24||s==25||s==26) {  //if cursor at a colour component or a screen offset
@@ -1143,7 +1144,7 @@ void Config_Screen(void)
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
 			}
-			sprintf(tmp, "ÿ3:%s", LNG(Return));
+			sprintf(tmp, " ÿ3:%s", LNG(Return));
 			strcat(c, tmp);
 			setScrTmp("", c);
 		}//ends if(event||post_event)
@@ -1349,7 +1350,7 @@ void Config_Startup(void)
 			y = Menu_start_y + s*FONT_HEIGHT + FONT_HEIGHT /2;
 
 			if(s>=max_s) y+=FONT_HEIGHT/2;
-			drawChar(127, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
 			if ((s==1)||(s==3)||(s==7)) { //resetIOP || usbkbd_used
@@ -1374,7 +1375,7 @@ void Config_Startup(void)
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
 			}
-			sprintf(tmp, "ÿ3:%s", LNG(Return));
+			sprintf(tmp, " ÿ3:%s", LNG(Return));
 			strcat(c, tmp);
 			setScrTmp("", c);
 		}//ends if(event||post_event)
@@ -1677,7 +1678,7 @@ void Config_Network(void)
 			if(s>=5) y+=FONT_HEIGHT/2;
 			if (l > 1)
 				x += l*48 + 15;
-			drawChar(127, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
 			if ((s <4) && (l==1)) {
@@ -1698,7 +1699,7 @@ void Config_Network(void)
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
 			}
-			sprintf(tmp, "ÿ3:%s", LNG(Return));
+			sprintf(tmp, " ÿ3:%s", LNG(Return));
 			strcat(c, tmp);
 			setScrTmp(NetMsg, c);
 		}//ends if(event||post_event)
@@ -1928,7 +1929,7 @@ cancel_exit:
 			y = Menu_start_y + (s+1)*FONT_HEIGHT;
 			if(s>=SHOW_TITLES)
 				y += FONT_HEIGHT / 2;
-			drawChar(127, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
 			if (s < SHOW_TITLES) {
@@ -1947,7 +1948,7 @@ cancel_exit:
 				else
 					sprintf(c, "ÿ0:%s", LNG(OK));
 			}
-			sprintf(tmp, "ÿ3:%s", LNG(Return));
+			sprintf(tmp, " ÿ3:%s", LNG(Return));
 			strcat(c, tmp);
 			setScrTmp(localMsg, c);
 		}//ends if(event||post_event)

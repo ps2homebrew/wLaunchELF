@@ -340,9 +340,9 @@ int ynDialog(const char *message)
 			printXY(LNG(CANCEL), dx+dw-x-(strlen(LNG(CANCEL))+1)*FONT_WIDTH,
 				(dy+a+b+2+n*FONT_HEIGHT), setting->color[3],TRUE,0);
 			if(sel==0)
-				drawChar(127, dx+a+x,(dy+a+b+2+n*FONT_HEIGHT), setting->color[3]);
+				drawChar(LEFT_CUR, dx+a+x,(dy+a+b+2+n*FONT_HEIGHT), setting->color[3]);
 			else
-				drawChar(127,dx+dw-x-(strlen(LNG(CANCEL))+2)*FONT_WIDTH-1,
+				drawChar(LEFT_CUR,dx+dw-x-(strlen(LNG(CANCEL))+2)*FONT_WIDTH-1,
 					(dy+a+b+2+n*FONT_HEIGHT),setting->color[3]);
 		}//ends if(event||post_event)
 		drawLastMsg();
@@ -545,6 +545,9 @@ void setPartyList(void)
 		}
 		if(!strncmp(dirEnt.name, "__", 2) &&
 			strcmp(dirEnt.name, "__boot") &&
+			strcmp(dirEnt.name, "__net") &&
+			strcmp(dirEnt.name, "__system") &&
+			strcmp(dirEnt.name, "__sysconf") &&
 			strcmp(dirEnt.name, "__common"))
 			continue;
 		
@@ -1260,7 +1263,7 @@ int menu(const char *path, const char *file)
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(LEFT_CUR, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
@@ -2241,9 +2244,9 @@ int keyboard(char *out, int max)
 	          "NOPQRSTUVWXYZ"
 	          "abcdefghijklm"
 	          "nopqrstuvwxyz"
-	          "0123456789   "
-	          "()[]!#$%&@;  "
-	          "=+-'^.,_     ";
+	          "0123456789/|\\"
+	          "<>(){}[].,:;\""
+	          "!@#$%&=+-^*_'";
 	int KEY_LEN;
 	int cur=0, sel=0, i=0, x, y, t=0;
 	char tmp[256], *p;
@@ -2292,6 +2295,16 @@ int keyboard(char *out, int max)
 					out[cur-1]=0;
 					strcat(out, &tmp[cur]);
 					cur--;
+					t=0;
+				}
+			}else if(new_pad & PAD_SQUARE){ //Square => space
+				i=strlen(out);
+				if(i<max && i<33){
+					strcpy(tmp, out);
+					out[cur]=' ';
+					out[cur+1]=0;
+					strcat(out, &tmp[cur]);
+					cur++;
 					t=0;
 				}
 			}else if((swapKeys && new_pad & PAD_CROSS)
@@ -2415,7 +2428,7 @@ int keyboard(char *out, int max)
 				x = KEY_X + KEY_W - 2 - (strlen(LNG(CANCEL))+3)*FONT_WIDTH;
 			y = KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
 			          + LINE_THICKNESS + 8 + (sel/WFONTS)*FONT_HEIGHT;
-			drawChar(127, x, y, setting->color[2]);
+			drawChar(LEFT_CUR, x, y, setting->color[2]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
@@ -2423,14 +2436,13 @@ int keyboard(char *out, int max)
 			drawSprite(setting->color[0], 0, y-1, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys){
-				sprintf(tmp, "ÿ1:%s ÿ0:%s L1:%s R1:%s START:%s",
-				LNG(OK), LNG(Back), LNG(Left), LNG(Right), LNG(Enter));
-				printXY(tmp, x, y, setting->color[2], TRUE, 0);
+				sprintf(tmp, "ÿ1:%s ÿ0", LNG(Use));
 			}else{
-				sprintf(tmp, "ÿ0:%s ÿ1:%s L1:%s R1:%s START:%s",
-				LNG(OK), LNG(Back), LNG(Left), LNG(Right), LNG(Enter));
-				printXY(tmp, x, y, setting->color[2], TRUE, 0);
+				sprintf(tmp, "ÿ0:%s ÿ1", LNG(Use));
 			}
+				sprintf(tmp+strlen(tmp), ":%s ÿ2:%s L1:%s R1:%s START:%s ÿ3:%s",
+				LNG(BackSpace), LNG(SPACE), LNG(Left), LNG(Right), LNG(Enter), LNG(Exit));
+			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2586,7 +2598,7 @@ int keyboard2(char *out, int max)
 			else
 				x = KEY_X+2+4 + 25*8;
 			y = KEY_Y+28 + (sel/WFONTS)*16;
-			drawChar(127, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;

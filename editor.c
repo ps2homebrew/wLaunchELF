@@ -189,7 +189,7 @@ int MenuEditor(void)
 				y+=FONT_HEIGHT;
 			}
 			if(Menu_Sel<NUM_MENU)
-				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+Menu_Sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(LEFT_CUR, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+Menu_Sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section.
 			x = SCREEN_MARGIN;
@@ -905,7 +905,7 @@ int Windows_Selector(void)
 			}
 
 			if(Window_Sel<=10)
-				drawChar(127, wSprite_X1+FONT_WIDTH, wSprite_Y1+(FONT_HEIGHT/2+Window_Sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(LEFT_CUR, wSprite_X1+FONT_WIDTH, wSprite_Y1+(FONT_HEIGHT/2+Window_Sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section.
 			x = SCREEN_MARGIN;
@@ -1168,7 +1168,8 @@ abort:
 //--------------------------------------------------------------
 void TextEditor(void)
 {
-	char   tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH], c[2];
+	char   tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH];
+	int    ch;
 	int    x, y, y0, y1;
 	int    i=0, j, ret=0;
 	int    tmpLen=0;
@@ -1181,7 +1182,7 @@ void TextEditor(void)
 				KEY_Y=(Menu_end_y - KEY_H);
 	int KEY_LEN = strlen(KEY);
 	
-	tmp[0]='\0', tmp1[0]='\0', c[0]='\0';
+	tmp[0]='\0', tmp1[0]='\0', ch='\0';
 	
 	Active_Window=0, Num_Window=0;
 
@@ -1484,7 +1485,7 @@ abort:
 				else
 					x = KEY_X+2+4+14 + (KeyBoard_Cur%WFONTS+1)*20 - 40;
 				y = KEY_Y+12 + (KeyBoard_Cur/WFONTS)*18;
-				drawChar(127, x, y, setting->color[2]);
+				drawChar(LEFT_CUR, x, y, setting->color[2]);
 			
 			} // end Display Virtual KeyBoard Section.
 
@@ -1524,32 +1525,31 @@ abort:
 						else
 							color = COL_CUR_OVERWR;
 						if(((event|post_event)&4) && (t & 0x10))
-							printXY("|", x-4, y, color, TRUE, 0);
+							drawChar(TEXT_CUR, x-4, y, color);
 					}
 
 					if(TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\n'){ // Line Feed.
-						c[0]='ù';
+						ch=DN_ARROW;
 						color = COL_LINE_END;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\r'){ // Carriage Return.
-						c[0]='û';
+						ch=LT_ARROW;
 						color = COL_LINE_END;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\t'){ // Tabulation.
-						c[0]='ü';
+						ch=RT_ARROW;
 						color = COL_TAB;
 					}else if (TextBuffer[Active_Window][Top_Width+tmpLen+j]=='\0'){ // Text End.
-						c[0]='à';
+						ch=BR_SPLIT;
 						color = COL_TEXT_END;
 						Editor_TextEnd=1;
 					}else{
-						c[0]=TextBuffer[Active_Window][Top_Width+tmpLen+j];
+						ch=TextBuffer[Active_Window][Top_Width+tmpLen+j];
 						if(Mark[MARK_ON] && Mark[MARK_COLOR]) //Text Color Black / White If Mark.
 							color = COL_MARK_TEXT;
 						else
 							color = COL_NORM_TEXT;
 					}
 
-					c[1]='\0';
-					printXY(c, x, y, color, TRUE, 0);
+					drawChar(ch, x, y, color);
 
 					if(Editor_TextEnd)
 						goto end;

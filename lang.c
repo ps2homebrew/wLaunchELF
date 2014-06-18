@@ -18,7 +18,6 @@ Language Lang_String[sizeof(Lang_Default) / sizeof(Lang_Default[0])];
 Language Lang_Extern[sizeof(Lang_Default) / sizeof(Lang_Default[0])];
 
 Language *External_Lang_Buffer = NULL;
-int lang_initialized_f = 0;
 
 //---------------------------------------------------------------------------
 // get_LANG_string is the main parser called for each language dependent
@@ -213,7 +212,7 @@ aborted_1:
 		}  // end if clause for file opened OK
 	} // end if language file string set
 
-	if(lang_initialized_f && (error_id < -1)){
+	if(error_id < -1){
 		u8 tmp_s[80*8], t1_s[102], t2_s[102];
 		int pos=0, stp=0;
 		sprintf(tmp_s,
@@ -299,7 +298,6 @@ aborted_1:
 	sprintf(setting->Misc_Load_CNF     , "%s/%s", LNG(MISC), LNG(Load_CNF));
 	sprintf(setting->Misc_ShowFont     , "%s/%s", LNG(MISC), LNG(ShowFont));
 
-	lang_initialized_f = 1;
 }
 //Ends Load_External_Language
 //---------------------------------------------------------------------------

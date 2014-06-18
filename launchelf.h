@@ -230,7 +230,7 @@ void waitAnyPadReady(void);
 
 extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;
-void loadConfig(char *, char *);
+int loadConfig(char *, char *);  //0==OK, -1==load failed
 void config(char *, char *);
 
 /* filer.c */
@@ -304,5 +304,18 @@ void Load_External_Language(void);
 /* font_uLE.c */
 
 extern unsigned char font_uLE[];
+enum {
+	RIGHT_CUR = 0x10A, //Triangle pointing left, for use to the right of an item
+	LEFT_CUR  = 0x10B, //Triangle pointing right, for use to the left of an item
+	UP_ARROW  = 0x10C, //Arrow pointing up
+	DN_ARROW  = 0x10D, //Arrow pointing up
+	LT_ARROW  = 0x10E, //Arrow pointing up
+	RT_ARROW  = 0x10F, //Arrow pointing up
+	TEXT_CUR  = 0x110, //Vertical bar, for use between two text characters
+	UL_ARROW  = 0x111, //Arrow pointing up and to the left, from a vertical start.
+	BR_SPLIT  = 0x112, //Splits rectangle from BL to TR with BR portion filled
+	BL_SPLIT  = 0x113, //Splits rectangle from TL to BR with BL portion filled
+	FONT_COUNT= 0x114  //Total number of characters in font
+};
 
 #endif

@@ -972,16 +972,30 @@ void Set_CNF_Path(void)
 //Reload CNF, possibly after a path change
 void reloadConfig()
 {
+	char tmp[MAX_PATH];
+	int CNF_error = -1;
+
 	if (numCNF == 0)
 		strcpy(CNF, "LAUNCHELF.CNF");
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 
-	loadConfig(mainMsg, CNF);
+	CNF_error = loadConfig(mainMsg, CNF);
 	Validate_CNF_Path();
 	updateScreenMode(0);
 	loadSkin(BACKGROUND_PIC, 0, 0);
+
+	if(CNF_error<0)
+		strcpy(tmp, mainMsg+strlen(LNG(Failed_To_Load)));
+	else
+		strcpy(tmp, mainMsg+strlen(LNG(Loaded_Config)));
+
 	Load_External_Language();
+
+	if(CNF_error<0)
+		sprintf(mainMsg, "%s%s", LNG(Failed_To_Load), tmp);
+	else
+		sprintf(mainMsg, "%s%s", LNG(Loaded_Config), tmp);
 
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -1231,6 +1245,7 @@ int main(int argc, char *argv[])
 	int cdvd_booted = 0;
 	int	host_booted = 0;
 	int gs_vmode;
+	int CNF_error = -1; //assume error until CNF correctly loaded
 
 	SifInitRpc(0);
 	CheckModules();
@@ -1296,8 +1311,8 @@ int main(int argc, char *argv[])
 	}
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
 
-	if(emergency) loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
-	else          loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	if(emergency) CNF_error = loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
+	else          CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
 	init_delay = setting->Init_Delay*SCANRATE;
 	if(emergency && (init_delay < 2*SCANRATE))
@@ -1339,9 +1354,6 @@ int main(int argc, char *argv[])
 		}
 	}
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
-	Load_External_Language();
-	strcpy(tmp, mainMsg+7);
-	sprintf(mainMsg, "%s %s", LNG(Loaded_Config), tmp);
 	getIpConfig();
 	setupPad(); //Comment out this line when using early setupPad above
 	initsbv_patches();
@@ -1367,6 +1379,13 @@ int main(int argc, char *argv[])
 	startKbd();
 	TimerInit();
 	WaitTime=0LL;
+
+	Load_External_Language();
+	strcpy(tmp, mainMsg+7); //NB: relies on ps2sdk xprintf to change NULL to "(null)"
+	if(CNF_error<0)
+		sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), tmp);
+	else
+		sprintf(mainMsg, "%s %s", LNG(Loaded_Config), tmp);
 
 	//Here nearly everything is ready for the main menu event loop
 	//But before we start that, we need to validate CNF_Path

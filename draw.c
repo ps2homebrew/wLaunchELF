@@ -444,7 +444,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v3.98 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.99 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -939,7 +939,7 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
 		y = y & -2;
 	}
 
-	if(c >= 0x10A) c = '_';
+	if(c >= FONT_COUNT) c = '_';
 	cm = &font_uLE[c*16]; //cm points to the character definition in the font
 
 	pixMask = 0x80;

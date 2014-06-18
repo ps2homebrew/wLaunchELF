@@ -1,5 +1,19 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.99 (2006.08.29)
+-Tweaked some config menus that lacked spaces between some tooltips
+-Fixed bug that prevented use of LNG files stored on HDD
+-Fixed bug that made failed load of initial CNF be shown as success
+-Fixed bug that made CNF switch messages use language valid before switch attempt
+-Tweaked init to allow LNG diagnosis dialog to work for bootup LNG failures
+-Made JpgViewer fullscreen flag persistent, changed only by user and CNF loading
+-Removed partition blocks for "__net", "__system", and "__sysconf"
+-Implemented Square as space key for FileBrowser virtual keyboard
+-Implemented some more characters for FileBrowser virtual keyboard <>{}:"/|\* But be aware that using '/' will not always work as expected, since it is the PS2 folder separator.
+-Moved some graphics characters we use out of the proper font area
+-Replaced characters 0x60 and 0x7B-0x7F with proper ascii standard characters
+-Erased all graphics characters from font range 0x80-0x9F (as preparation for new chars)
+
 LaunchELF v3.98 (2006.08.29)
 -Merged additional font characters contributed by Polo. The font now has most national characters for languages using Latin-style alphabets.
 -Modified the 'ShowFont' subprogram to display 256 font characters

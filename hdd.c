@@ -401,7 +401,7 @@ int MenuParty(PARTYINFO Info)
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(LEFT_CUR, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
