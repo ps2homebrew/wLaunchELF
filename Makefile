@@ -1,9 +1,9 @@
 EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
-	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o ps2ip.o ps2smap.o ps2hdd.o\
+	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o ps2smap.o ps2hdd.o\
 	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
 	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o smsutils.o
+	font_uLE.o makeicon.o
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
@@ -42,13 +42,13 @@ ps2dev9.s:
 	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
 
 ps2ip.s:
-	bin2s modules/SMSNET/SMSTCPIP.irx ps2ip.s ps2ip_irx
+	bin2s $(PS2DEV)/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
 
 ps2smap.s:
-	bin2s modules/SMSNET/SMSMAP.irx ps2smap.s ps2smap_irx
+	bin2s $(PS2DEV)/SMS/drv/SMSMAP/SMSMAP.irx ps2smap.s ps2smap_irx
 
 smsutils.s:
-	bin2s modules/SMSNET/SMSUTILS.irx smsutils.s smsutils_irx
+	bin2s $(PS2DEV)/SMS/drv/SMSUTILS/SMSUTILS.irx smsutils.s smsutils_irx
 
 ps2ftpd.s:
 	bin2s modules/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx

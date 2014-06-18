@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.12 (2007.02.16)
+-Fixed an issue with the makefile that messed up the network functionality in LaunchELF after exiting from another PS2 application.
+-Updated to latest SMS TCPIP driver.
+-Removed the prior SMS network modules, and then changed the makefile so EEUG's network modules(SMSUTILS, SMSTCPIP, and SMSMAP) now require the compiled sources from SMS to build uLE.
+
 LaunchELF v4.11 (2007.02.02)
 -Fixed a bad bug that smashed the storage path for content of copied folders. Instead of being stored inside the proper folder the files were stored beside that folder, with the folder name attached as a prefix to the proper filename. This was due to a single faulty string reference in "filer.c", which has now been fixed.
 
