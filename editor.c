@@ -195,7 +195,7 @@ int MenuEditor(void)
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y-2,
+				0, y-1,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
 				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
@@ -911,7 +911,7 @@ int Windows_Selector(void)
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y-2,
+				0, y-1,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
 				sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));

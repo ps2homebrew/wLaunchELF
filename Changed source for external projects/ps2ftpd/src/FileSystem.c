@@ -43,6 +43,8 @@ extern char* itoa(char* in, int val);
 
 #define DEVINFOARRAY(d,ofs) ((iop_device_t **)((d)->text_start + (d)->text_size + (d)->data_size + (ofs)))
 
+#define DEVICE_UNITS 4
+
 // buffer used for concating filenames internally
 static char buffer[512];
 
@@ -472,7 +474,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 			{
 				// evaluating units below a device
 
-				while( pContext->m_kFile.unit < 16 ) // find a better value, and make a define
+				while( pContext->m_kFile.unit < DEVICE_UNITS )
 				{
 					iox_stat_t stat;
 					int ret;
@@ -486,7 +488,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 						itoa(pInfo->m_Name,unit);
 						pInfo->m_iSize = 0;
 						pInfo->m_eType = FT_DIRECTORY;
-						pContext->m_kFile.unit = 16; // stop evaluating units below device
+						pContext->m_kFile.unit = 4; // stop evaluating units below device
 						return 0;
 					}
 
@@ -502,16 +504,16 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					{
 						ret = 0;
 						// fix for multiple mc directories, when both slots contain memory cards
-						if(pContext->m_kFile.unit >= 1)
-							pContext->m_kFile.unit = 15; // stop evaluating units below device
+						if(pContext->m_kFile.unit > 1)
+							break; // stop evaluating units below device
 					}
 
 					// increase to next unit
 					pContext->m_kFile.unit++;
 
-					// currently we stop evaluating devices if one was not found (so if mc 1 exists and not mc 0, it will not show)
+					// move to next device unit, if one was not found
 					if( ret < 0 )
-						return -1;
+						continue;
 
 					itoa(pInfo->m_Name,unit);
 					pInfo->m_iSize = 0;

@@ -43,6 +43,8 @@ FileSystem.c
 -Changed the size value to zero for all folders including partitions in the hdd listing.
 -Fixed a few issues that prevented PS1 memory cards from appearing in the listing. (Note: Files on PS1 memory cards lack timestamps so the timestamps come from the current PS2 system time).
 -Modified the partition-hiding patches, so as to allow access to "__common", the partition used for memory card backups by Sony's HDD browser.
+-Added a define "DEVICE_UNITS 4" to set the maximum number of device units from 16 to a variable. The variable was assigned the value four because it fits the maximum number of mounted partitions to PFS. (Ex: includes: pfs/0, pfs/1, pfs/2, and pfs/3).
+-Changed procedure for evaluating devices when one was not found. Before when a device unit such as mc/0 was not found it wouldn't even look for a memory card in mc/1. Now since the number of device units was changed from 16 to 4, it’s easier to check all possible instances without penalty.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

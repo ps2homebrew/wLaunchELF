@@ -2,7 +2,6 @@
 //File name:   draw.c
 //--------------------------------------------------------------
 #include "launchelf.h"
-#include "font5200.c"
 
 GSGLOBAL  *gsGlobal;
 GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
@@ -445,7 +444,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v3.96 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.97 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -505,7 +504,7 @@ void drawMsg(const char *msg)
 {
 	strncpy(LastMessage, msg, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';
-	drawSprite(setting->color[0], 0, Menu_message_y-2,
+	drawSprite(setting->color[0], 0, Menu_message_y-1,
 		SCREEN_WIDTH, Frame_start_y);
 	printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
@@ -513,7 +512,7 @@ void drawMsg(const char *msg)
 //--------------------------------------------------------------
 void drawLastMsg(void)
 {
-	drawSprite(setting->color[0], 0, Menu_message_y-2,
+	drawSprite(setting->color[0], 0, Menu_message_y-1,
 		SCREEN_WIDTH, Frame_start_y);
 	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
 	drawScr();
@@ -931,8 +930,8 @@ void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 // draw a char using the system font (16x16)
 void drawChar(unsigned int c, int x, int y, u64 colour)
 {
-	unsigned int i, j, ix;
-	unsigned char cc;
+	int i, j, pixBase, pixMask;
+	u8  *cm;
 
 	updateScr_1 = 1;
 
@@ -940,19 +939,24 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
 		y = y & -2;
 	}
 
-	if(c >= 0x10A) ix='_'*8;
-	else          ix=c*8;
-	for(i=0; i<8; i++)
-	{
-		cc = font5200[ix++];
-		for(j=0; j<8; j++)
-		{
-			if(cc & 0x80){
-				gsKit_prim_sprite(gsGlobal, x+j, y+i*2-2, x+j+1, y+i*2, 1, colour);
+	if(c >= 0x10A) c = '_';
+	cm = &font_uLE[c*16]; //cm points to the character definition in the font
+
+	pixMask = 0x80;
+	for(i=0; i<8; i++){	//for i == each pixel column
+		pixBase = -1;
+		for(j=0; j<16; j++){ //for j == each pixel row
+			if((pixBase < 0) && (cm[j] & pixMask)){ //if start of sequence
+				pixBase = j;
+			} else if((pixBase > -1) && !(cm[j] & pixMask)){ //if end of sequence
+				gsKit_prim_sprite(gsGlobal, x+i, y+pixBase-1, x+i+1, y+j-1, 1, colour);
+				pixBase = -1;
 			}
-			cc = cc << 1;
-		}
-	}
+		}//ends for j == each pixel row
+		if(pixBase > -1) //if end of sequence including final row
+			gsKit_prim_sprite(gsGlobal, x+i, y+pixBase-1, x+i+1, y+j-1, 1, colour);
+		pixMask >>= 1;
+	}//ends for i == each pixel column
 }
 //------------------------------
 //endfunc drawChar
@@ -1186,6 +1190,64 @@ u8 *transcpy_sjis(u8 *d, u8 *s)
 }
 //------------------------------
 //endfunc transcpy_sjis
+//--------------------------------------------------------------
+//WriteFont_C is used to save the current font as C source code
+//Comment it out if not used
+/*
+int	WriteFont_C(char *path_arg)
+{
+	u8  path[MAX_PATH];
+	u8  text[80*2], char_info[80];
+	u8	*p;
+	int ret, tst, i, fd=-1;
+
+	ret=-1; tst=genFixPath(path_arg, path);
+	if(tst < 0) goto finish;
+	ret=-2; tst=genOpen(path,O_CREAT|O_WRONLY|O_TRUNC);
+	if(tst < 0) goto finish;
+	fd = tst;
+	sprintf(text, "unsigned char font_uLE[] = {\r\n");
+	ret=-3; tst = genWrite(fd, text, strlen(text));
+	if(tst != strlen(text)) goto finish;
+	for(i=0x000; i<0x10A; i++){
+		p = font_uLE + i*16;
+		text[0] = '\0';
+		if((i & 0x07) == 0)
+			sprintf(text, "//Font position 0x%03X\r\n", i);
+		if((i < 0x20) || (i>0x80 && i<0xA0))
+			sprintf(char_info, "//char 0x%03X == '_' (free for use)", i);
+		else if(i < 0x100)
+			sprintf(char_info, "//char 0x%03X == '%c'", i, i);
+		else //(i > 0x0FF)
+			sprintf(char_info, "//char 0x%03X == special for uLE", i);
+		sprintf(text+strlen(text),
+			"	0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, %s\r\n"
+			"	0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X, 0x%02X"
+			, p[0],p[1], p[2],p[3], p[4],p[5], p[6],p[7], char_info
+			, p[8],p[9], p[10],p[11], p[12],p[13], p[14],p[15]
+		);
+		if(i<0x109) strcat(text, ",");
+		strcat(text, "\r\n");
+		ret=-4; tst = genWrite(fd, text, strlen(text));
+		if(tst != strlen(text)) break;
+		ret = 0;
+	} //ends for
+	if(ret == 0){
+		sprintf(text,
+			"//Font position 0x%03X\r\n"
+			"}; //ends font_uLE\r\n", i);
+		ret=-5; tst = genWrite(fd, text, strlen(text));
+		if(tst == strlen(text)) ret = 0;
+	}
+finish:
+	if(fd >= 0) genClose(fd);
+	sprintf(text,"Saving %s => %d\nChoose either option to continue", path, ret);
+	ynDialog(text);
+	return ret;
+}
+*/
+//------------------------------
+//endfunc WriteFont_C
 //--------------------------------------------------------------
 //End of file: draw.c
 //--------------------------------------------------------------

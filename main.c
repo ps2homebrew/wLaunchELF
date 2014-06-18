@@ -864,6 +864,9 @@ void	ShowFont(void)
 	int px, ly, cy;
 	u64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
 
+//The next line is a patch to save font, if/when needed (needs patch in draw.c too)
+//	WriteFont_C("mc0:/SYS-CONF/font_uLE.c");
+
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
 	while(1) {

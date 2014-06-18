@@ -201,6 +201,8 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 u8 *transcpy_sjis(u8 *d, u8 *s);
 void loadIcon(void);
+//Comment out WriteFont_C when not used (also requires patch in draw.c)
+//int	WriteFont_C(char *pathname);
 
 /* pad.c */
 #define PAD_R3_V0 0x010000
@@ -298,5 +300,9 @@ extern Language Lang_String[];
 extern Language Lang_Default[];
 
 void Load_External_Language(void);
+
+/* font_uLE.c */
+
+extern unsigned char font_uLE[];
 
 #endif
