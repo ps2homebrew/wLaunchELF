@@ -884,8 +884,8 @@ void triggerPowerOff(void)
 	FILE *File;
 
 	File = fopen( filepath, "r" );
-	sprintf(mainMsg, "%s => %08X.", filepath, File);
-	drawMsg(mainMsg);
+//	sprintf(mainMsg, "%s => %08X.", filepath, File);
+//	drawMsg(mainMsg);
 	if( File != NULL ) {
 		fclose( File );
 	} // end if( File != NULL )
@@ -960,8 +960,9 @@ void RunElf(const char *path)
 		tmp[0] = 0;
 		LastDir[0] = 0;
 		getFilePath(tmp, FALSE);
-		if(tmp[0]) RunElf(tmp);
-		else return;
+		if(tmp[0])
+			RunElf(tmp);
+		return;
 	}else if(!stricmp(path, "MISC/PS2Browser")){
 		__asm__ __volatile__(
 			"	li $3, 0x04;"
@@ -1005,10 +1006,11 @@ void RunElf(const char *path)
 */
 //end of two clauses used only for debugging
 	}else if(!strncmp(path, "cdfs", 4)){
-		party[0] = 0;
-		strcpy(fullpath, path);
+		loadCdModules();
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
+		party[0] = 0;
+		strcpy(fullpath, path);
 	}else if(!strncmp(path, "rom", 3)){
 		party[0] = 0;
 		strcpy(fullpath, path);

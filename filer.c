@@ -2023,9 +2023,9 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			strcpy(files[nfiles].name, "host:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		}
-		if(cnfmode==1) {
+		if(cnfmode<2) {
 			//This condition blocks use of MISC pseudo-device for drivers and skins
-			//And allows this device only for launch keys, not for normal browsing
+			//And allows this device only for launch keys and for normal browsing
 			strcpy(files[nfiles].name, "MISC");
 			files[nfiles].stats.attrFile = MC_ATTR_SUBDIR;
 			nfiles++;
@@ -2110,14 +2110,14 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 // example: getFilePath(setting->skin, SKIN_CNF);
 // dlanor: ADD USBKBD_IRX_CNF mode for found IRX file for USBKBD.IRX
 // example: getFilePath(setting->usbd, USBKBD_IRX_CNF);
-static int browser_cd, browser_up, browser_pushed;
+static int browser_cd, browser_up, browser_repos, browser_pushed;
 static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
 static void submenu_func_Paste(char *mess, char *path);
 static void submenu_func_mcPaste(char *mess, char *path);
 void getFilePath(char *out, int cnfmode)
 {
-	char path[MAX_PATH], oldFolder[MAX_PATH],
+	char path[MAX_PATH], cursorEntry[MAX_PATH],
 		msg0[MAX_PATH], msg1[MAX_PATH],
 		tmp[MAX_PATH], ext[8], *p;
 	uint64 color;
@@ -2131,6 +2131,7 @@ void getFilePath(char *out, int cnfmode)
 	
 	browser_cd=TRUE;
 	browser_up=FALSE;
+	browser_repos=FALSE;
 	browser_pushed=TRUE;
 	browser_sel=0;
 	browser_nfiles=0;
@@ -2248,6 +2249,7 @@ void getFilePath(char *out, int cnfmode)
 							ret = ynDialog("Mark Files Delete?");
 						
 						if(ret>0){
+							int first_deleted = 0;
 							if(nmarks==0){
 								strcpy(tmp, files[browser_sel].name);
 								if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR) strcat(tmp,"/");
@@ -2257,6 +2259,8 @@ void getFilePath(char *out, int cnfmode)
 							}else{
 								for(i=0; i<browser_nfiles; i++){
 									if(marks[i]){
+										if(!first_deleted) //if this is the first mark
+											first_deleted = i; //then memorize it for cursor positioning
 										strcpy(tmp, files[i].name);
 										if(files[i].stats.attrFile & MC_ATTR_SUBDIR) strcat(tmp,"/");
 										strcat(tmp, " deleting");
@@ -2266,11 +2270,18 @@ void getFilePath(char *out, int cnfmode)
 									}
 								}
 							}
-							if(ret>=0) browser_cd=TRUE;
-							else{
+							if(ret>=0) {
+								if(nmarks==0)
+									strcpy(cursorEntry, files[browser_sel-1].name);
+								else
+									strcpy(cursorEntry, files[first_deleted-1].name);
+							} else {
+								strcpy(cursorEntry, files[browser_sel].name);
 								strcpy(msg0, "Delete Failed");
 								browser_pushed = FALSE;
 							}
+							browser_cd=TRUE;
+							browser_repos=TRUE;
 						}
 					} else if(ret==RENAME){
 						strcpy(tmp, files[browser_sel].name);
@@ -2293,10 +2304,12 @@ void getFilePath(char *out, int cnfmode)
 							}else if(ret < 0){
 								strcpy(msg0, "NewDir Failed");
 								browser_pushed=FALSE;
-							}else{ //dlanor: modified to avoid 'automatic' navigation
+							}else{ //dlanor: modified for similarity to PC browsers
 								strcpy(msg0, "Created folder: ");
 								strcat(msg0, tmp);
 								browser_pushed=FALSE;
+								strcpy(cursorEntry, tmp);
+								browser_repos=TRUE;
 								browser_cd=TRUE;
 							}
 						}
@@ -2358,13 +2371,14 @@ void getFilePath(char *out, int cnfmode)
 				*p = 0;
 			if((p=strrchr(path, '/'))!=NULL){
 				p++;
-				strcpy(oldFolder, p);
+				strcpy(cursorEntry, p);
 				*p = 0;
 			}else{
-				strcpy(oldFolder, path);
+				strcpy(cursorEntry, path);
 				path[0] = 0;
 			}
 			browser_cd=TRUE;
+			browser_repos=TRUE;
 		}//ends 'if(browser_up)'
 		//----- Process newly entered directory here (incl initial entry)
 		if(browser_cd){
@@ -2381,20 +2395,21 @@ void getFilePath(char *out, int cnfmode)
 			}
 			browser_sel=0;
 			top=0;
-			if(browser_up){
+			if(browser_repos){
+				browser_repos = FALSE;
 				for(i=0; i<browser_nfiles; i++) {
-					if(!strcmp(oldFolder, files[i].name)) {
+					if(!strcmp(cursorEntry, files[i].name)) {
 						browser_sel=i;
 						top=browser_sel-3;
 						break;
 					}
 				}
-			}
+			} //ends if(browser_repos)
 			nmarks = 0;
 			memset(marks, 0, MAX_ENTRY);
 			browser_cd=FALSE;
 			browser_up=FALSE;
-		}
+		} //ends if(browser_cd)
 		if(strncmp(path,"cdfs",4) && setting->discControl)
 			CDVD_Stop();
 		if(top > browser_nfiles-rows)	top=browser_nfiles-rows;

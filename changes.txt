@@ -1,5 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.71 (2006.05.21)
+-Changed browser to allow MISC/ pseudodevice for manual browsing (except 'FileBrowser')
+-Changed browser to select folder created by 'New Dir' command
+-Changed browser to select object preceding object(s) removed by 'Delete' command. For multiple marks the object preceding the first deleted one will become selected, and at delete failure an attempt will be made to keep selection unchanged (may fail though).
+-Removed test message from triggerPowerOff function (was visible at PS2PowerOff)
+-Fixed a bug that made 'Disc Control' necessary for Launch Key paths using CD
+
 LaunchELF v3.70 (2006.05.18)
 -Fixed a bug from v3.69 that messed up screen when switching CNFs or canceling CONFIG
 -Changed text for ynDialog used to confirm Delete operations
