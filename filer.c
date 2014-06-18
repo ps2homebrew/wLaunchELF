@@ -121,9 +121,9 @@ int ynDialog(const char *message)
 	int sel=0, a=6, b=4, c=2, n, tw;
 	int i, x, len, ret;
 	int event, post_event=0;
-
+	
 	strcpy(msg, message);
-
+	
 	for(i=0,n=1; msg[i]!=0; i++){ //start with one string at pos zero
 		if(msg[i]=='\n'){           //line separator at current pos ?
 			msg[i]=0;                 //split old line to separate string
@@ -137,11 +137,11 @@ int ynDialog(const char *message)
 	}
 	if(tw<96) tw=96;
 	
-	dh = 16*(n+1)+2*2+a+b+c;
+	dh = FONT_HEIGHT*(n+1)+2*2+a+b+c;
 	dw = 2*2+a*2+tw;
-	dx = (512-dw)/2;
-	dy = (432-dh)/2;
-	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
+	dx = (SCREEN_WIDTH-dw)/2;
+	dy = (SCREEN_HEIGHT-dh)/2;
+//	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 	
 	event = 1;  //event = initial entry
 	while(1){
@@ -165,13 +165,13 @@ int ynDialog(const char *message)
 				break;
 			}
 		}
-
+		
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
 			drawSprite(setting->color[0],
-				0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
+				0, (Menu_message_y)/2,
+				SCREEN_WIDTH, (Menu_message_y+FONT_HEIGHT)/2);
 			drawSprite(setting->color[0],
 				dx-2, (dy-2)/2,
 				dx+dw+2, (dy+dh+4)/2);
@@ -220,13 +220,13 @@ void nonDialog(const char *message)
 
 	dh = 16*n+2*2+a+b+c;
 	dw = 2*2+a*2+tw;
-	dx = (512-dw)/2;
-	dy = (432-dh)/2;
+	dx = (SCREEN_WIDTH-dw)/2;
+	dy = (SCREEN_HEIGHT-dh)/2;
 	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
 	drawSprite(setting->color[0],
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
+		0, (Menu_message_y)/2,
+		SCREEN_WIDTH, (Frame_start_y)/2);
 	drawSprite(setting->color[0],
 		dx-2, (dy-2)/2,
 		dx+dw+2, (dy+dh+4)/2);
@@ -671,7 +671,7 @@ int menu(const char *path, const char *file)
 	int menu_ch_w = 8;             //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 32;           //Top edge of sprite
-	int mSprite_X2 = 493;          //Right edge of sprite
+	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
 	int mFrame_Y1 = mSprite_Y1+1;  //Top edge of frame
 	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
 	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
@@ -776,7 +776,7 @@ int menu(const char *path, const char *file)
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
-			
+
 			for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==COPY)			strcpy(tmp, "Copy");
 				else if(i==CUT)		strcpy(tmp, "Cut");
@@ -786,22 +786,22 @@ int menu(const char *path, const char *file)
 				else if(i==NEWDIR)	strcpy(tmp, "New Dir");
 				else if(i==GETSIZE) strcpy(tmp, "Get Size");
 				else if(i==MCPASTE)	strcpy(tmp, "mcPaste");
-				
+
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
-				
+
 				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y/2, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
 				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT)/2, setting->color[3]);
-			
+
 			//Tooltip section
 			x = SCREEN_MARGIN;
-			y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
+			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, y/2,
-				SCREEN_WIDTH, y/2+8);
+				0, (y/2),
+				SCREEN_WIDTH, y/2+10);
 			if (swapKeys)
 				printXY("~:OK ›:Cancel", x, y/2, setting->color[2], TRUE);
 			else
@@ -1337,9 +1337,9 @@ int keyboard(char *out, int max)
 {
 	int event, post_event=0;
 	const int	KEY_W=276,
-				KEY_H=84,
-				KEY_X=130,
-				KEY_Y=60,
+				KEY_H=84,  //NB: This is not real height, but height/2
+				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
+				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2)/2,
 				WFONTS=13,
 				HFONTS=7;
 	char *KEY="ABCDEFGHIJKLM"
@@ -1427,7 +1427,7 @@ int keyboard(char *out, int max)
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
 			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
-				setting->color[1], KEY_X+KEY_W, KEY_Y+11, 0);
+				setting->color[1], KEY_X+KEY_W-1, KEY_Y+11, 0);
 			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
 			t++;
 			if(t<SCANRATE/2){
@@ -1443,7 +1443,7 @@ int keyboard(char *out, int max)
 					setting->color[3]);
 			printXY("OK                       CANCEL",
 				KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
-	
+
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
 				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
@@ -1451,12 +1451,12 @@ int keyboard(char *out, int max)
 				x = KEY_X+2+4 + 25*8;
 			y = KEY_Y+16 + (sel/WFONTS)*8;
 			drawChar(127, x, y, setting->color[3]);
-			
+
 			//Tooltip section
 			x = SCREEN_MARGIN;
-			y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+8);
-	
+			y = Menu_tooltip_y;
+			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
+
 			if (swapKeys) 
 				printXY("~:OK ›:Back L1:Left R1:Right START:Enter",
 					x, y/2, setting->color[2], TRUE);
@@ -1576,12 +1576,13 @@ void getFilePath(char *out, int cnfmode)
 		tmp[MAX_PATH], ext[8], *p;
 	uint64 color;
 	FILEINFO files[MAX_ENTRY];
-	int top=0, rows=MAX_ROWS;
+	int top=0, rows;
 	int nofnt=FALSE;
 	int x, y, y0, y1;
 	int i, ret, fd;
 	int event, post_event=0;
-
+	int font_height;
+	
 	browser_cd=TRUE;
 	browser_up=FALSE;
 	browser_pushed=TRUE;
@@ -1600,8 +1601,15 @@ void getFilePath(char *out, int cnfmode)
 	nclipFiles = 0;
 	browser_cut = 0;
 	title_show=FALSE;
+
+	font_height = FONT_HEIGHT;
+	if(title_show && elisaFnt!=NULL)
+		font_height = FONT_HEIGHT+2;
+	rows = (Menu_end_y-Menu_start_y)/font_height;
+
 	event = 1;  //event = initial entry
 	while(1){
+
 		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
@@ -1788,10 +1796,6 @@ void getFilePath(char *out, int cnfmode)
 						}else
 							nofnt = TRUE;
 					}
-					if(elisaFnt!=NULL){
-						if(title_show) rows=19;
-						else	  rows=MAX_ROWS;
-					}
 					browser_cd=TRUE;
 				} else if(new_pad & PAD_SELECT){
 					if(mountedParty[0][0]!=0) fileXioUmount("pfs0:");
@@ -1857,10 +1861,16 @@ void getFilePath(char *out, int cnfmode)
 
 			//Display section
 			clrScr(setting->color[0]);
-	
-			x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
-			y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
-			if(title_show && elisaFnt!=NULL) y-=2;
+
+			x = Menu_start_x;
+			y = Menu_start_y;
+			font_height = FONT_HEIGHT;
+			if(title_show && elisaFnt!=NULL){
+				y-=2;
+				font_height = FONT_HEIGHT+2;
+			}
+			rows = (Menu_end_y-Menu_start_y)/font_height;
+
 			for(i=0; i<rows; i++)
 			{
 				if(top+i >= browser_nfiles) break;
@@ -1877,31 +1887,24 @@ void getFilePath(char *out, int cnfmode)
 					strcpy(tmp,files[top+i].name);
 				printXY(tmp, x+4, y/2, color, TRUE);
 				if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
-				y += FONT_HEIGHT;
-				if(title_show && elisaFnt!=NULL) y+=2;
+				y += font_height;
 			}
 			if(browser_nfiles > rows)
 			{
-				itoSprite(setting->color[1],
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-14,
-					(SCREEN_MARGIN+FONT_HEIGHT*2+4)/2,
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-12,
-					(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT)/2,
-					0);
-				y0=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
-					* ((double)top/browser_nfiles);
-				y1=(SCREEN_HEIGHT-SCREEN_MARGIN*2-FONT_HEIGHT*3-LINE_THICKNESS*2-4)
-					* ((double)(top+rows)/browser_nfiles);
+				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y/2,
+					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
+				y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/browser_nfiles);
 				itoSprite(setting->color[1],
 					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-					(y0+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
+					(y0+Menu_start_y-4)/2,
 					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-					(y1+SCREEN_MARGIN+FONT_HEIGHT*2+LINE_THICKNESS+4)/2,
+					(y1+Menu_start_y-4)/2,
 					0);
 			}
 			if(browser_pushed)
 				sprintf(msg0, "Path: %s", path);
-	
+
 			//Tooltip section
 			if(cnfmode==TRUE){
 				if(!strcmp(ext, "*")) {
@@ -1972,7 +1975,7 @@ void getFilePath(char *out, int cnfmode)
 					SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2);
 				printXY(tmp,
 					SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
-					(SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+					(Menu_message_y)/2,
 					setting->color[2], TRUE);
 			}
 		}//ends if(event||post_event)

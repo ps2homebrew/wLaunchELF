@@ -4,11 +4,29 @@
 #include "launchelf.h"
 #include "font5200.c"
 
-itoGsEnv screen_env;
-int        testskin;
-int        testsetskin;
+itoGsEnv	screen_env;
+int				testskin;
+int				testsetskin;
+int				SCREEN_WIDTH	= 640;
+int				SCREEN_HEIGHT = 448;
+int				SCREEN_X			= 158;
+int				SCREEN_Y			= 50;
+//dlanor: values shown above are defaults for NTSC mode
 
-// ELISA100.FNT‚É‘¶Ý‚µ‚È‚¢•¶Žš
+int Menu_start_x   = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+int Menu_title_y   = SCREEN_MARGIN;
+int Menu_message_y = SCREEN_MARGIN + FONT_HEIGHT;
+int Frame_start_y  = SCREEN_MARGIN + 2*FONT_HEIGHT + 2;  //First line of menu frame
+int Menu_start_y   = SCREEN_MARGIN + 2*FONT_HEIGHT + LINE_THICKNESS + 6;
+//dlanor: Menu_start_y is the 1st pixel line that may be used for main content of a menu
+//dlanor: values below are only calculated when a rez is activated
+int Menu_end_y;     //Normal menu display should not use pixels at this line or beyond
+int Frame_end_y;    //first line of frame bottom
+int Menu_tooltip_y; //Menus may also use this row for tooltips
+
+
+//The font file ELISA100.FNT is needed to display MC save titles in japanese
+//and the arrays defined here are needed to find correct data in that file
 const uint16 font404[] = {
 	0xA2AF, 11,
 	0xA2C2, 8,
@@ -380,89 +398,83 @@ void setScrTmp(const char *msg0, const char *msg1)
 	int x, y;
 	
 	x = SCREEN_MARGIN;
-	y = SCREEN_MARGIN;
+	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.57 ¡",
+	printXY(" ¡ LaunchELF v3.58 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
-	y += FONT_HEIGHT+4;
 	
-	printXY(msg0, x, y/2, setting->color[2], TRUE);
-	y += FONT_HEIGHT;
-	
-	if(setting->Menu_Frame)
-		drawFrame(SCREEN_MARGIN, y/2,
-			SCREEN_WIDTH-SCREEN_MARGIN-1,
-			(SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT-2)/2,
-			setting->color[1]);
+	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
 
-	x = SCREEN_MARGIN;
-	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-	printXY(msg1, x, y/2, setting->color[2], TRUE);
+	if(setting->Menu_Frame)
+		drawFrame(SCREEN_MARGIN, Frame_start_y/2,
+			SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+	
+	printXY(msg1, x, Menu_tooltip_y/2, setting->color[2], TRUE);
 }
 //--------------------------------------------------------------
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 ) {
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),x1, y1,x1, y1,x2, y2,x2, y2,0);
+		setBrightness(setting->Brightness);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1-1, x1, y1, x2, y2-1, x2, y2,0);
+		setBrightness(50);
 	}else{
-		itoSprite(color,x1, y1,x2, y2,0);
+		itoSprite(color, x1, y1, x2, y2, 0);
 	}
 }
 //--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
-	drawSprite(setting->color[0],
-		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2);
-	printXY(msg, SCREEN_MARGIN, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		setting->color[2], TRUE);
+	drawSprite(setting->color[0], 0, (Menu_message_y)/2,
+		SCREEN_WIDTH, (Frame_start_y)/2);
+	printXY(msg, SCREEN_MARGIN, Menu_message_y/2, setting->color[2], TRUE);
 	drawScr();
 }
 //--------------------------------------------------------------
-void setupito(void)
+void setupito(int ito_vmode)
 {
 	itoInit();
 
 	// screen resolution
-	screen_env.screen.width		= 512;
-	screen_env.screen.height	= 480;
-	screen_env.screen.psm		= ITO_RGBA32;
+	screen_env.screen.width		= SCREEN_WIDTH;
+	screen_env.screen.height	= SCREEN_HEIGHT;
+	screen_env.screen.psm			= ITO_RGBA32;
 
 	// These setting work best with my tv, experiment for youself
-	screen_env.screen.x			= setting->screen_x; 
-	screen_env.screen.y			= setting->screen_y;
+	screen_env.screen.x				= setting->screen_x; 
+	screen_env.screen.y				= setting->screen_y;
 	
 	screen_env.framebuffer1.x	= 0;
-	screen_env.framebuffer1.y	= 0;
+	screen_env.framebuffer1.y	= SCREEN_HEIGHT;
 	
 	screen_env.framebuffer2.x	= 0;
-	screen_env.framebuffer2.y	= 480;
+	screen_env.framebuffer2.y	= SCREEN_HEIGHT*2;
 
 	// zbuffer
-	screen_env.zbuffer.x		= 0;
-	screen_env.zbuffer.y		= 480*2;
+	screen_env.zbuffer.x			= 0;
+	screen_env.zbuffer.y			= SCREEN_HEIGHT*2;
 	screen_env.zbuffer.psm		= ITO_ZBUF32;
 	
 	// scissor 
-	screen_env.scissor_x1		= 0;
-	screen_env.scissor_y1		= 0;
-	screen_env.scissor_x2		= 512;
-	screen_env.scissor_y2		= 480;
+	screen_env.scissor_x1			= 0;
+	screen_env.scissor_y1			= 0;
+	screen_env.scissor_x2			= SCREEN_WIDTH;
+	screen_env.scissor_y2			= SCREEN_HEIGHT;
 	
 	// misc
-	screen_env.dither			= TRUE;
-	screen_env.interlace		= setting->interlace;
-	screen_env.ffmode			= ITO_FRAME;
-	screen_env.vmode			= ITO_VMODE_AUTO;
-	
+	screen_env.dither					= TRUE;
+	screen_env.interlace			= setting->interlace;
+	screen_env.ffmode					= ITO_FRAME;
+	screen_env.vmode					= ito_vmode;
+
 	itoGsEnvSubmit(&screen_env);
 	initScr();
 	itoSetBgColor(setting->color[0]);
 }
 
 //--------------------------------------------------------------
-void loadSkin(int skinNum)
+void loadSkin(int Picture)
 {
-	if( skinNum == 0 )testskin = 0;
+	if( Picture == BACKGROUND_PIC )testskin = 0;
 		else testsetskin = 0;
 	char skinpath[MAX_PATH];
 	strcpy(skinpath, "\0");
@@ -508,15 +520,21 @@ void loadSkin(int skinNum)
 				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
 					if( ( ImgData = malloc (  Jpg -> width * Jpg -> height * ( Jpg -> bpp / 8 ) ) ) > 0 ){
 						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
-						 	if( skinNum == 0 ){
-						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, 240 ) ) != 0 ){
-						 			itoLoadTexture ( ResData, 0, SCREEN_WIDTH, ITO_RGB24, 0, 0, SCREEN_WIDTH, 240 );
+						 	if( Picture == BACKGROUND_PIC ){
+						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
+						 			itoLoadTexture ( ResData,
+						 			 0,
+						 			 SCREEN_WIDTH, ITO_RGB24,
+						 			 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
 									itoGsFinish();
 									testskin = 1;
 								} /* end if */
 						 	} else {
-						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, 256, 120 ) ) != 0 ){
-						 			itoLoadTexture ( ResData, SCREEN_WIDTH*256*4, 256, ITO_RGB24, 0, 0, 256, 120 );
+						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
+						 			itoLoadTexture ( ResData,
+						 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
+						 			 SCREEN_WIDTH/2, ITO_RGB24,
+						 			 0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 );
 									itoGsFinish();
 									testsetskin = 1;
 								} /* end if */
@@ -536,12 +554,52 @@ void loadSkin(int skinNum)
 }
 
 //--------------------------------------------------------------
+// Set Skin Brightness
+void setBrightness(int Brightness)
+{
+	int		fogStat	= FALSE;
+	int		fogColor	= 0;
+	int		fogCoef	= 255;
+	float adjustBright = 128.0F;
+ 
+	if ( Brightness == 50 ) adjustBright = 128.0F;
+		else	adjustBright = (((256.0F/100.0F)*Brightness) + (32.0F*((50.0F-Brightness)/50)));
+
+	if ( adjustBright <=   32.0F ) adjustBright = 32.0F;
+
+	if ( adjustBright == 128.0F ) {
+ 		fogStat  = FALSE;
+		fogColor = 0;
+		fogCoef  = 255;
+	} /* end if */
+
+	if ( adjustBright >= 224.0F ) adjustBright = 224.0F;
+ 
+	if ( adjustBright >= 32.0F && adjustBright < 128.0F ) {
+ 		fogStat  = TRUE;
+		fogColor = 0;
+		if( ( fogCoef  = (int)adjustBright * 2 ) <= 0 ) fogCoef = 0;
+	} /* end if */
+
+	if ( adjustBright > 128.0F && adjustBright <= 224.0F ) {
+ 		fogStat  = TRUE;
+		fogColor = 255;
+		if( ( fogCoef  = 320 - ( (int)adjustBright - 96 ) * 2 ) >= 256 ) fogCoef = 255;
+	} /* end if */
+
+	itoPrimFog( fogStat );
+	itoSetFogValue( fogColor, fogColor, fogColor, fogCoef );
+}
+
+//--------------------------------------------------------------
 void clrScr(uint64 color)
 {
 	if ( testskin == 1 ) {
+		setBrightness(setting->Brightness);
 		itoSprite(ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-		itoSetTexture(0, 512, ITO_RGB24, log(SCREEN_WIDTH), log(240));
-		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, SCREEN_WIDTH, 240, SCREEN_WIDTH, 240, 0);
+		itoSetTexture(0, SCREEN_WIDTH, ITO_RGB24, log(SCREEN_WIDTH), log(SCREEN_HEIGHT/2));
+		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2, 0);
+		setBrightness(50);
 	} else {
 		itoSprite(color, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	} /* end else */

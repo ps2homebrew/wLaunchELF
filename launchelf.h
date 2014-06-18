@@ -41,9 +41,7 @@
 
 enum
 {
-	SCREEN_WIDTH = 512,
-	SCREEN_HEIGHT = 432,
-	SCREEN_MARGIN = 12,
+	SCREEN_MARGIN = 16,
 	FONT_WIDTH = 8,
 	FONT_HEIGHT = 16,
 	LINE_THICKNESS = 2,
@@ -51,7 +49,6 @@ enum
 	MAX_NAME = 256,
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
-	MAX_ROWS = 21,
 	MAX_PARTITIONS=100,
 	MAX_TITLE = 40
 };
@@ -74,6 +71,8 @@ typedef struct
 	int numCNF;
 	int swapKeys;
 	int HOSTwrite;
+	int Brightness;
+	int TV_mode;
 } SETTING;
 
 typedef struct
@@ -95,16 +94,33 @@ int checkELFheader(const char *filename);
 void RunLoaderElf(char *filename, char *);
 
 /* draw.c */
+#define BACKGROUND_PIC	0
+#define PREVIEW_PIC			1
+
 extern itoGsEnv screen_env;
 extern int      testskin;
 extern int      testsetskin;
+extern int      SCREEN_WIDTH;
+extern int      SCREEN_HEIGHT;
+extern int      SCREEN_X;
+extern int      SCREEN_Y;
+extern int			Menu_start_x;
+extern int			Menu_title_y;
+extern int			Menu_message_y;
+extern int			Frame_start_y;
+extern int			Menu_start_y;
+extern int			Menu_end_y;
+extern int			Frame_end_y;
+extern int			Menu_tooltip_y;
+
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
-void setupito(void);
+void setupito(int ito_vmode);
 void clrScr(uint64 color);
 int log(int Value);
-void loadSkin(int skinNum);
+void setBrightness(int Brightness);
+void loadSkin(int Picture);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
 void drawChar(unsigned char c, int x, int y, uint64 colour);
@@ -118,6 +134,10 @@ int readpad_norepeat(void);
 void waitPadReady(int port, int slot);
 
 /* config.c */
+#define TV_mode_AUTO 0
+#define TV_mode_NTSC 1
+#define TV_mode_PAL  2
+
 extern SETTING *setting;
 void loadConfig(char *, char *);
 void config(char *, char *);

@@ -1,5 +1,16 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.58  (2006.04.04)
+-dlanor: Fixed a bug that could corrupt a Launch Key setting, if you started to browse for a new ELF of a launch key whose old ELF was on MC, and then cancelled out of the browser
+-dlanor: Tweaked some display parameters to improve visibility of characters at the 'edges' of the screen. Mainly needed for top and bottom lines (esp corner characters)
+-dlanor: Readjusted some display parameters so that file browser now uses 26 rows for PAL, and 22 rows for NTSC.
+-dlanor: Modified the methods of handling display parameters, to make it easier to modify screen layouts
+-dlanor: Corrected various implementation bugs of the new resolution for NTSC
+-dlanor: Added support for either PAL or NTSC TV modes on either PAL or NTSC consoles. The TV mode is configurable in 'STARTUP SETTINGS', and requires reset of the console to activate a changed mode
+-dlanor: Renamed the "SKIN SETTING" submenu to "SKIN SETTINGS" as it has two settings now
+-Polo35: Reimplemented much of the graphics routines, to provide new higher resolutions of 640x512 for PAL consoles and 640x448 for NTSC consoles
+-Polo35: Added brightness control for skins. This allows skin pictures to be used that would not work otherwise because they contain both bright and dark areas, so that text would become invisible on parts of the background. By adjusting skin brightness you can ensure text readability with any picture. Brightness is configurable in 'SKIN SETTINGS' submenu
+
 LaunchELF v3.57  (2006.04.02)
 -Fixed a bug that interfered with timeout for default ELF launching
 

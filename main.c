@@ -125,8 +125,8 @@ int have_ps2netfs = 0;
 //Function to print a text row to the 'ito' screen
 //------------------------------
 void	PrintRow(int row, char *text_p)
-{	int x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH + 4;
-	int y = (SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12 + FONT_HEIGHT*row)/2;
+{	int x = (Menu_start_x + 4);
+	int y = (Menu_start_y + FONT_HEIGHT*row)/2;
 
 	printXY(text_p, x, y, setting->color[3], TRUE);
 }
@@ -235,9 +235,8 @@ int drawMainScreen(void)
 	
 	clrScr(setting->color[0]);
 	
-	// ˜g‚Ì’†
-	x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
-	y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+	x = Menu_start_x;
+	y = Menu_start_y;
 	if(setting->dirElf[0][0]){
 		if(!user_acted)
 			sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
@@ -316,8 +315,7 @@ int drawMainScreen(void)
 			y += FONT_HEIGHT;
 		}
 	}
-	x = SCREEN_MARGIN;
-	y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
+
 	if(mode==BUTTON)	sprintf(c, "PUSH ANY BUTTON or D-PAD!");
 	else{
 		if(swapKeys) 
@@ -783,7 +781,8 @@ void decConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
-	loadSkin(0);
+	loadSkin(BACKGROUND_PIC);
+	itoSetBgColor(setting->color[0]);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -805,7 +804,8 @@ void incConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
-	loadSkin(0);
+	loadSkin(BACKGROUND_PIC);
+	itoSetBgColor(setting->color[0]);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -860,6 +860,7 @@ int main(int argc, char *argv[])
 	int mc_booted = 0;
 	int cdvd_booted = 0;
 	int	host_booted = 0;
+	int TV_mode, ito_vmode;
 
 	SifInitRpc(0);
 	CheckModules();
@@ -904,6 +905,33 @@ int main(int argc, char *argv[])
 	LastDir[0] = 0;
 
 	loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+
+	TV_mode = setting->TV_mode;
+	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
+		if((ITO_VMODE_AUTO)==(ITO_VMODE_PAL))             //Let console decide
+			TV_mode = TV_mode_PAL;
+		else
+			TV_mode = TV_mode_NTSC;
+	}
+
+	if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
+		ito_vmode = ITO_VMODE_PAL;
+		SCREEN_WIDTH	= 640;
+		SCREEN_HEIGHT = 512;
+		SCREEN_X			= 163;
+		SCREEN_Y			= 72;
+		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
+	}else{                      //else use NTSC mode (forced or auto/default)
+		ito_vmode = ITO_VMODE_NTSC;
+		SCREEN_WIDTH	= 640;
+		SCREEN_HEIGHT = 448;
+		SCREEN_X			= 158;
+		SCREEN_Y			= 50;
+		Menu_end_y		 = Menu_start_y + 22*FONT_HEIGHT;
+	} /* end else */
+	Frame_end_y			= Menu_end_y + 4;
+	Menu_tooltip_y	= Frame_end_y + LINE_THICKNESS + 2;
+
 	maxCNF = setting->numCNF;
 	swapKeys = setting->swapKeys;
 	if(setting->resetIOP)
@@ -932,9 +960,9 @@ int main(int argc, char *argv[])
 		}
 	}
 */
-	setupito();
-	loadSkin(0);
-	
+	setupito(ito_vmode);
+	loadSkin(BACKGROUND_PIC);
+
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state
 	event = 1;   //event = initial entry
