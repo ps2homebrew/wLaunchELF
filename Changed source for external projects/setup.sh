@@ -67,6 +67,14 @@ if [ $DOWNLOAD -eq 1 ]; then
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSUTILS --revision 588 SMS/drv/SMSUTILS
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSMAP --revision 588 SMS/drv/SMSMAP
 	svn co svn://svn.ps2dev.org/ps2ware/trunk/SMS/drv/SMSTCPIP --revision 588 SMS/drv/SMSTCPIP
+#
+# As of early 2010 access to the site server of ps2dev.org is no longer reliable
+# For SVN update this is transparent, as the SVN commands just keep current files
+# if there is no reply from the server. But the HTTP wget command does not work
+# that way. So for libcdvd, available only as HTTP download, rather than SVN, we
+# have no choice but to supply it ourselves in the uLE release, in the form of
+# a 'Changed source...' folder containing that entire lib ("libcdvd_orig")
+#
 if [ -e libcdvd ]; then
   echo libcdvd folder exists.
 else
@@ -74,12 +82,9 @@ else
   mkdir libcdvd
 fi
   rm -fr libcdvd/*
-	cd libcdvd
-	wget http://ps2dev.org/ps2/Projects/Libraries/LIBCDVD:_CD+DVD_Filing_System_for_PS2/LIBCDVD_v1.15:_CD+DVD_Filing_System_for_PS2.download -O libcdvd_1.15.zip
-	unzip libcdvd_1.15.zip -d $BUP_DIR/libcdvd
-	rm libcdvd_1.15.zip
+	cd "$SRCDIR"
+	cp -r libcdvd_orig/* "$BUP_DIR/libcdvd"
 fi
-
 # Since old work libs are previously patched, and the user wants to recompile,
 # we need to erase the old work libs and renew their sources from $BUP_DIR
 

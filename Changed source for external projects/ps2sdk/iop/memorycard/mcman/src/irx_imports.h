@@ -18,6 +18,9 @@
 #include <loadcore.h>
 #include <modload.h>
 #include <secrman.h>
+#ifdef SIO_DEBUG
+#include <sior.h>
+#endif
 #include <stdio.h>
 #include <sysclib.h>
 #include <timrman.h>

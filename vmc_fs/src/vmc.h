@@ -28,7 +28,7 @@
 #define MAX_PATH 1024
 
 
-//  Vmcfs error definitions
+//  Vmc_fs error definitions
 #define VMCFS_ERR_NO            0
 #define VMCFS_ERR_INITIALIZED  -1
 #define VMCFS_ERR_VMC_OPEN     -2
@@ -258,7 +258,7 @@ int          Vmc_Chdir     ( iop_file_t* f, const char* path );
 int          Vmc_Sync      ( iop_file_t* f, const char* device, int flag );
 int          Vmc_Mount     ( iop_file_t* f, const char* fsname, const char* devname, int flag, void *arg, unsigned int arg_len );
 int          Vmc_Umount    ( iop_file_t* f, const char* fsname );
-long long    Vmc_Lseek64   ( iop_file_t* f, long long offset, int whence );
+int          Vmc_Lseek64   ( iop_file_t* f, long long offset, int whence );
 int          Vmc_Devctl    ( iop_file_t* f, const char* path, int cmd, void *arg, unsigned int arglen, void *buf, unsigned int buflen );
 int          Vmc_Symlink   ( iop_file_t* f, const char* old, const char* new );
 int          Vmc_Readlink  ( iop_file_t* f, const char* path, char* buf, unsigned int buf_len );

@@ -28,7 +28,13 @@
 #include <io_common.h>
 #include "sio2man_imports.h"
 
-//#define DEBUG
+#ifdef SIO_DEBUG
+	#include <sior.h>
+	#define DEBUG
+	#define DPRINTF(args...)	sio_printf(args)
+#else
+	#define DPRINTF(args...)	printf(args)
+#endif
 
 #define MODNAME "mcman"
 #define MODVER  0x101

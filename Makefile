@@ -1,17 +1,17 @@
 EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o\
-	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o\
-	cdvd.o ps2ftpd.o ps2host.o vmcfs.o fakehost.o ps2kbd.o\
+	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
+	cdvd.o ps2ftpd.o ps2host.o smbman.o vmc_fs.o fakehost.o ps2kbd.o\
 	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o
+	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o sior.o kpatch_10K.o kpatcher_10K.o
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 	-L$(PS2SDK)/sbv/lib -L$(PS2DEV)/libcdvd/lib -s
-EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lc  -lfileXio -lpatches -lpoweroff  -ldebug -lc
+EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lc  -lfileXio -lpatches -lpoweroff  -ldebug -lc -lsior
 
 all:	$(EE_BIN)
 
@@ -19,6 +19,12 @@ run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF
 reset: clean
 	ps2client -h 192.168.0.10 reset
+
+mcman.s:
+	bin2s $(PS2SDK)/iop/irx/mcman.irx mcman.s mcman_irx
+
+mcserv.s:
+	bin2s $(PS2SDK)/iop/irx/mcserv.irx mcserv.s mcserv_irx
 
 usbd.s:
 	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx
@@ -76,9 +82,13 @@ ps2host.s:
 	$(MAKE) -C ps2host
 	bin2s ps2host/ps2host.irx ps2host.s ps2host_irx
 
-vmcfs.s:
-	$(MAKE) -C vmcfs
-	bin2s vmcfs/bin/vmcfs.irx vmcfs.s vmcfs_irx
+smbman.s:
+	$(MAKE) -C smbman
+	bin2s smbman/smbman.irx smbman.s smbman_irx
+
+vmc_fs.s:
+	$(MAKE) -C vmc_fs
+	bin2s vmc_fs/bin/vmc_fs.irx vmc_fs.s vmc_fs_irx
 
 loader.s:
 	$(MAKE) -C loader
@@ -91,12 +101,21 @@ chkesr.s:
 	$(MAKE) -C chkesr
 	bin2s chkesr/chkesr.irx chkesr.s chkesr_irx
 
+sior.s:
+	bin2s $(PS2SDK)/iop/irx/sior.irx sior.s sior_irx
+
+kpatch_10K.s:
+	$(MAKE) -C kpatch_10K
+	bin2s kpatch_10K/kpatch.elf kpatch_10K.s kpatch_10K_elf
+
 clean:
 	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
+	$(MAKE) -C smbman clean
 	$(MAKE) -C loader clean
-	$(MAKE) -C vmcfs clean
+	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C chkesr clean
+	$(MAKE) -C kpatch_10K clean
 	rm -f *.o *.a *.s BOOT.ELF
 
 include $(PS2SDK)/samples/Makefile.pref

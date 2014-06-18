@@ -3,6 +3,13 @@
 // Description: Used to generate code for IRX function imports
 //---------------------------------------------------------------------------
 
+#ifdef SIO_DEBUG
+sior_IMPORTS_start
+I_sio_init
+I_sio_printf
+sior_IMPORTS_end
+#endif
+
 loadcore_IMPORTS_start
 I_RegisterLibraryEntries
 I_GetLibraryEntryTable

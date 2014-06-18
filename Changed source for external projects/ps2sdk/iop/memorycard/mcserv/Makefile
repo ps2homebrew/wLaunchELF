@@ -16,7 +16,7 @@ IOP_INC_DIR = include/
 IOP_BIN  = bin/mcserv.irx
 IOP_OBJS = obj/mcserv.o obj/imports.o obj/exports.o
 
-IOP_CFLAGS  += -Wall -fno-builtin -D_IOP
+IOP_CFLAGS  += -Wall -fno-builtin -D_IOP #-DSIO_DEBUG #-DDEBUG
 IOP_LDFLAGS += -s
 
 all: $(IOP_OBJS_DIR) $(IOP_BIN_DIR) $(IOP_BIN)

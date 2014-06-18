@@ -212,9 +212,27 @@ void sio2packet_add_do_nothing(int port, int slot, int cmd, u8 *buf, int pos)
 //-------------------------------------------------------------- 
 int mcsio2_transfer(int port, int slot, sio2_transfer_data_t *sio2data)
 {
+	register int r;
+
+#ifdef DEBUG
+	u8 *p = (u8 *)(sio2data->in_dma.addr);
+	if (p)
+		DPRINTF("mcman: mcsio2_transfer port%d slot%d cmd = %02x %02x %02x ", port, slot, p[0], p[1], p[2]);
+	else {
+		p = (u8 *)(sio2data->in);
+		DPRINTF("mcman: mcsio2_transfer for secrman port%d slot%d cmd = %02x %02x %02x ", port, slot, p[0], p[1], p[2]);
+	}
+#endif
+
 	// SIO2 transfer for MCMAN
 	sio2_mc_transfer_init();
-	return sio2_transfer(sio2data);
+	r = sio2_transfer(sio2data);
+
+#ifdef DEBUG	
+	DPRINTF("returns %d\n", r);
+#endif
+
+	return r;
 }
 
 //-------------------------------------------------------------- 
@@ -223,6 +241,10 @@ int mcsio2_transfer2(int port, int slot, sio2_transfer_data_t *sio2data)
 	// SIO2 transfer for XMCMAN
 	register int r;
 	int port_ctrl[8];	
+
+#ifdef DEBUG
+	DPRINTF("mcman: mcsio2_transfer2 port%d slot%d\n", port, slot);		
+#endif
 	
 	port_ctrl[0] = -1; 
 	port_ctrl[1] = -1; 
@@ -235,6 +257,10 @@ int mcsio2_transfer2(int port, int slot, sio2_transfer_data_t *sio2data)
 	sio2_func1(&port_ctrl);   
 	r = sio2_transfer(sio2data);
 	sio2_transfer_reset();
+
+#ifdef DEBUG
+	DPRINTF("mcman: mcsio2_transfer2 returns %d\n", r);
+#endif
 	
 	return r;
 }
@@ -254,8 +280,16 @@ void mcman_initPS2com(void)
 		
 	mcman_sio2packet.out_dma.addr = &mcman_rdmabufs;
 	mcman_sio2packet.out_dma.size = 0x24;
-			
+
+#ifdef DEBUG
+	DPRINTF("mcman: mcman_initPS2com registering secrman_mc_command callback\n");
+#endif			
 	SetMcCommandCallback((void *)secrman_mc_command);
+
+#ifdef DEBUG
+	DPRINTF("mcman: mcman_initPS2com registering mcman_getcnum callback\n");
+#endif			
+
 	SetMcDevIDCallback((void *)mcman_getcnum);
 }
 
@@ -282,6 +316,10 @@ void mcman_initPS1PDAcom(void)
 int secrman_mc_command(int port, int slot, sio2_transfer_data_t *sio2data)
 {
 	register int r;
+
+#ifdef DEBUG
+	DPRINTF("mcman: secrman_mc_command port%d slot%d\n", port, slot);
+#endif			
 					
 	r = mcman_sio2transfer(port, slot, sio2data);
 		
@@ -295,7 +333,7 @@ int mcman_cardchanged(int port, int slot)
 	u8 *p = mcman_sio2packet.out_dma.addr;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_cardchanged port%d slot%d\n", port, slot);		
+	DPRINTF("mcman: mcman_cardchanged sio2cmd port%d slot%d\n", port, slot);		
 #endif
 	
 	sio2packet_add(port, slot, 0xffffffff, NULL);
@@ -310,9 +348,17 @@ int mcman_cardchanged(int port, int slot)
 			break;
 			
 	} while (++retries < 5);
- 
-	if (retries >= 5)
+
+	if (retries >= 5) {
+#ifdef DEBUG
+		DPRINTF("mcman: mcman_cardchanged sio2cmd card changed!\n");		
+#endif
 		return sceMcResChangedCard; 
+	}
+
+#ifdef DEBUG		
+	DPRINTF("mcman: mcman_cardchanged sio2cmd succeeded\n");
+#endif	
 	
 	return sceMcResSucceed;
 }
@@ -541,7 +587,7 @@ int McGetCardSpec(int port, int slot, u16 *pagesize, u16 *blocksize, int *cardsi
 	u8 *p = mcman_sio2packet.out_dma.addr;
 	
 #ifdef DEBUG	
-	printf("mcman: McGetCardSpec port%d slot%d\n", port, slot);		
+	DPRINTF("mcman: McGetCardSpec sio2cmd port%d slot%d\n", port, slot);		
 #endif
 	
 	sio2packet_add(port, slot, 0xffffffff, NULL);
@@ -570,7 +616,7 @@ int McGetCardSpec(int port, int slot, u16 *pagesize, u16 *blocksize, int *cardsi
 	*flags = p[2];
 
 #ifdef DEBUG	
-	printf("mcman: McGetCardSpec pagesize=%d blocksize=%d cardsize=%d flags%x\n", *pagesize, *blocksize, *cardsize, *flags);
+	DPRINTF("mcman: McGetCardSpec sio2cmd pagesize=%d blocksize=%d cardsize=%d flags%x\n", *pagesize, *blocksize, *cardsize, *flags);
 #endif	
 	
 	return sceMcResSucceed;
@@ -582,7 +628,7 @@ int mcman_resetauth(int port, int slot)
 	register int retries;
 
 #ifdef DEBUG		
-	printf("mcman: mcman_resetauth port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_resetauth sio2cmd port%d slot%d\n", port, slot);
 #endif	
 	
 	sio2packet_add(port, slot, 0xffffffff, NULL);
@@ -599,10 +645,19 @@ int mcman_resetauth(int port, int slot)
 		
 	} while (++retries < 5);
 	
-	if (retries >= 5)
-		return sceMcResChangedCard; 
+	if (retries >= 5) {
+#ifdef DEBUG		
+		DPRINTF("mcman: mcman_resetauth sio2cmd card changed!\n");
+#endif	
+
+		return sceMcResChangedCard;
+	}
+
+#ifdef DEBUG		
+	DPRINTF("mcman: mcman_resetauth sio2cmd succeeded\n");
+#endif	
  		
-    return sceMcResSucceed;
+	return sceMcResSucceed;
 }
 
 //--------------------------------------------------------------
@@ -611,8 +666,8 @@ int mcman_probePS2Card2(int port, int slot)
 	register int retries, r;
 	u8 *p = mcman_sio2packet.out_dma.addr;
 
-#ifdef DEBUG	
-	printf("mcman: mcman_probePS2Card2 port%d slot%d\n", port, slot);
+#ifdef DEBUG
+	DPRINTF("mcman: mcman_probePS2Card2 sio2cmd port%d slot%d\n", port, slot);
 #endif	
 		
 	retries = 0;
@@ -632,13 +687,28 @@ int mcman_probePS2Card2(int port, int slot)
 		
 	if (p[3] == 0x5a) {
 		r = McGetFormat(port, slot);
-		if (r > 0)
+		if (r > 0) {
+#ifdef DEBUG
+			DPRINTF("mcman: mcman_probePS2Card2 succeeded\n");
+#endif	
+
 			return sceMcResSucceed;
+		}
 			
 		r = McGetFormat(port, slot);
-		if (r < 0)
+		if (r < 0) {
+#ifdef DEBUG
+			DPRINTF("mcman: mcman_probePS2Card2 sio2cmd failed (no format)\n");
+#endif
+
 			return sceMcResNoFormat;
+		}
 	}
+
+#ifdef DEBUG
+	DPRINTF("mcman: mcman_probePS2Card2 sio2cmd failed (mc detection failed)\n");
+#endif
+
 	return sceMcResFailDetect2;
 }
 
@@ -650,21 +720,36 @@ int mcman_probePS2Card(int port, int slot) //2
 	u8 *p = mcman_sio2packet.out_dma.addr;
 
 #ifdef DEBUG	
-	printf("mcman: mcman_probePS2Card port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_probePS2Card sio2cmd port%d slot%d\n", port, slot);
 #endif	
 	
 	r = mcman_cardchanged(port, slot);
 	if (r == sceMcResSucceed) {
 		r = McGetFormat(port, slot);
-		if (r != 0)
+		if (r != 0) {
+#ifdef DEBUG	
+			DPRINTF("mcman: mcman_probePS2Card sio2cmd succeeded\n");
+#endif	
+
 			return sceMcResSucceed;
+		}
 	}
 	
-	if (mcman_resetauth(port, slot) != sceMcResSucceed)
+	if (mcman_resetauth(port, slot) != sceMcResSucceed) {
+#ifdef DEBUG	
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd failed (auth reset failed)\n");
+#endif	
+
 		return sceMcResFailResetAuth;
+	}
 	
-	if (SecrAuthCard(port + 2, slot, mcman_getcnum(port, slot)) == 0)
-		return sceMcResFailAuth;	
+	if (SecrAuthCard(port + 2, slot, mcman_getcnum(port, slot)) == 0) {
+#ifdef DEBUG	
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd failed (auth failed)\n");
+#endif	
+
+		return sceMcResFailAuth;
+	}
 			
 	retries = 0;
 	do {
@@ -678,8 +763,12 @@ int mcman_probePS2Card(int port, int slot) //2
 			break;
 	} while (++retries < 5);
 	
-	if (retries >= 5)
+	if (retries >= 5) {
+#ifdef DEBUG
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd failed (mc detection failed)\n");
+#endif
 		return sceMcResFailDetect;
+	}
 	
 	mcman_clearcache(port, slot);
 
@@ -698,17 +787,34 @@ int mcman_probePS2Card(int port, int slot) //2
     		break;
 	} while (++retries < 5);
 
-	if (retries >= 5)
+	if (retries >= 5) {
+#ifdef DEBUG
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd failed (mc detection failed)\n");
+#endif
+
 		return sceMcResFailDetect2;
+	}
 	
 	r = mcman_setdevinfos(port, slot);
-	if (r == 0)
+	if (r == 0) {
+#ifdef DEBUG
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd card changed!\n");
+#endif
 		return sceMcResChangedCard;
-	if (r != sceMcResNoFormat)	
+	}
+	if (r != sceMcResNoFormat) {
+#ifdef DEBUG
+		DPRINTF("mcman: mcman_probePS2Card sio2cmd failed (mc detection failed)\n");
+#endif
 		return sceMcResFailDetect2;
+	}
 		
 	mcdi = &mcman_devinfos[port][slot];	
 	mcdi->cardform = r;	
+
+#ifdef DEBUG	
+	DPRINTF("mcman: mcman_probePS2Card sio2cmd succeeded\n");
+#endif	
 	
 	return r;
 }
@@ -720,7 +826,7 @@ int mcman_probePS1Card2(int port, int slot)
 	register MCDevInfo *mcdi = &mcman_devinfos[port][slot];	
 	
 #ifdef DEBUG
-	printf("mcman: mcman_probePS1Card2 port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_probePS1Card2 port%d slot%d\n", port, slot);
 #endif	
 	
 	mcman_sio2packet_PS1PDA.regdata[0] = 0;
@@ -777,7 +883,7 @@ int mcman_probePS1Card(int port, int slot)
 	u32 *p;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_probePS1Card port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_probePS1Card port%d slot%d\n", port, slot);
 #endif	
 	
 	mcman_sio2packet_PS1PDA.regdata[0] = 0;
@@ -846,7 +952,7 @@ int mcman_probePDACard(int port, int slot)
 	register int retries;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_probePDACard port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_probePDACard port%d slot%d\n", port, slot);
 #endif	
 	
 	mcman_sio2packet_PS1PDA.regdata[0] = 0;
@@ -881,7 +987,7 @@ int McWritePS1PDACard(int port, int slot, int page, void *buf) // Export #30
 	u8 *p;
 	
 #ifdef DEBUG
-	//printf("mcman: McWritePS1PDACard port%d slot%d page %x\n", port, slot, page);
+	//DPRINTF("mcman: McWritePS1PDACard port%d slot%d page %x\n", port, slot, page);
 #endif	
 	
 	mcman_sio2packet_PS1PDA.regdata[0] = 0;
@@ -946,7 +1052,7 @@ int McReadPS1PDACard(int port, int slot, int page, void *buf) // Export #29
 	u8 *p;
 	
 #ifdef DEBUG
-	//printf("mcman: McReadPS1PDACard port%d slot%d page %x\n", port, slot, page);
+	//DPRINTF("mcman: McReadPS1PDACard port%d slot%d page %x\n", port, slot, page);
 #endif	
 	
 	mcman_sio2packet_PS1PDA.regdata[0] = 0;

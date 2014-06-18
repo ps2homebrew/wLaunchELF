@@ -1,9 +1,28 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.42 (2010.06.12)
+-Added kernel patcher and kernel patch as designed by jimmikaelkael to make v0 japanese consoles compatible with newer models in use of homebrews. This cures v0 problems for many other applications too (including ESR) as the kernel remains patched for the duration of a session (until next hard reset/power on). This patching is compatible with that to be added into new versions of "Open PS2 Loader" too, and includes conflict protection when multiple patchers are used. This change has no effect at all on newer consoles, but was required to make it possible to keep the homebrew MC modules in future versions of uLE, and still retain uLE compatibility to all PS2 models.
+
+LaunchELF v4.41a (2010.06.03)
+-Fixed a problem with uLE initialization, causing problems with the new MC drivers when used on a PS2 of very old model. This change means that 'initsbv_patches' is now called early in 'loadBasicModules', and nowhere else.
+-Reinstated MC drivers by jimmikaelkael, and thus FileBrowser renaming on MCs
+-Added corrections by jimmikaelkael to the EE_SIO debug output module of ps2sdk
+-added the 'sior' module to uLE with changes in "makefile", "launchelf.h", "iopmod_name.h" and "main.c"
+-Added 'SIO_DEBUG' flag to "launchelf.h" for use only in compiling special debug versions of uLE, that use EE_SIO interface for debug feedback instead of PS2LINK
+(NB: This is required for debugging with oldest models, as PS2LINK won't work...)
+-Remerged all of the changes described for beta v4.40j described further below
+
 LaunchELF v4.41 (2010.05.30)
 -Updated ps2sdk and existing source files to SVN rev 1682.
--Fixed some compiler warnings with the vmcfs driver do to changes in the latest ps2sdk revision.
+-Fixed some compiler warnings with the vmcfs driver due to changes in the latest ps2sdk revision.
 -Removed the modified screen update delay methods, restoring previous functionality.
+
+LaunchELF v4.40j (2010.05.29)
+-Added libcdvd_orig folder to CSD folder, so as to provide original libcvd source now that it is no longer available for download at ps2dev.org, and edited setup.sh accordingly so as to use the local copy.
+-Edited VMC sources to correct hundreds of incorrect references to "vmcfs" module which is in fact named "vmc_fs". This was mainly in 'DEBUGPRINT' error messages. This also required some editing of the main uLE source files.
+-Changed vmc_fs from being an 'uncheckable' module to being 'checkable' (changes in "main.c" and "iopmod_name.h")
+-Started work on merging smbman by jimmikaelkael into uLE
+-SMB routines now allow successful server connection, using a test menu inside the subprogram "MISC/Debug Info". Note that the SMB functionality requires a suitable "SMB.CNF" file stored as "mc0:/SYS-CONF/SMB.CNF"
 
 LaunchELF v4.40i (2010.04.09)
 -Updated ps2sdk and existing source files to SVN rev 1678 and removed a previous source file as it's no longer needed.

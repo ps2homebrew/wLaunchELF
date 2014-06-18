@@ -2,7 +2,7 @@ IOP_OBJS_DIR = obj/
 IOP_BIN_DIR = bin/
 IOP_SRC_DIR = src/
 
-IOP_BIN  = bin/vmcfs.irx
+IOP_BIN  = bin/vmc_fs.irx
 IOP_OBJS = obj/vmc_fs.o obj/vmc_io.o obj/vmc_misc.o obj/vmc_fat.o obj/vmc_ps2.o obj/imports.o
 
 IOP_CFLAGS  += -Wall -fno-builtin

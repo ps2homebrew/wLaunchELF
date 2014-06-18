@@ -1,8 +1,10 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.41"
-#define ULE_VERDATE "2010.05.30"
+#define ULE_VERSION "v4.42"
+#define ULE_VERDATE "2010.06.12"
+
+//#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 
 #include <stdio.h>
 #include <tamtypes.h>
@@ -38,6 +40,16 @@
 #include <libkbd.h>
 #include <floatlib.h>
 #include "hdl_rpc.h"
+#include "smbman.h"
+
+#include <sio.h>
+#include <sior_rpc.h>
+
+#ifdef SIO_DEBUG
+	#define DPRINTF(args...)	sio_printf(args)
+#else
+	#define DPRINTF(args...)	printf(args)
+#endif
 
 #define TRUE		1
 #define FALSE		0

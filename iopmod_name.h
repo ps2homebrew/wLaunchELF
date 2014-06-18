@@ -38,9 +38,12 @@ extern "C" {
 #define	IOPMOD_NAME_PS2HDD    "hdd_driver"
 #define	IOPMOD_NAME_PS2IP     "TCP/IP Stack"
 #define	IOPMOD_NAME_SIO2MAN   "sio2man"
+#define	IOPMOD_NAME_SIOR      "sioremote_driver"
+#define	IOPMOD_NAME_SMBMAN    "smbman"
 #define	IOPMOD_NAME_SMAP      "INET_SMAP_driver"
 #define IOPMOD_NAME_THREADMAN "Multi_Thread_Manager"
 #define	IOPMOD_NAME_USBD      "USB_driver"
+#define	IOPMOD_NAME_VMC_FS    "vmc_fs"
 #define IOPMOD_NAME_XLOADFILE "LoadModuleByEE" //NB: same name as for LOADFILE
 #define IOPMOD_NAME_XMCMAN    "mcman_cex"
 #define IOPMOD_NAME_XMCSERV   "mcserv" //NB: same name as for MCSERV

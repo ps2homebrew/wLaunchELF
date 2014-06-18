@@ -14,6 +14,14 @@
 
 IRX_ID(MODNAME, 2, 8);
 
+#ifdef SIO_DEBUG
+	#include <sior.h>
+	#define DEBUG
+	#define DPRINTF(args...)	sio_printf(args)
+#else
+	#define DPRINTF(args...)	printf(args)
+#endif
+
 struct irx_export_table _exp_mcserv;
 
 //-------------------------------------------------------------- 
@@ -25,6 +33,13 @@ int _start(int argc, const char **argv)
 	iop_library_t *libptr;
 	int i, mcman_loaded;
 	void **export_tab;
+
+#ifdef SIO_DEBUG
+	sio_init(38400, 0, 0, 0, 0);
+#endif
+#ifdef DEBUG
+	DPRINTF("mcserv: _start...\n");
+#endif
 	
 	// Get mcman lib ptr
 	mcman_loaded = 0;
@@ -44,11 +59,14 @@ int _start(int argc, const char **argv)
 	
 	if (!mcman_loaded) {
 #ifdef DEBUG		
-		printf("mcserv: mcman module is not loaded...\n"); 		
+		DPRINTF("mcserv: mcman module is not loaded...\n"); 		
 #endif		
 		goto err_out;
 	}
-	
+
+#ifdef DEBUG
+	DPRINTF("mcserv: mcman version=%03x\n", libptr->version);
+#endif	
 	if (libptr->version > 0x200)
 		mcman_type = XMCMAN;
 	
@@ -90,12 +108,18 @@ int _start(int argc, const char **argv)
 	McCheckBlock = export_tab[45];
 	}	
 		
-	// Register mcserv dummy export table	
+	// Register mcserv dummy export table
+#ifdef DEBUG
+	DPRINTF("mcserv: registering exports...\n");
+#endif	
 	if (RegisterLibraryEntries(&_exp_mcserv) != 0)
 		goto err_out;
 	
 	CpuEnableIntr();	
-	
+
+#ifdef DEBUG
+	DPRINTF("mcserv: starting RPC thread...\n");
+#endif		
  	thread_param.attr = TH_C;
  	thread_param.thread = (void *)thread_rpc_S_0400;
  	thread_param.priority = 0x68;
@@ -107,9 +131,18 @@ int _start(int argc, const char **argv)
 		
 	StartThread(thread_id, 0);		
 
+#ifdef DEBUG
+	DPRINTF("mcserv: _start returns MODULE_RESIDENT_END...\n");
+#endif		
+
 	return MODULE_RESIDENT_END;
 	
 err_out:
+
+#ifdef DEBUG
+	DPRINTF("mcserv: _start returns MODULE_NO_RESIDENT_END...\n");
+#endif		
+
 	return MODULE_NO_RESIDENT_END;	
 }
 
@@ -301,7 +334,7 @@ int _McInit(void *rpc_buf)
 	int ps1flag = 0;
 
 #ifdef DEBUG	
-	printf("mcserv: _McInit fd %d offset %d\n", dP->fd, dP->offset);
+	DPRINTF("mcserv: _McInit fd %d offset %d\n", dP->fd, dP->offset);
 #endif
 		
 	if (mcman_type == MCMAN) {
@@ -320,7 +353,7 @@ int _McOpen(void *rpc_buf)
 	g_nameParam_t *nP = (g_nameParam_t *)rpc_buf;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McOpen port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
+	DPRINTF("mcserv: _McOpen port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
 #endif
 	
 	return McOpen(nP->port, nP->slot, nP->name, nP->flags);
@@ -332,7 +365,7 @@ int _McClose(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McClose fd %d\n", dP->fd);
+	DPRINTF("mcserv: _McClose fd %d\n", dP->fd);
 #endif
 	
 	return McClose(dP->fd);
@@ -344,7 +377,7 @@ int _McSeek(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 
 #ifdef DEBUG	
-	printf("mcserv: _McSeek fd %d offset %d origin %d\n", dP->fd, dP->offset, dP->origin);
+	DPRINTF("mcserv: _McSeek fd %d offset %d origin %d\n", dP->fd, dP->offset, dP->origin);
 #endif
 		
 	return McSeek(dP->fd, dP->offset, dP->origin);
@@ -362,7 +395,7 @@ int _McRead(void *rpc_buf)
 	void *eedata;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McRead fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
+	DPRINTF("mcserv: _McRead fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
 #endif	
 
 	eP.fastIO1_size = 0;
@@ -492,7 +525,7 @@ int _McRead2(void *rpc_buf)
 	void *eedata;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McRead2 fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
+	DPRINTF("mcserv: _McRead2 fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
 #endif	
 
 	eP.fastIO1_size = 0;
@@ -632,7 +665,7 @@ int _McWrite(void *rpc_buf)
 	register int size_to_write, size_written, r;
 	
 #ifdef DEBUG		
-	printf("mcserv: _McWrite fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
+	DPRINTF("mcserv: _McWrite fd %d ee buffer addr %x size %d\n", dP->fd, (int)dP->buffer, dP->size);
 #endif	
 	
 	size_written = 0;
@@ -678,7 +711,7 @@ int _McGetDir(void *rpc_buf)
 	int intStatus;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McGetDir port%d slot%d dir %s flags %d maxent %d mcT addr %x\n", nP->port, nP->slot, nP->name, nP->flags, nP->maxent, (int)nP->mcT);
+	DPRINTF("mcserv: _McGetDir port%d slot%d dir %s flags %d maxent %d mcT addr %x\n", nP->port, nP->slot, nP->name, nP->flags, nP->maxent, (int)nP->mcT);
 #endif	
 
 	status = 0;
@@ -730,7 +763,7 @@ int _McChDir(void *rpc_buf)
 	int intStatus;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McChDir port%d slot%d newdir %s\n", nP->port, nP->slot, nP->name);
+	DPRINTF("mcserv: _McChDir port%d slot%d newdir %s\n", nP->port, nP->slot, nP->name);
 #endif	
 
 	r = McChDir(nP->port, nP->slot, nP->name, (char *)mcserv_buf); 
@@ -756,7 +789,7 @@ int _McFormat(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 
 #ifdef DEBUG	
-	printf("mcserv: _McFormat port%d slot%d\n", dP->port, dP->slot);
+	DPRINTF("mcserv: _McFormat port%d slot%d\n", dP->port, dP->slot);
 #endif
 		
 	return McFormat(dP->port, dP->slot);
@@ -768,7 +801,7 @@ int _McUnformat(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 
 #ifdef DEBUG	
-	printf("mcserv: _McUnformat port%d slot%d\n", dP->port, dP->slot);
+	DPRINTF("mcserv: _McUnformat port%d slot%d\n", dP->port, dP->slot);
 #endif
 		
 	return McUnformat(dP->port, dP->slot);
@@ -784,7 +817,7 @@ int _McGetInfo(void *rpc_buf)
 	int intStatus;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McGetInfo port%d slot%d\n", dP->port, dP->slot);
+	DPRINTF("mcserv: _McGetInfo port%d slot%d\n", dP->port, dP->slot);
 #endif	
 
 	mc_free = 0;
@@ -834,7 +867,7 @@ int _McGetInfo2(void *rpc_buf)
 	int intStatus;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McGetInfo2 port%d slot%d\n", dP->port, dP->slot);
+	DPRINTF("mcserv: _McGetInfo2 port%d slot%d\n", dP->port, dP->slot);
 #endif	
 
 	mc_free = 0;
@@ -891,7 +924,7 @@ int _McGetEntSpace(void *rpc_buf)
 	g_nameParam_t *nP = (g_nameParam_t *)rpc_buf;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McGetEntSpace port%d slot%d dirname %s\n", nP->port, nP->slot, nP->name);
+	DPRINTF("mcserv: _McGetEntSpace port%d slot%d dirname %s\n", nP->port, nP->slot, nP->name);
 #endif
 	
 	return McGetEntSpace(nP->port, nP->slot, nP->name);
@@ -903,7 +936,7 @@ int _McDelete(void *rpc_buf)
 	g_nameParam_t *nP = (g_nameParam_t *)rpc_buf;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McDelete port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
+	DPRINTF("mcserv: _McDelete port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
 #endif
 	
 	return McDelete(nP->port, nP->slot, nP->name, nP->flags);
@@ -915,7 +948,7 @@ int _McFlush(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 
 #ifdef DEBUG	
-	printf("mcserv: _McFlush fd %d\n", dP->fd);
+	DPRINTF("mcserv: _McFlush fd %d\n", dP->fd);
 #endif
 		
 	return McFlush(dP->fd);
@@ -929,7 +962,7 @@ int _McEraseBlock(void *rpc_buf)
 	u8 eccbuf[16];
 		
 #ifdef DEBUG		
-	printf("mcserv: _McEraseBlock port%d slot%d offset %d\n", dP->port, dP->slot, dP->offset);
+	DPRINTF("mcserv: _McEraseBlock port%d slot%d offset %d\n", dP->port, dP->slot, dP->offset);
 #endif	
 
 	dP->port = (dP->port & 1) + 2;
@@ -977,7 +1010,7 @@ int _McReadPage(void *rpc_buf)
 	int intStatus;
 		
 #ifdef DEBUG		
-	printf("mcserv: _McReadPage port%d slot%d page %d\n", dP->port, dP->slot, dP->fd);
+	DPRINTF("mcserv: _McReadPage port%d slot%d page %d\n", dP->port, dP->slot, dP->fd);
 #endif	
 
 	eP.fastIO1_eeaddr = dP->buffer;
@@ -1055,7 +1088,7 @@ int _McWritePage(void *rpc_buf)
 	u8 eccbuf[16];
 		
 #ifdef DEBUG		
-	printf("mcserv: _McWritePage port%d slot%d page %d\n", dP->port, dP->slot, dP->fd);
+	DPRINTF("mcserv: _McWritePage port%d slot%d page %d\n", dP->port, dP->slot, dP->fd);
 #endif	
 
 	fastsize = ((u32)dP->buffer) & 0xf;
@@ -1105,7 +1138,7 @@ int _McSetFileInfo(void *rpc_buf)
 	SifRpcReceiveData_t	rD;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McSetFileInfo port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
+	DPRINTF("mcserv: _McSetFileInfo port%d slot%d file %s flags %d\n", nP->port, nP->slot, nP->name, nP->flags);
 #endif
 	
 	sceSifGetOtherData(&rD, (void *)nP->mcT, &mcserv_buf, sizeof (mcTable_t), 0);
@@ -1119,7 +1152,7 @@ int _McCheckBlock(void *rpc_buf)
 	g_descParam_t *dP = (g_descParam_t *)rpc_buf;
 	
 #ifdef DEBUG	
-	printf("mcserv: _McCheckBlock port%d slot%d block %d\n", dP->port, dP->slot, dP->offset);
+	DPRINTF("mcserv: _McCheckBlock port%d slot%d block %d\n", dP->port, dP->slot, dP->offset);
 #endif
 	
 	return McCheckBlock(dP->port, dP->slot, dP->offset);

@@ -19,7 +19,7 @@ obj/main.o obj/mcdev.o obj/mcsio2.o \
 obj/ps2mc_fio.o obj/ps1mc_fio.o\
 obj/imports.o obj/exports.o
 
-IOP_CFLAGS  += -Wall -fno-builtin -D_IOP
+IOP_CFLAGS  += -Wall -fno-builtin -D_IOP #-DSIO_DEBUG #-DDEBUG
 IOP_LDFLAGS += -s
 
 all: $(IOP_OBJS_DIR) $(IOP_BIN_DIR) $(IOP_BIN)

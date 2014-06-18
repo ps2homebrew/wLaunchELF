@@ -16,6 +16,9 @@
 #include <loadcore.h>
 #include <sifcmd.h>
 #include <sifman.h>
+#ifdef SIO_DEBUG
+#include <sior.h>
+#endif
 #include <stdio.h>
 #include <sysclib.h>
 #include <thbase.h>

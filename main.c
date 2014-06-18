@@ -2,6 +2,7 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
+#include "SMB_test.h"
 
 //dlanor: I'm correcting all these erroneous 'u8 *name' declarations
 //dlanor: They are not pointers at all, but pure block addresses
@@ -20,8 +21,10 @@ extern void smsutils_irx;
 extern int  size_smsutils_irx;
 extern void ps2host_irx;
 extern int  size_ps2host_irx;
-extern void vmcfs_irx;
-extern int  size_vmcfs_irx;
+extern void smbman_irx;
+extern int  size_smbman_irx;
+extern void vmc_fs_irx;
+extern int  size_vmc_fs_irx;
 extern void ps2ftpd_irx;
 extern int  size_ps2ftpd_irx;
 extern void ps2atad_irx;
@@ -50,10 +53,14 @@ extern void hdl_info_irx;
 extern int  size_hdl_info_irx;
 extern void chkesr_irx;
 extern int size_chkesr_irx;
-//extern void mcman_irx;
-//extern int  size_mcman_irx;
-//extern void mcserv_irx;
-//extern int  size_mcserv_irx;
+extern void mcman_irx;
+extern int  size_mcman_irx;
+extern void mcserv_irx;
+extern int  size_mcserv_irx;
+extern void sior_irx;
+extern int  size_sior_irx;
+extern void kpatch_10K_elf;
+extern int  size_kpatch_10K_elf;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -109,6 +116,7 @@ int have_HDD_modules = 0;
 int have_sbv_patches = 0;
 //Old State of Checkable Modules (valid header)
 int	old_sio2man  = 0;
+int	old_sior     = 0;
 int	old_mcman    = 0;
 int	old_mcserv   = 0;
 int	old_padman   = 0;
@@ -122,19 +130,21 @@ int	old_ps2atad  = 0;
 int old_ps2hdd   = 0;
 int old_ps2fs    = 0;
 int old_ps2netfs = 0;
+int	old_smbman   = 0;
+int	old_vmc_fs   = 0;
 //State of Uncheckable Modules (invalid header)
 int	have_cdvd     = 0;
 int	have_usbd     = 0;
 int	have_usb_mass = 0;
 int	have_ps2smap  = 0;
 int	have_ps2host  = 0;
-int have_vmcfs    = 0; //vmcfs may be checkable. (must ask Polo)
 int	have_ps2ftpd  = 0;
 int	have_ps2kbd   = 0;
 int	have_hdl_info = 0;
 //State of Checkable Modules (valid header)
 int have_urgent   = 0;	//flags presence of urgently needed modules
 int	have_sio2man  = 0;
+int	have_sior     = 0;
 int	have_mcman    = 0;
 int	have_mcserv   = 0;
 int	have_padman   = 0;
@@ -148,6 +158,8 @@ int	have_ps2atad  = 0;
 int have_ps2hdd   = 0;
 int have_ps2fs    = 0;
 int have_ps2netfs = 0;
+int	have_smbman   = 0;
+int have_vmc_fs   = 0;
 
 int have_chkesr   = 0;
 
@@ -238,19 +250,45 @@ int	PrintPos(int row_f, int column, char *text_p)
 void ShowDebugInfo(void)
 {	char TextRow[256];
 	int	i, event, post_event=0;
+	int row;
+
+	load_smbman();
+	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
+	smbCurrentServer = 0;
 
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
 	while(1) {
 		//Pad response section
 		waitAnyPadReady();
-		if(readpad() && new_pad){
-			event |= 2;
-			if (setting->GUI_skin[0]) {
-				GUI_active = 1;
-				loadSkin(BACKGROUND_PIC, 0, 0);
+		if(readpad() && new_pad)
+		{	event |= 2;
+			if(new_pad & PAD_CIRCLE)
+			{ if(smbCurrentServer+1 < smbServerListCount)
+					smbCurrentServer++;
+				else
+					smbCurrentServer = 0;
 			}
-			break;
+			else if(new_pad & PAD_CROSS)
+			{	if(smbCurrentServer > 0)
+					smbCurrentServer--;
+				else
+					smbCurrentServer = smbServerListCount-1;
+			}
+			else if(new_pad & PAD_SQUARE)
+			{	smbLogon_Server(smbCurrentServer);
+			}
+			else if(new_pad & PAD_TRIANGLE)
+			{	smbServerList[smbCurrentServer].Server_Logon_f = 0;
+			}
+			else
+			{
+				if(setting->GUI_skin[0])
+				{	GUI_active = 1;
+					loadSkin(BACKGROUND_PIC, 0, 0);
+				}
+				break;
+			}
 		}
 
 		//Display section
@@ -268,7 +306,29 @@ void ShowDebugInfo(void)
 			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
+			row = PrintRow(-1, TextRow);
+
+			int si = smbCurrentServer;
+			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
+			PrintRow(row+1, TextRow);
+			sprintf(TextRow, "Server_IP = %s", smbServerList[si].Server_IP);
 			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_Port = %d", smbServerList[si].Server_Port);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Username = %s", smbServerList[si].Username);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Password = %s", smbServerList[si].Password);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "PasswordType = %d", smbServerList[si].PasswordType);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "PassHash_f = %d", smbServerList[si].PassHash_f);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_Logon_f = %d", smbServerList[si].Server_Logon_f);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "ÿ0 Index++  ÿ1 Index--  ÿ2 Logon  ÿ3 Forget Logon");
+			PrintRow(-1, TextRow); 
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -335,6 +395,7 @@ void	CheckModules(void)
 {	smod_mod_info_t	mod_t;
 
 	old_sio2man  = (have_sio2man = smod_get_mod_by_name(IOPMOD_NAME_SIO2MAN, &mod_t));
+	old_sior     = (have_sior = smod_get_mod_by_name(IOPMOD_NAME_SIOR, &mod_t));
 	old_mcman    = (have_mcman = smod_get_mod_by_name(IOPMOD_NAME_MCMAN, &mod_t));
 	old_mcserv   = (have_mcserv = smod_get_mod_by_name(IOPMOD_NAME_MCSERV, &mod_t));
 	old_padman   = (have_padman = smod_get_mod_by_name(IOPMOD_NAME_PADMAN, &mod_t));
@@ -348,6 +409,8 @@ void	CheckModules(void)
 	old_ps2hdd   = (have_ps2hdd = smod_get_mod_by_name(IOPMOD_NAME_PS2HDD, &mod_t));
 	old_ps2fs    = (have_ps2fs = smod_get_mod_by_name(IOPMOD_NAME_PS2FS, &mod_t));
 	old_ps2netfs = (have_ps2netfs= smod_get_mod_by_name(IOPMOD_NAME_PS2NETFS, &mod_t));
+	old_smbman  = (have_smbman = smod_get_mod_by_name(IOPMOD_NAME_SMBMAN, &mod_t));
+	old_vmc_fs  = (have_vmc_fs = smod_get_mod_by_name(IOPMOD_NAME_VMC_FS, &mod_t));
 }
 //------------------------------
 //endfunc CheckModules
@@ -756,19 +819,33 @@ void	load_ps2host(void)
 //------------------------------
 //endfunc load_ps2host
 //---------------------------------------------------------------------------
-void	load_vmcfs(void)
+void	load_smbman(void)
+{
+	int ret;
+
+	setupPowerOff(); //resolves stall out when opening smb: FileBrowser
+	load_ps2ip();
+	if	(!have_smbman)
+	{	SifExecModuleBuffer(&smbman_irx, size_smbman_irx, 0, NULL, &ret);
+		have_smbman = 1;
+	}
+}
+//------------------------------
+//endfunc load_smbman
+//---------------------------------------------------------------------------
+void	load_vmc_fs(void)
 {
 	int ret;
 
 	load_iomanx();
 	load_filexio();
-	if	(!have_vmcfs)
-	{	SifExecModuleBuffer(&vmcfs_irx, size_vmcfs_irx, 0, NULL, &ret);
-		have_vmcfs = 1;
+	if	(!have_vmc_fs)
+	{	SifExecModuleBuffer(&vmc_fs_irx, size_vmc_fs_irx, 0, NULL, &ret);
+		have_vmc_fs = 1;
 	}
 }
 //------------------------------
-//endfunc load_vmcfs
+//endfunc load_vmc_fs
 //---------------------------------------------------------------------------
 void	load_ps2ftpd(void)
 {
@@ -803,20 +880,38 @@ void	load_ps2netfs(void)
 //---------------------------------------------------------------------------
 void loadBasicModules(void)
 {
-	int ret;
+	int ret, id;
 
 	if	(!have_sio2man) {
 		SifLoadModule("rom0:SIO2MAN", 0, NULL);
 		have_sio2man = 1;
 	}
+
+	initsbv_patches();  //NB: Must be used before loading uLE_embedded modules
+
+#ifdef SIO_DEBUG
+        // I call this just after SIO2MAN have been loaded
+	sio_init(38400, 0, 0, 0, 0);
+	DPRINTF("Hello from EE SIO!\n"); 
+
+	SIOR_Init(0x20);
+
+	if	(!have_sior) {
+		id = SifExecModuleBuffer(&sior_irx, size_sior_irx, 0, NULL, &ret);
+		scr_printf("\t sior id=%d _start ret=%d\n", id, ret);
+		DPRINTF("sior id=%d _start ret=%d\n", id, ret);
+		have_sior = 1;
+	}
+#endif
+
 	if	(!have_mcman) {
-		//SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret); //Home
-		SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
+		SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret); //Home
+		//SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
 		have_mcman = 1;
 	}
 	if	(!have_mcserv) {
-		//SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret); //Home
-		SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
+		SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret); //Home
+		//SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
 		have_mcserv = 1;
 	}
 	if	(!have_padman) {
@@ -1843,6 +1938,8 @@ void Reset()
 	have_usb_mass = 0;
 	have_ps2smap  = 0;
 	have_ps2host  = 0;
+	have_vmc_fs  = 0;
+	have_smbman  = 0;
 	have_ps2ftpd  = 0;
 	have_ps2kbd   = 0;
 	have_NetModules = 0;
@@ -1877,6 +1974,10 @@ int uLE_detect_TV_mode()
 //------------------------------
 //endfunc uLE_detect_TV_mode
 //---------------------------------------------------------------------------
+
+#include "SMB_test.c"
+
+//---------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
 	char *p, CNF_pathname[MAX_PATH];
@@ -1898,6 +1999,7 @@ int main(int argc, char *argv[])
 	for(i=0; (i<argc)&&(i<8); i++)
 		boot_argv[i] = argv[i];
 
+	sysApplyKernelPatches();
 	SifInitRpc(0);
 	CheckModules();
 	loadBasicModules();
@@ -2009,18 +2111,14 @@ int main(int argc, char *argv[])
 	if(setting->resetIOP)
 	{	Reset();
 		if(!strncmp(LaunchElfDir, "mass", 4))
-		{	initsbv_patches();
 			loadUsbModules();
-		}
 		else if(!strncmp(LaunchElfDir, "host:", 5))
 		{	getIpConfig();
-			initsbv_patches();
 			initHOST();
 		}
 	}
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
 	getIpConfig();
-	initsbv_patches();
 
 	if(setting->discControl)
 		loadCdModules();

@@ -31,7 +31,7 @@ int Vmc_Initialize ( iop_device_t * driver )
 	g_Vmc_Image[ 0 ].fd = -4235;
 	g_Vmc_Image[ 1 ].fd = -4235;
 
-	DEBUGPRINT ( 1, "vmcfs: Filesystem Driver Initialized\n" );
+	DEBUGPRINT ( 1, "vmc_fs: Filesystem Driver Initialized\n" );
 
 	return VMCFS_ERR_NO;
 }
@@ -62,7 +62,7 @@ int Vmc_Deinitialize ( iop_device_t * driver )
 		
 	}
 
-	DEBUGPRINT ( 1, "vmcfs: Filesystem Driver Deinitialized\n" );
+	DEBUGPRINT ( 1, "vmc_fs: Filesystem Driver Deinitialized\n" );
 
 	return VMCFS_ERR_NO;
 
@@ -72,9 +72,9 @@ int Vmc_Deinitialize ( iop_device_t * driver )
 int _start ( int argc, char*  * argv ) 
 {
 
-	printf ( "vmcfs: Created by ubergeek42\n" );
-	printf ( "vmcfs: ... Improved by Polo35.\n" );
-	printf ( "vmcfs: Version 1.2\n" );
+	printf ( "vmc_fs: Created by ubergeek42\n" );
+	printf ( "vmc_fs: ... Improved by Polo35.\n" );
+	printf ( "vmc_fs: Version 1.2\n" );
 
 	g_Vmc_Initialized = FALSE;
 	g_Vmc_Remove_Flag = FALSE;
@@ -121,7 +121,7 @@ int _start ( int argc, char*  * argv )
 	AddDrv ( &s_Vmc_Driver );
 
 	//  And we are done!
-	DEBUGPRINT ( 1, "vmcfs: Filesystem Driver %s added!\n", s_Vmc_Driver.name );
+	DEBUGPRINT ( 1, "vmc_fs: Filesystem Driver %s added!\n", s_Vmc_Driver.name );
 
 	return 0;
 

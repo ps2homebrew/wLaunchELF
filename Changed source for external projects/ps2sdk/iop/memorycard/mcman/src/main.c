@@ -117,6 +117,13 @@ int _start(int argc, const char **argv)
 	iop_library_t *libptr;
 	register int i, sio2man_loaded;
 	void **export_tab;
+
+#ifdef SIO_DEBUG
+	sio_init(38400, 0, 0, 0, 0);
+#endif
+#ifdef DEBUG
+	DPRINTF("mcman: _start...\n"); 		
+#endif		
 		
 	// Get sio2man lib ptr
 	sio2man_loaded = 0;
@@ -136,11 +143,14 @@ int _start(int argc, const char **argv)
 	
 	if (!sio2man_loaded) {
 #ifdef DEBUG	
-		printf("mcman: sio2man module is not loaded...\n"); 		
+		DPRINTF("mcman: sio2man module is not loaded...\n"); 		
 #endif		
 		return MODULE_NO_RESIDENT_END;
 	}
-	
+
+#ifdef DEBUG
+	DPRINTF("mcman: sio2man version=0x%03x\n", libptr->version); 		
+#endif			
 	if (libptr->version > 0x101)
 		sio2man_type = XSIO2MAN;
 	
@@ -185,15 +195,33 @@ int _start(int argc, const char **argv)
 		export_tab[51] = (void *)mcman_flushmccache;
 		export_tab[52] = (void *)mcman_setdirentrystate;
 	}
-			
+
+#ifdef DEBUG
+	DPRINTF("mcman: registering exports...\n"); 		
+#endif
 	if (RegisterLibraryEntries(&_exp_mcman) != 0)
 		return MODULE_NO_RESIDENT_END;
 	
 	CpuEnableIntr();	
-	
+
+#ifdef DEBUG
+	DPRINTF("mcman: initPS2com...\n"); 		
+#endif
 	mcman_initPS2com();
+
+#ifdef DEBUG
+	DPRINTF("mcman: initPS1PDAcom...\n"); 		
+#endif
 	mcman_initPS1PDAcom();
+
+#ifdef DEBUG
+	DPRINTF("mcman: initcache...\n"); 		
+#endif
 	mcman_initcache();
+
+#ifdef DEBUG
+	DPRINTF("mcman: initdev...\n");
+#endif
 	mcman_initdev();
 	
 	timer_ID = ReferHardTimer(1, 32, 0, 0x6309);	
@@ -205,7 +233,11 @@ int _start(int argc, const char **argv)
 	
 	if (timer_ID > 0)
 		SetTimerMode(timer_ID, 0);
-			
+
+#ifdef DEBUG
+	DPRINTF("mcman: _start returns MODULE_RESIDENT_END...\n"); 		
+#endif		
+
 	return MODULE_RESIDENT_END;
 }
 
@@ -213,7 +245,7 @@ int _start(int argc, const char **argv)
 int McGetFormat(int port, int slot) // Export #22 XMCMAN only
 {
 #ifdef DEBUG	
-	printf("mcman: McGetFormat port%d slot%d\n", port, slot);
+	DPRINTF("mcman: McGetFormat port%d slot%d\n", port, slot);
 #endif
 	return mcman_devinfos[port][slot].cardform;
 }
@@ -222,7 +254,7 @@ int McGetFormat(int port, int slot) // Export #22 XMCMAN only
 int McGetMcType(int port, int slot) // Export #39
 {
 #ifdef DEBUG		
-	printf("mcman: McGetMcType port%d slot%d\n", port, slot);
+	DPRINTF("mcman: McGetMcType port%d slot%d\n", port, slot);
 #endif	
 	return mcman_devinfos[port][slot].cardtype;
 }
@@ -231,7 +263,7 @@ int McGetMcType(int port, int slot) // Export #39
 struct modInfo_t *McGetModuleInfo(void) // Export #42 XMCMAN only
 {
 #ifdef DEBUG		
-	printf("mcman: McGetModuleInfo\n");
+	DPRINTF("mcman: McGetModuleInfo\n");
 #endif	
 	return (struct modInfo_t *)&mcman_modInfo;
 }
@@ -240,7 +272,7 @@ struct modInfo_t *McGetModuleInfo(void) // Export #42 XMCMAN only
 void McSetPS1CardFlag(int flag) // Export #40
 {
 #ifdef DEBUG
-	printf("mcman: McSetPS1CardFlag flag %x\n", flag);
+	DPRINTF("mcman: McSetPS1CardFlag flag %x\n", flag);
 #endif	
 	PS1CardFlag = flag;
 }
@@ -252,7 +284,7 @@ int McGetFreeClusters(int port, int slot) // Export #38
 	register MCDevInfo *mcdi = &mcman_devinfos[port][slot];
 
 #ifdef DEBUG	
-	printf("mcman: McGetFreeClusters port%d slot%d\n", port, slot);
+	DPRINTF("mcman: McGetFreeClusters port%d slot%d\n", port, slot);
 #endif	
 
 	mcfree = 0;
@@ -432,7 +464,7 @@ int mcman_detectcard(int port, int slot)
 	register MCDevInfo *mcdi;
 
 #ifdef DEBUG	
-	printf("mcman: mcman_detectcard port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_detectcard port%d slot%d\n", port, slot);
 #endif	
 	mcdi = (MCDevInfo *)&mcman_devinfos[port][slot];
 	
@@ -501,7 +533,7 @@ int McDetectCard2(int port, int slot) // Export #21 XMCMAN only
 	register MCDevInfo *mcdi;
 	
 #ifdef DEBUG	
-	printf("mcman: McDetectCard2 port%d slot%d\n", port, slot);
+	DPRINTF("mcman: McDetectCard2 port%d slot%d\n", port, slot);
 #endif
 	
 	mcdi = (MCDevInfo *)&mcman_devinfos[port][slot];
@@ -710,7 +742,7 @@ int McSeek(int fd, int offset, int origin) // Export #10
 	register MC_FHANDLE *fh;
 	
 #ifdef DEBUG	
-	printf("mcman: McSeek fd %d offset %d origin %d\n", fd, offset, origin);
+	DPRINTF("mcman: McSeek fd %d offset %d origin %d\n", fd, offset, origin);
 #endif	
 	
 	if (!((u32)fd < MAX_FDHANDLES))
@@ -1238,7 +1270,7 @@ int mcman_setdevspec(int port, int slot)
 	register MCDevInfo *mcdi = &mcman_devinfos[port][slot];
 
 #ifdef DEBUG		
-	printf("mcman: mcman_setdevspec port%d, slot%d\n", port, slot);	
+	DPRINTF("mcman: mcman_setdevspec port%d, slot%d\n", port, slot);	
 #endif
 	
 	if (McGetCardSpec(port, slot, &mcdi->pagesize, &mcdi->blocksize, &cardsize, &mcdi->cardflags) != sceMcResSucceed)
@@ -1266,7 +1298,7 @@ int mcman_setdevinfos(int port, int slot)
 	McFsEntry *pfse;
 	
 #ifdef DEBUG	
-	printf("mcman: mcman_setdevinfos port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_setdevinfos port%d slot%d\n", port, slot);
 #endif	
 	
 	mcman_wmemset((void *)mcdi, sizeof(MCDevInfo), 0);
@@ -1283,7 +1315,7 @@ int mcman_setdevinfos(int port, int slot)
 			
 	if (strncmp(SUPERBLOCK_MAGIC, mcman_pagebuf, 28) != 0) {
 #ifdef DEBUG		
-		printf("mcman: mcman_setdevinfos No card format !!!\n");
+		DPRINTF("mcman: mcman_setdevinfos No card format !!!\n");
 #endif		
 		return sceMcResNoFormat;
 	}
@@ -1361,7 +1393,7 @@ int mcman_reportBadBlocks(int port, int slot)
 	u8 *p;
 
 #ifdef DEBUG	
-	printf("mcman: mcman_reportBadBlocks port%d, slot%d\n", port, slot);	
+	DPRINTF("mcman: mcman_reportBadBlocks port%d, slot%d\n", port, slot);	
 #endif	
 	
 	mcman_wmemset((void *)mcdi->bad_block_list, 128, -1);	
@@ -1429,7 +1461,7 @@ int mcman_createDirentry(int port, int slot, int parent_cluster, int num_entries
 	McFsEntry *mfe, *mfe_next, *pfse;
 
 #ifdef DEBUG	
-	printf("mcman: mcman_createDirentry port%d slot%d parent_cluster %x num_entries %d cluster %x\n", port, slot, parent_cluster, num_entries, cluster);
+	DPRINTF("mcman: mcman_createDirentry port%d slot%d parent_cluster %x num_entries %d cluster %x\n", port, slot, parent_cluster, num_entries, cluster);
 #endif	
 	
 	r = mcman_readcluster(port, slot, mcdi->alloc_offset + cluster, &mce);
@@ -1616,7 +1648,7 @@ int mcman_findfree2(int port, int slot, int reserve)
 	McCacheEntry *mce1, *mce2;	
 	
 #ifdef DEBUG	
-	printf("mcman: mcman_findfree2 port%d slot%d reserve%d\n", port, slot, reserve);
+	DPRINTF("mcman: mcman_findfree2 port%d slot%d reserve%d\n", port, slot, reserve);
 #endif	
 	
 	fat_index = mcdi->unknown2;
@@ -1674,7 +1706,7 @@ int mcman_getentspace(int port, int slot, char *dirname)
 	u8 *pfsentry, *pmfe, *pfseend;
 
 #ifdef DEBUG		
-	printf("mcman: mcman_getentspace port%d slot%d dirname %s\n", port, slot, dirname);
+	DPRINTF("mcman: mcman_getentspace port%d slot%d dirname %s\n", port, slot, dirname);
 #endif	
 		
 	r = mcman_cachedirentry(port, slot, dirname, &cacheDir, &fse, 1);
@@ -1720,7 +1752,7 @@ int mcman_cachedirentry(int port, int slot, char *filename, McCacheDir *pcacheDi
 	u8 *p, *pfsentry, *pcache, *pfseend;
 
 #ifdef DEBUG		
-	printf("mcman: mcman_cachedirentry port%d slot%d name %s\n", port, slot, filename);
+	DPRINTF("mcman: mcman_cachedirentry port%d slot%d name %s\n", port, slot, filename);
 #endif	
 	
 	if (pcacheDir == NULL) {
@@ -1835,7 +1867,7 @@ int mcman_getdirinfo(int port, int slot, McFsEntry *pfse, char *filename, McCach
 	u8 *pfsentry, *pfsee, *pfseend;
 	
 #ifdef DEBUG	
-	printf("mcman: mcman_getdirinfo port%d slot%d name %s\n", port, slot, filename);
+	DPRINTF("mcman: mcman_getdirinfo port%d slot%d name %s\n", port, slot, filename);
 #endif	
 	
 	pos = mcman_chrpos(filename, '/');
@@ -2263,7 +2295,7 @@ int McCheckBlock(int port, int slot, int block)
 	u8 *p_page, *p_ecc;
 	
 #ifdef DEBUG
-	printf("mcman: McCheckBlock port%d slot%d block 0x%x\n", port, slot, block);
+	DPRINTF("mcman: McCheckBlock port%d slot%d block 0x%x\n", port, slot, block);
 #endif
 	
 	// sp50 = block;
@@ -2438,7 +2470,7 @@ int mcman_setPS1devinfos(int port, int slot)
 	MCDevInfo *mcdi = &mcman_devinfos[port][slot];
 	
 #ifdef DEBUG
-	printf("mcman: mcman_setPS1devinfos port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_setPS1devinfos port%d slot%d\n", port, slot);
 #endif	
 	
 	memset((void *)mcdi, 0, sizeof (MCDevInfo));
@@ -2495,7 +2527,7 @@ int mcman_getPS1direntry(int port, int slot, char *filename, McFsEntryPS1 **pfse
 	char *p = filename;
 
 #ifdef DEBUG		
-	printf("mcman: mcman_getPS1direntry port%d slot%d file %s flag %x\n", port, slot, filename, flag);
+	DPRINTF("mcman: mcman_getPS1direntry port%d slot%d file %s flag %x\n", port, slot, filename, flag);
 #endif	
 	
 	if (*p == '/')
@@ -2533,7 +2565,7 @@ int mcman_clearPS1direntry(int port, int slot, int cluster, int flags)
 	McCacheEntry *mce;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_clearPS1direntry port%d slot%d cluster %x flags %x\n", port, slot, cluster, flags);
+	DPRINTF("mcman: mcman_clearPS1direntry port%d slot%d cluster %x flags %x\n", port, slot, cluster, flags);
 #endif	
 
 	r = mcman_readdirentryPS1(port, slot, cluster, &fse);
@@ -2619,7 +2651,7 @@ int mcman_findfree1(int port, int slot, int reserve)
 	McFsEntryPS1 *fse;
 		
 #ifdef DEBUG
-	printf("mcman: mcman_findfree1 port%d slot%d reserve %d\n", port, slot, reserve);
+	DPRINTF("mcman: mcman_findfree1 port%d slot%d reserve %d\n", port, slot, reserve);
 #endif	
 	
 	free = 0; 
@@ -2725,7 +2757,7 @@ int mcman_FNC8ca4(int port, int slot, MC_FHANDLE *fh)
 	u8 *pfsentry, *pfsee, *pfseend; 
 
 #ifdef DEBUG		
-	printf("mcman: mcman_FNC8ca4 port%d slot%d\n", port, slot); 
+	DPRINTF("mcman: mcman_FNC8ca4 port%d slot%d\n", port, slot); 
 #endif	
 	
 	if (mcdi->cluster_size < 0)
@@ -2919,7 +2951,7 @@ int mcman_cachePS1dirs(int port, int slot)
 	int cluster_t[15];
 
 #ifdef DEBUG
-	printf("mcman: mcman_cachePS1dirs port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_cachePS1dirs port%d slot%d\n", port, slot);
 #endif	
 	
 	i = 0;
@@ -3077,7 +3109,7 @@ void mcman_initcache(void)
 	u8 *p;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_initcache\n");
+	DPRINTF("mcman: mcman_initcache\n");
 #endif	
 	
 	j = MAX_CACHEENTRY - 1;
@@ -3114,7 +3146,7 @@ void mcman_initcache(void)
 int McRetOnly(int fd) // Export #37
 {
 #ifdef DEBUG	
-	printf("mcman: McRetOnly param %x\n", fd);
+	DPRINTF("mcman: McRetOnly param %x\n", fd);
 #endif	
 	return sceMcResSucceed;
 }
@@ -3127,7 +3159,7 @@ int mcman_clearcache(int port, int slot)
 	McCacheEntry *mce, *mce_save;
 	
 #ifdef DEBUG
-	printf("mcman: mcman_clearcache port%d, slot%d\n", port, slot);	
+	DPRINTF("mcman: mcman_clearcache port%d, slot%d\n", port, slot);	
 #endif	
 
 	for (i = MAX_CACHEENTRY - 1; i >= 0; i--) { 
@@ -3170,7 +3202,7 @@ McCacheEntry *mcman_getcacheentry(int port, int slot, int cluster)
 	register int i;
 	McCacheEntry *mce = (McCacheEntry *)pmcman_entrycache;
 	
-	//printf("mcman: mcman_getcacheentry port%d slot%d cluster %x\n", port, slot, cluster);		
+	//DPRINTF("mcman: mcman_getcacheentry port%d slot%d cluster %x\n", port, slot, cluster);		
 	
 	for (i = 0; i < MAX_CACHEENTRY; i++) { 		
 		if ((mce->mc_port == port) && (mce->mc_slot == slot) && (mce->cluster == cluster))
@@ -3250,7 +3282,7 @@ int mcman_flushmccache(int port, int slot)
 	McCacheEntry *mce;
 
 #ifdef DEBUG		
-	printf("mcman: mcman_flushmccache port%d slot%d\n", port, slot);
+	DPRINTF("mcman: mcman_flushmccache port%d slot%d\n", port, slot);
 #endif	
 	
 	i = MAX_CACHEENTRY - 1;
@@ -3283,7 +3315,7 @@ int mcman_flushcacheentry(McCacheEntry *mce)
 	void *p_page, *p_ecc;
 		
 #ifdef DEBUG	
-	printf("mcman: mcman_flushcacheentry mce %x cluster %x\n", (int)mce, (int)mce->cluster);
+	DPRINTF("mcman: mcman_flushcacheentry mce %x cluster %x\n", (int)mce, (int)mce->cluster);
 #endif	
 	
 	if (mce->wr_flag == 0)
@@ -3311,7 +3343,7 @@ lbl0:
 
 			do {
 				if (((mce->wr_flag >> j) & 1) != 0) {
-					//printf("flushing ent %x cl_data %x to page %d offset %d\n", mce, mce->cl_data, i, (pagesize * j));
+					//DPRINTF("flushing ent %x cl_data %x to page %d offset %d\n", mce, mce->cl_data, i, (pagesize * j));
 					r = McWritePS1PDACard(mce->mc_port, mce->mc_slot, i, (void *)(mce->cl_data + (pagesize * j)));
 					if (r == sceMcResFailReplace)
 						break;
@@ -3645,7 +3677,7 @@ int mcman_readdirentry(int port, int slot, int cluster, int fsindex, McFsEntry *
 	McCacheEntry *mce;
 	
 #ifdef DEBUG	
-	printf("mcman: mcman_readdirentry port%d slot%d cluster %d fsindex %d\n", port, slot, cluster, fsindex);
+	DPRINTF("mcman: mcman_readdirentry port%d slot%d cluster %d fsindex %d\n", port, slot, cluster, fsindex);
 #endif	
 	
 	maxent = 0x402 / (mcdi->cluster_size >> 9); //a1
@@ -3736,7 +3768,7 @@ int mcman_setFATentry(int port, int slot, int fat_index, int fat_entry) // Expor
 	McCacheEntry *mce;
 	register MCDevInfo *mcdi = &mcman_devinfos[port][slot];	
 	
-	//printf("mcman: mcman_setFATentry port%d slot%d fat_index %x fat_entry %x\n", port, slot, fat_index, fat_entry);	
+	//DPRINTF("mcman: mcman_setFATentry port%d slot%d fat_index %x fat_entry %x\n", port, slot, fat_index, fat_entry);	
 	
 	indirect_index = fat_index / mcdi->FATentries_per_cluster;
 	fat_offset = fat_index % mcdi->FATentries_per_cluster;
@@ -3866,7 +3898,7 @@ int mcman_fillbackupblock1(int port, int slot, int block, void **pagedata, void 
 	register u8 *p_ecc;
 	
 #ifdef DEBUG	
-	printf("mcman: mcman_fillbackupblock1 port%d slot%d block %x mcman_badblock %x\n", port, slot, block, mcman_badblock);
+	DPRINTF("mcman: mcman_fillbackupblock1 port%d slot%d block %x mcman_badblock %x\n", port, slot, block, mcman_badblock);
 #endif	
 	
 	sparesize = mcman_sparesize(port, slot);
@@ -3929,7 +3961,7 @@ int mcman_replacebadblock(void)
 	McFsEntry *fse;
 
 #ifdef DEBUG	
-	printf("mcman: mcman_replacebadblock mcman_badblock_port%d mcman_badblock_slot%d mcman_badblock %x\n", mcman_badblock_port, mcman_badblock_slot, mcman_badblock);
+	DPRINTF("mcman: mcman_replacebadblock mcman_badblock_port%d mcman_badblock_slot%d mcman_badblock %x\n", mcman_badblock_port, mcman_badblock_slot, mcman_badblock);
 #endif	
 	
 	if (mcman_badblock == 0)

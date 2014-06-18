@@ -3611,7 +3611,7 @@ int getFilePath(char *out, int cnfmode)
 					} //ends NEWICON
 					else if((ret==MOUNTVMC0) || (ret==MOUNTVMC1)){
 						i = ret-MOUNTVMC0;
-						load_vmcfs();
+						load_vmc_fs();
 						sprintf(tmp, "vmc%d:", i);
 						if(vmcMounted[i]){
 							if((j=vmc_PartyIndex[i]) >= 0){

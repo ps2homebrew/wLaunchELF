@@ -11,7 +11,7 @@ unsigned int getDirentryFromPath ( struct direntry* retval, const char* path, st
 
 	PROF_START ( getDirentryFromPathProf );
 
-	DEBUGPRINT ( 6, "vmcfs: Searching Direntry corresponding to path: %s\n", path );
+	DEBUGPRINT ( 6, "vmc_fs: Searching Direntry corresponding to path: %s\n", path );
 
 	// Skip past the first slash if they opened a file such as
 	// vmc0: / file.txt ( which means the path passed here will be / file.txt, we
@@ -46,7 +46,7 @@ unsigned int getDirentryFromPath ( struct direntry* retval, const char* path, st
 
 		gendata->dirent_page = i % g_Vmc_Image[ unit ].header.pages_per_cluster;
 
-		DEBUGPRINT ( 6, "vmcfs: Reading in allocatable cluster %u / page %u\n", ( current_cluster + gendata->first_allocatable ), ( current_cluster + gendata->first_allocatable ) * g_Vmc_Image[ unit ].header.pages_per_cluster + gendata->dirent_page );
+		DEBUGPRINT ( 6, "vmc_fs: Reading in allocatable cluster %u / page %u\n", ( current_cluster + gendata->first_allocatable ), ( current_cluster + gendata->first_allocatable ) * g_Vmc_Image[ unit ].header.pages_per_cluster + gendata->dirent_page );
 
 		// Reads either the first or second page of a cluster, depending
 		// on the value currently stored in i
@@ -56,12 +56,12 @@ unsigned int getDirentryFromPath ( struct direntry* retval, const char* path, st
 		if ( i == 0 && current_cluster == 0 ) 
 			length = dirent.length;
 
-		DEBUGPRINT ( 5, "vmcfs: Direntry Informations\n" );
-		DEBUGPRINT ( 5, "vmcfs: Object Type    : %s\n", ( dirent.mode & DF_DIRECTORY ) ?"Folder":"File" );
-		DEBUGPRINT ( 5, "vmcfs: Object Name    : %s\n", dirent.name );
-		DEBUGPRINT ( 5, "vmcfs: Object Exists  : %s\n", ( dirent.mode & DF_EXISTS ) ?"Yes":"No" );
-		DEBUGPRINT ( 5, "vmcfs: Object Length  : %u\n", dirent.length );
-		DEBUGPRINT ( 5, "vmcfs: Object Cluster : %u\n", dirent.cluster );
+		DEBUGPRINT ( 5, "vmc_fs: Direntry Informations\n" );
+		DEBUGPRINT ( 5, "vmc_fs: Object Type    : %s\n", ( dirent.mode & DF_DIRECTORY ) ?"Folder":"File" );
+		DEBUGPRINT ( 5, "vmc_fs: Object Name    : %s\n", dirent.name );
+		DEBUGPRINT ( 5, "vmc_fs: Object Exists  : %s\n", ( dirent.mode & DF_EXISTS ) ?"Yes":"No" );
+		DEBUGPRINT ( 5, "vmc_fs: Object Length  : %u\n", dirent.length );
+		DEBUGPRINT ( 5, "vmc_fs: Object Cluster : %u\n", dirent.cluster );
 
 		// Now that we have a pages worth of data, check if it is the
 		// Directory we are searching for.
@@ -78,10 +78,10 @@ unsigned int getDirentryFromPath ( struct direntry* retval, const char* path, st
 			if ( path[ pathoffset ] == '\0' || ( path[ pathoffset ] == '/' && path[ pathoffset + 1 ] == '\0' )  ) 
 			{
 
-				DEBUGPRINT ( 6, "vmcfs: Breaking from function\n" );
-				DEBUGPRINT ( 6, "vmcfs: dir_cluster = %u\n", dirent.cluster );
-				DEBUGPRINT ( 6, "vmcfs: dirent.name = %s\n", dirent.name );
-				DEBUGPRINT ( 6, "vmcfs: dirent.length = %u\n", dirent.length );
+				DEBUGPRINT ( 6, "vmc_fs: Breaking from function\n" );
+				DEBUGPRINT ( 6, "vmc_fs: dir_cluster = %u\n", dirent.cluster );
+				DEBUGPRINT ( 6, "vmc_fs: dirent.name = %s\n", dirent.name );
+				DEBUGPRINT ( 6, "vmc_fs: dirent.length = %u\n", dirent.length );
 
 				status = 1;
 
@@ -93,10 +93,10 @@ unsigned int getDirentryFromPath ( struct direntry* retval, const char* path, st
 			else
 			{
 
-				DEBUGPRINT ( 6, "vmcfs: Recursing into subfolder\n" );
-				DEBUGPRINT ( 6, "vmcfs: dir_cluster = %u\n", dirent.cluster );
-				DEBUGPRINT ( 6, "vmcfs: dirent.name = %s\n", dirent.name );
-				DEBUGPRINT ( 6, "vmcfs: dirent.length = %u\n", dirent.length );
+				DEBUGPRINT ( 6, "vmc_fs: Recursing into subfolder\n" );
+				DEBUGPRINT ( 6, "vmc_fs: dir_cluster = %u\n", dirent.cluster );
+				DEBUGPRINT ( 6, "vmc_fs: dirent.name = %s\n", dirent.name );
+				DEBUGPRINT ( 6, "vmc_fs: dirent.length = %u\n", dirent.length );
 
 				i               = -1;             // will be 0 when we continue, essentially starting the loop over again
 				current_cluster = dirent.cluster; // dirent.cluster refer to fat table and current_cluster to allocatable place
@@ -156,14 +156,14 @@ unsigned int addPseudoEntries ( struct gen_privdata* gendata, struct direntry* p
 	if ( pseudo_entries_cluster == ERROR_CLUSTER ) 
 	{
 
-		DEBUGPRINT ( 2, "vmcfs: Not enough free space to add pseudo entries.  Aborting.\n" );
+		DEBUGPRINT ( 2, "vmc_fs: Not enough free space to add pseudo entries.  Aborting.\n" );
 
 		return ERROR_CLUSTER;
 
 	}
 
 	// Create the first 2 psuedo entries for the folder, and write them
-	DEBUGPRINT ( 5, "vmcfs: Adding pseudo entries into fat table cluster %u\n", pseudo_entries_cluster );
+	DEBUGPRINT ( 5, "vmc_fs: Adding pseudo entries into fat table cluster %u\n", pseudo_entries_cluster );
 
 	struct direntry pseudo_entries;
 
@@ -213,12 +213,12 @@ unsigned int addObject ( struct gen_privdata* gendata, unsigned int parent_clust
 	for ( i = 0; i < parent->length; i += g_Vmc_Image[ unit ].header.pages_per_cluster ) 
 	{
 
-		DEBUGPRINT ( 6, "vmcfs: Following fat table cluster: %u\n", current_cluster );
+		DEBUGPRINT ( 6, "vmc_fs: Following fat table cluster: %u\n", current_cluster );
 
 		if ( getFatEntry ( gendata->fd, current_cluster, gendata->indir_fat_clusters, FAT_VALUE ) == EOF_CLUSTER ) 
 		{
 
-			DEBUGPRINT ( 6, "vmcfs: Last used cluster in fat table %u\n", current_cluster );
+			DEBUGPRINT ( 6, "vmc_fs: Last used cluster in fat table %u\n", current_cluster );
 			break;
 
 		}
@@ -237,13 +237,13 @@ unsigned int addObject ( struct gen_privdata* gendata, unsigned int parent_clust
 		if ( nextfree_cluster == ERROR_CLUSTER ) 
 		{
 
-			DEBUGPRINT ( 2, "vmcfs: Not enough free space.  Aborting.\n" );
+			DEBUGPRINT ( 2, "vmc_fs: Not enough free space.  Aborting.\n" );
 
 			return ERROR_CLUSTER;
 
 		}
 
-		DEBUGPRINT ( 6, "vmcfs: Added new object in fat table cluster %u ( Page %u ) \n", current_cluster, current_cluster * g_Vmc_Image[ unit ].header.pages_per_cluster );
+		DEBUGPRINT ( 6, "vmc_fs: Added new object in fat table cluster %u ( Page %u ) \n", current_cluster, current_cluster * g_Vmc_Image[ unit ].header.pages_per_cluster );
 
 		setFatEntry ( gendata->fd, current_cluster, nextfree_cluster, gendata->indir_fat_clusters, FAT_SET ); // update the last cluster in the directory entry list to point to our new cluster
 		setFatEntry ( gendata->fd, nextfree_cluster, EOF_CLUSTER, gendata->indir_fat_clusters, FAT_SET );     // set the free cluster we just found to be EOF
@@ -277,7 +277,7 @@ unsigned int addObject ( struct gen_privdata* gendata, unsigned int parent_clust
 	else	// otherwise we can just add the directory entry to the end of the last cluster
 	{
 
-		DEBUGPRINT ( 5, "vmcfs: Added new object in fat table cluster %u ( Page %u ) \n", current_cluster, current_cluster * g_Vmc_Image[ unit ].header.pages_per_cluster + 1 );
+		DEBUGPRINT ( 5, "vmc_fs: Added new object in fat table cluster %u ( Page %u ) \n", current_cluster, current_cluster * g_Vmc_Image[ unit ].header.pages_per_cluster + 1 );
 
 		// If the object is a folder, we have to add 2 psuedoentries
 		if ( dirent->mode & DF_DIRECTORY ) 
@@ -325,7 +325,7 @@ void removeObject ( struct gen_privdata* gendata, unsigned int dirent_cluster, s
 	unsigned int current_cluster = 0;
 	unsigned int last_cluster    = dirent->cluster;
 
-	DEBUGPRINT ( 3, "vmcfs: Searching last cluster of direntry\n" );
+	DEBUGPRINT ( 3, "vmc_fs: Searching last cluster of direntry\n" );
 
 	while ( 1 ) 
 	{
@@ -336,7 +336,7 @@ void removeObject ( struct gen_privdata* gendata, unsigned int dirent_cluster, s
 		{
 
 			// FREE_CLUSTER mean nothing to remove or error, so return
-			DEBUGPRINT ( 10, "vmcfs: Testing cluster %u ... value is FREE_CLUSTER\n", last_cluster );
+			DEBUGPRINT ( 10, "vmc_fs: Testing cluster %u ... value is FREE_CLUSTER\n", last_cluster );
 			
 			return;
 
@@ -345,7 +345,7 @@ void removeObject ( struct gen_privdata* gendata, unsigned int dirent_cluster, s
 		{
 
 			// EOF_CLUSTER mean last cluster of the direntry is found
-			DEBUGPRINT ( 3, "vmcfs: Last cluster of direntry at %u\n", last_cluster );
+			DEBUGPRINT ( 3, "vmc_fs: Last cluster of direntry at %u\n", last_cluster );
 
 			break;
 
@@ -354,7 +354,7 @@ void removeObject ( struct gen_privdata* gendata, unsigned int dirent_cluster, s
 		{
 
 			// Otherwise change bit mask of tested cluster
-			DEBUGPRINT ( 10, "vmcfs: Testing cluster %u ... value is %u\n", last_cluster, current_cluster );
+			DEBUGPRINT ( 10, "vmc_fs: Testing cluster %u ... value is %u\n", last_cluster, current_cluster );
 
 			setFatEntry ( gendata->fd, last_cluster, current_cluster, gendata->indir_fat_clusters, FAT_RESET );
 
@@ -392,9 +392,9 @@ unsigned int getFreeCluster ( struct gen_privdata* gendata, int unit )
 		if ( value == FREE_CLUSTER ) 
 		{
 
-			DEBUGPRINT ( 10, "vmcfs: Testing fat table cluster %d ... value is FREE_CLUSTER\n", i - gendata->first_allocatable );
+			DEBUGPRINT ( 10, "vmc_fs: Testing fat table cluster %d ... value is FREE_CLUSTER\n", i - gendata->first_allocatable );
 
-			DEBUGPRINT ( 6, "vmcfs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable );
+			DEBUGPRINT ( 6, "vmc_fs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable );
 			g_Vmc_Image[ unit ].last_free_cluster = i;
 
 			return ( i - gendata->first_allocatable );
@@ -403,20 +403,20 @@ unsigned int getFreeCluster ( struct gen_privdata* gendata, int unit )
 		else if ( value == EOF_CLUSTER ) 
 		{
 
-			DEBUGPRINT ( 10, "vmcfs: Testing fat table cluster %d ... value is EOF_CLUSTER\n", i - gendata->first_allocatable );
+			DEBUGPRINT ( 10, "vmc_fs: Testing fat table cluster %d ... value is EOF_CLUSTER\n", i - gendata->first_allocatable );
 
 		}
 		else
 		{
 
-			DEBUGPRINT ( 10, "vmcfs: Testing fat table cluster %d ... value is %d\n", i - gendata->first_allocatable, value );
+			DEBUGPRINT ( 10, "vmc_fs: Testing fat table cluster %d ... value is %d\n", i - gendata->first_allocatable, value );
 
 			cluster_mask = getFatEntry ( gendata->fd, i - gendata->first_allocatable, gendata->indir_fat_clusters, FAT_MASK );
 			
 			if ( cluster_mask != MASK_CLUSTER )
 			{
 
-				DEBUGPRINT ( 6, "vmcfs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable );
+				DEBUGPRINT ( 6, "vmc_fs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable );
 				g_Vmc_Image[ unit ].last_free_cluster = i;
 
 				return ( i - gendata->first_allocatable );
@@ -438,13 +438,13 @@ unsigned int getFreeCluster ( struct gen_privdata* gendata, int unit )
 int setDefaultSpec ( int unit ) 
 {
 
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock set by default\n" );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock set by default\n" );
 
 	memset ( &g_Vmc_Image[ unit ].header, g_Vmc_Image[ unit ].erase_byte, sizeof ( struct superblock )  );
 	
 	strcpy ( g_Vmc_Image[ unit ].header.magic, "Sony PS2 Memory Card Format 1.2.0.0" );
 
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: magic[40]             : %s\n"   , g_Vmc_Image[ unit ].header.magic                  );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: magic[40]             : %s\n"   , g_Vmc_Image[ unit ].header.magic                  );
 
 	g_Vmc_Image[ unit ].header.page_size = 0x200;
 	g_Vmc_Image[ unit ].header.pages_per_cluster = 0x2;
@@ -483,14 +483,14 @@ int setDefaultSpec ( int unit )
 	g_Vmc_Image[ unit ].header.mc_type = 0x2;
 	g_Vmc_Image[ unit ].header.mc_flag = 0x2B;
 
-	DEBUGPRINT ( 4, "vmcfs: Image file Info: Number of pages       : %d\n", g_Vmc_Image[ unit ].total_pages );
-	DEBUGPRINT ( 4, "vmcfs: Image file Info: Size of a cluster     : %d bytes\n", g_Vmc_Image[ unit ].cluster_size );
-	DEBUGPRINT ( 4, "vmcfs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[ unit ].ecc_flag ? "YES" : "NO" );
-	DEBUGPRINT ( 3, "vmcfs: Image file Info: Vmc card type         : %s MemoryCard.\n", ( g_Vmc_Image[ unit ].header.mc_type == PSX_MEMORYCARD ? "PSX" : ( g_Vmc_Image[ unit ].header.mc_type == PS2_MEMORYCARD ? "PS2" : "PDA" )  )  );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: page_size             : 0x%02x\n", g_Vmc_Image[ unit ].header.page_size              );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: pages_per_cluster     : 0x%02x\n", g_Vmc_Image[ unit ].header.pages_per_cluster      );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: pages_per_block       : 0x%02x\n", g_Vmc_Image[ unit ].header.pages_per_block        );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: clusters_per_card     : 0x%02x\n", g_Vmc_Image[ unit ].header.clusters_per_card      );
+	DEBUGPRINT ( 4, "vmc_fs: Image file Info: Number of pages       : %d\n", g_Vmc_Image[ unit ].total_pages );
+	DEBUGPRINT ( 4, "vmc_fs: Image file Info: Size of a cluster     : %d bytes\n", g_Vmc_Image[ unit ].cluster_size );
+	DEBUGPRINT ( 4, "vmc_fs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[ unit ].ecc_flag ? "YES" : "NO" );
+	DEBUGPRINT ( 3, "vmc_fs: Image file Info: Vmc card type         : %s MemoryCard.\n", ( g_Vmc_Image[ unit ].header.mc_type == PSX_MEMORYCARD ? "PSX" : ( g_Vmc_Image[ unit ].header.mc_type == PS2_MEMORYCARD ? "PS2" : "PDA" )  )  );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: page_size             : 0x%02x\n", g_Vmc_Image[ unit ].header.page_size              );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: pages_per_cluster     : 0x%02x\n", g_Vmc_Image[ unit ].header.pages_per_cluster      );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: pages_per_block       : 0x%02x\n", g_Vmc_Image[ unit ].header.pages_per_block        );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: clusters_per_card     : 0x%02x\n", g_Vmc_Image[ unit ].header.clusters_per_card      );
 
 	g_Vmc_Image[ unit ].header.first_allocatable = (  (  (  ( g_Vmc_Image[ unit ].total_pages - 1 ) * ( g_Vmc_Image[ unit ].cluster_size / g_Vmc_Image[ unit ].header.page_size )  ) / g_Vmc_Image[ unit ].cluster_size ) + 1 ) + 8 + (  ( g_Vmc_Image[ unit ].total_pages - 1 ) / ( g_Vmc_Image[ unit ].total_pages * g_Vmc_Image[ unit ].header.pages_per_cluster * ( g_Vmc_Image[ unit ].cluster_size / g_Vmc_Image[ unit ].header.page_size )  )  ) + 1;
 	g_Vmc_Image[ unit ].header.last_allocatable = ( g_Vmc_Image[ unit ].header.clusters_per_card - g_Vmc_Image[ unit ].header.first_allocatable ) - (  ( g_Vmc_Image[ unit ].header.pages_per_block / g_Vmc_Image[ unit ].header.pages_per_cluster ) * g_Vmc_Image[ unit ].header.pages_per_cluster );
@@ -500,11 +500,11 @@ int setDefaultSpec ( int unit )
 	g_Vmc_Image[ unit ].header.backup_block2 = g_Vmc_Image[ unit ].header.backup_block1 - 1;
 	memset ( g_Vmc_Image[ unit ].header.unused1, g_Vmc_Image[ unit ].erase_byte, 8 );
 
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: first_allocatable     : 0x%02x\n", g_Vmc_Image[ unit ].header.first_allocatable      );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: last_allocatable      : 0x%02x\n", g_Vmc_Image[ unit ].header.last_allocatable       );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: root_cluster          : 0x%02x\n", g_Vmc_Image[ unit ].header.root_cluster           );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: backup_block1         : 0x%02x\n", g_Vmc_Image[ unit ].header.backup_block1          );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: backup_block2         : 0x%02x\n", g_Vmc_Image[ unit ].header.backup_block2          );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: first_allocatable     : 0x%02x\n", g_Vmc_Image[ unit ].header.first_allocatable      );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: last_allocatable      : 0x%02x\n", g_Vmc_Image[ unit ].header.last_allocatable       );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: root_cluster          : 0x%02x\n", g_Vmc_Image[ unit ].header.root_cluster           );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: backup_block1         : 0x%02x\n", g_Vmc_Image[ unit ].header.backup_block1          );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: backup_block2         : 0x%02x\n", g_Vmc_Image[ unit ].header.backup_block2          );
 
 	unsigned int last_blk_sector = 8;
 	int i = 0;
@@ -519,7 +519,7 @@ int setDefaultSpec ( int unit )
 	}
 
 	for ( i = 0; g_Vmc_Image[ unit ].header.indir_fat_clusters[ i ]!= 0; i++ ) 
-		DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: indir_fat_clusters[%d] : 0x%02x\n", i, g_Vmc_Image[ unit ].header.indir_fat_clusters[ i ]);
+		DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: indir_fat_clusters[%d] : 0x%02x\n", i, g_Vmc_Image[ unit ].header.indir_fat_clusters[ i ]);
 
 	memset ( g_Vmc_Image[ unit ].header.bad_block_list, g_Vmc_Image[ unit ].erase_byte, sizeof ( unsigned int ) * 32 );
 
@@ -532,8 +532,8 @@ int setDefaultSpec ( int unit )
 	memset ( g_Vmc_Image[ unit ].header.unused6, g_Vmc_Image[ unit ].erase_byte, 8 );
 	g_Vmc_Image[ unit ].header.unused7 = 0xFFFFFFFF;
 
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: mc_type               : 0x%02x\n", g_Vmc_Image[ unit ].header.mc_type                );
-	DEBUGPRINT ( 4, "vmcfs: SuperBlock Info: mc_flag               : 0x%02x\n", g_Vmc_Image[ unit ].header.mc_flag                );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: mc_type               : 0x%02x\n", g_Vmc_Image[ unit ].header.mc_type                );
+	DEBUGPRINT ( 4, "vmc_fs: SuperBlock Info: mc_flag               : 0x%02x\n", g_Vmc_Image[ unit ].header.mc_flag                );
 
 	g_Vmc_Image[ unit ].last_free_cluster = g_Vmc_Image[ unit ].header.first_allocatable;
 
@@ -568,7 +568,7 @@ int setDefaultSpec ( int unit )
 		SysClock2USec ( &iop_clock_finished, &sec2, &usec2 );
 		SysClock2USec ( iopclock1, &sec1, &usec1 );
 
-		printf ( "vmcfs: Profiler[ %s ]: %s %ld. %ld seconds\n", function, name, sec2 - sec1, ( usec2 - usec1 ) / 1000 );
+		printf ( "vmc_fs: Profiler[ %s ]: %s %ld. %ld seconds\n", function, name, sec2 - sec1, ( usec2 - usec1 ) / 1000 );
 
 	}
 
