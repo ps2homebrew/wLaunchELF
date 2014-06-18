@@ -305,7 +305,7 @@ int sizeSelector(int size)
 				sprintf(c, "—è1:%s —è0:%s —è3:%s —è</—è::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
 					LNG(OK), LNG(Cancel), LNG(Back), LNG(MB), LNG(GB), LNG(GB));
 			else
-				sprintf(c, "—è0:%s —è1:%s —è3:%s —è</—è::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
+				sprintf(c, "ˇ0:%s ˇ1:%s ˇ3:%s ˇ</ˇ::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
 					LNG(OK), LNG(Cancel), LNG(Back), LNG(MB), LNG(GB), LNG(GB));
 			printXY(c, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
@@ -424,9 +424,9 @@ int MenuParty(PARTYINFO Info)
 				0, y-1,
 				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				sprintf(tmp, "—è1:%s —è0:%s —è3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+				sprintf(tmp, "ˇ1:%s ˇ0:%s ˇ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
 			else
-				sprintf(tmp, "—è0:%s —è1:%s —è3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+				sprintf(tmp, "ˇ0:%s ˇ1:%s ˇ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
 			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1054,9 +1054,9 @@ void hddManager(void)
 				} //ends clause for scrollbar
 			} //ends hdd formated
 			//Tooltip section
-			sprintf(tooltip, "R1:%s  —è3:%s", LNG(MENU), LNG(Exit));
+			sprintf(tooltip, "R1:%s  ˇ3:%s", LNG(MENU), LNG(Exit));
 			if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){
-				sprintf(tmp, " —è2:%s", LNG(Load_HDL_Game_Info));
+				sprintf(tmp, " ˇ2:%s", LNG(Load_HDL_Game_Info));
 				strcat(tooltip, tmp);
 			}
 			setScrTmp(LNG(PS2_HDD_MANAGER), tooltip);

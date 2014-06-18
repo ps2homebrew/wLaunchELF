@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF wip5 (2013.10.27)
+ - fixed file encoding bug
+
 LaunchELF wip4 (2013.10.22)
  * now all partitions which names are started from "__" are browsable;
  * hide DELETE menu entry in HDD manager for partitions which are started from "__" (because PS2SDK has a bug - so these partitions cannot be removed)

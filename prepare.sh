@@ -29,7 +29,8 @@ else
  git reset --hard origin/master || exit 1
 fi
 
-make clean && make && make install && make clean || { exit 1; }
+chmod a+x setup.sh
+./setup.sh || { exit 1; }
 cd ..
  
 cd oldlibs
