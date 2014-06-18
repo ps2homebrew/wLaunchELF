@@ -2,9 +2,23 @@
 //File name:    "dlanor usbhdfsd rev02.txt"
 //---------------------------------------------------------------------------
 //
+//dlanor: usbhdfsd Revision 03 changelog:
+//
+//  1:  Modified fat_getNextDirentry, to eliminate huge delays for large dirs.
+//      Those delays were previously proportional to the square of the object
+//      count, but are now linearly related to the object count.
+//
+//  2:  Fixed a disconnection memory leak and hotswap bug. The old cache buffer
+//      was never released, so it would remain allocated though no longer used.
+//      This bug could lead to driver freezing after hotswaps. The fix affects
+//      four files: "scache.c", "scache.h", "fat_driver.c", and "fat_driver.h".
+//
+//  3:  Removed an incorrect limitation that prevented file and folder names
+//      beginning with a period from being used. (eg: ".htaccess")
+//
 //dlanor: usbhdfsd Revision 02 changelog:
 //
-//	1:  The changes described in point 2 of revision 01 caused some problems
+//  1:  The changes described in point 2 of revision 01 caused some problems
 //      with the read access of large directories (possibly cache related). For
 //      the time being 'fat_getNextDirentry' has been reverted to its old, and
 //      unfortunately super-slow behaviour. But at least it works again...

@@ -27,12 +27,13 @@ extern unsigned g_MaxLBA;
 
 #define SECTOR_SIZE Size_Sector //512 modified by Hermes
 
-#define DISK_INIT(a,b)		scache_init((a), (b))
-#define DISK_CLOSE		scache_close
+#define DISK_INIT(a,b) scache_init((a), (b))
+#define DISK_CLOSE     scache_close
+#define DISK_KILL      scache_kill  //dlanor: added for disconnection events (no flush)
 #define READ_SECTOR(a, b)	scache_readSector((a), (void **)&b)
 #define FLUSH_SECTORS		scache_flushSectors
 
-int	mounted;	//disk mounted=1 not mounted=0
+int	mounted = 0;	//disk mounted=1 not mounted=0
 fat_part partTable;	//partition master record
 fat_bpb  partBpb;	//partition bios parameter block
 
@@ -938,7 +939,7 @@ int fat_mountCheck()
 	mediaStatus = mass_stor_getStatus(&mass_device);
 	if (mediaStatus < 0)
 	{
-		mounted = 0;
+		fat_forceUnmount();
 		return mediaStatus;
 	}
 	if ((mediaStatus & 0x03) == 3)  //if DEVICE_DETECTED and DEVICE_CONFIGURED both set
@@ -950,7 +951,7 @@ int fat_mountCheck()
 		//I've fixed that by modifying 'fat_initDriver', further below
 
 		if((mediaStatus & 0x04) == 4) { //if DEVICE_DISCONNECTED
-			mounted = 0;
+			fat_forceUnmount();
 		} else if (mounted) {
 			return 1;
 		}
@@ -959,7 +960,7 @@ int fat_mountCheck()
 	}
 
 	/* fs mounted but media is not ready - force unmount */
-	if (mounted) { mounted = 0; }
+	fat_forceUnmount();
 	return -10;
 }
 
@@ -972,10 +973,9 @@ int fat_getNextDirentry(fat_dir* fatDir) {
 	int i;
 	int dirSector;
 	unsigned int startSector;
-	int cont;
+	int cont, new_entry;
 	int ret;
 	int dirPos;
-	int index;
 	unsigned int dirCluster;
 
 	//the getFirst function was not called
@@ -985,7 +985,6 @@ int fat_getNextDirentry(fat_dir* fatDir) {
 	bpb = &partBpb;
 
 	dirCluster = direntryCluster;
-	index  = 0;
 
 	//clear name strings
 	dir.sname[0] = 0;
@@ -999,36 +998,34 @@ int fat_getNextDirentry(fat_dir* fatDir) {
 	//or stop when no more direntries detected
   //dlanor: but avoid rescanning same areas redundantly (if possible)
 	cont = 1;
-	for (i = 0; i < dirSector && cont; i++) {
+	new_entry = 1;
+	dirPos = (direntryIndex*32) % bpb->sectorSize;
+	for (i = ((direntryIndex*32) / bpb->sectorSize); (i < dirSector) && cont; i++) {
 		//At cluster borders, get correct sector from cluster chain buffer
-		if ((dirCluster != 0) && (i % bpb->clusterSize == 0)) {
-			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize)]) -i;
+		if ((dirCluster != 0) && (new_entry || (i % bpb->clusterSize == 0))) {
+			startSector = fat_cluster2sector(bpb, cbuf[(i / bpb->clusterSize)])
+				-i + (i % bpb->clusterSize);
+			new_entry = 0;
 		}
 		ret = READ_SECTOR(startSector + i, sbuf);
 		if (ret < 0) {
 			printf("Read directory  sector failed ! sector=%i\n", startSector + i);
 			return -3;
 		}
-		dirPos = 0;
 
-		// go through start of the sector till the end of sector
-		while (cont &&  dirPos < bpb->sectorSize) {
+		// go through sector from current pos till its end
+		while (cont &&  (dirPos < bpb->sectorSize)) {
 			dsfn = (fat_direntry_sfn*) (sbuf + dirPos);
 			dlfn = (fat_direntry_lfn*) (sbuf + dirPos);
 			cont = fat_getDirentry(dsfn, dlfn, &dir); //get a directory entry from sector
+			direntryIndex++; //Note current entry processed
 			if (cont == 1) { //when short file name entry detected
-				index++;
-				if ((index-1) == direntryIndex) {
-						direntryIndex++;
-						fat_setFatDir(bpb, fatDir, dsfn, &dir, 0);
-						return 1;
-				}
-				//clear name strings
-				dir.sname[0] = 0;
-				dir.name[0] = 0;
+				fat_setFatDir(bpb, fatDir, dsfn, &dir, 0);
+				return 1;
 			}
 			dirPos += 32; //directory entry of size 32 bytes
 		}//ends "while"
+		dirPos = 0;
 	}//ends "for"
 	// when we get this far - reset the direntry cluster
 	direntryCluster = 0xFFFFFFFF; //no more files
@@ -1044,11 +1041,31 @@ int fat_getFirstDirentry(char * dirName, fat_dir* fatDir) {
 	if (ret < 0) {
 		return ret;
 	}
-   if ((dirName == NULL) || (dirName[0] == 0) ||
-      (dirName[0] == '.') ||
-      ((dirName[0] == '/' || dirName[0]=='\\') && ((dirName[1] == 0) || (dirName[1] == '.')))) // the root directory
-      {
-			direntryCluster = 0;
+
+	//When used as an absolute path, lots of alternatives evaluate to root...
+	if(	(dirName == NULL)              //NULL => root
+		||(dirName[0] == 0)              //""   => root
+		||( (dirName[0] == '.')
+			&&(	(dirName[1] == 0)          //"."  => root
+				||(	(dirName[1] == '.')
+					&&(dirName[2] == 0)        //".." => root
+					)
+				)
+			)
+		||( (dirName[0]=='/' || dirName[0]=='\\') //Treat slash and backslash the same
+			&&( (dirName[1] == 0)                   //"/"   => root
+				||( (dirName[0] == '.')
+					&&(	(dirName[1] == 0)               //"/."  => root
+						||(	(dirName[1] == '.')
+							&&(dirName[2] == 0)             //"/.." => root
+							)
+						)
+					)
+				)
+			)
+		) //Complex condition to accept various root directory reference methods
+	{
+		direntryCluster = 0;
 	} else {
 		ret = fat_getFileStartCluster(&partBpb, dirName, &startCluster, fatDir);
 		if (ret < 0) { //dir name not found
@@ -1097,6 +1114,15 @@ int fat_initDriver() {
 //---------------------------------------------------------------------------
 void fat_closeDriver() {
 	DISK_CLOSE();
+}
+
+//---------------------------------------------------------------------------
+void fat_forceUnmount() //dlanor: added for disconnection events (flush impossible)
+{
+	if(mounted) {
+		DISK_KILL();
+		mounted = 0;
+	}
 }
 
 //---------------------------------------------------------------------------

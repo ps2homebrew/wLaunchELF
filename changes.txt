@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.05 (2006.10.05)
+-Modified USB mass: driver to reduce delays in browsing large directories
+-Fixed USB mass: driver to permit file/folder names beginning with a period ('.')
+-Bugfixed USB mass: driver to eliminate a memory leak at disconnection/hotswap, which was responsible for occasional freezing after hotswaps
+
 LaunchELF v4.04 (2006.09.23)
 -Reverted one of my changes in usbhdfsd, because it seems to have broken dir caching. Unfortunately this means that we're back to the original super-slow dir reading, where time delay increases proportional to the square of the object count. So this version is very slow for large directories, but at least they work right...
 

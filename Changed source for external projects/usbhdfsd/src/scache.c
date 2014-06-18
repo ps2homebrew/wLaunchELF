@@ -1,3 +1,6 @@
+//---------------------------------------------------------------------------
+//File name:    scache.c
+//---------------------------------------------------------------------------
 /*
  * scache.c - USB Mass storage driver for PS2
  *
@@ -8,6 +11,7 @@
  *
  * See the file LICENSE included with this distribution for licensing terms.
  */
+//---------------------------------------------------------------------------
 
 #include <tamtypes.h>
 #include <stdio.h>
@@ -17,6 +21,7 @@
 
 #include "mass_stor.h"
 
+//---------------------------------------------------------------------------
 // Modified Hermes
 //always read 4096 bytes from sector (the rest bytes is stored in the cache)
 #define READ_SECTOR_4096(a, b)	mass_stor_readSector4096((a), (b))
@@ -51,6 +56,7 @@ unsigned int flushCounter;
 
 unsigned int cacheDumpCounter = 0;
 
+//---------------------------------------------------------------------------
 void initRecords()
 {
 	int i;
@@ -66,6 +72,7 @@ void initRecords()
 	flushCounter = 0;
 }
 
+//---------------------------------------------------------------------------
 /* search cache records for the sector number stored in cache
   returns cache record (slot) number
  */
@@ -81,6 +88,7 @@ int getSlot(unsigned int sector) {
 }
 
 
+//---------------------------------------------------------------------------
 /* search cache records for the sector number stored in cache */
 int getIndexRead(unsigned int sector) {
 	int i;
@@ -100,6 +108,7 @@ int getIndexRead(unsigned int sector) {
 		return ((index * indexLimit) + (sector - rec[index].sector));
 }
 
+//---------------------------------------------------------------------------
 /* select the best record where to store new sector */
 int getIndexWrite(unsigned int sector) {
 	int i, ret;
@@ -132,6 +141,7 @@ int getIndexWrite(unsigned int sector) {
 
 
 
+//---------------------------------------------------------------------------
 /*
 	flush dirty sectors
  */
@@ -164,10 +174,11 @@ int scache_flushSectors() {
 	return counter;
 }
 
+//---------------------------------------------------------------------------
 int scache_readSector(unsigned int sector, void** buf) {
 	int index; //index is given in single sectors not octal sectors
 	int ret;
-	unsigned int allignedSector;
+	unsigned int alignedSector;
 
 	XPRINTF("cache: readSector = %i \n", sector);
 	cacheAccess ++;
@@ -181,11 +192,11 @@ int scache_readSector(unsigned int sector, void** buf) {
 		return sectorSize;
 	}
 
-	//compute allignedSector - to prevent storage of duplicit sectors in slots
-	allignedSector = (sector/indexLimit)*indexLimit;
-	index = getIndexWrite(allignedSector);
-	XPRINTF("cache: indexWrite=%i slot=%d  allignedSector=%i\n", index, index / indexLimit, allignedSector);
-	ret = READ_SECTOR_4096(allignedSector, sectorBuf + (index * sectorSize));
+	//compute alignedSector - to prevent storage of duplicit sectors in slots
+	alignedSector = (sector/indexLimit)*indexLimit;
+	index = getIndexWrite(alignedSector);
+	XPRINTF("cache: indexWrite=%i slot=%d  alignedSector=%i\n", index, index / indexLimit, alignedSector);
+	ret = READ_SECTOR_4096(alignedSector, sectorBuf + (index * sectorSize));
 
 	if (ret < 0) {
 		return ret;
@@ -203,10 +214,11 @@ int scache_readSector(unsigned int sector, void** buf) {
 }
 
 
+//---------------------------------------------------------------------------
 int scache_allocSector(unsigned int sector, void** buf) {
 	int index; //index is given in single sectors not octal sectors
 	//int ret;
-	unsigned int allignedSector;
+	unsigned int alignedSector;
 
 	XPRINTF("cache: allocSector = %i \n", sector);
 	index = getIndexRead(sector);
@@ -217,9 +229,9 @@ int scache_allocSector(unsigned int sector, void** buf) {
 		return sectorSize;
 	}
 
-	//compute allignedSector - to prevent storage of duplicit sectors in slots
-	allignedSector = (sector/indexLimit)*indexLimit;
-	index = getIndexWrite(allignedSector);
+	//compute alignedSector - to prevent storage of duplicit sectors in slots
+	alignedSector = (sector/indexLimit)*indexLimit;
+	index = getIndexWrite(alignedSector);
 	XPRINTF("cache: indexWrite=%i \n", index);
 	*buf = sectorBuf + (index * sectorSize) + ((sector%indexLimit) * sectorSize);
 	XPRINTF("cache: done allocating sector\n");
@@ -227,6 +239,7 @@ int scache_allocSector(unsigned int sector, void** buf) {
 }
 
 
+//---------------------------------------------------------------------------
 int scache_writeSector(unsigned int sector) {
 	int index; //index is given in single sectors not octal sectors
 	//int ret;
@@ -258,6 +271,7 @@ int scache_writeSector(unsigned int sector) {
 	return sectorSize;
 }
 
+//---------------------------------------------------------------------------
 int scache_init(char * param, int sectSize)
 {
 	//added by Hermes
@@ -282,17 +296,27 @@ int scache_init(char * param, int sectSize)
 	return(1);
 }
 
+//---------------------------------------------------------------------------
 void scache_getStat(unsigned int* access, unsigned int* hits) {
 	*access = cacheAccess;
         *hits = cacheHits;
 }
 
-void scache_close()
+//---------------------------------------------------------------------------
+void scache_kill() //dlanor: added for disconnection events (flush impossible)
 {
-	scache_flushSectors();
 	if(sectorBuf != NULL)
 	{
 		free(sectorBuf);
 		sectorBuf = NULL;
 	}
 }
+//---------------------------------------------------------------------------
+void scache_close()
+{
+	scache_flushSectors();
+	scache_kill();
+}
+//---------------------------------------------------------------------------
+//End of file:  scache.c
+//---------------------------------------------------------------------------

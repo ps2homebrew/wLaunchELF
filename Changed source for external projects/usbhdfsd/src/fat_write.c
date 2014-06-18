@@ -846,7 +846,13 @@ int createShortNameMask(unsigned char* lname, unsigned char* sname) {
 	int j;
 	int fit;
 
-	if (lname[0] == '.') {
+	if(	(lname[0] == '.')
+		&&(	(lname[1] == 0)
+			||(	(lname[1] == '.')
+				&&(lname[2] == 0))
+			)
+		)
+	{
 		return -EINVAL;
 	}
 
@@ -1856,7 +1862,18 @@ int fat_createFile(fat_bpb* bpb, const char* fname, char directory, char escapeN
 
 
 	ret = separatePathAndName(fname, path, lname);
-	if (lname[0] == 0 || lname[0]=='.' || ret < 0) {
+	if(	(ret < 0)               //if name invalid to separation routine
+		||(	(lname[0] == 0)       //or name is empty string
+			||(	(lname[0]=='.')
+				&&(	(lname[1]==0)     //or name is single period
+					||(	(lname[1]=='.')
+						&&(lname[2]==0)   //or name is two periods
+						)
+					)
+				)
+			)
+		)
+	{
 		XPRINTF("E: file name not exist or not valid!");
 		return -ENOENT;
 	}
@@ -1913,7 +1930,18 @@ int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 
 
 	ret = separatePathAndName(fname, path, lname);
-	if (lname[0] == 0 || lname[0]=='.' || ret < 0) {
+	if(	(ret < 0)               //if name invalid to separation routine
+		||(	(lname[0] == 0)       //or name is empty string
+			||(	(lname[0]=='.')
+				&&(	(lname[1]==0)     //or name is single period
+					||(	(lname[1]=='.')
+						&&(lname[2]==0)   //or name is two periods
+						)
+					)
+				)
+			)
+		)
+	{
 		XPRINTF("E: file name not exist or not valid!");
 		return -ENOENT;
 	}
@@ -1943,6 +1971,56 @@ int fat_deleteFile(fat_bpb* bpb, const char* fname, char directory) {
 }
 
 
+//---------------------------------------------------------------------------
+/* //This will eventually become a function for renaming objects on mass:,
+//but it's not yet operational, and therefore commented out
+
+int fat_renameFile(fat_bpb* bpb, char* sPName, char* dPName, char directory) {
+	int ret;
+	unsigned int startCluster;
+	unsigned int sDirCluster;
+	unsigned int dDirCluster;
+	unsigned char sPath[FAT_MAX_PATH];
+	unsigned char sName[FAT_MAX_NAME];
+	unsigned char dPath[FAT_MAX_PATH];
+	unsigned char dName[FAT_MAX_NAME];
+
+
+	ret = separatePathAndName(sPName, sPath, sName);
+	if(	(ret < 0)               //if name invalid to separation routine
+		||(	(sName[0] == 0)       //or name is empty string
+			||(	(sName[0]=='.')
+				&&(	(sName[1]==0)     //or name is single period
+					||(	(sName[1]=='.')
+						&&(sName[2]==0)   //or name is two periods
+						)
+					)
+				)
+			)
+		)
+	{
+		XPRINTF("E: file name not exist or not valid!");
+		return -ENOENT;
+	}
+	ret = separatePathAndName(dPName, dPath, dName);
+	if(	(ret < 0)               //if name invalid to separation routine
+		||(	(dName[0] == 0)       //or name is empty string
+			||(	(dName[0]=='.')
+				&&(	(dName[1]==0)     //or name is single period
+					||(	(dName[1]=='.')
+						&&(dName[2]==0)   //or name is two periods
+						)
+					)
+				)
+			)
+		)
+	{
+		XPRINTF("E: file name not exist or not valid!");
+		return -ENOENT;
+	}
+
+} //ends fat_renameFile
+*/ //End of commented out function (rename function for future implementation)
 //---------------------------------------------------------------------------
 int fat_writeFile(fat_bpb* bpb, fat_dir* fatDir, int* updateClusterIndices, unsigned int filePos, unsigned char* buffer, int size) {
 	int ret;

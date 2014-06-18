@@ -552,70 +552,71 @@ int fs_dopen  (iop_file_t *fd, const char *name)
 {
 	//int index;
 	fat_dir fatdir;
-    int ret, is_root = 0;
+	int ret, is_root = 0;
 
-    _fs_lock();
+	_fs_lock();
 
-    //check if media mounted
-    ret = fat_mountCheck();
-    if (ret < 0) { _fs_unlock(); return ret; }
+	//check if media mounted
+	ret = fat_mountCheck();
+	if (ret < 0) { _fs_unlock(); return ret; }
 
 	fsCounter++;
 
-    if(((name[0] == '/') && (name[1] == '\0')) || ((name[0] == '/') && (name[1] == '.') && (name[2] == '\0')))
-    {
-        name = "/";
-        is_root = 1;
-    }
+	if( ((name[0] == '/') && (name[1] == '\0'))
+		||((name[0] == '/') && (name[1] == '.') && (name[2] == '\0')))
+	{
+		name = "/";
+		is_root = 1;
+	}
 
-    ret = fat_getFirstDirentry((char*)name, &fatdir);
+	ret = fat_getFirstDirentry((char*)name, &fatdir);
 
 	fd->privdata = (void*)malloc(sizeof(D_PRIVATE));
 	memset(fd->privdata, 0, sizeof(D_PRIVATE)); //NB: also implies "file_flag = 0;"
 
 	if (ret < 1)
 	{
-	    // root directory may have no entries, nothing else may.
-	    if(!is_root) { free(fd->privdata); _fs_unlock(); return(-1); }
+		// root directory may have no entries, nothing else may.
+		if(!is_root) { free(fd->privdata); _fs_unlock(); return(-1); }
 
-        // cause "dread" to return "no entries" immediately since dir is empty.
-        ((D_PRIVATE *) fd->privdata)->status = 1;
-    }
+		// cause "dread" to return "no entries" immediately since dir is empty.
+		((D_PRIVATE *) fd->privdata)->status = 1;
+	}
 
 	memcpy(&(((D_PRIVATE*)fd->privdata)->fatdir), &fatdir, sizeof(fatdir));
 
-    _fs_unlock();
- 	return fsCounter;
+	_fs_unlock();
+	return fsCounter;
 }
 
 //---------------------------------------------------------------------------
 int fs_dclose (iop_file_t *fd)
 {
-    _fs_lock();
- 	free(fd->privdata);
-    _fs_unlock();
- 	return 0;
+	_fs_lock();
+	free(fd->privdata);
+	_fs_unlock();
+	return 0;
 }
 
 //---------------------------------------------------------------------------
 int fs_dread  (iop_file_t *fd, void* data)
 {
 	int notgood;
-    int ret;
+	int ret;
 
-    _fs_lock();
+	_fs_lock();
 
-    //check if media mounted
-    ret = fat_mountCheck();
-    if (ret < 0) { _fs_unlock(); return ret; }
+	//check if media mounted
+	ret = fat_mountCheck();
+	if (ret < 0) { _fs_unlock(); return ret; }
 
 	fio_dirent_t *buffer = (fio_dirent_t *)data;
 	do {
 		if (((D_PRIVATE*)fd->privdata)->status)
 		{
-            _fs_unlock();
- 			return 0;
- 		}
+			_fs_unlock();
+			return 0;
+		}
 
 		notgood = 0;
 
@@ -625,7 +626,7 @@ int fs_dread  (iop_file_t *fd, void* data)
 		}
 		if ((((D_PRIVATE*)fd->privdata)->fatdir).attr & 0x10) {
 			buffer->stat.mode |= FIO_SO_IFDIR;
-	        } else {
+		} else {
 			buffer->stat.mode |= FIO_SO_IFREG;
 		}
 
@@ -665,8 +666,8 @@ int fs_dread  (iop_file_t *fd, void* data)
 			((D_PRIVATE*)fd->privdata)->status = 1;	/* no more entries */
 	} while (notgood);
 
-    _fs_unlock();
- 	return 1;
+	_fs_unlock();
+	return 1;
 }
 
 //---------------------------------------------------------------------------
@@ -686,7 +687,7 @@ int fs_getstat(iop_file_t *fd, const char *name, void* data)
 	XPRINTF("Calling fat_getFileStartCluster from fs_getstat\n");
 	ret = fat_getFileStartCluster(&partBpb, name, &cluster, &fatdir);
 	if (ret < 0) {
-        _fs_unlock();
+		_fs_unlock();
 		return -1;
 	}
 
