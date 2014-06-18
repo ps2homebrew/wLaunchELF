@@ -8,6 +8,7 @@ struct padButtonStatus buttons_t[2];
 u32 paddata, paddata_t[2];
 u32 old_pad = 0, old_pad_t[2] = {0, 0};
 u32 new_pad, new_pad_t[2];
+static int test_joy;
 
 //---------------------------------------------------------------------------
 // read PAD, without KB, and allow no auto-repeat. This is needed in code
@@ -53,10 +54,29 @@ int readpad_no_KB(void)
 			ret[port] = padRead(port, 0, &buttons_t[port]);
 			if (ret[port] != 0){
 				paddata_t[port] = 0xffff ^ buttons_t[port].btns;
+				if(++test_joy==2) test_joy=0;
+				if(test_joy){
+					if(buttons_t[port].rjoy_h == 0xff)
+						paddata_t[port]=PAD_R3_H1;
+					else if(buttons_t[port].rjoy_h == 0x00)
+						paddata_t[port]=PAD_R3_H0;
+					else if(buttons_t[port].rjoy_v == 0x00)
+						paddata_t[port]=PAD_R3_V0;
+					else if(buttons_t[port].rjoy_v == 0xff)
+						paddata_t[port]=PAD_R3_V1;
+					else if(buttons_t[port].ljoy_h == 0xff)
+						paddata_t[port]=PAD_L3_H1;
+					else if(buttons_t[port].ljoy_h == 0x00)
+						paddata_t[port]=PAD_L3_H0;
+					else if(buttons_t[port].ljoy_v == 0x00)
+						paddata_t[port]=PAD_L3_V0;
+					else if(buttons_t[port].ljoy_v == 0xff)
+						paddata_t[port]=PAD_L3_V1;
+				}
 				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];
 				if(old_pad_t[port]==paddata_t[port]){
 					n[port]++;
-					if(ITO_VMODE_AUTO==ITO_VMODE_NTSC){
+					if(gsKit_detect_signal()==GS_MODE_NTSC){
 						if(n[port]>=25){
 							new_pad_t[port]=paddata_t[port];
 							if(nn[port]++ < 20)	n[port]=20;

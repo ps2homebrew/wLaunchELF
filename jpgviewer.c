@@ -3,17 +3,19 @@
 //--------------------------------------------------------------
 #include "launchelf.h"
 
-static char	 msg0[MAX_PATH], msg1[MAX_PATH];
-static float fZoomStep, fOffsetX, fOffsetY;
-static u32	 nImagePosX, nImagePosY, nImagePosX1, nImagePosY1;
-static int   DiapoTime, DiapoTrans, DiapoBegin, DiapoStart, DiapoStop, DiapoSkip, FullScreen;
-static int	 Brightness;
-static int	 TimeRemain;
+static char	 msg0[MAX_PATH], msg1[MAX_PATH], jpgpath[MAX_PATH];
+static int   SlideShowTime, SlideShowTrans, SlideShowBegin, SlideShowStart, SlideShowStop, SlideShowSkip;
+static int	 Brightness, TimeRemain, PrintLen;
+static float PanPosX, PanPosY, PanPosX1, PanPosY1;
+static float PanZoom, PanOffsetX, PanOffsetY;
+float    		 PicW, PicH, PicCoeff;
+float    		 PicWidth, PicHeight;
+int					 PicRotate, FullScreen;
 
 #define OFF        1
 #define ZOOM       2
-#define FOND       3
-#define ZOOM_FOND  4
+#define FADE       3
+#define ZOOM_FADE  4
 
 #define LIST       1
 #define THUMBNAIL  2
@@ -23,89 +25,177 @@ static int	 TimeRemain;
 #define LOADED  	 1
 
 //--------------------------------------------------------------
-void View_Render( void ) {
+static void Command_List( void )
+{
+	int x, y;
+	int event, post_event=0;
 
-	u32 nTmpPosX, nTmpPosY;
-	u32 picOffsetX=0, picOffsetY=0;
+	int Command_ch_w = 34; //Total characters in longest Command Name.
+	int Command_ch_h = 9;  //Total Command lines number.
+	int cSprite_Y1 = SCREEN_HEIGHT/2-((Command_ch_h+1)*FONT_HEIGHT)/2; //Top edge of sprite.
+	int cSprite_X2 = SCREEN_WIDTH/2+((Command_ch_w+3)*FONT_WIDTH)/2;   //Right edge of sprite.
+	int cFrame_Y1 = cSprite_Y1;   //Top edge of frame.
+	int cFrame_X2 = cSprite_X2-3; //Right edge of frame (-3 correct ???).
+	int cFrame_X1 = cFrame_X2-(Command_ch_w+3)*FONT_WIDTH;  //Left edge of frame.
+	int cFrame_Y2 = cFrame_Y1+(Command_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame.
+	int cSprite_X1 = cFrame_X1-1; //Left edge of sprite.
+	int cSprite_Y2 = cFrame_Y2;   //Bottom edge of sprite.
 
-	nImagePosX = nTmpPosX = SCREEN_WIDTH/8  - (1.5f - fZoomStep) * (SCREEN_WIDTH/4);
-	nImagePosY = nTmpPosY = SCREEN_HEIGHT/8 - (1.5f - fZoomStep) * (SCREEN_HEIGHT/4);
-	
-	if(fZoomStep == 1.0f){
-		fOffsetX = 0.0f;
-		fOffsetY = 0.0f;
-	}else{
-		nImagePosX  += fOffsetX * nTmpPosX;
-		nImagePosY  += fOffsetY * nTmpPosY;
-	}
-	if(nImagePosX  <= 0) nImagePosX = 0;
-	if(nImagePosY  <= 0) nImagePosY = 0;
-  
-	nImagePosX1 = SCREEN_WIDTH  - (nTmpPosX*2 - nImagePosX);
-	nImagePosY1 = SCREEN_HEIGHT - (nTmpPosY*2 - nImagePosY);
-  
-	if(nImagePosX1 >= SCREEN_WIDTH ) nImagePosX1 = SCREEN_WIDTH;
-	if(nImagePosY1 >= SCREEN_HEIGHT) nImagePosY1 = SCREEN_HEIGHT;
-  
-	testskin=0;
-	clrScr(setting->color[0]);
-	itoSetTexture(0,
-		SCREEN_WIDTH, ITO_RGB24, log(SCREEN_WIDTH), log(SCREEN_HEIGHT/2));
+	event = 1;  //event = initial entry.
+	while(1){
+		//Pad response section.
+		waitPadReady(0, 0);
+		if(readpad()){
+			if(new_pad){
+				event |= 2;  //event |= valid pad command.
+				break;
+			}
+		}
 
-	if(Brightness!=100){
-		itoPrimFog( TRUE );
-		itoSetFogValue( 0, 0, 0, Brightness*2.55f );
-	}else
-		setBrightness(50);
+		if(event||post_event){ //NB: We need to update two frame buffers per event.
 
+			//Display section.
+			drawPopSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
+			drawFrame(cFrame_X1, cFrame_Y1, cFrame_X2, cFrame_Y2, setting->color[1]);
+
+			y=cFrame_Y1+FONT_HEIGHT/2;
+			x=cFrame_X1+2*FONT_WIDTH;
+
+			printXY("Start: Start/Stop Slideshow", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("L1/R1: Slideshow Timer", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("L2/R2: Slideshow Transition", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("Left/Right Pad: Prev/Next Picture", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("Left Joystick: Panorama", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("Right Joystick Vertical: Zoom", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("Right Joystick Horizontal: Rotate", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			if (swapKeys)
+				printXY("ÿ1: FullScreen Mode", x, y, setting->color[3], TRUE);
+			else
+				printXY("ÿ0: FullScreen Mode", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+			printXY("ÿ3: Exit To Jpg Browser", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
+
+		}//ends if(event||post_event).
+		drawScr();
+		post_event = event;
+		event = 0;
+	}//ends while.
+}//ends Command_List.
+//--------------------------------------------------------------
+static void View_Render( void ) {
+
+	char *name, tmp[MAX_PATH];
+
+	float ScreenPosX, ScreenPosX1, ScreenPosY, ScreenPosY1;
+	float ScreenOffsetX, ScreenOffsetY;
+	float TmpPosX, TmpPosY;
+
+	// Init picture position on screen
 	if(FullScreen){
-		itoSprite(ITO_RGBA( 0, 0, 0, 0 ),
-			0, 0,
-			SCREEN_WIDTH, SCREEN_HEIGHT/2, 0);
-		if(picHeight>=SCREEN_HEIGHT)
-			picOffsetX=(SCREEN_WIDTH-(SCREEN_HEIGHT*picCoeff))/2;
-		else
-			picOffsetY=(SCREEN_HEIGHT-(SCREEN_WIDTH/picCoeff))/2;
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
-			picOffsetX, picOffsetY/2,
-			nImagePosX, nImagePosY/2,
-			SCREEN_WIDTH-picOffsetX, (SCREEN_HEIGHT-picOffsetY)/2,
-			nImagePosX1, nImagePosY1/2, 0);
+		ScreenPosX =0.0f;
+		ScreenPosX1=SCREEN_WIDTH;
+		ScreenPosY =0.0f;
+		ScreenPosY1=SCREEN_HEIGHT;
 	}else{
-		itoSprite(ITO_RGBA( 0, 0, 0, 0 ),
-			SCREEN_MARGIN, Frame_start_y/2,
-			SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, 0);
-		if(picHeight>=Frame_end_y-Frame_start_y)
-			picOffsetX=((SCREEN_WIDTH-SCREEN_MARGIN*2)-((Frame_end_y-Frame_start_y)*picCoeff))/2;
-		else
-			picOffsetY=((Frame_end_y-Frame_start_y)-(SCREEN_WIDTH-SCREEN_MARGIN*2)/picCoeff)/2;
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
-			SCREEN_MARGIN+picOffsetX,
-			(Frame_start_y+picOffsetY)/2,
-			nImagePosX, nImagePosY/2,
-			SCREEN_WIDTH-SCREEN_MARGIN-picOffsetX,
-			(Frame_end_y-picOffsetY)/2,
-			nImagePosX1, nImagePosY1/2, 0);
-		setBrightness(50);
+		ScreenPosX =SCREEN_MARGIN;
+		ScreenPosX1=SCREEN_WIDTH-SCREEN_MARGIN;
+		ScreenPosY =Frame_start_y;
+		ScreenPosY1=Frame_end_y;
+	}
+
+	// Init black bars
+	if((ScreenOffsetX=((ScreenPosX1-ScreenPosX)-((ScreenPosY1-ScreenPosY)*PicCoeff))/2)<=0.0f)
+		ScreenOffsetX=0.0f;
+	if((ScreenOffsetY=((ScreenPosY1-ScreenPosY)-((ScreenPosX1-ScreenPosX)/PicCoeff))/2)<=0.0f)
+		ScreenOffsetY=0.0f;
+
+	// Init panorama
+	PanPosX=0.0f;
+	PanPosY=0.0f;
+	PanPosX1=PicWidth;
+	PanPosY1=PicHeight;
+	if(PanZoom==1.0f){
+		PanOffsetX=0.0f;
+		PanOffsetY=0.0f;
+	}else{
+		PanPosX=TmpPosX=((PicWidth/8)-((1.5f-PanZoom)*(PicWidth/4)));
+		if((PanPosX+=PanOffsetX*TmpPosX)<=0.0f)
+			PanPosX=0.0f;
+		if((PanPosX1=PicWidth-(TmpPosX*2-PanPosX))>=PicWidth)
+			PanPosX1=PicWidth;
+		PanPosY=TmpPosY=((PicHeight/8)-((1.5f-PanZoom)*(PicHeight/4)));
+		if((PanPosY+=PanOffsetY*TmpPosY)<=0.0f)
+			PanPosY=0.0f;
+		if((PanPosY1=PicHeight-(TmpPosY*2-PanPosY))>=PicHeight)
+			PanPosY1=PicHeight;
+	}
+
+	// Clear screen
+	clrScr(setting->color[0]);
+
+	// Draw color8 graph4
+	gsKit_prim_sprite(gsGlobal, ScreenPosX, ScreenPosY, ScreenPosX1, ScreenPosY1, 0, setting->color[7]);
+	// Draw picture
+	if(PicRotate==0 || PicRotate==1 ||PicRotate==3){ // No rotation, rotate +90°, -90°
+	 gsKit_prim_sprite_texture(gsGlobal,
+		 &TexPicture,
+		 ScreenPosX+ScreenOffsetX, ScreenPosY+ScreenOffsetY, PanPosX, PanPosY,
+		 ScreenPosX1-ScreenOffsetX, ScreenPosY1-ScreenOffsetY, PanPosX1, PanPosY1,
+		 0, GS_SETREG_RGBAQ(Brightness*1.28f, Brightness*1.28f, Brightness*1.28f, 0x80, 0x00));
+	}else if(PicRotate==2){ // Rotate 180°
+	 gsKit_prim_sprite_texture(gsGlobal,
+		 &TexPicture,
+		 ScreenPosX+ScreenOffsetX, ScreenPosY+ScreenOffsetY, PanPosX1, PanPosY1,
+		 ScreenPosX1-ScreenOffsetX, ScreenPosY1-ScreenOffsetY, PanPosX, PanPosY,
+		 0, GS_SETREG_RGBAQ(Brightness*1.28f, Brightness*1.28f, Brightness*1.28f, 0x80, 0x00));
+	}
+	setBrightness(50);
+
+	if(!FullScreen){
 		//Tooltip section
-		if (swapKeys)
-			sprintf(msg1, "ÿ1:FullScreen Dir:Move L1/R1:Zoom Start:Play/Pause Sel:Skip ÿ3:Stop Time:%d", TimeRemain);
+		strcpy(tmp, jpgpath);
+		name=strrchr(tmp, '/');
+		strcpy(name, name+1);
+		msg0[0]='\0';
+		sprintf(msg0, "Jpg Viewer  Picture: %s  Size: %d*%d ", name, (int)PicW, (int)PicH);
+		msg1[0]='\0';
+		sprintf(msg1, "Select: Command List  ");
+		tmp[0]='\0';
+		if(TimeRemain<60)
+			sprintf(tmp, "Timer: %d sec  Transition: ", TimeRemain);
 		else
-			sprintf(msg1, "ÿ0:FullScreen Dir:Move L1/R1:Zoom Start:Play/Pause Sel:Skip ÿ3:Stop Time:%d", TimeRemain);
+			sprintf(tmp, "Timer: %d m %d sec  Transition: ", TimeRemain/60, TimeRemain%60);
+		strcat(msg1, tmp);
+		if(SlideShowTrans==OFF)
+			strcat(msg1, "Off");
+		else if(SlideShowTrans==ZOOM)
+			strcat(msg1, "Zoom");
+		else if(SlideShowTrans==FADE)
+			strcat(msg1, "Fade");
+		else if(SlideShowTrans==ZOOM_FADE)
+			strcat(msg1, "Zoom+Fade");
 		setScrTmp(msg0, msg1);
-	} /* end fullscreen */
+	} /* end FullScreen */
 	drawScr();
 } /* end View_Render */
 
 //--------------------------------------------------------------
-void View_Input( void ) {
+static void View_Input( void ) {
 
 	int i=0;
 	u64 OldTime=Timer()+1000;
 
 	while(1){
 
-		if(DiapoStart){
+		if(SlideShowStart){
 			if(Timer()>=OldTime){
 				OldTime=Timer()+1000;
 				if(--TimeRemain<=0)
@@ -113,78 +203,142 @@ void View_Input( void ) {
 				View_Render();
 			}
 		}else{
-			OldTime=Timer()+1000;
-			TimeRemain=DiapoTime;
+			if(Timer()>=OldTime){
+				OldTime=Timer()+1000;
+				TimeRemain=SlideShowTime;
+				View_Render();
+			}
 		}
 
 		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
-			if(new_pad & PAD_R1){ 
-				if( fZoomStep < 3.0f ) { // Zoom In
-					fZoomStep += 0.01f;
-					DiapoStart=0;
+			if(new_pad & PAD_R3_V0){ 
+				if( PanZoom < 2.75f ) { // PanZoom In
+					PanZoom += 0.01f;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_L1){ // Zoom Out
-				if( fZoomStep > 1.0f ) {
-					fZoomStep -= 0.01f;
-					DiapoStart=0;
+			}else if(new_pad & PAD_R3_V1){ // PanZoom Out
+				if( PanZoom > 1.0f ) {
+					PanZoom -= 0.01f;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_RIGHT){ // Move Right
-				if ( fOffsetX < 0.95f ) {
-					fOffsetX += 0.05f/fZoomStep;
-					DiapoStart=0;
+			}else if(new_pad & PAD_L3_H1){ // Move Right
+				if ( PanOffsetX < 0.95f ) {
+					PanOffsetX += 0.05f/PanZoom;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_LEFT){ // Move Left
-				if ( fOffsetX > -0.95f ) {
-					fOffsetX -= 0.05f/fZoomStep;
-					DiapoStart=0;
+			}else if(new_pad & PAD_L3_H0){ // Move Left
+				if ( PanOffsetX > -0.95f ) {
+					PanOffsetX -= 0.05f/PanZoom;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_DOWN){ // Move Down
-				if ( fOffsetY < 0.95f ) {
-					fOffsetY += 0.05f/fZoomStep;
-					DiapoStart=0;
+			}else if(new_pad & PAD_L3_V1){ // Move Down
+				if ( PanOffsetY < 0.95f ) {
+					PanOffsetY += 0.05f/PanZoom;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_UP){ // Move Up
-				if ( fOffsetY > -0.95f ) {
-					fOffsetY -= 0.05f/fZoomStep;
-					DiapoStart=0;
+			}else if(new_pad & PAD_L3_V0){ // Move Up
+				if ( PanOffsetY > -0.95f ) {
+					PanOffsetY -= 0.05f/PanZoom;
+					SlideShowStart=0;
 					View_Render();
 				} /* end if */
-			}else if(new_pad & PAD_TRIANGLE){ // Stop Diaporama
-				DiapoStop=1;
+			}else if(new_pad & PAD_RIGHT){ // Next Pic
+				SlideShowSkip=1;
 				break;
-			}else if(new_pad & PAD_SELECT){ // Skip Pic
-				DiapoSkip=1;
+			}else if(new_pad & PAD_LEFT){ // Prev Pic
+				SlideShowSkip=-1;
 				break;
-			}else if(new_pad & PAD_START){ // Play/Pause Diaporama
-		    if(fZoomStep!=1.0f){
-		    	for ( i = 0; i < 40; ++i ) {
-						if (  ( fZoomStep -= 0.05F ) <= 1.0F  ) fZoomStep = 1.0F;
+			}else if(new_pad & PAD_R3_H1){ // Rotate Pic +
+		    if(PanZoom!=1.0f){
+		    	for ( i = 0; i < 35; ++i ) {
+						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
 						View_Render();
 					} /* end for */
 				} /* end if */
-				DiapoStart=!DiapoStart;
+				if(++PicRotate>=4) PicRotate=0;
+				loadSkin( JPG_PIC, jpgpath, 0 );
 				WaitTime=Timer();
-				while(Timer()<WaitTime+500); // Wait To Ensure On/Off Switch
-				TimeRemain=DiapoTime;
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
 				View_Render();
+			}else if(new_pad & PAD_R3_H0){ // Rotate Pic -
+		    if(PanZoom!=1.0f){
+		    	for ( i = 0; i < 35; ++i ) {
+						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
+						View_Render();
+					} /* end for */
+				} /* end if */
+				if(--PicRotate<=-1) PicRotate=3;
+				loadSkin( JPG_PIC, jpgpath, 0 );
+				WaitTime=Timer();
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
+				View_Render();
+			}else if(new_pad & PAD_R1){
+				if(++SlideShowTime>=3600) SlideShowTime=3600;
+				WaitTime=Timer();
+				while(Timer()<WaitTime+100); // Wait To Ensure Switch
+				if(++TimeRemain>=3600) TimeRemain=3600;
+				View_Render();
+			}else if(new_pad & PAD_L1){
+				if(--SlideShowTime<=1) SlideShowTime=1;
+				WaitTime=Timer();
+				while(Timer()<WaitTime+100); // Wait To Ensure Switch
+				if(--TimeRemain<=1) TimeRemain=1;
+				View_Render();
+			}else if(new_pad & PAD_R2){
+				if(++SlideShowTrans>4) SlideShowTrans=1;
+				WaitTime=Timer();
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
+				View_Render();
+			}else if(new_pad & PAD_L2){
+				if(--SlideShowTrans<1) SlideShowTrans=4;
+				WaitTime=Timer();
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
+				View_Render();
+			}else if(new_pad & PAD_TRIANGLE){ // Stop SlideShow
+				SlideShowStop=1;
+				break;
+			}else if(new_pad & PAD_START){ // Play/Pause SlideShow
+		    if(PanZoom!=1.0f){
+		    	for ( i = 0; i < 35; ++i ) {
+						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
+						View_Render();
+					} /* end for */
+				} /* end if */
+				SlideShowStart=!SlideShowStart;
+				WaitTime=Timer();
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
+				TimeRemain=SlideShowTime;
+				View_Render();
+			}else if(new_pad & PAD_SELECT){ // Command List
+				Command_List();
+				View_Render();
+				WaitTime=Timer();
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
+				OldTime=Timer()+1000;
 			}else if((swapKeys && new_pad & PAD_CROSS)
 			     || (!swapKeys && new_pad & PAD_CIRCLE) ){ // Full Screen
-		    if(fZoomStep!=1.0f){
-		    	for ( i = 0; i < 40; ++i ) {
-						if (  ( fZoomStep -= 0.05F ) <= 1.0F  ) fZoomStep = 1.0F;
+		    if(PanZoom!=1.0f){
+		    	for ( i = 0; i < 35; ++i ) {
+						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
 						View_Render();
 					} /* end for */
 				} /* end if */
 				FullScreen=!FullScreen;
+				if(FullScreen){
+					loadSkin( JPG_PIC, jpgpath, 0 );
+				}else{
+					loadSkin(BACKGROUND_PIC, 0, 0);
+					loadSkin( JPG_PIC, jpgpath, 0 );
+				}
 				WaitTime=Timer();
-				while(Timer()<WaitTime+500); // Wait To Ensure On/Off Switch
+				while(Timer()<WaitTime+500); // Wait To Ensure Switch
 				View_Render();
 			} /* end else */
 		}//ends pad response section
@@ -192,45 +346,39 @@ void View_Input( void ) {
 } /* end View_Input */
 
 //--------------------------------------------------------------
-void loadPic( char *jpgpath )
+static void loadPic(void)
 {
 	int i=0;
-	char *name;
 
 	loadSkin( JPG_PIC, jpgpath, 0 );
 
-	name=strrchr(jpgpath, '/');
-	strcpy(name, name+1);
-	msg0[0]='\0';
-	sprintf(msg0, "Jpg Viewer  Picture: %s  Size: %d*%d ", name, (int)picW, (int)picH);
-  
 	Brightness = 0;
-	fZoomStep  = 3.0f;
-	fOffsetX   = 0.0f;
-	fOffsetY   = 0.0f;
+	PanZoom    = 3.0f;
+	PanOffsetX = 0.0f;
+	PanOffsetY = 0.0f;
   
 	if(testjpg){
-		switch ( DiapoTrans ) {
+		switch ( SlideShowTrans ) {
 			case OFF  : {
 				View_Render();
 			} break;
 			case ZOOM : {
 				Brightness = 100;
 		    for ( i = 0; i < 100; ++i ) {
-					if (  ( fZoomStep -= 0.02F ) <= 1.0F  ) fZoomStep = 1.0F;
+					if (  ( PanZoom -= 0.02F ) <= 1.0F  ) PanZoom = 1.0F;
 					View_Render();
 				} /* end for */
 			} break;
-			case FOND : {
-				fZoomStep = 1.0f;
+			case FADE : {
+				PanZoom = 1.0f;
 				for ( i = 0; i < 100; ++i ) {
 					++Brightness;
 					View_Render();
 				} /* end for */
 			} break;
-			case ZOOM_FOND : {
+			case ZOOM_FADE : {
 				for ( i = 0; i < 100; ++i ) {
-					if (  ( fZoomStep -= 0.02F ) <= 1.0F  ) fZoomStep = 1.0F;
+					if (  ( PanZoom -= 0.02F ) <= 1.0F  ) PanZoom = 1.0F;
 					++Brightness;
 					View_Render();
 				} /* end for */
@@ -238,33 +386,33 @@ void loadPic( char *jpgpath )
 		}  /* end switch */
 
 		Brightness = 100;
-		fZoomStep  = 1.0f;
-		fOffsetX   = 0.0f;
-		fOffsetY   = 0.0f;
-		TimeRemain = DiapoTime;
+		PanZoom    = 1.0f;
+		PanOffsetX = 0.0f;
+		PanOffsetY = 0.0f;
+		TimeRemain = SlideShowTime;
 
 		View_Render();
 		View_Input();
 
-		switch ( DiapoTrans ) {
+		switch ( SlideShowTrans ) {
 			case OFF  : {
 				View_Render();
 			} break;
 			case ZOOM : {
 		    for ( i = 0; i < 100; ++i ) {
-					if (  ( fZoomStep += 0.02F ) >= 3.0F  ) fZoomStep = 3.0F;
+					if (  ( PanZoom += 0.02F ) >= 3.0F  ) PanZoom = 3.0F;
 					View_Render();
 				} /* end for */
 			} break;
-			case FOND : {
+			case FADE : {
 				for ( i = 0; i < 100; ++i ) {
 					--Brightness;
 					View_Render();
 				} /* end for */
 			} break;
-			case ZOOM_FOND : {
+			case ZOOM_FADE : {
 				for ( i = 0; i < 100; ++i ) {
-					if (  ( fZoomStep += 0.02F ) >= 3.0F  ) fZoomStep = 3.0F;
+					if (  ( PanZoom += 0.02F ) >= 3.0F  ) PanZoom = 3.0F;
 					--Brightness;
 					View_Render();
 				} /* end for */
@@ -274,12 +422,12 @@ void loadPic( char *jpgpath )
 } /* end loadPic */
 
 //--------------------------------------------------------------
-void JpgViewer(void)
+void JpgViewer( void )
 {
-	char jpgpath[MAX_PATH], path[MAX_PATH],
+	char path[MAX_PATH],
 		cursorEntry[MAX_PATH], ext[8],
 		tmp[MAX_PATH], tmp1[MAX_PATH], *p;
-	uint64 color;
+	u64 color;
 	FILEINFO files[MAX_ENTRY];
 	int thumb_test[MAX_ENTRY];
 	int	jpg_browser_cd, jpg_browser_up, jpg_browser_repos, jpg_browser_pushed;
@@ -287,12 +435,13 @@ void JpgViewer(void)
 	int	jpg_browser_sel, jpg_browser_nfiles, old_jpg_browser_sel;
 	int top=0, test_top=0, rows=0, rows_down=0;
 	int x=0, y=0, y0=0, y1=0;
-	int thumb_num=0, thumb_top=0, vram_offset=0;
+	int thumb_num=0, thumb_top=0;
 	int jpg_browser_mode=LIST;
 	int print_name=0;
 	int Len=0;
 	int event, post_event=0;
 	int i, t=0;
+	int CountJpg=0;
 	
 	jpg_browser_cd=TRUE;
 	jpg_browser_up=FALSE;
@@ -303,10 +452,11 @@ void JpgViewer(void)
 	jpg_browser_nfiles=0;
 	old_jpg_browser_sel=0;
 	
-	DiapoTime=5;
-	DiapoTrans=2;
-	DiapoBegin=DiapoStart=DiapoStop=DiapoSkip=FullScreen=0;
-	
+	SlideShowTime=5;
+	SlideShowTrans=2;
+	SlideShowBegin=SlideShowStart=SlideShowStop=SlideShowSkip=0;
+	FullScreen=PicRotate=PrintLen=0;
+
 	for(i=0;i<MAX_ENTRY;++i)
 		thumb_test[i]=NOTLOADED;
 
@@ -316,6 +466,7 @@ void JpgViewer(void)
 	mountedParty[1][0]=0;
 
 	path[0]='\0';
+	jpgpath[0]='\0';
 
 	if(jpg_browser_mode==LIST){
 		rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
@@ -363,13 +514,13 @@ void JpgViewer(void)
 				}else
 					jpg_browser_mode=LIST;
 			}else if(new_pad & PAD_R1){
-				if(++DiapoTime>=300) DiapoTime=300;
+				if(++SlideShowTime>=300) SlideShowTime=300;
 			}else if(new_pad & PAD_L1){
-				if(--DiapoTime<=1) DiapoTime=1;
+				if(--SlideShowTime<=1) SlideShowTime=1;
 			}else if(new_pad & PAD_R2){
-				if(++DiapoTrans>4) DiapoTrans=1;
+				if(++SlideShowTrans>4) SlideShowTrans=1;
 			}else if(new_pad & PAD_L2){
-				if(--DiapoTrans<1) DiapoTrans=4;
+				if(--SlideShowTrans<1) SlideShowTrans=4;
 			}else if((swapKeys && new_pad & PAD_CROSS)
 			     || (!swapKeys && new_pad & PAD_CIRCLE) ){ //Pushed OK
 				if(files[jpg_browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
@@ -387,34 +538,52 @@ void JpgViewer(void)
 restart:
 					sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
 
-					DiapoBegin=1;
+					SlideShowBegin=1;
 
-					if(!DiapoStart)
+					if(!SlideShowStart)
 						goto single;
 repeat:
 					for(i=0;i<jpg_browser_nfiles;++i){
-						if(DiapoBegin){
+						if(SlideShowBegin){
 							i=jpg_browser_sel+1;
-							DiapoBegin=0;
+							SlideShowBegin=0;
 						}
 						sprintf(jpgpath, "%s%s", path, files[i].name);
-						loadPic( jpgpath );
-						if(DiapoStop)
+						loadPic();
+						PicRotate=0;
+						if(testjpg) ++CountJpg;
+						if(SlideShowSkip==1)
+							SlideShowSkip=0;
+						else if(SlideShowSkip==-1){
+							i-=2;
+							SlideShowSkip=0;
+						}
+						if(SlideShowStop)
 							goto end;
 					} /* end for */
 					goto end;
 single:
-					loadPic( jpgpath );
-					if(DiapoSkip || !testjpg){
+					loadPic();
+					PicRotate=0;
+					if(testjpg) ++CountJpg;
+					if(SlideShowSkip==1 || !testjpg){
 						if(++jpg_browser_sel>jpg_browser_nfiles) jpg_browser_sel=0;
-						DiapoSkip=0;
+						SlideShowSkip=0;
+						goto restart;
+					}else if(SlideShowSkip==-1){
+						jpg_browser_sel-=1;
+						SlideShowSkip=0;
 						goto restart;
 					}
 end:
-					if(DiapoStart && !DiapoStop)
+					if(SlideShowStart && !SlideShowStop && CountJpg>0)
 						goto repeat;
-					FullScreen=DiapoStart=DiapoStop=0;
-					loadSkin(BACKGROUND_PIC, 0, 0);
+					if(FullScreen){
+						loadSkin(BACKGROUND_PIC, 0, 0);
+						loadIcon();
+					}
+					FullScreen=SlideShowStart=SlideShowStop=CountJpg=PicRotate=0;
+					thumb_load=TRUE;
 				} /* end else file */
 			} else if(new_pad & PAD_SELECT){
 				if(mountedParty[0][0]!=0){
@@ -427,12 +596,22 @@ end:
 				}
 				return;
 			} else if(new_pad & PAD_START){
-				DiapoStart=1;
-				DiapoBegin=0;
-				goto repeat;
+				if(path[0]!=0){
+					SlideShowStart=1;
+					SlideShowBegin=0;
+					goto repeat;
+				}
 			}   
 		}//ends pad response section
           
+		//Thumb init
+		if(thumb_load){
+			jpg_browser_sel=0;
+			gsGlobal->CurrentPointer=0x288000;
+			for(i=0;i<MAX_ENTRY;++i)
+				thumb_test[i]=NOTLOADED;
+		}
+
 		//browser path adjustment section
 		if(jpg_browser_up){
 			if((p=strrchr(path, '/'))!=NULL)
@@ -475,12 +654,6 @@ end:
 		if(jpg_browser_sel >= top+rows)		top=jpg_browser_sel-rows+1;
 		if(jpg_browser_sel < top)			top=jpg_browser_sel;
 		
-		if(thumb_load){
-			vram_offset=0;
-			for(i=0;i<MAX_ENTRY;++i)
-				thumb_test[i]=NOTLOADED;
-		}
-
 		t++;
 
 		if(t & 0x0F) event |= 4;  //repetitive timer event
@@ -514,7 +687,7 @@ end:
 			if(test_top!=top){
 				if(top>test_top){
 down:
-					thumb_top=thumb_num=vram_offset=0;
+					thumb_top=thumb_num=0;
 					for(i=0;i<jpg_browser_sel;++i){
 						if(i<top && thumb_test[i]==LOADED)
 							++thumb_top;
@@ -522,9 +695,8 @@ down:
 							++thumb_num;
 					} /* end for */
 					if(thumb_test[jpg_browser_sel]==NOTLOADED && !(files[jpg_browser_sel].stats.attrFile & MC_ATTR_SUBDIR)){
-						vram_offset=64*32*4*(thumb_top+thumb_num);
 						sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
-						loadSkin( THUMB_PIC, jpgpath, 16*16*4*2+vram_offset);
+						loadSkin( THUMB_PIC, jpgpath, thumb_top+thumb_num);
 						thumb_test[jpg_browser_sel]=testthumb;
 					} /* end if notloaded */
 					if(rows_down==1){
@@ -551,7 +723,6 @@ down:
 			}/* end else test_top!=top */
 
 			thumb_num=0;
-			vram_offset=64*32*4*thumb_top;
 
 list:
 			for(i=0; i<rows; i++)
@@ -569,51 +740,51 @@ list:
 
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 						strcat(tmp, "/");
-					printXY(tmp, x+4, y/2, color, TRUE);
+					printXY(tmp, x+4, y, color, TRUE);
 					y += FONT_HEIGHT;
 
 				}else{
 
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
 						strcat(tmp, "/");
-						itoSetTexture(SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
-							16, ITO_RGBA32, log(16), log(16));
-						itoSetAlphaBlending( ITO_ALPHA_COLOR_SRC,
-							ITO_ALPHA_COLOR_DST, ITO_ALPHA_VALUE_SRC, ITO_ALPHA_COLOR_DST, 0x80 );
-						itoPrimAlphaBlending(TRUE);
-						itoTextureSprite(ITO_RGBA(0, 0, 0, 0x80),
-							x+20, (y+10)/2, 0, 0, x+72-20, (y+55-10)/2, 16, 16, 0);
-						itoPrimAlphaBlending(FALSE);
+						gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
+						gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+						gsKit_set_test(gsGlobal, GS_ATEST_OFF);
+						gsKit_prim_sprite_texture(gsGlobal,
+		 				 &TexIcon[0], x+20, (y+10), 0, 0, x+72-20, (y+55-10), 16, 16,
+		 				 0, GS_SETREG_RGBAQ(0x80,0x80,0x80,0x80,0x00));
+						gsKit_set_test(gsGlobal, GS_ATEST_ON);
+						gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+						gsGlobal->PrimAlphaEnable = GS_SETTING_OFF;
 						thumb_test[top+i]=BADJPG;
 						goto frame;
 					}
 
 					if(thumb_load){
 						sprintf(jpgpath, "%s%s", path, files[top+i].name);
-						loadSkin( THUMB_PIC, jpgpath, 16*16*4*2+vram_offset);
+						loadSkin( THUMB_PIC, jpgpath, thumb_num+thumb_top);
 						thumb_test[top+i]=testthumb;
 					}
 
 					if(thumb_test[top+i]==LOADED){
-						itoSetTexture(SCREEN_WIDTH*SCREEN_HEIGHT/2*4+16*16*4*2+vram_offset,
-							64, ITO_RGB24, log(64), log(32));
-						itoTextureSprite(ITO_RGBA(0, 0, 0, 0x80),
-							x, y/2, 0, 0, x+72, (y+55)/2, 64, 32, 0);
+						gsKit_prim_sprite_texture(gsGlobal,
+		 				 &TexThumb[thumb_num+thumb_top], x, y, 0, 0, x+72, (y+55), 64, 32,
+		 				 0, BrightColor);
 						++thumb_num;
-						vram_offset=64*32*4*(thumb_top+thumb_num);
 					}else{ // BADJPG
-						itoSetTexture(SCREEN_WIDTH*SCREEN_HEIGHT/2*4+16*16*4,
-							16, ITO_RGBA32, log(16), log(16));
-						itoSetAlphaBlending( ITO_ALPHA_COLOR_SRC,
-							ITO_ALPHA_COLOR_DST, ITO_ALPHA_VALUE_SRC, ITO_ALPHA_COLOR_DST, 0x80 );
-						itoPrimAlphaBlending(TRUE);
-						itoTextureSprite(ITO_RGBA(0, 0, 0, 0x80),
-							x+20, (y+10)/2, 0, 0, x+72-20, (y+55-10)/2, 16, 16, 0);
-						itoPrimAlphaBlending(FALSE);
+						gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
+						gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0,1,0,1,0), 0);
+						gsKit_set_test(gsGlobal, GS_ATEST_OFF);
+						gsKit_prim_sprite_texture(gsGlobal,
+		 				 &TexIcon[0], x+20, (y+10), 0, 0, x+72-20, (y+55-10), 16, 16,
+		 				 0, GS_SETREG_RGBAQ(0x80,0x80,0x80,0x80,0x00));
+						gsKit_set_test(gsGlobal, GS_ATEST_ON);
+						gsKit_set_primalpha(gsGlobal, GS_BLEND_BACK2FRONT, 0);
+						gsGlobal->PrimAlphaEnable = GS_SETTING_OFF;
 					}
 
 frame:
-					drawFrame(x, y/2, x+72, (y+55)/2,color);
+					drawFrame(x, y, x+72, (y+55),color);
 
 					Len = printXY(tmp, 0, 0, 0, FALSE);
 					if(Len>72 && top+i==jpg_browser_sel){
@@ -624,12 +795,12 @@ frame:
 								print_name=0;
 						}
 						Len = printXY(tmp1, 0, 0, 0, FALSE);
-						printXY(tmp1, x+72/2-Len/2, (y+58)/2, color, TRUE);
+						printXY(tmp1, x+72/2-Len/2, (y+58), color, TRUE);
 					}else if(Len>72){
 						tmp[7]='.'; tmp[8]='.'; tmp[9]='.'; tmp[10]='\0';
-						printXY(tmp, x-4, (y+58)/2, color, TRUE);
+						printXY(tmp, x-4, (y+58), color, TRUE);
 					}else
-						printXY(tmp, x+72/2-Len/2, (y+58)/2, color, TRUE);
+						printXY(tmp, x+72/2-Len/2, (y+58), color, TRUE);
 
 					if(TV_mode == TV_mode_NTSC)
 						y += 71+15;
@@ -640,18 +811,16 @@ frame:
 
 			} //ends for, so all browser rows were fixed above
 			thumb_load=FALSE;
-			itoSetTexture(0, SCREEN_WIDTH, ITO_RGB24, log(SCREEN_WIDTH), log(SCREEN_HEIGHT/2));
 			if(jpg_browser_nfiles > rows) { //if more files than available rows, use scrollbar
-				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y/2,
-					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/jpg_browser_nfiles);
 				y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/jpg_browser_nfiles);
-				itoSprite(setting->color[1],
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-					(y0+Menu_start_y-4)/2,
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-					(y1+Menu_start_y-4)/2,
-					0);
+				gsKit_prim_sprite(gsGlobal,
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
+				 (y0+Menu_start_y-4),
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
+				 (y1+Menu_start_y-4), 0, setting->color[1]);
 			} //ends clause for scrollbar
 			msg0[0]='\0';
 			if(jpg_browser_pushed)
@@ -664,19 +833,19 @@ frame:
 			else
 				strcpy(msg1, "ÿ0:View");
 			if(jpg_browser_mode==LIST)
-				strcat(msg1, " ÿ3:Up ÿ2:List");
+				strcat(msg1, " ÿ3:Up ÿ2:Thumb");
 			else
-				strcat(msg1, " ÿ3:Up ÿ2:Thumbnail");
-			sprintf(tmp, " Sel:Exit Start:Diapo L1/R1:%dsec L2/R2:", DiapoTime);
+				strcat(msg1, " ÿ3:Up ÿ2:List");
+			sprintf(tmp, " Sel:Exit Start:SlideShow L1/R1:%dsec L2/R2:", SlideShowTime);
 			strcat(msg1, tmp);
-			if(DiapoTrans==OFF)
+			if(SlideShowTrans==OFF)
 				strcat(msg1, "Off");
-			else if(DiapoTrans==ZOOM)
+			else if(SlideShowTrans==ZOOM)
 				strcat(msg1, "Zoom");
-			else if(DiapoTrans==FOND)
-				strcat(msg1, "Fond");
-			else if(DiapoTrans==ZOOM_FOND)
-				strcat(msg1, "Zoom+Fond");
+			else if(SlideShowTrans==FADE)
+				strcat(msg1, "Fade");
+			else if(SlideShowTrans==ZOOM_FADE)
+				strcat(msg1, "Zoom+Fade");
 			setScrTmp(msg0, msg1);
 		}//ends if(event||post_event)
 		drawScr();

@@ -222,29 +222,29 @@ int ynDialog(const char *message)
 
 			//Display section
 			drawPopSprite(setting->color[0],
-				dx, dy/2,
-				dx+dw, (dy+dh)/2);
-			drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+				dx, dy,
+				dx+dw, (dy+dh));
+			drawFrame(dx, dy, dx+dw, (dy+dh), setting->color[1]);
 			for(i=len=0; i<n; i++){
-				printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
+				printXY(&msg[len], dx+2+a,(dy+a+2+i*16), setting->color[3],TRUE);
 				len+=strlen(&msg[len])+1;
 			}
 
 			//Cursor positioning section
 			x=(tw-96)/2;
-			printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16)/2, setting->color[3],TRUE);
+			printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16), setting->color[3],TRUE);
 			if(sel==0)
-				drawChar(127, dx+a+x,(dy+a+b+2+n*16)/2, setting->color[3]);
+				drawChar(127, dx+a+x,(dy+a+b+2+n*16), setting->color[3]);
 			else
-				drawChar(127,dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
+				drawChar(127,dx+a+x+40,(dy+a+b+2+n*16),setting->color[3]);
 		}//ends if(event||post_event)
 		drawLastMsg();
 		post_event = event;
 		event = 0;
 	}//ends while
-	drawSprite(setting->color[0], dx, dy/2, dx+dw+1, (dy+dh)/2+1);
+	drawSprite(setting->color[0], dx, dy, dx+dw+1, (dy+dh)+1);
 	drawScr();
-	drawSprite(setting->color[0], dx, dy/2, dx+dw+1, (dy+dh)/2+1);
+	drawSprite(setting->color[0], dx, dy, dx+dw+1, (dy+dh)+1);
 	drawScr();
 	return ret;
 }
@@ -280,11 +280,11 @@ void nonDialog(const char *message)
 	//printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
 	drawPopSprite(setting->color[0],
-		dx, dy/2,
-		dx+dw, (dy+dh)/2);
-	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+		dx, dy,
+		dx+dw, (dy+dh));
+	drawFrame(dx, dy, dx+dw, (dy+dh), setting->color[1]);
 	for(i=len=0; i<n; i++){
-		printXY(&msg[len], dx+2+a,(dy+a+2+i*FONT_HEIGHT)/2, setting->color[3],TRUE);
+		printXY(&msg[len], dx+2+a,(dy+a+2+i*FONT_HEIGHT), setting->color[3],TRUE);
 		len+=strlen(&msg[len])+1;
 	}
 }
@@ -930,19 +930,19 @@ finish:
 //--------------------------------------------------------------
 int menu(const char *path, const char *file)
 {
-	uint64 color;
+	u64 color;
 	char enable[NUM_MENU], tmp[64];
 	int x, y, i, sel, test;
 	int event, post_event=0;
 
 	int menu_ch_w = 8;             //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
-	int mSprite_Y1 = 32;           //Top edge of sprite
+	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
 	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame
 	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
 	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
-	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT/2; //Bottom edge of frame
+	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame
 	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite
 	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite
 
@@ -1049,7 +1049,7 @@ int menu(const char *path, const char *file)
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
 
-			for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
+			for(i=0,y=mFrame_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==COPY)			strcpy(tmp, "Copy");
 				else if(i==CUT)		strcpy(tmp, "Cut");
 				else if(i==PASTE)	strcpy(tmp, "Paste");
@@ -1062,22 +1062,22 @@ int menu(const char *path, const char *file)
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y/2, color, TRUE);
+				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT)/2, setting->color[3]);
+				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, (y/2),
-				SCREEN_WIDTH, y/2+10);
+				0, y,
+				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1088,7 +1088,7 @@ int menu(const char *path, const char *file)
 //--------------------------------------------------------------
 char *PathPad_menu(const char *path)
 {
-	uint64 color;
+	u64 color;
 	int x, y, dx, dy, dw, dh;
 	int a=6, b=4, c=2, tw, th;
 	int i, sel_x, sel_y;
@@ -1154,12 +1154,12 @@ char *PathPad_menu(const char *path)
 
 			//Display section
 			drawSprite(setting->color[0],
-				0, (Menu_message_y)/2,
-				SCREEN_WIDTH, (Frame_start_y)/2);
+				0, (Menu_message_y),
+				SCREEN_WIDTH, (Frame_start_y));
 			drawPopSprite(setting->color[0],
-				dx, dy/2,
-				dx+dw, (dy+dh)/2);
-			drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+				dx, dy,
+				dx+dw, (dy+dh));
+			drawFrame(dx, dy, dx+dw, (dy+dh), setting->color[1]);
 			for(i=0; i<10; i++){
 				if(i==sel_y)
 					color=setting->color[2];
@@ -1168,13 +1168,13 @@ char *PathPad_menu(const char *path)
 				sprintf(textrow, "%02d=", (sel_x*10+i));
 				strncat(textrow, PathPad[sel_x*10+i], 64);
 				textrow[67] = '\0';
-				printXY(textrow, dx+2+a,(dy+a+2+i*FONT_HEIGHT)/2, color,TRUE);
+				printXY(textrow, dx+2+a,(dy+a+2+i*FONT_HEIGHT), color,TRUE);
 			}
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, (y/2), SCREEN_WIDTH, y/2+10);
+			drawSprite(setting->color[0], 0, (y), SCREEN_WIDTH, y+10);
 
 			if(swapKeys) {
 				strcpy(textrow, "ÿ1:Use ");
@@ -1186,7 +1186,7 @@ char *PathPad_menu(const char *path)
 					strcat(textrow, "ÿ1:Clear ÿ2:Set ");
 			}
 			strcat(textrow, "ÿ3:Back L1/R1:Page_left/right");
-			printXY(textrow, x, y/2, setting->color[2], TRUE);
+			printXY(textrow, x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1829,9 +1829,9 @@ int keyboard(char *out, int max)
 {
 	int event, post_event=0;
 	const int	KEY_W=276,
-				KEY_H=84,  //NB: This is not real height, but height/2
+				KEY_H=168,
 				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
-				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2)/2,
+				KEY_Y=((SCREEN_HEIGHT - KEY_H)/2),
 				WFONTS=13,
 				HFONTS=7;
 	char *KEY="ABCDEFGHIJKLM"
@@ -1978,40 +1978,40 @@ int keyboard(char *out, int max)
 			drawFrame(
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
-				setting->color[1], KEY_X+KEY_W-1, KEY_Y+11, 0);
-			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
+			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+20, KEY_X+KEY_W-1, KEY_Y+20, 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+21, KEY_X+KEY_W-1, KEY_Y+21, 1, setting->color[1]);
+			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
-					KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
+					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE);
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
 					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
-					KEY_Y+16 + (i/WFONTS)*8,
+					KEY_Y+28 + (i/WFONTS)*16,
 					setting->color[3]);
 			printXY("OK                       CANCEL",
-				KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
+				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
 				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
 			else
 				x = KEY_X+2+4 + 25*8;
-			y = KEY_Y+16 + (sel/WFONTS)*8;
+			y = KEY_Y+28 + (sel/WFONTS)*16;
 			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
+			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+16);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
-					x, y/2, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE);
 			else
 				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
-					x, y/2, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2041,7 +2041,7 @@ int keyboard2(char *out, int max)
 	const int	KEY_W=276,
 				KEY_H=84,  //NB: This is not real height, but height/2
 				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
-				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2)/2,
+				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2),
 				WFONTS=13,
 				HFONTS=7;
 	char *KEY="ABCDEFGHIJKLM"
@@ -2145,12 +2145,12 @@ int keyboard2(char *out, int max)
 			drawFrame(
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-			itoLine(setting->color[1], KEY_X, KEY_Y+11, 0,
-				setting->color[1], KEY_X+KEY_W-1, KEY_Y+11, 0);
-			printXY(out, KEY_X+2+3, KEY_Y+2, setting->color[3], TRUE);
+			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+10, KEY_X+KEY_W-1, KEY_Y+10, 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+11, KEY_X+KEY_W-1, KEY_Y+11, 1, setting->color[1]);
+			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
-					KEY_X+cur*8+1, KEY_Y+2, setting->color[3], TRUE);
+					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE);
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
@@ -2171,14 +2171,14 @@ int keyboard2(char *out, int max)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y/2, SCREEN_WIDTH, y/2+10);
+			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+10);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
-					x, y/2, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE);
 			else
 				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
-					x, y/2, setting->color[2], TRUE);
+					x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -2329,7 +2329,7 @@ void getFilePath(char *out, int cnfmode)
 	char path[MAX_PATH], cursorEntry[MAX_PATH],
 		msg0[MAX_PATH], msg1[MAX_PATH],
 		tmp[MAX_PATH], ext[8], *p;
-	uint64 color;
+	u64 color;
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
 	int nofnt=FALSE;
@@ -2685,34 +2685,32 @@ void getFilePath(char *out, int cnfmode)
 				if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR)
 					strcat(tmp, "/");
 				if(title_flag)
-					printXY_sjis(tmp, x+4, y/2, color, TRUE);
+					printXY_sjis(tmp, x+4, y, color, TRUE);
 				else
-					printXY(tmp, x+4, y/2, color, TRUE);
-				if(marks[top+i]) drawChar('*', x-6, y/2, setting->color[3]);
+					printXY(tmp, x+4, y, color, TRUE);
+				if(marks[top+i]) drawChar('*', x-6, y, setting->color[3]);
 				y += font_height;
 			} //ends for, so all browser rows were fixed above
 			if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
-				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y/2,
-					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
 				y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/browser_nfiles);
-				itoSprite(setting->color[1],
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-					(y0+Menu_start_y-4)/2,
-					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-					(y1+Menu_start_y-4)/2,
-					0);
+				gsKit_prim_sprite(gsGlobal,
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-4),
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-4),
+				 0, setting->color[1]);
 			} //ends clause for scrollbar
 			if(nclipFiles) { //if Something in clipboard, emulate LED indicator
-				uint64 LED_colour, RIM_colour = ITO_RGBA(0,0,0,0);
+				u64 LED_colour, RIM_colour = GS_SETREG_RGBA(0,0,0,0);
 				int RIM_w=4, LED_w=6, indicator_w = LED_w+2*RIM_w;
 				int x2 = SCREEN_WIDTH-SCREEN_MARGIN-2, x1 = x2-indicator_w;
 				int y1 = Frame_start_y+2, y2 = y1+indicator_w; 
 
-				if(browser_cut) LED_colour = ITO_RGBA(0xC0,0,0,0); //Red LED == CUT
-				else            LED_colour = ITO_RGBA(0,0xC0,0,0); //Green LED == COPY
-				itoSprite(RIM_colour, x1, y1/2, x2, y2/2, 0);
-				itoSprite(LED_colour, x1+RIM_w, (y1+RIM_w)/2, x2-RIM_w, (y2-RIM_w)/2, 0);
+				if(browser_cut) LED_colour = GS_SETREG_RGBA(0xC0,0,0,0); //Red LED == CUT
+				else            LED_colour = GS_SETREG_RGBA(0,0xC0,0,0); //Green LED == COPY
+				gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, RIM_colour);
+				gsKit_prim_sprite(gsGlobal, x1+RIM_w, (y1+RIM_w), x2-RIM_w, (y2-RIM_w), 0, LED_colour);
 			} //ends clause for clipboard indicator
 			if(browser_pushed)
 				sprintf(msg0, "Path: %s", path);
@@ -2763,11 +2761,11 @@ void getFilePath(char *out, int cnfmode)
 					sprintf(tmp, "[%dB free]", (int) freeSpace);
 				ret=strlen(tmp);
 				drawSprite(setting->color[0],
-					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y)/2,
-					SCREEN_WIDTH-SCREEN_MARGIN, (Menu_message_y+FONT_HEIGHT)/2);
+					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y),
+					SCREEN_WIDTH-SCREEN_MARGIN, (Menu_message_y+FONT_HEIGHT));
 				printXY(tmp,
 					SCREEN_WIDTH-SCREEN_MARGIN-ret*FONT_WIDTH,
-					(Menu_message_y)/2,
+					(Menu_message_y),
 					setting->color[2], TRUE);
 			}
 		}//ends if(event||post_event)

@@ -8,16 +8,16 @@ enum
 {
 	DEF_TIMEOUT = 10,
 	DEF_HIDE_PATHS = TRUE,
-	DEF_COLOR1 = ITO_RGBA(128,128,128,0), //Backgr
-	DEF_COLOR2 = ITO_RGBA(64,64,64,0),    //Frame
-	DEF_COLOR3 = ITO_RGBA(96,0,0,0),      //Select
-	DEF_COLOR4 = ITO_RGBA(0,0,0,0),       //Text
-	DEF_COLOR5 = ITO_RGBA(255,0,255,0),   //Graph1
-	DEF_COLOR6 = ITO_RGBA(0,0,255,0),     //Graph2
-	DEF_COLOR7 = ITO_RGBA(0,0,0,0),       //Graph3
-	DEF_COLOR8 = ITO_RGBA(0,0,0,0),       //Graph4
+	DEF_COLOR1 = GS_SETREG_RGBA(128,128,128,0), //Backgr
+	DEF_COLOR2 = GS_SETREG_RGBA(64,64,64,0),    //Frame
+	DEF_COLOR3 = GS_SETREG_RGBA(96,0,0,0),      //Select
+	DEF_COLOR4 = GS_SETREG_RGBA(0,0,0,0),       //Text
+	DEF_COLOR5 = GS_SETREG_RGBA(255,0,255,0),   //Graph1
+	DEF_COLOR6 = GS_SETREG_RGBA(0,0,255,0),     //Graph2
+	DEF_COLOR7 = GS_SETREG_RGBA(0,0,0,0),       //Graph3
+	DEF_COLOR8 = GS_SETREG_RGBA(0,0,0,0),       //Graph4
 	DEF_DISCCONTROL = FALSE,
-	DEF_INTERLACE = FALSE,
+	DEF_INTERLACE = TRUE,
 	DEF_MENU_FRAME = TRUE,
 	DEF_RESETIOP = TRUE,
 	DEF_NUMCNF = 1,
@@ -135,7 +135,7 @@ void saveConfig(char *mainMsg, char *CNF)
 	char cnf_path[MAX_PATH];
 	size_t CNF_size, CNF_step;
 
-	sprintf(tmp, "CNF_version = 2.0\r\n%n", &CNF_size); //Start CNF with version header
+	sprintf(tmp, "CNF_version = 3\r\n%n", &CNF_size); //Start CNF with version header
 
 	for(i=0; i<15; i++){	//Loop to save the ELF paths for launch keys
 		if((i<12) || (setting->LK_Flag[i]!=0)){
@@ -322,6 +322,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	char path[MAX_PATH];
 	char cnf_path[MAX_PATH];
 	unsigned char *RAM_p, *CNF_p, *name, *value;
+	int X_flag=0, Y_flag=0, IL_flag=0;
 	
 	if(setting!=NULL)
 		free(setting);
@@ -422,9 +423,9 @@ failed_load:
 	genClose(fd);
 	CNF_p[CNF_size] = '\0';        //Terminate the CNF string
 
-//RA NB: in the code below, the 'LK_' variables havee been implemented such that
+//RA NB: in the code below, the 'LK_' variables have been implemented such that
 //       any _Ex suffix will be accepted, with identical results. This will need
-//       to be modified when more execution metods are implemented.
+//       to be modified when more execution methods are implemented.
 
   CNF_version = 0;  // The CNF version is still unidentified
 	for(var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
@@ -454,10 +455,19 @@ failed_load:
 		else if(!strcmp(name,"GUI_Col_6_ABGR")) setting->color[5] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_7_ABGR")) setting->color[6] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_8_ABGR")) setting->color[7] = hextoul(value);
-		else if(!strcmp(name,"Screen_X")) setting->screen_x = atoi(value);
-		else if(!strcmp(name,"Screen_Y")) setting->screen_y = atoi(value);
+		else if(!strcmp(name,"Screen_X")){
+			setting->screen_x = atoi(value);
+			X_flag = 1;
+		}
+		else if(!strcmp(name,"Screen_Y")){
+			setting->screen_y = atoi(value);
+			Y_flag = 1;
+		}
 		else if(!strcmp(name,"Init_CDVD_Check")) setting->discControl = atoi(value);
-		else if(!strcmp(name,"Screen_Interlace")) setting->interlace = atoi(value);
+		else if(!strcmp(name,"Screen_Interlace")){
+			setting->interlace = atoi(value);
+			IL_flag = 1;
+		}
 		else if(!strcmp(name,"Init_Reset_IOP")) setting->resetIOP = atoi(value);
 		else if(!strcmp(name,"Menu_Pages")) setting->numCNF = atoi(value);
 		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
@@ -499,6 +509,12 @@ failed_load:
 	} //ends for
 	for(i=0; i<15; i++) setting->LK_Title[i][MAX_ELF_TITLE-1] = 0;
 	free(RAM_p);
+	if(CNF_version < 3){
+		if(X_flag) setting->screen_x *= 4;
+		if(Y_flag && ((!IL_flag) || (!setting->interlace)))
+				setting->screen_y = setting->screen_y*2 - 2;
+	}
+	setting->interlace = 1;  //Interlace is currently forced on
 	sprintf(mainMsg, "Loaded Config (%s)", path);
 	return;
 }
@@ -594,30 +610,26 @@ void Config_Skin(void)
 			//Display section
 			clrScr(setting->color[0]);
 
-			drawFrame( ( SCREEN_WIDTH/4 )-2, ( ( ( SCREEN_HEIGHT/2 )/4 )+10 )-1,
-			 ( ( SCREEN_WIDTH/4 )*3 )+1, ( ( ( SCREEN_HEIGHT/2 )/4 )*3 )+10,
-			  setting->color[1]);
-			itoSetTexture(SCREEN_WIDTH*SCREEN_HEIGHT/2*4, SCREEN_WIDTH/2, ITO_RGB24, log(SCREEN_WIDTH/2), log(SCREEN_HEIGHT/4));
 			if ( testsetskin == 1 ) {
 				setBrightness(Brightness);
-				itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0),
-				 SCREEN_WIDTH/4, ( ( SCREEN_HEIGHT/2 )/4 )+10,
-				 0, 0,
-				 ( SCREEN_WIDTH/4 )*3, ( ( ( SCREEN_HEIGHT/2 )/4 )*3 )+10,
-				 SCREEN_WIDTH/2, SCREEN_HEIGHT/4,
-				 0);
+				gsKit_prim_sprite_texture(gsGlobal, &TexPreview,
+				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+10, 0, 0,
+				 ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+10, SCREEN_WIDTH, SCREEN_HEIGHT,
+				 0, BrightColor);
 				setBrightness(50);
-			}else{
-				itoSprite(setting->color[0],
-				 SCREEN_WIDTH/4, ( ( SCREEN_HEIGHT/2 )/4 )+10,
-				 ( SCREEN_WIDTH/4 )*3, ( ( ( SCREEN_HEIGHT/2 )/4 )*3 )+10,
-				 0);
+			} else {
+				gsKit_prim_sprite(gsGlobal,
+				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+10, ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+10,
+				 0, setting->color[0]);
 			}
+			drawFrame( ( SCREEN_WIDTH/4 )-2, ( ( SCREEN_HEIGHT/4 )+10 )-1,
+			 ( ( SCREEN_WIDTH/4 )*3 )+1, ( ( SCREEN_HEIGHT/4 )*3 )+10,
+			  setting->color[1]);
 
 			x = Menu_start_x;
 			y = Menu_start_y;
 		
-			printXY("SKIN SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("SKIN SETTINGS", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT/2;
 
@@ -625,20 +637,20 @@ void Config_Skin(void)
 				sprintf(c, "  Skin Path: NULL");
 			else
 				sprintf(c, "  Skin Path: %s",setting->skin);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT/2;
 
-			printXY("  Apply New Skin", x, y/2, setting->color[3], TRUE);
+			printXY("  Apply New Skin", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT/2;
 
 			sprintf(c, "  Brightness: %d", Brightness);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
-			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+			printXY("  RETURN", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			//Cursor positioning section
@@ -647,7 +659,7 @@ void Config_Skin(void)
 			if(s>=2) y+=FONT_HEIGHT/2;
 			if(s>=3) y+=FONT_HEIGHT/2;
 			if(s>=4) y+=FONT_HEIGHT/2;
-			drawChar(127, x, y/2, setting->color[3]);
+			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
 			if (s == 1) {
@@ -679,10 +691,10 @@ void Config_Skin(void)
 void Config_Screen(void)
 {
 	int i;
-	int s, max_s=32;		//define cursor index and its max value
+	int s, max_s=33;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
-	uint64 rgb[8][3];
+	u64 rgb[8][3];
 	char c[MAX_PATH];
 	
 	event = 1;	//event = initial entry
@@ -723,20 +735,24 @@ void Config_Screen(void)
 			else if(new_pad & PAD_LEFT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=29) s=28;
+				if(s>=32) s=30;
+				else if(s>=30) s=29;
+				else if(s>=29) s=28;
 				else if(s>=28) s=27;
-				else if(s>=27) s=26;
-				else if(s>=26) s=24;
+				else if(s>=27) s=25;
+				else if(s>=25) s=24; //at or 
 				else if(s>=24) s=21; //if s beyond color settings
 				else if(s>=3) s-=3;  //if s in a color beyond Color1 step to preceding color
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=28) s=29;
+				if(s>=30) s=32;
+				else if(s>=29) s=30;
+				else if(s>=28) s=29;
 				else if(s>=27) s=28;
-				else if(s>=26) s=27;
-				else if(s>=24) s=26;
+				else if(s>=25) s=27;
+				else if(s>=24) s=25;
 				else if(s>=21) s=24; //if s in Color8, move it to ScreenX
 				else s+=3;           //if s in a color before Color8, step to next color
 			}
@@ -747,21 +763,21 @@ void Config_Screen(void)
 					if(rgb[s/3][s%3] > 0) {
 						rgb[s/3][s%3]--;
 						setting->color[s/3] = 
-							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
-					}
-				} else if(s==24) {
-					if(setting->screen_x > 0) {
-						setting->screen_x--;
-						screen_env.screen.x = setting->screen_x;
-						itoSetScreenPos(setting->screen_x, setting->screen_y);
+							GS_SETREG_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
 				} else if(s==25) {
+					if(setting->screen_x > 0) {
+						setting->screen_x--;
+						gsGlobal->StartX = setting->screen_x;
+						updateScreenMode();
+					}
+				} else if(s==26) {
 					if(setting->screen_y > 0) {
 						setting->screen_y--;
-						screen_env.screen.y = setting->screen_y;
-						itoSetScreenPos(setting->screen_x, setting->screen_y);
+						gsGlobal->StartY = setting->screen_y;
+						updateScreenMode();
 					}
-				} else if(s==28) {  //cursor is at Menu_Title
+				} else if(s==29) {  //cursor is at Menu_Title
 						setting->Menu_Title[0] = '\0';
 				}
 			}
@@ -772,36 +788,32 @@ void Config_Screen(void)
 					if(rgb[s/3][s%3] < 255) {
 						rgb[s/3][s%3]++;
 						setting->color[s/3] = 
-							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
+							GS_SETREG_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
-				} else if(s==24) {
-					setting->screen_x++;
-					screen_env.screen.x = setting->screen_x;
-					itoSetScreenPos(setting->screen_x, setting->screen_y);
+				}else if(s==24){
+					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
+					updateScreenMode();
 				} else if(s==25) {
-					setting->screen_y++;
-					screen_env.screen.y = setting->screen_y;
-					itoSetScreenPos(setting->screen_x, setting->screen_y);
+					setting->screen_x++;
+					gsGlobal->StartX = setting->screen_x;
+					updateScreenMode();
 				} else if(s==26) {
-					setting->interlace = !setting->interlace;
-					screen_env.interlace = setting->interlace;
-					itoGsReset();
-					itoGsEnvSubmit(&screen_env);
-					if(setting->interlace)
-						setting->screen_y = (setting->screen_y-1)*2;
-					else
-						setting->screen_y = setting->screen_y/2+1;
-					itoSetScreenPos(setting->screen_x, setting->screen_y);
+					setting->screen_y++;
+					gsGlobal->StartY = setting->screen_y;
+					updateScreenMode();
 				} else if(s==27) {
+					//RA NB: change this clause to allow interlace mode choice
+					setting->interlace = DEF_INTERLACE;
+				} else if(s==28) {
 					Config_Skin();
-				} else if(s==28) {  //cursor is at Menu_Title
+				} else if(s==29) {  //cursor is at Menu_Title
 					char tmp[MAX_MENU_TITLE+1];
 					strcpy(tmp, setting->Menu_Title);
 					if(keyboard(tmp, 36)>=0)
 						strcpy(setting->Menu_Title, tmp);
-				} else if(s==29) {
-					setting->Menu_Frame = !setting->Menu_Frame;
 				} else if(s==30) {
+					setting->Menu_Frame = !setting->Menu_Frame;
+				} else if(s==31) {
 					setting->Popup_Opaque = !setting->Popup_Opaque;
 				} else if(s==max_s-1) { //Always put 'RETURN' next to last
 					return;
@@ -816,6 +828,7 @@ void Config_Screen(void)
 					setting->color[5] = DEF_COLOR6;
 					setting->color[6] = DEF_COLOR7;
 					setting->color[7] = DEF_COLOR8;
+					setting->TV_mode = TV_mode_AUTO;
 					setting->screen_x = SCREEN_X;
 					setting->screen_y = SCREEN_Y;
 					setting->interlace = DEF_INTERLACE;
@@ -823,7 +836,6 @@ void Config_Screen(void)
 					setting->Brightness = DEF_BRIGHT;
 					setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 					updateScreenMode();
-					itoSetBgColor(GS_border_colour);
 					
 					for(i=0; i<8; i++) {
 						rgb[i][0] = setting->color[i] & 0xFF;
@@ -840,59 +852,69 @@ void Config_Screen(void)
 
 			//Display section
 			clrScr(setting->color[0]);
-			itoSetBgColor(GS_border_colour);
 
 			x = Menu_start_x;
 			y = Menu_start_y;
 
 			sprintf(c, "    Color1  Color2  Color3  Color4  Color5  Color6  Color7  Color8");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "    Backgr  Frames  Select  Normal  Graph1  Graph2  Graph3  Graph4");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "R:    %02lX      %02lX      %02lX      %02lX"
 			           "      %02lX      %02lX      %02lX      %02lX",
 				rgb[0][0], rgb[1][0], rgb[2][0], rgb[3][0],
 				rgb[4][0], rgb[5][0], rgb[6][0], rgb[7][0]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "G:    %02lX      %02lX      %02lX      %02lX"
 			           "      %02lX      %02lX      %02lX      %02lX",
 				rgb[0][1], rgb[1][1], rgb[2][1], rgb[3][1],
 				rgb[4][1], rgb[5][1], rgb[6][1], rgb[7][1]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "B:    %02lX      %02lX      %02lX      %02lX"
 			           "      %02lX      %02lX      %02lX      %02lX",
 				rgb[0][2], rgb[1][2], rgb[2][2], rgb[3][2],
 				rgb[4][2], rgb[5][2], rgb[6][2], rgb[7][2]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "ÿ4");
 			for(i=0; i<8; i++)
-				printXY(c, x+FONT_WIDTH*(6+i*8), y/2, setting->color[i], TRUE);
-			y += FONT_HEIGHT;
+				printXY(c, x+FONT_WIDTH*(6+i*8), y, setting->color[i], TRUE);
+			y += FONT_HEIGHT*2;
 
-			y += FONT_HEIGHT/2;
+			strcpy(c, "  TV mode: ");
+			if(setting->TV_mode==TV_mode_NTSC)
+				strcat(c, "NTSC");
+			else if(setting->TV_mode==TV_mode_PAL)
+				strcat(c, "PAL");
+			else
+				strcat(c, "AUTO");
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			y += FONT_HEIGHT / 2;
 
 			sprintf(c, "  Screen X offset: %d", setting->screen_x);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "  Screen Y offset: %d", setting->screen_y);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			y += FONT_HEIGHT / 2;
-		
-			if(setting->interlace)
-				sprintf(c, "  Interlace: ON");
-			else
-				sprintf(c, "  Interlace: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
-			printXY("  Skin Settings...", x, y/2, setting->color[3], TRUE);
+			sprintf(c, "  Interlace: ON (locked)");
+//RA NB: Remove 1 line above, and uncomment 4 lines below, to allow non-interlace mode
+//			if(setting->interlace)
+//				sprintf(c, "  Interlace: ON");
+//			else
+//				sprintf(c, "  Interlace: OFF");
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+			y += FONT_HEIGHT / 2;
+
+			printXY("  Skin Settings...", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
@@ -900,7 +922,7 @@ void Config_Screen(void)
 				sprintf(c, "  Menu Title: NULL");
 			else
 				sprintf(c, "  Menu Title: %s",setting->Menu_Title);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
@@ -908,20 +930,20 @@ void Config_Screen(void)
 				sprintf(c, "  Menu Frame: ON");
 			else
 				sprintf(c, "  Menu Frame: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->Popup_Opaque)
 				sprintf(c, "  Popups Opaque: ON");
 			else
 				sprintf(c, "  Popups Opaque: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
-			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+			printXY("  RETURN", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  Use Default Screen Settings", x, y/2, setting->color[3], TRUE);
+			printXY("  Use Default Screen Settings", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			//Cursor positioning section
@@ -936,37 +958,41 @@ void Config_Screen(void)
 			} else {  //if cursor indicates anything after colour components
 				y += (s-24+6)*FONT_HEIGHT+FONT_HEIGHT/2;  //adjust y for cursor beyond colours
 				//Here y is almost correct, except for additional group spacing
-				if(s>=26)            //if cursor at or beyond interlace choice
+				if(s>=24)            //if cursor at or beyond TV mode choice
+					y+=FONT_HEIGHT/2;  //adjust for half-row space below colours
+				if(s>=25)            //if cursor at or beyond screen offsets
+					y+=FONT_HEIGHT/2;  //adjust for half-row space below TV mode choice
+				if(s>=27)            //if cursor at or beyond interlace choice
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below screen offsets
-				if(s>=27)            //if cursor at or beyond 'SKIN SETTINGS'
+				if(s>=28)            //if cursor at or beyond 'SKIN SETTINGS'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below interlace choice
-				if(s>=28)            //if cursor at or beyond 'Menu Title'
+				if(s>=29)            //if cursor at or beyond 'Menu Title'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'SKIN SETTINGS'
-				if(s>=29)            //if cursor at or beyond 'Menu Frame'
+				if(s>=30)            //if cursor at or beyond 'Menu Frame'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Menu Title'
 				if(s>=max_s-1)            //if cursor at or beyond 'RETURN'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Popups Opaque'
 			}
-			drawChar(127, x, y/2, setting->color[3]);  //draw cursor
+			drawChar(127, x, y, setting->color[3]);  //draw cursor
 
 			//Tooltip section
-			if (s <= 25) {  //if cursor at a colour component or a screen offset
+			if (s<24||s==25||s==26) {  //if cursor at a colour component or a screen offset
 				if (swapKeys)
 					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
 					strcpy(c, "ÿ0:Add ÿ1:Subtract");
-			} else if(s==26||s==29||s==30) {
-				//if cursor at 'INTERLACE' or 'Menu Frame' or 'Popups Opaque'
+			} else if(s==24||s==27||s==30||s==31) {
+				//if cursor at 'TV mode', 'INTERLACE', 'Menu Frame' or 'Popups Opaque'
 				if (swapKeys)
 					strcpy(c, "ÿ1:Change");
 				else
 					strcpy(c, "ÿ0:Change");
-			} else if(s==27){  //if cursor at 'SKIN SETTINGS'
+			} else if(s==28){  //if cursor at 'SKIN SETTINGS'
 				if (swapKeys)
 					sprintf(c, "ÿ1:OK");
 				else
 					sprintf(c, "ÿ0:OK");
-			} else if(s==28){  //if cursor at Menu_Title
+			} else if(s==29){  //if cursor at Menu_Title
 				if (swapKeys)
 					sprintf(c, "ÿ1:Edit ÿ0:Clear");
 				else
@@ -994,7 +1020,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=12;		//define cursor index and its max value
+	int s, max_s=11;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -1036,11 +1062,11 @@ void Config_Startup(void)
 				event |= 2;  //event |= valid pad command
 				if(s==2 && setting->numCNF>1) setting->numCNF--;
 				else if(s==4) setting->usbd_file[0] = '\0';
-				else if(s==6 && setting->Init_Delay>0) setting->Init_Delay--;
-				else if(s==7 && setting->timeout>0) setting->timeout--;
-				else if(s==9) setting->usbkbd_file[0] = '\0';
-				else if(s==10) setting->kbdmap_file[0] = '\0';
-				else if(s==11) setting->CNF_Path[0] = '\0';
+				else if(s==5 && setting->Init_Delay>0) setting->Init_Delay--;
+				else if(s==6 && setting->timeout>0) setting->timeout--;
+				else if(s==8) setting->usbkbd_file[0] = '\0';
+				else if(s==9) setting->kbdmap_file[0] = '\0';
+				else if(s==10) setting->CNF_Path[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -1054,18 +1080,16 @@ void Config_Startup(void)
 				else if(s==4)
 					getFilePath(setting->usbd_file, USBD_IRX_CNF);
 				else if(s==5)
-					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
-				else if(s==6)
 					setting->Init_Delay++;
-				else if(s==7)
+				else if(s==6)
 					setting->timeout++;
-				else if(s==8)
+				else if(s==7)
 					setting->usbkbd_used = !setting->usbkbd_used;
-				else if(s==9)
+				else if(s==8)
 					getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
-				else if(s==10)
+				else if(s==9)
 					getFilePath(setting->kbdmap_file, KBDMAP_FILE_CNF);
-				else if(s==11)
+				else if(s==10)
 				{	char *tmp;
 
 					getFilePath(setting->CNF_Path, CNF_PATH_CNF);
@@ -1087,7 +1111,7 @@ void Config_Startup(void)
 			x = Menu_start_x;
 			y = Menu_start_y;
 
-			printXY("STARTUP SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("STARTUP SETTINGS", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
@@ -1095,90 +1119,80 @@ void Config_Startup(void)
 				sprintf(c, "  Reset IOP: ON");
 			else
 				sprintf(c, "  Reset IOP: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			sprintf(c, "  Number of CNF's: %d", setting->numCNF);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->swapKeys)
 				sprintf(c, "  Pad mapping: ÿ1:OK ÿ0:CANCEL");
 			else
 				sprintf(c, "  Pad mapping: ÿ0:OK ÿ1:CANCEL");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(strlen(setting->usbd_file)==0)
 				sprintf(c, "  USBD IRX: DEFAULT");
 			else
 				sprintf(c, "  USBD IRX: %s",setting->usbd_file);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-
-			strcpy(c, "  TV mode: ");
-			if(setting->TV_mode==TV_mode_NTSC)
-				strcat(c, "NTSC");
-			else if(setting->TV_mode==TV_mode_PAL)
-				strcat(c, "PAL");
-			else
-				strcat(c, "AUTO");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			sprintf(c, "  Initial Delay: %d", setting->Init_Delay);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			sprintf(c, "  'Default' Timeout: %d", setting->timeout);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->usbkbd_used)
 				sprintf(c, "  USB Keyboard Used: ON");
 			else
 				sprintf(c, "  USB Keyboard Used: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(strlen(setting->usbkbd_file)==0)
 				sprintf(c, "  USB Keyboard IRX: DEFAULT");
 			else
 				sprintf(c, "  USB Keyboard IRX: %s",setting->usbkbd_file);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(strlen(setting->kbdmap_file)==0)
 				sprintf(c, "  USB Keyboard Map: DEFAULT");
 			else
 				sprintf(c, "  USB Keyboard Map: %s",setting->kbdmap_file);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(strlen(setting->CNF_Path)==0)
 				sprintf(c, "  CNF Path override: NONE");
 			else
 				sprintf(c, "  CNF Path override: %s",setting->CNF_Path);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			y += FONT_HEIGHT / 2;
-			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+			printXY("  RETURN", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			//Cursor positioning section
 			y = Menu_start_y + s*FONT_HEIGHT + FONT_HEIGHT /2;
 
 			if(s>=max_s) y+=FONT_HEIGHT/2;
-			drawChar(127, x, y/2, setting->color[3]);
+			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
-			if ((s==1)||(s==8)) { //resetIOP || usbkbd_used
+			if ((s==1)||(s==7)) { //resetIOP || usbkbd_used
 				if (swapKeys)
 					strcpy(c, "ÿ1:Change");
 				else
 					strcpy(c, "ÿ0:Change");
-			} else if ((s==2)||(s==6)||(s==7)) { //numCNF || Init_Delay || timeout
+			} else if ((s==2)||(s==5)||(s==6)) { //numCNF || Init_Delay || timeout
 				if (swapKeys)
 					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
@@ -1188,17 +1202,12 @@ void Config_Startup(void)
 					sprintf(c, "ÿ1:Change");
 				else
 					sprintf(c, "ÿ0:Change");
-			} else if((s==4)||(s==9)||(s==10)||(s==11)) {
+			} else if((s==4)||(s==8)||(s==9)||(s==10)) {
 			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path
 				if (swapKeys)
 					sprintf(c, "ÿ1:Browse ÿ0:Clear");
 				else
 					sprintf(c, "ÿ0:Browse ÿ1:Clear");
-			} else if(s == 5) {
-				if (swapKeys)
-					sprintf(c, "ÿ1:Change");
-				else
-					sprintf(c, "ÿ0:Change");
 			} else {
 				if (swapKeys)
 					strcpy(c, "ÿ1:OK");
@@ -1464,31 +1473,31 @@ void Config_Network(void)
 			x = Menu_start_x;
 			y = Menu_start_y;
 
-			printXY("NETWORK SETTINGS", x, y/2, setting->color[3], TRUE);
+			printXY("NETWORK SETTINGS", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			y += FONT_HEIGHT / 2;
 
 			sprintf(c, "  IP Address:  %.3i . %.3i . %.3i . %.3i",ipdata.ip[0],ipdata.ip[1],ipdata.ip[2],ipdata.ip[3]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			sprintf(c, "  Netmask:     %.3i . %.3i . %.3i . %.3i",ipdata.nm[0],ipdata.nm[1],ipdata.nm[2],ipdata.nm[3]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			sprintf(c, "  Gateway:     %.3i . %.3i . %.3i . %.3i",ipdata.gw[0],ipdata.gw[1],ipdata.gw[2],ipdata.gw[3]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			y += FONT_HEIGHT / 2;
 
 			sprintf(c, "  Save to \"mc0:/SYS-CONF/IPCONFIG.DAT\"");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			y += FONT_HEIGHT / 2;
-			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+			printXY("  RETURN", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			//Cursor positioning section
@@ -1498,7 +1507,7 @@ void Config_Network(void)
 			if(s>=5) y+=FONT_HEIGHT/2;
 			if (l > 1)
 				x += l*48 + 15;
-			drawChar(127, x, y/2, setting->color[3]);
+			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
 			if ((s <4) && (l==1)) {
@@ -1657,7 +1666,7 @@ cancel_exit:
 
 			x = Menu_start_x;
 			y = Menu_start_y;
-			printXY("Button Settings", x, y/2, setting->color[3], TRUE);
+			printXY("Button Settings", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			for(i=0; i<12; i++)
 			{
@@ -1701,7 +1710,7 @@ cancel_exit:
 					break;
 				}
 				strcat(c, setting->LK_Path[i]);
-				printXY(c, x, y/2, setting->color[3], TRUE);
+				printXY(c, x, y, setting->color[3], TRUE);
 				y += FONT_HEIGHT;
 			}
 
@@ -1711,39 +1720,39 @@ cancel_exit:
 				sprintf(c, "  Show launch titles: ON");
 			else
 				sprintf(c, "  Show launch titles: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->discControl)
 				sprintf(c, "  Disc control: ON");
 			else
 				sprintf(c, "  Disc control: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
 			if(setting->Hide_Paths)
 				sprintf(c, "  Hide full ELF paths: ON");
 			else
 				sprintf(c, "  Hide full ELF paths: OFF");
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			printXY("  Screen Settings...", x, y/2, setting->color[3], TRUE);
+			printXY("  Screen Settings...", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  Startup Settings...", x, y/2, setting->color[3], TRUE);
+			printXY("  Startup Settings...", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  Network Settings...", x, y/2, setting->color[3], TRUE);
+			printXY("  Network Settings...", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			printXY("  OK", x, y/2, setting->color[3], TRUE);
+			printXY("  OK", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			printXY("  Cancel", x, y/2, setting->color[3], TRUE);
+			printXY("  Cancel", x, y, setting->color[3], TRUE);
 
 			//Cursor positioning section
 			y = Menu_start_y + (s+1)*FONT_HEIGHT;
 			if(s>=SHOW_TITLES)
 				y += FONT_HEIGHT / 2;
-			drawChar(127, x, y/2, setting->color[3]);
+			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
 			if (s < SHOW_TITLES) {

@@ -53,7 +53,7 @@ typedef struct
 // Modified version of loader from Independence
 //	(C) 2003 Marcus R. Brown <mrbrown@0xd6.org>
 //--------------------------------------------------------------
-int checkELFheader(const char *path)
+int checkELFheader(char *path)
 {
 	elf_header_t elf_head;
 	u8 *boot_elf = (u8 *) &elf_head;
@@ -62,49 +62,41 @@ int checkELFheader(const char *path)
 	char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
 	strcpy(fullpath,path);
-	if(!strncmp(fullpath, "hdd0", 4)) {
-		sprintf(tmp, "hdd0:%s", &path[6]);
+	if(!strncmp(fullpath, "hdd0:", 5)) {
+		p = &path[5];
+		if(*p == '/')
+			p++;
+		sprintf(tmp, "hdd0:%s", p);
 		p = strchr(tmp, '/');
 		sprintf(fullpath, "pfs0:%s", p);
 		*p = 0;
-		ret = fileXioMount("pfs0:", tmp, FIO_MT_RDONLY);
-		if ((fd = fileXioOpen(fullpath, O_RDONLY, FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH)) < 0){
-			unmountParty(0);
+		if( (ret = mountParty(tmp)) < 0)
 			goto error;
-		}
-		size = fileXioLseek(fd, 0, SEEK_END);
-		if (!size){
-			fileXioClose(fd);
-			unmountParty(0);
-			goto error;
-		}
-		fileXioLseek(fd, 0, SEEK_SET);
-		fileXioRead(fd, boot_elf, sizeof(elf_header_t));
-		fileXioClose(fd);
-		unmountParty(0);
-	}else if(!strncmp(fullpath, "mc", 2) ||
-		!strncmp(fullpath, "mass", 4) ||
-		!strncmp(fullpath, "host", 4)){
-		if ((fd = fioOpen(fullpath, O_RDONLY)) < 0) 
-			goto error;
-		size = fioLseek(fd, 0, SEEK_END);
-		if (!size){
-			fioClose(fd);
-			goto error;
-		}
-		fioLseek(fd, 0, SEEK_SET);
-		fioRead(fd, boot_elf, sizeof(elf_header_t));
-		fioClose(fd);
+		fullpath[3] += ret;
+	}else if(!strncmp(fullpath, "mass:", 5) || !strncmp(fullpath, "host:", 5)){
+		if(path[5] == '/')
+			strcpy(fullpath+5, path+6);
+	}else if(!strncmp(fullpath, "mc", 2)){; //fullpath is already correct
 	} else {
-		return 0;
+		return 0;  //return 0 for unrecognized device
 	}
+	if ((fd = genOpen(fullpath, O_RDONLY)) < 0) 
+		goto error;
+	size = genLseek(fd, 0, SEEK_END);
+	if (!size){
+		genClose(fd);
+		goto error;
+	}
+	genLseek(fd, 0, SEEK_SET);
+	genRead(fd, boot_elf, sizeof(elf_header_t));
+	genClose(fd);
 
 	if ((_lw((u32)&eh->ident) != ELF_MAGIC) || eh->type != 2)
 		goto error;
 	
-	return 1;
+	return 1;  //return 1 for successful check
 error:
-	return -1;
+	return -1; //return -1 for failed check
 }
 //------------------------------
 //End of func:  int checkELFheader(const char *path)

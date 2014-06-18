@@ -25,7 +25,8 @@
 #include <smod.h>
 #include <sys/fcntl.h>
 #include <debug.h>
-#include <ito.h>
+#include <gsKit.h>
+#include <dmaKit.h>
 #include <cdvd_rpc.h>
 #include "cd.h"
 #include "mass_rpc.h"
@@ -35,7 +36,10 @@
 #include <floatlib.h>
 #include "hdl_rpc.h"
 
-#define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
+#define TRUE		1
+#define FALSE		0
+
+#define SCANRATE (gsKit_detect_signal()==GS_MODE_NTSC ? 60:50)
 
 enum {  // cnfmode values for getFilePath in browsing for configurable file paths
 	NON_CNF = 0,     // Normal browser mode, not configuration mode
@@ -50,9 +54,6 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   JPG_CNF,				 // Jpg viewer choice
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
-
-//#define GS_border_colour itoSetBgColor(setting->color[0]) /* Old method */
-#define GS_border_colour 0 /* New method */
 
 enum
 {
@@ -84,7 +85,7 @@ typedef struct
 	int  Menu_Frame;
 	int timeout;
 	int Hide_Paths;
-	uint64 color[8];
+	u64 color[8];
 	int screen_x;
 	int screen_y;
 	int discControl;
@@ -122,7 +123,7 @@ void loadHddModules(void);
 void loadHdlInfoModule(void);
 
 /* elf.c */
-int checkELFheader(const char *filename);
+int checkELFheader(char *filename);
 void RunLoaderElf(char *filename, char *);
 
 /* draw.c */
@@ -131,13 +132,16 @@ void RunLoaderElf(char *filename, char *);
 #define JPG_PIC					2
 #define THUMB_PIC				3
 
+#define FOLDER          0
+#define WARNING         1
+
 unsigned char icon_folder[1024];
 unsigned char icon_warning[1024];
 
-extern itoGsEnv screen_env;
+extern GSGLOBAL  *gsGlobal;
+extern GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
 extern int      testskin, testsetskin, testjpg, testthumb;
-extern int      picWidth, picHeight;
-extern float    picW, picH, picCoeff;
+extern float     PicWidth, PicHeight, PicW, PicH, PicCoeff;
 extern int      SCREEN_WIDTH;
 extern int      SCREEN_HEIGHT;
 extern int      SCREEN_X;
@@ -150,26 +154,37 @@ extern int			Menu_start_y;
 extern int			Menu_end_y;
 extern int			Frame_end_y;
 extern int			Menu_tooltip_y;
+extern u64       BrightColor;
+extern int       PicRotate, FullScreen;
 
 void setScrTmp(const char *msg0, const char *msg1);
-void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
-void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 );
+void drawSprite( u64 color, int x1, int y1, int x2, int y2 );
+void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void drawLastMsg(void);
-void setupito(int ito_vmode);
+void setupGS(int gs_vmode);
 void updateScreenMode(void);
-void clrScr(uint64 color);
+void clrScr(u64 color);
 int log(int Value);
 void setBrightness(int Brightness);
-void loadSkin(int Picture, char *Path, int Offset);
+void loadSkin(int Picture, char *Path, int ThumbNum);
 void drawScr(void);
-void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
-void drawChar(unsigned char c, int x, int y, uint64 colour);
-int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
-int printXY_sjis(const unsigned char *s, int x, int y, uint64 colour, int);
+void drawFrame(int x1, int y1, int x2, int y2, u64 color);
+void drawChar(unsigned char c, int x, int y, u64 colour);
+int printXY(const unsigned char *s, int x, int y, u64 colour, int);
+int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
 void loadIcon(void);
 
 /* pad.c */
+#define PAD_R3_V0 0x010000
+#define PAD_R3_V1 0x020000
+#define PAD_R3_H0 0x040000
+#define PAD_R3_H1 0x080000
+#define PAD_L3_V0 0x100000
+#define PAD_L3_V1 0x200000
+#define PAD_L3_H0 0x400000
+#define PAD_L3_H1 0x800000
+
 extern u32 new_pad;
 int setupPad(void);
 int readpad(void);

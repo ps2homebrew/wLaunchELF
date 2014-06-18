@@ -139,11 +139,11 @@ int ps2kbd_opened = 0;
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
-//Function to print a text row to the 'ito' screen
+//Function to print a text row to the 'gs' screen
 //------------------------------
 void	PrintRow(int row, char *text_p)
 {	int x = (Menu_start_x + 4);
-	int y = (Menu_start_y + FONT_HEIGHT*row)/2;
+	int y = (Menu_start_y + FONT_HEIGHT*row);
 
 	printXY(text_p, x, y, setting->color[3], TRUE);
 }
@@ -241,7 +241,7 @@ int drawMainScreen(void)
 	int nElfs=0;
 	int i;
 	int x, y;
-	uint64 color;
+	u64 color;
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
 
@@ -263,7 +263,7 @@ int drawMainScreen(void)
 		else            sprintf(c, "TIMEOUT: Halted");
 	}
 	if(c[0]){
-		printXY(c, x, y/2, setting->color[3], TRUE);
+		printXY(c, x, y, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
 	for(i=0; i<15; i++){
@@ -336,7 +336,7 @@ int drawMainScreen(void)
 				color = setting->color[2];
 			else
 				color = setting->color[3];
-			printXY(c, x, y/2, color, TRUE);
+			printXY(c, x, y, color, TRUE);
 			y += FONT_HEIGHT;
 		} //ends clause for defined LK_Path[i]
 	} //ends for
@@ -839,48 +839,48 @@ void	ShowFont(void)
 	int mat_x = (SCREEN_WIDTH-mat_w)/2, mat_y = (SCREEN_HEIGHT-mat_h)/2;
 	int ch_x  = mat_x+FONT_WIDTH/2+1,   ch_y  = mat_y+FONT_HEIGHT/2+1;
 	int px, ly, cy;
-	uint64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
+	u64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
 
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
 	while(1) {
 		//Display section
 		if(event||post_event) { //NB: We need to update two frame buffers per event
-			itoSprite(col_0, mat_x, mat_y/2, mat_x+mat_w, (mat_y+mat_h)/2 ,0);
-			itoLine(col_1, mat_x, mat_y/2, 0, col_1, mat_x+mat_w, mat_y/2, 0);
-			itoLine(col_1, mat_x, mat_y/2, 0, col_1, mat_x, (mat_y+mat_h)/2, 0);
-			itoLine(col_1, mat_x+1, mat_y/2, 0, col_1, mat_x+1, (mat_y+mat_h)/2, 0);
+			gsKit_prim_sprite(gsGlobal, mat_x, mat_y, mat_x+mat_w, mat_y+mat_h , 1, col_0);
+			gsKit_prim_line(gsGlobal, mat_x, mat_y, mat_x+mat_w, mat_y, 1, col_1);
+			gsKit_prim_line(gsGlobal, mat_x, mat_y, mat_x, mat_y+mat_h, 1, col_1);
+			gsKit_prim_line(gsGlobal, mat_x+1, mat_y, mat_x+1, mat_y+mat_h, 1, col_1);
 			px=mat_x+3*FONT_WIDTH;
-			itoLine(col_1, px, mat_y/2, 0, col_1, px, (mat_y+mat_h)/2, 0);
-			itoLine(col_1, px+1, mat_y/2, 0, col_1, px+1, (mat_y+mat_h)/2, 0);
+			gsKit_prim_line(gsGlobal, px, mat_y, px, mat_y+mat_h, 1, col_1);
+			gsKit_prim_line(gsGlobal, px+1, mat_y, px+1, mat_y+mat_h, 1, col_1);
 			for(j=0; j<16; j++) {
 				px += 2*FONT_WIDTH;
-				itoLine(col_1, px, mat_y/2, 0, col_1, px, (mat_y+mat_h)/2, 0);
-				itoLine(col_1, px+1, mat_y/2, 0, col_1, px+1, (mat_y+mat_h)/2, 0);
+				gsKit_prim_line(gsGlobal, px, mat_y, px, mat_y+mat_h, 1, col_1);
+				gsKit_prim_line(gsGlobal, px+1, mat_y, px+1, mat_y+mat_h, 1, col_1);
 			}
 			cy=ch_y;
 			ly=mat_y;
 			for(i=0; i<10; i++) {
 				px=ch_x;
 				if(!i) {
-					drawChar('-', px, cy/2, col_3);
+					drawChar('-', px, cy, col_3);
 					px += FONT_WIDTH;
-					drawChar('-', px, cy/2, col_3);
+					drawChar('-', px, cy, col_3);
 				} else {
-					drawChar(Hex[i+1], px, cy/2, col_3);
+					drawChar(Hex[i+1], px, cy, col_3);
 					px += FONT_WIDTH;
-					drawChar('0', px, cy/2, col_3);
+					drawChar('0', px, cy, col_3);
 				}
 				for(j=0; j<16; j++) {
 					px += FONT_WIDTH*2;
 					if(!i) {
-						drawChar(Hex[j], px, cy/2, col_3);
+						drawChar(Hex[j], px, cy, col_3);
 					} else {
-						drawChar((i+1)*16+j, px, cy/2, col_3);
+						drawChar((i+1)*16+j, px, cy, col_3);
 					}
 				}
 				ly += FONT_HEIGHT*2;
-				itoLine(col_1, mat_x, ly/2, 0, col_1, mat_x+mat_w, ly/2, 0);
+				gsKit_prim_line(gsGlobal, mat_x, ly, mat_x+mat_w, ly, 1, col_1);
 				cy += FONT_HEIGHT*2;
 			}
 		}
@@ -956,7 +956,6 @@ void reloadConfig()
 	Validate_CNF_Path();
 	updateScreenMode();
 	loadSkin(BACKGROUND_PIC, 0, 0);
-	itoSetBgColor(GS_border_colour);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -993,7 +992,7 @@ void incConfig()
 //--------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
-void RunElf(const char *path)
+void RunElf(char *path)
 {
 	char tmp[MAX_PATH];
 	static char fullpath[MAX_PATH];
@@ -1002,50 +1001,54 @@ void RunElf(const char *path)
 	
 	if(path[0]==0) return;
 	
-	if(!strncmp(path, "hdd0:/", 6)){
-		loadHddModules();
-		sprintf(party, "hdd0:%s", path+6);
-		p = strchr(party, '/');
-		sprintf(fullpath, "pfs0:%s", p);
-		*p = 0;
-	}else if(!strncmp(path, "mc", 2)){
+	if(!strncmp(path, "mc", 2)){
 		party[0] = 0;
 		if(path[2]==':'){
 			strcpy(fullpath, "mc0:");
 			strcat(fullpath, path+3);
-			if(checkELFheader(fullpath)<0){
+			if(checkELFheader(fullpath)<=0){
 				fullpath[2]='1';
-				if(checkELFheader(fullpath)<0){
+				if(checkELFheader(fullpath)<=0){
 					sprintf(mainMsg, "%s is Not Found.", path);
 					return;
 				}
-			}
+			} //coming here means the ELF on unspecified MC is fine
 		} else {
 			strcpy(fullpath, path);
-			if(checkELFheader(fullpath)<0){
+			if(checkELFheader(fullpath)<=0){
 				sprintf(mainMsg, "%s is Not Found.", path);
 				return;
-			}
-		}
-	}else if(!strncmp(path, "mass", 4)){
+			} //coming here means the ELF on specified MC is fine
+		} //coming here means the ELF on  MC is fine
+	}else if(!strncmp(path, "hdd0:/", 6)){
+		loadHddModules();
+		if(checkELFheader(path)<=0){
+			sprintf(mainMsg, "%s is Not Found.", path);
+			return;
+		} //coming here means the ELF is fine
+		sprintf(party, "hdd0:%s", path+6);
+		p = strchr(party, '/');
+		sprintf(fullpath, "pfs0:%s", p);
+		*p = 0;
+	}else if(!strncmp(path, "mass:/", 6)){
 		loadUsbModules();
+		if(checkELFheader(path)<=0){
+			sprintf(mainMsg, "%s is Not Found.", path);
+			return;
+		} //coming here means the ELF is fine
 		party[0] = 0;
 		strcpy(fullpath, "mass:");
 		strcat(fullpath, path+6);
-		if(checkELFheader(fullpath)<0){
-			sprintf(mainMsg, "%s is Not Found.", path);
-			return;
-		}
-	}else if(!strncmp(path, "host:", 5)){
+	}else if(!strncmp(path, "host:/", 6)){
 		initHOST();
 		party[0] = 0;
 		strcpy(fullpath, "host:");
 		strcat(fullpath, path+6);
 		makeHostPath(fullpath, fullpath);
-		if(checkELFheader(fullpath)<0){
+		if(checkELFheader(fullpath)<=0){
 			sprintf(mainMsg, "%s is Not Found.", path);
 			return;
-		}
+		} //coming here means the ELF is fine
 	}else if(!stricmp(path, "MISC/PS2Disc")){
 		drawMsg("Reading SYSTEM.CNF...");
 		strcpy(mainMsg, "Failed");
@@ -1138,9 +1141,9 @@ void RunElf(const char *path)
 		strcpy(fullpath, path);
 	}
 	
-	clrScr(ITO_RGBA(0x00, 0x00, 0x00, 0));
+	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
 	drawScr();
-	clrScr(ITO_RGBA(0x00, 0x00, 0x00, 0));
+	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
 	drawScr();
 	free(setting);
 	free(elisaFnt);
@@ -1217,7 +1220,7 @@ int main(int argc, char *argv[])
 	int mc_booted = 0;
 	int cdvd_booted = 0;
 	int	host_booted = 0;
-	int ito_vmode;
+	int gs_vmode;
 
 	SifInitRpc(0);
 	CheckModules();
@@ -1274,6 +1277,15 @@ int main(int argc, char *argv[])
 //	else emergency = 0;
 	emergency = 0; //Comment out this line when using early setupPad above
 
+	if(gsKit_detect_signal()==GS_MODE_PAL) {  //Test console TV mode
+		SCREEN_X			= 652;
+		SCREEN_Y			= 72;
+	} else {
+		SCREEN_X			= 632;
+		SCREEN_Y			= 50;
+	}
+	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
+
 	if(emergency) loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
 	else          loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
@@ -1283,25 +1295,25 @@ int main(int argc, char *argv[])
 
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
-		if((ITO_VMODE_AUTO)==(ITO_VMODE_PAL))             //Let console decide
+		if(gsKit_detect_signal()==GS_MODE_PAL)             //Let console decide
 			TV_mode = TV_mode_PAL;
 		else
 			TV_mode = TV_mode_NTSC;
 	}
 
 	if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
-		ito_vmode = ITO_VMODE_PAL;
+		gs_vmode = GS_MODE_PAL;
 		SCREEN_WIDTH	= 640;
 		SCREEN_HEIGHT = 512;
-		SCREEN_X			= 163;
-		SCREEN_Y			= 37;
+		SCREEN_X			= 652;
+		SCREEN_Y			= 72;
 		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
 	}else{                      //else use NTSC mode (forced or auto)
-		ito_vmode = ITO_VMODE_NTSC;
+		gs_vmode = GS_MODE_NTSC;
 		SCREEN_WIDTH	= 640;
 		SCREEN_HEIGHT = 448;
-		SCREEN_X			= 158;
-		SCREEN_Y			= 26;
+		SCREEN_X			= 632;
+		SCREEN_Y			= 50;
 		Menu_end_y		 = Menu_start_y + 22*FONT_HEIGHT;
 	} /* end else */
 	Frame_end_y			= Menu_end_y + 4;
@@ -1335,8 +1347,9 @@ int main(int argc, char *argv[])
 		}
 	}
 */
-	setupito(ito_vmode);
+	setupGS(gs_vmode);
 	loadSkin(BACKGROUND_PIC, 0, 0);
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	startKbd();
 	TimerInit();

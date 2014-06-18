@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.81 (2006.07.31)
+-Merged gsKit adaption contributed by Polo
+-Replaced some remnant libito defaults with ones appropriate for gsKit
+-Added screen offset conversion for compatibility to old CNF files
+-Modified some screen offset adjustments to match standard LaunchELF practice
+-Modified dialog navigation for screen settings to make it more consistent
+-Added another console check, to avoid NTSC offsets for PAL console with no CNF
+-Modified "RunElf" and "checkELFheader" functions to improve error checking for HDD. This eliminates a bug that caused program crash when attempting to use a launch key to a deleted file on HDD.
+
 LaunchELF v3.80 (2006.07.19)
 -Changed some incorrect strings in the supplied example LAUNCHELF.CNF
 -Merged JPG viewer contributed by Polo

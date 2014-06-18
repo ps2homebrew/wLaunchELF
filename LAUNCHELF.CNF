@@ -12,12 +12,17 @@
 # for that version. Using newer variables with older versions is futile.
 # It should not crash the program, but will not have meaningful effects.
 # ----------------------------------------------------------------------
-CNF_version = 2.0
+CNF_version = 3
 # ----------------------------------------------------------------------
 # The CNF_version variable MUST exist for a CNF to be accepted as valid,
 # and it must also be the first variable defined in the file. That way
 # an old CNF can't cause damage when read by new LaunchELF versions.
-# Future LaunchELF versions may also check the value for some features.
+#
+# From LaunchELF v3.81 the CNF_version value will be 3 or higher, which
+# means that the Screen_X and Screen_Y offsets are valid for gsKit, as
+# used by that program version. Also, when that program version is used
+# with a CNF file having lower CNF_version value than 3, then the old
+# screen offsets will be converted to ones suitable for gsKit.
 # ----------------------------------------------------------------------
 # Next follows the 12 (as yet) launching links, here kept in traditional
 # order, though users are allowed to vary the order at will. For these

@@ -4,12 +4,12 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o mass_rpc.o cd.o\
 	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
 	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o
 
-EE_INCS := -I$(PS2DEV)/libito/include -I$(PS2DEV)/libjpg/include\
+EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
 
-EE_LDFLAGS := -L$(PS2DEV)/libito/lib -L$(PS2DEV)/libjpg\
+EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 	-L$(PS2SDK)/sbv/lib -L$(PS2DEV)/libcdvd/lib -s
-EE_LIBS = -lpad -lito -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
+EE_LIBS = -lpad -lgsKit -ldmaKit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
 	rm -f hdl_info.s

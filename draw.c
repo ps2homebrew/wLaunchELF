@@ -4,14 +4,14 @@
 #include "launchelf.h"
 #include "font5200.c"
 
-itoGsEnv	screen_env;
+GSGLOBAL  *gsGlobal;
+GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
 int				testskin, testsetskin, testjpg, testthumb;
-int       picWidth, picHeight;
-float     picW, picH, picCoeff;
 int				SCREEN_WIDTH	= 640;
 int				SCREEN_HEIGHT = 448;
-int				SCREEN_X			= 158;
-int				SCREEN_Y			= 26;
+int				SCREEN_X			= 632;
+int				SCREEN_Y			= 50;
+u64       BrightColor;
 //dlanor: values shown above are defaults for NTSC mode
 
 char LastMessage[MAX_TEXT_LINE+2];
@@ -30,7 +30,7 @@ int Menu_tooltip_y; //Menus may also use this row for tooltips
 
 //The font file ELISA100.FNT is needed to display MC save titles in japanese
 //and the arrays defined here are needed to find correct data in that file
-const uint16 font404[] = {
+const u16 font404[] = {
 	0xA2AF, 11,
 	0xA2C2, 8,
 	0xA2D1, 11,
@@ -383,16 +383,54 @@ int ScaleBitmap( u8* pInBuff, u16 wWidth, u16 wHeight, u8** pOutBuff, u16 wNewWi
 } /* end ScaleBitmap */
 
 //--------------------------------------------------------------
-// Init Screen
-void initScr(void)
-{
-	itoSprite( ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
-	itoGsFinish();
-	itoSwitchFrameBuffers();
-	itoSprite( ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
-	itoGsFinish();
-	itoSwitchFrameBuffers();
-}
+void RotateBitmap(u8* InBuff, u16 Width, u16 Height, u8* OutBuff, int Way) {
+
+	int i, j, k, l;
+	int Byte;
+	u8  pixels[Width][Height][3];
+	u8  newpixels[Height][Width][3];
+	
+	Byte=0;
+	for( i = 0; i < Height; i++ ){
+		for( j = 0; j < Width; j++ ){
+			pixels[j][i][0] = InBuff[Byte];
+			pixels[j][i][1] = InBuff[Byte+1];
+			pixels[j][i][2] = InBuff[Byte+2];
+			Byte+=3;
+		}
+	}
+	if(Way==1){ // +90°
+		for( i = 0, l = 0; i < Width; i++, l++ ){
+			for( j = 0, k = Height-1; j < Height; j++, k-- ){
+				newpixels[j][i][0] = pixels[l][k][0];
+				newpixels[j][i][1] = pixels[l][k][1];
+				newpixels[j][i][2] = pixels[l][k][2];
+			}
+		}
+	}else if(Way==3){ // -90°
+		for( i = 0, l = Width-1; i < Width; i++, l-- ){
+			for( j = 0, k = 0; j < Height; j++, k++ ){
+				newpixels[j][i][0] = pixels[l][k][0];
+				newpixels[j][i][1] = pixels[l][k][1];
+				newpixels[j][i][2] = pixels[l][k][2];
+			}
+		}
+	} /* end if */
+	
+	Byte=0;
+	for( i = 0; i < Width; i++ ){
+		for( j = 0; j < Height; j++ ){
+			OutBuff[Byte]   = newpixels[j][i][0];
+			OutBuff[Byte+1] = newpixels[j][i][1];
+			OutBuff[Byte+2] = newpixels[j][i][2];
+			Byte+=3;
+		}
+	}
+
+ free( pixels );
+ free( newpixels );
+
+} /* end RotateBitmap */
 
 //--------------------------------------------------------------
 void setScrTmp(const char *msg0, const char *msg1)
@@ -401,38 +439,38 @@ void setScrTmp(const char *msg0, const char *msg1)
 	
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
-	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.80 ÿ4",
-		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
+	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
+	printXY(" ÿ4 LaunchELF v3.81 ÿ4",
+		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';
-	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
+	printXY(msg0, x, Menu_message_y, setting->color[2], TRUE);
 
 	if(setting->Menu_Frame)
-		drawFrame(SCREEN_MARGIN, Frame_start_y/2,
-			SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+		drawFrame(SCREEN_MARGIN, Frame_start_y,
+			SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 	
-	printXY(msg1, x, Menu_tooltip_y/2, setting->color[2], TRUE);
+	printXY(msg1, x, Menu_tooltip_y, setting->color[2], TRUE);
 }
 //--------------------------------------------------------------
-void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
+void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 ) {
 		setBrightness(setting->Brightness);
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1, x1, y1, x2, y2, x2, y2,0);
+		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
 		setBrightness(50);
-	}else{
-		itoSprite(color, x1, y1, x2, y2, 0);
+	} else {
+		gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
 	}
 }
 //--------------------------------------------------------------
-void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 ){
+void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 && !setting->Popup_Opaque) {
 		setBrightness(setting->Brightness);
-		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1, x1, y1, x2, y2, x2, y2,0);
+		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
 		setBrightness(50);
-	}else{
-		itoSprite(color, x1, y1, x2, y2, 0);
+	} else {
+		gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
 	}
 }
 //--------------------------------------------------------------
@@ -440,72 +478,108 @@ void drawMsg(const char *msg)
 {
 	strncpy(LastMessage, msg, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';
-	drawSprite(setting->color[0], 0, (Menu_message_y)/2,
-		SCREEN_WIDTH, (Frame_start_y)/2);
-	printXY(msg, SCREEN_MARGIN, Menu_message_y/2, setting->color[2], TRUE);
+	drawSprite(setting->color[0], 0, Menu_message_y,
+		SCREEN_WIDTH, Frame_start_y);
+	printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE);
 	drawScr();
 }
 //--------------------------------------------------------------
 void drawLastMsg(void)
 {
-	drawSprite(setting->color[0], 0, (Menu_message_y)/2,
-		SCREEN_WIDTH, (Frame_start_y)/2);
-	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y/2, setting->color[2], TRUE);
+	drawSprite(setting->color[0], 0, Menu_message_y,
+		SCREEN_WIDTH, Frame_start_y);
+	printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE);
 	drawScr();
 }
 //--------------------------------------------------------------
-void setupito(int ito_vmode)
+void setupGS(int gs_vmode)
 {
-	itoInit();
+	// GS Init
+	gsGlobal = gsKit_init_global(gs_vmode);
 
-	// screen resolution
-	screen_env.screen.width		= SCREEN_WIDTH;
-	screen_env.screen.height	= SCREEN_HEIGHT;
-	screen_env.screen.psm			= ITO_RGBA32;
+	// Screen Position Init
+	gsGlobal->StartX = setting->screen_x; 
+	gsGlobal->StartY = setting->screen_y;
 
-	// These setting work best with my tv, experiment for youself
-	screen_env.screen.x				= setting->screen_x; 
-	screen_env.screen.y				= setting->screen_y;
-	
-	screen_env.framebuffer1.x	= 0;
-	screen_env.framebuffer1.y	= SCREEN_HEIGHT;
-	
-	screen_env.framebuffer2.x	= 0;
-	screen_env.framebuffer2.y	= SCREEN_HEIGHT*2;
+	// Buffer Init
+	gsGlobal->DoubleBuffering = GS_SETTING_OFF;
+	gsGlobal->ZBuffering      = GS_SETTING_OFF;
 
-	// zbuffer
-	screen_env.zbuffer.x			= 0;
-	screen_env.zbuffer.y			= SCREEN_HEIGHT*2;
-	screen_env.zbuffer.psm		= ITO_ZBUF32;
-	
-	// scissor 
-	screen_env.scissor_x1			= 0;
-	screen_env.scissor_y1			= 0;
-	screen_env.scissor_x2			= SCREEN_WIDTH;
-	screen_env.scissor_y2			= SCREEN_HEIGHT;
-	
-	// misc
-	screen_env.dither					= TRUE;
-	screen_env.interlace			= setting->interlace;
-	screen_env.ffmode					= ITO_FRAME;
-	screen_env.vmode					= ito_vmode;
+	// DMAC Init
+	dmaKit_init(D_CTRL_RELE_OFF,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC, D_CTRL_STD_OFF, D_CTRL_RCYC_8);
+	dmaKit_chan_init(DMA_CHANNEL_GIF);
+	dmaKit_chan_init(DMA_CHANNEL_FROMSPR);
+	dmaKit_chan_init(DMA_CHANNEL_TOSPR);
 
-	itoGsEnvSubmit(&screen_env);
-	initScr();
-	itoSetBgColor(GS_border_colour);
+	// Screen Init
+	gsKit_init_screen(gsGlobal);
+	gsKit_mode_switch(gsGlobal, GS_ONESHOT);
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 }
 
 //--------------------------------------------------------------
 void updateScreenMode(void)
 {
-	screen_env.screen.x = setting->screen_x;
-	screen_env.screen.y = setting->screen_y;
-	screen_env.interlace = setting->interlace;
-	itoGsReset();
-	itoGsEnvSubmit(&screen_env);
+	int New_TV_mode = setting->TV_mode;
+
+	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)){ //If no forced request
+		if(gsKit_detect_signal()==GS_MODE_PAL)             //Let console decide
+			New_TV_mode = TV_mode_PAL;
+		else
+			New_TV_mode = TV_mode_NTSC;
+	}
+
+	if(New_TV_mode != TV_mode){
+
+		TV_mode = New_TV_mode;
+  
+		if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
+			gsGlobal->Mode = GS_MODE_PAL;
+			SCREEN_WIDTH	 = 640;
+			SCREEN_HEIGHT  = 512;
+			setting->screen_x+=20;
+			setting->screen_y+=22;
+			Menu_end_y     = Menu_start_y + 26*FONT_HEIGHT;
+		}else{                      //else use NTSC mode (forced or auto)
+			gsGlobal->Mode = GS_MODE_NTSC;
+			SCREEN_WIDTH	 = 640;
+			SCREEN_HEIGHT  = 448;
+			setting->screen_x-=20;
+			setting->screen_y-=22;
+			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
+		} /* end else */
+		Frame_end_y      = Menu_end_y + 4;
+		Menu_tooltip_y   = Frame_end_y + LINE_THICKNESS + 2;
+  
+		// Init screen size
+		gsGlobal->Width  = SCREEN_WIDTH;
+		gsGlobal->Height = SCREEN_HEIGHT;
+
+		// Init screen modes
+		SetGsCrt(gsGlobal->Interlace, gsGlobal->Mode, gsGlobal->Field);
+
+	} // end TV_Mode unchanged
+
+	// Init screen position
+	gsGlobal->StartX = setting->screen_x;
+	gsGlobal->StartY = setting->screen_y;
+
+	GS_SET_DISPLAY1(gsGlobal->StartX,		// X position in the display area (in VCK unit
+			gsGlobal->StartY,		// Y position in the display area (in Raster u
+			gsGlobal->MagX,			// Horizontal Magnification
+			gsGlobal->MagY,			// Vertical Magnification
+			(gsGlobal->Width * 4) -1,	// Display area width
+			(gsGlobal->Height-1));		// Display area height
+
+	GS_SET_DISPLAY2(gsGlobal->StartX,		// X position in the display area (in VCK units)
+			gsGlobal->StartY,		// Y position in the display area (in Raster units)
+			gsGlobal->MagX,			// Horizontal Magnification
+			gsGlobal->MagY,			// Vertical Magnification
+			(gsGlobal->Width * 4) -1,	// Display area width
+			(gsGlobal->Height-1));		// Display area height
 }
 //--------------------------------------------------------------
-void loadSkin(int Picture, char *Path, int Offset)
+void loadSkin(int Picture, char *Path, int ThumbNum)
 {
 	char  tmpPath[MAX_PATH], skinpath[MAX_PATH];
 
@@ -550,77 +624,130 @@ void loadSkin(int Picture, char *Path, int Offset)
 
 	FILE *File = fopen(skinpath, "r");
 	
-	picW=0, picH=0, picCoeff=0;
+	PicW=0, PicH=0, PicCoeff=0;
  
 	if( File != NULL ) {
 
-		jpgData* Jpg;
-		u8*      ImgData;
-		u8*      ImgData1;
-		u8*      ResData;
+		jpgData  *Jpg;
+		u8       *ImgData, *ImgData1, *ImgData2;
+		int      W=0;
 
 		if( ( Jpg = jpgOpenFILE ( File, JPG_WIDTH_FIX ) ) > 0 ){
 			if( (ImgData = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) ) ) > 0){
 				if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
 				 	if( Picture == BACKGROUND_PIC ){
-				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
-				 			itoLoadTexture ( ResData,
-				 			 0,
-				 			 SCREEN_WIDTH, ITO_RGB24,
-				 			 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
-							itoGsFinish();
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, (void*)&TexSkin.Mem, SCREEN_WIDTH, SCREEN_HEIGHT ) ) != 0 ){
+				 			TexSkin.PSM = GS_PSM_CT24;
+							TexSkin.VramClut = 0;
+							TexSkin.Clut = NULL;
+							TexSkin.Width =  SCREEN_WIDTH;
+							TexSkin.Height = SCREEN_HEIGHT;
+							TexSkin.Filter = GS_FILTER_NEAREST;
+							gsGlobal->CurrentPointer=0x140000;
+							TexSkin.Vram = gsKit_vram_alloc(gsGlobal,
+							 gsKit_texture_size(TexSkin.Width, TexSkin.Height, TexSkin.PSM),
+							 GSKIT_ALLOC_USERBUFFER);
+							gsKit_texture_upload(gsGlobal, &TexSkin);
+							free(TexSkin.Mem);
 							testskin = 1;
 						} /* end if */
 				 	} else if( Picture == PREVIEW_PIC ){
-				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
-				 			itoLoadTexture ( ResData,
-				 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
-				 			 SCREEN_WIDTH/2, ITO_RGB24,
-				 			 0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 );
-							itoGsFinish();
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, (void*)&TexPreview.Mem, SCREEN_WIDTH, SCREEN_HEIGHT ) ) != 0 ){
+				 			TexPreview.PSM = GS_PSM_CT24;
+							TexPreview.VramClut = 0;
+							TexPreview.Clut = NULL;
+				 			TexPreview.Width =  SCREEN_WIDTH;
+							TexPreview.Height = SCREEN_HEIGHT;
+							TexPreview.Filter = GS_FILTER_NEAREST;
+							gsGlobal->CurrentPointer=0x280000;
+							TexPreview.Vram = gsKit_vram_alloc(gsGlobal,
+							 gsKit_texture_size(TexPreview.Width, TexPreview.Height, TexPreview.PSM),
+							 GSKIT_ALLOC_USERBUFFER);
+							gsKit_texture_upload(gsGlobal, &TexPreview);
+							free(TexPreview.Mem);
 							testsetskin = 1;
 						} /* end if */
 				 	} else if( Picture == JPG_PIC ){
-				 		picW=Jpg->width;
-				 		picH=Jpg->height;
-				 		if(TV_mode == TV_mode_NTSC)
-				 			picCoeff=(picW/picH)+0.0952f;
-						else if(TV_mode == TV_mode_PAL)
-				 			picCoeff=(picW/picH)-0.0833f;
-				 		if(Jpg->width > Jpg->height){
-scaleW:
-				 			picWidth=SCREEN_WIDTH;
-				 			if((picHeight=picWidth/picCoeff)>SCREEN_HEIGHT) goto scaleH;
+				 		if(PicRotate==1){ // 90°
+				 			ImgData1 = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) +1);
+				 			RotateBitmap(ImgData, Jpg->width, Jpg->height, ImgData1, PicRotate);
+				 			W=Jpg->width;
+				 			Jpg->width=Jpg->height;
+				 			Jpg->height=W;
+				 		}else if(PicRotate==3){ // -90°
+				 			ImgData1 = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) +1);
+				 			RotateBitmap(ImgData, Jpg->width, Jpg->height, ImgData1, PicRotate);
+				 			W=Jpg->width;
+				 			Jpg->width=Jpg->height;
+				 			Jpg->height=W;
 				 		}else{
-scaleH:
-				 			picHeight=SCREEN_HEIGHT;
-				 			if((picWidth=picHeight*picCoeff)>SCREEN_WIDTH) goto scaleW;
+				 			memcpy(&ImgData1, &ImgData, sizeof(ImgData));
+						}
+				 		PicW=Jpg->width;
+				 		PicH=Jpg->height;
+				 		if(TV_mode == TV_mode_NTSC)
+				 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
+						else if(TV_mode == TV_mode_PAL)
+				 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);
+				 		if(FullScreen){
+				 			if(Jpg->width > Jpg->height){
+				 				PicWidth=928;
+				 				PicHeight=696;
+				 			}else{
+				 				PicHeight=928;
+				 				PicWidth=696;
+				 			}
+				 		}else{
+				 			if(Jpg->width > Jpg->height){
+				 				PicWidth=640;
+				 				PicHeight=512;
+				 			}else{
+				 				PicHeight=640;
+				 				PicWidth=512;
+				 			}
 				 		}
-				 		if((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, SCREEN_WIDTH, Jpg->height))!=0){
-				 			if((ScaleBitmap(ImgData1, SCREEN_WIDTH, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2))!=0){
-				 				itoLoadTexture ( ResData,
-				 				 0,
-				 				 SCREEN_WIDTH, ITO_RGB24,
-				 				 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
-								itoGsFinish();
+				 		if((ScaleBitmap(ImgData1, Jpg->width, Jpg->height, &ImgData2, (int)PicWidth, Jpg->height))!=0){
+				 			if((ScaleBitmap(ImgData2, (int)PicWidth, Jpg->height, (void*)&TexPicture.Mem, (int)PicWidth, (int)PicHeight))!=0){
+				 				TexPicture.PSM = GS_PSM_CT24;
+								TexPicture.VramClut = 0;
+								TexPicture.Clut = NULL;
+								TexPicture.Filter = GS_FILTER_NEAREST;
+				 				TexPicture.Width =  PicWidth;
+								TexPicture.Height = PicHeight;
+				 				if(FullScreen)
+									gsGlobal->CurrentPointer=0x140000;
+								else
+									gsGlobal->CurrentPointer=0x288000;
+								TexPicture.Vram = gsKit_vram_alloc(gsGlobal,
+								 gsKit_texture_size(TexPicture.Width, TexPicture.Height, TexPicture.PSM),
+								 GSKIT_ALLOC_USERBUFFER);
+								gsKit_texture_upload(gsGlobal, &TexPicture);
+								free(TexPicture.Mem);
 								testjpg = 1;
 							} /* end if */
 						} /* end if */
 				 	} else if( Picture == THUMB_PIC ){
-				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, 64, 32 ) ) != 0 ){
-				 			itoLoadTexture ( ResData,
-				 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4+Offset,
-				 			 64, ITO_RGB24,
-				 			 0, 0, 64, 32 );
-							itoGsFinish();
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, (void*)&TexThumb[ThumbNum].Mem, 64, 32 ) ) != 0 ){
+				 			TexThumb[ThumbNum].PSM = GS_PSM_CT24;
+							TexThumb[ThumbNum].VramClut = 0;
+							TexThumb[ThumbNum].Clut = NULL;
+				 			TexThumb[ThumbNum].Width =  64;
+							TexThumb[ThumbNum].Height = 32;
+							TexThumb[ThumbNum].Filter = GS_FILTER_NEAREST;
+							TexThumb[ThumbNum].Vram = gsKit_vram_alloc(gsGlobal,
+							 gsKit_texture_size(TexThumb[ThumbNum].Width,
+							 TexThumb[ThumbNum].Height, TexThumb[ThumbNum].PSM),
+							 GSKIT_ALLOC_USERBUFFER);
+							gsKit_texture_upload(gsGlobal, &TexThumb[ThumbNum]);
+							free(TexThumb[ThumbNum].Mem);
 							testthumb = 1;
 						} /* end if */
 				 	} /* end else */
 					jpgClose( Jpg );//This really should be moved, but jpg funcs may object
-					free(ResData); //This really should be moved, but jpg funcs may object
 				} /* end if((jpgReadImage(...)) != -1) */
 			free(ImgData);
 			free(ImgData1);
+			free(ImgData2);
 			} /* end if( (ImgData = malloc(...)) > 0 ) */
 		} /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
 		fclose( File );
@@ -632,87 +759,83 @@ scaleH:
 //--------------------------------------------------------------
 void loadIcon(void)
 {
-	itoLoadTexture ( icon_folder, SCREEN_WIDTH*SCREEN_HEIGHT/2*4, 16, ITO_RGBA32, 0, 0, 16, 16 );
-	itoLoadTexture ( icon_warning, SCREEN_WIDTH*SCREEN_HEIGHT/2*4+16*16*4, 16, ITO_RGBA32, 0, 0, 16, 16 );
-	itoGsFinish();
+	TexIcon[0].Width = 16;
+	TexIcon[0].Height = 16;
+	TexIcon[0].PSM = GS_PSM_CT32;
+	TexIcon[0].Mem = (void*)icon_folder;
+	gsGlobal->CurrentPointer=0x280000;
+	TexIcon[0].Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(TexIcon[0].Width, TexIcon[0].Height, TexIcon[0].PSM), GSKIT_ALLOC_USERBUFFER);
+	TexIcon[0].Filter = GS_FILTER_LINEAR;
+	gsKit_texture_upload(gsGlobal, &TexIcon[0]);
+	free(TexIcon[0].Mem);
+
+	TexIcon[1].Width = 16;
+	TexIcon[1].Height = 16;
+	TexIcon[1].PSM = GS_PSM_CT32;
+	TexIcon[1].Mem = (void*)icon_warning;
+	gsGlobal->CurrentPointer=0x284000;
+	TexIcon[1].Vram = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(TexIcon[0].Width, TexIcon[0].Height, TexIcon[0].PSM), GSKIT_ALLOC_USERBUFFER);
+	TexIcon[1].Filter = GS_FILTER_LINEAR;
+	gsKit_texture_upload(gsGlobal, &TexIcon[1]);
+	free(TexIcon[1].Mem);
 }
 //--------------------------------------------------------------
 // Set Skin Brightness
 void setBrightness(int Brightness)
 {
-	int		fogStat	= FALSE;
-	int		fogColor	= 0;
-	int		fogCoef	= 255;
 	float adjustBright = 128.0F;
  
 	if ( Brightness == 50 ) adjustBright = 128.0F;
 		else	adjustBright = (((256.0F/100.0F)*Brightness) + (32.0F*((50.0F-Brightness)/50)));
 
-	if ( adjustBright <=   32.0F ) adjustBright = 32.0F;
-
-	if ( adjustBright == 128.0F ) {
- 		fogStat  = FALSE;
-		fogColor = 0;
-		fogCoef  = 255;
-	} /* end if */
-
+	if ( adjustBright <=  32.0F ) adjustBright =  32.0F;
 	if ( adjustBright >= 224.0F ) adjustBright = 224.0F;
- 
-	if ( adjustBright >= 32.0F && adjustBright < 128.0F ) {
- 		fogStat  = TRUE;
-		fogColor = 0;
-		if( ( fogCoef  = (int)adjustBright * 2 ) <= 0 ) fogCoef = 0;
-	} /* end if */
 
-	if ( adjustBright > 128.0F && adjustBright <= 224.0F ) {
- 		fogStat  = TRUE;
-		fogColor = 255;
-		if( ( fogCoef  = 320 - ( (int)adjustBright - 96 ) * 2 ) >= 256 ) fogCoef = 255;
-	} /* end if */
-
-	itoPrimFog( fogStat );
-	itoSetFogValue( fogColor, fogColor, fogColor, fogCoef );
+	BrightColor = GS_SETREG_RGBAQ( adjustBright, adjustBright, adjustBright, 0x80, 0x00 );
 }
 
 //--------------------------------------------------------------
-void clrScr(uint64 color)
+void clrScr(u64 color)
 {
 	if ( testskin == 1 ) {
 		setBrightness(setting->Brightness);
-		itoSprite(ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-		itoSetTexture(0, SCREEN_WIDTH, ITO_RGB24, log(SCREEN_WIDTH), log(SCREEN_HEIGHT/2));
-		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2, 0);
+		gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+		gsKit_prim_sprite_texture(gsGlobal,
+		 &TexSkin, 0, 0, 0, 0,
+		 SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH, SCREEN_HEIGHT,
+		 0, BrightColor);
 		setBrightness(50);
 	} else {
-		itoSprite(color, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+		gsKit_prim_sprite(gsGlobal, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, color);
 	} /* end else */
 }
 
 //--------------------------------------------------------------
 void drawScr(void)
 {
-	itoGsFinish();
-	itoVSync();
-	itoSwitchFrameBuffers();
+	gsKit_sync_flip(gsGlobal);
+	gsKit_queue_exec(gsGlobal);
 }
 
 //--------------------------------------------------------------
-void drawFrame(int x1, int y1, int x2, int y2, uint64 color)
+void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
-	itoLine(color, x1, y1, 0, color, x2, y1, 0);
+	gsKit_prim_line(gsGlobal, x1, y1, x2, y1, 1, color);
+	gsKit_prim_line(gsGlobal, x1, y1+1, x2, y1+1, 1, color);
 	
-	itoLine(color, x2, y1, 0, color, x2, y2, 0);
-	itoLine(color, x2-1, y1, 0, color, x2-1, y2, 0);
+	gsKit_prim_line(gsGlobal, x2, y1, x2, y2, 1, color);
+	gsKit_prim_line(gsGlobal, x2-1, y1, x2-1, y2, 1, color);
 	
-	itoLine(color, x2, y2, 0, color, x1, y2, 0);
+	gsKit_prim_line(gsGlobal, x2, y2, x1, y2, 1, color);
+	gsKit_prim_line(gsGlobal, x2, y2-1, x1, y2-1, 1, color);
 	
-	itoLine(color, x1, y2, 0, color, x1, y1, 0);
-	itoLine(color, x1+1, y2, 0, color, x1+1, y1, 0);
+	gsKit_prim_line(gsGlobal, x1, y2, x1, y1, 1, color);
+	gsKit_prim_line(gsGlobal, x1+1, y2, x1+1, y1, 1, color);
 }
 
 //--------------------------------------------------------------
-// draw a char using the system font (8x8)
-void drawChar(unsigned char c, int x, int y, uint64 colour)
+// draw a char using the system font (16x16)
+void drawChar(unsigned char c, int x, int y, u64 colour)
 {
 	unsigned int i, j, ix;
 	unsigned char cc;
@@ -725,7 +848,10 @@ void drawChar(unsigned char c, int x, int y, uint64 colour)
 		cc = font5200[ix++];
 		for(j=0; j<8; j++)
 		{
-			if(cc & 0x80) itoPoint(colour, x+j, y+i, 0);
+			if(cc & 0x80){
+				gsKit_prim_point(gsGlobal, x+j, y+i*2-1, 1, colour);
+				gsKit_prim_point(gsGlobal, x+j, y+i*2, 1, colour);
+			}
 			cc = cc << 1;
 		}
 	}
@@ -733,11 +859,11 @@ void drawChar(unsigned char c, int x, int y, uint64 colour)
 //------------------------------
 //endfunc drawChar
 //--------------------------------------------------------------
-// draw a char using the ELISA font (8x8)
-void drawChar2(int32 n, int x, int y, uint64 colour)
+// draw a char using the ELISA font (16x16)
+void drawChar2(int n, int x, int y, u64 colour)
 {
 	unsigned int i, j;
-	uint8 b;
+	u8 b;
 	
 	for(i=0; i<8; i++)
 	{
@@ -745,7 +871,8 @@ void drawChar2(int32 n, int x, int y, uint64 colour)
 		for(j=0; j<8; j++)
 		{
 			if(b & 0x80) {
-				itoPoint(colour, x+j, y+i, 0);
+				gsKit_prim_point(gsGlobal, x+j, y+i*2-1, 1, colour);
+				gsKit_prim_point(gsGlobal, x+j, y+i*2, 1, colour);
 			}
 			b = b << 1;
 		}
@@ -755,7 +882,7 @@ void drawChar2(int32 n, int x, int y, uint64 colour)
 //endfunc drawChar2
 //--------------------------------------------------------------
 // draw a string of characters, without shift-JIS support
-int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
+int printXY(const unsigned char *s, int x, int y, u64 colour, int draw)
 {
 	unsigned char c1, c2;
 	int i;
@@ -793,11 +920,11 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 //endfunc printXY
 //--------------------------------------------------------------
 // draw a string of characters, with shift-JIS support (only for gamesave titles)
-int printXY_sjis(const unsigned char *s, int x, int y, uint64 colour, int draw)
+int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 {
-	int32 n;
+	int n;
 	unsigned char ascii;
-	uint16 code;
+	u16 code;
 	int i, j, tmp;
 	
 	i=0;

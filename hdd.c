@@ -212,9 +212,9 @@ int sizeSelector(int size)
 	int   event, post_event=0;
 
 	int mSprite_X1 = SCREEN_WIDTH/2-12*FONT_WIDTH;       //Left edge of sprite
-	int mSprite_Y1 = (SCREEN_HEIGHT/2-3*FONT_HEIGHT)/2; //Top edge of sprite
+	int mSprite_Y1 = SCREEN_HEIGHT/2-3*FONT_HEIGHT; //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH/2+12*FONT_WIDTH;       //Right edge of sprite
-	int mSprite_Y2 = (SCREEN_HEIGHT/2+3*FONT_HEIGHT)/2; //Bottom edge of sprite
+	int mSprite_Y2 = SCREEN_HEIGHT/2+3*FONT_HEIGHT; //Bottom edge of sprite
 
 	event = 1;  //event = initial entry
 	while(1){
@@ -262,39 +262,43 @@ int sizeSelector(int size)
 
 			sprintf(c, "%d MB", size);
 			printXY(c, mSprite_X1+12*FONT_WIDTH-(strlen(c)*FONT_WIDTH)/2,
-				mSprite_Y1+FONT_HEIGHT/2, setting->color[3], TRUE);
-			drawFrame(mSprite_X1+7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT/4,
-				mSprite_X2-7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT+FONT_HEIGHT/4, setting->color[1]);
+				mSprite_Y1+FONT_HEIGHT, setting->color[3], TRUE);
+			drawFrame(mSprite_X1+7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT/2,
+				mSprite_X2-7*FONT_WIDTH, mSprite_Y1+FONT_HEIGHT*2+FONT_HEIGHT/2, setting->color[1]);
 
 			printXY("128MB             32GB", mSprite_X1+FONT_WIDTH,
-				mSprite_Y1+FONT_HEIGHT+FONT_HEIGHT/2, setting->color[3], TRUE);
+				mSprite_Y1+FONT_HEIGHT*3, setting->color[3], TRUE);
 
-			itoLine(setting->color[1], mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2, 0,
-				setting->color[1], mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2, 0);
+			gsKit_prim_line(gsGlobal,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5,
+			 mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5,
+			 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-1,
+			 mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-1,
+			 1, setting->color[1]);
 
 			scrollBar = (size*100/32640)*(19*FONT_WIDTH)/100;
 
-			itoLine(setting->color[2], mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2-FONT_HEIGHT/4, 0,
-				setting->color[2], mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2+FONT_HEIGHT/4, 0);
-			itoLine(setting->color[2], mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2-FONT_HEIGHT/4, 0,
-				setting->color[2], mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1,
-				mSprite_Y1+2*FONT_HEIGHT+FONT_HEIGHT/2+FONT_HEIGHT/4, 0);
+			gsKit_prim_line(gsGlobal,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar, mSprite_Y1+FONT_HEIGHT*5-FONT_HEIGHT/2,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar, mSprite_Y1+FONT_HEIGHT*5+FONT_HEIGHT/2,
+			 1, setting->color[2]);
+			gsKit_prim_line(gsGlobal,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1, mSprite_Y1+FONT_HEIGHT*5-FONT_HEIGHT/2,
+			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1, mSprite_Y1+FONT_HEIGHT*5+FONT_HEIGHT/2,
+			 1, setting->color[2]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, (y/2),
-				SCREEN_WIDTH, y/2+10);
+				0, y,
+				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y, setting->color[2], TRUE);
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back Right:+128MB Left:-128MB R1:+1024MB L1:-1024MB", x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -307,19 +311,19 @@ int sizeSelector(int size)
 //--------------------------------------------------------------
 int MenuParty(PARTYINFO Info)
 {
-	uint64 color;
+	u64 color;
 	char enable[NUM_MENU], tmp[64];
 	int x, y, i, sel;
 	int event, post_event=0;
 
 	int menu_ch_w = 8;             //Total characters in longest menu string
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
-	int mSprite_Y1 = 32;           //Top edge of sprite
+	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
 	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame
 	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
 	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
-	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT/2; //Bottom edge of frame
+	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame
 	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite
 	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite
 
@@ -381,7 +385,7 @@ int MenuParty(PARTYINFO Info)
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
 
-			for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
+			for(i=0,y=mFrame_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==CREATE)			strcpy(tmp, "Create");
 				else if(i==REMOVE)		strcpy(tmp, "Remove");
 				else if(i==RENAME)	strcpy(tmp, "Rename");
@@ -391,22 +395,22 @@ int MenuParty(PARTYINFO Info)
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y/2, color, TRUE);
+				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT)/2, setting->color[3]);
+				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
-				0, (y/2),
-				SCREEN_WIDTH, y/2+10);
+				0, y,
+				SCREEN_WIDTH, y+16);
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y/2, setting->color[2], TRUE);
+				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -695,7 +699,7 @@ void hddManager(void)
 	int    partySize;
 	int    pfsFree;
 	int    ray=50;
-	uint64 Color;
+	u64 Color;
 	char   tmp[MAX_PATH];
 	char	tooltip[MAX_TEXT_LINE];
 	int    top=0, rows;
@@ -819,15 +823,15 @@ void hddManager(void)
 			y = Menu_start_y;
 
 			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("HDD STATUS")*FONT_WIDTH)/2;
-			printXY("HDD STATUS", x, y/2, setting->color[3], TRUE);
+			printXY("HDD STATUS", x, y, setting->color[3], TRUE);
 
 			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+10;
 			else
 				y += FONT_HEIGHT+11;
 
-			itoLine(setting->color[1], SCREEN_MARGIN, y/2-3, 0,
-				setting->color[1], SCREEN_WIDTH/2-20, y/2-3, 0);
+			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-3, SCREEN_WIDTH/2-20, y-3, 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
 
 			if(hddConnected==0)
 				strcpy(c, "CONNECTED:  NO / FORMATED:  NO");
@@ -837,32 +841,32 @@ void hddManager(void)
 				strcpy(c, "CONNECTED: YES / FORMATED: YES");
 
 			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-			printXY(c, x, y/2, setting->color[3], TRUE);
+			printXY(c, x, y, setting->color[3], TRUE);
 
-			itoLine(setting->color[1], SCREEN_WIDTH/2-20, Frame_start_y/2, 0,
-				setting->color[1], SCREEN_WIDTH/2-20, Frame_end_y/2, 0);
-			itoLine(setting->color[1], SCREEN_WIDTH/2-21, Frame_start_y/2, 0,
-				setting->color[1], SCREEN_WIDTH/2-21, Frame_end_y/2, 0);
+			gsKit_prim_line(gsGlobal, SCREEN_WIDTH/2-20, Frame_start_y, SCREEN_WIDTH/2-20, Frame_end_y,
+			 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal, SCREEN_WIDTH/2-21, Frame_start_y, SCREEN_WIDTH/2-21, Frame_end_y,
+			 1, setting->color[1]);
 
 			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+11;
 			else
 				y += FONT_HEIGHT+12;
 
-			itoLine(setting->color[1], SCREEN_MARGIN, y/2-4, 0,
-				setting->color[1], SCREEN_WIDTH/2-20, y/2-4, 0);
+			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
+			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-5, SCREEN_WIDTH/2-20, y-5, 1, setting->color[1]);
 
 			if(hddFormated==1){
 
 				sprintf(c, "HDD SIZE: %d MB", hddSize);
 				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-				printXY(c, x, y/2, setting->color[3], TRUE);
+				printXY(c, x, y, setting->color[3], TRUE);
 				y += FONT_HEIGHT;
 				sprintf(c, "HDD USED: %d MB", hddUsed);
-				printXY(c, x, y/2, setting->color[3], TRUE);
+				printXY(c, x, y, setting->color[3], TRUE);
 				y += FONT_HEIGHT;
 				sprintf(c, "HDD FREE: %d MB", hddFreeSpace);
-				printXY(c, x, y/2, setting->color[3], TRUE);
+				printXY(c, x, y, setting->color[3], TRUE);
 
 				if(TV_mode == TV_mode_NTSC) 
 					ray = 45;
@@ -889,40 +893,40 @@ void hddManager(void)
 					else
 						y3 = (ray)*sindgf(Angle);
 					x2 = x+x3;
-					y2 = y/2+(y3/2);
-					itoLine(Color, x, y/2, 0, Color, x2, y2, 0);
-					itoLine(Color, x, y/2, 0, Color, x2+1, y2, 0);
-					itoLine(Color, x, y/2, 0, Color, x2, y2+1, 0);
+					y2 = y+(y3);
+					gsKit_prim_line(gsGlobal, x, y, x2, y2, 1, Color);
+					gsKit_prim_line(gsGlobal, x, y, x2+1, y2, 1, Color);
+					gsKit_prim_line(gsGlobal, x, y, x2, y2+1, 1, Color);
 				}
 
 				sprintf(c, "%d%% FREE",hddFree);
-				printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
+				printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/4, setting->color[3], TRUE);
 
 				if(TV_mode == TV_mode_NTSC) 
 					y += ray+15;
 				else
 					y += ray+20;
 
-				itoLine(setting->color[1], SCREEN_MARGIN, y/2-4, 0,
-					setting->color[1], SCREEN_WIDTH/2-20, y/2-4, 0);
+				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
+				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-5, SCREEN_WIDTH/2-20, y-5, 1, setting->color[1]);
 
 				Treat = PartyInfo[browser_sel].Treatment;
 				if(Treat == TREAT_SYSTEM){
 					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					strcpy(c, "Reserved for system");
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					pfsFree = 0;
 				} else if(Treat == TREAT_NOACCESS){
 					sprintf(c, "Raw SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					strcpy(c, "Inaccessible");
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					pfsFree = 0;
 				} else if(Treat == TREAT_HDL_RAW){ //starts clause for HDL without GameInfo
@@ -930,36 +934,36 @@ void hddManager(void)
 					//dlanor NB: Not properly implemented yet
 					sprintf(c, "HDL SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT*4;
 					strcpy(c, "Info not loaded");
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					pfsFree = -1; //Disable lower pie chart display
 				} else if(Treat == TREAT_HDL_GAME){ //starts clause for HDL with GameInfo
 					y += FONT_HEIGHT/4;
 
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("GAME INFORMATION")*FONT_WIDTH)/2;
-					printXY("GAME INFORMATION", x, y/2, setting->color[3], TRUE);
+					printXY("GAME INFORMATION", x, y, setting->color[3], TRUE);
 
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)
 						-(strlen(PartyInfo[browser_sel].Game.Name)*FONT_WIDTH)/2;
 					y += FONT_HEIGHT*2;
-					printXY(PartyInfo[browser_sel].Game.Name, x, y/2, setting->color[3], TRUE);
+					printXY(PartyInfo[browser_sel].Game.Name, x, y, setting->color[3], TRUE);
 
 					y += FONT_HEIGHT+FONT_HEIGHT/2+FONT_HEIGHT/4;
 					sprintf(c, "STARTUP: %s", PartyInfo[browser_sel].Game.Startup);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT+FONT_HEIGHT/2;
 					sprintf(c, "SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT+FONT_HEIGHT/2;
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("TYPE: DVD GAME")*FONT_WIDTH)/2;
 					if(PartyInfo[browser_sel].Game.Is_Dvd==1)
-						printXY("TYPE: DVD GAME", x, y/2, setting->color[3], TRUE);
+						printXY("TYPE: DVD GAME", x, y, setting->color[3], TRUE);
 					else
-						printXY("TYPE: CD  GAME", x, y/2, setting->color[3], TRUE);
+						printXY("TYPE: CD  GAME", x, y, setting->color[3], TRUE);
 					pfsFree = -1; //Disable lower pie chart display
 					//---------- End of clause for HDL game partitions ----------
 			  }else{ //ends clause for HDL, starts clause for normal partitions
@@ -967,13 +971,13 @@ void hddManager(void)
 
 					sprintf(c, "PFS SIZE: %d MB", (int)PartyInfo[browser_sel].TotalSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					sprintf(c, "PFS USED: %d MB", (int)PartyInfo[browser_sel].UsedSize);
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					sprintf(c, "PFS FREE: %d MB", (int)PartyInfo[browser_sel].FreeSize);
-					printXY(c, x, y/2, setting->color[3], TRUE);
+					printXY(c, x, y, setting->color[3], TRUE);
 
 					pfsFree = (PartyInfo[browser_sel].FreeSize * 100) / PartyInfo[browser_sel].TotalSize;
 
@@ -1001,14 +1005,14 @@ void hddManager(void)
 						else
 							y3 = (ray)*sindgf(Angle);
 						x2 = x+x3;
-						y2 = y/2+(y3/2);
-						itoLine(Color, x, y/2, 0, Color, x2, y2, 0);
-						itoLine(Color, x, y/2, 0, Color, x2+1, y2, 0);
-						itoLine(Color, x, y/2, 0, Color, x2, y2+1, 0);
+						y2 = y+(y3);
+						gsKit_prim_line(gsGlobal, x, y, x2, y2, 1, Color);
+						gsKit_prim_line(gsGlobal, x, y, x2+1, y2, 1, Color);
+						gsKit_prim_line(gsGlobal, x, y, x2, y2+1, 1, Color);
 					}
 
 					sprintf(c, "%d%% FREE",pfsFree);
-					printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
+					printXY(c, x-FONT_WIDTH*4, y-FONT_HEIGHT/2, setting->color[3], TRUE);
 				}
 
 				rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
@@ -1023,20 +1027,18 @@ void hddManager(void)
 					else			 Color = setting->color[3];
 
 					strcpy(tmp,PartyInfo[top+i].Name);
-					printXY(tmp, x+4, y/2, Color, TRUE);
+					printXY(tmp, x+4, y, Color, TRUE);
 					y += FONT_HEIGHT;
 				} //ends for, so all browser rows were fixed above
 				if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
-					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y/2,
-						SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y/2, setting->color[1]);
+					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+						SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 					y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
 					y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/browser_nfiles);
-					itoSprite(setting->color[1],
-						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-						(y0+Menu_start_y-4)/2,
-						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-						(y1+Menu_start_y-4)/2,
-						0);
+					gsKit_prim_sprite(gsGlobal,
+					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-4),
+					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-4),
+					 0, setting->color[1]);
 				} //ends clause for scrollbar
 			} //ends hdd formated
 			//Tooltip section
