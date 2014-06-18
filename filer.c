@@ -172,9 +172,9 @@ int ynDialog(const char *message)
 			drawSprite(setting->color[0],
 				0, (Menu_message_y)/2,
 				SCREEN_WIDTH, (Menu_message_y+FONT_HEIGHT)/2);
-			drawSprite(setting->color[0],
-				dx-2, (dy-2)/2,
-				dx+dw+2, (dy+dh+4)/2);
+			drawPopSprite(setting->color[0],
+				dx, dy/2,
+				dx+dw, (dy+dh)/2);
 			drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 			for(i=len=0; i<n; i++){
 				printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -227,9 +227,9 @@ void nonDialog(const char *message)
 	drawSprite(setting->color[0],
 		0, (Menu_message_y)/2,
 		SCREEN_WIDTH, (Frame_start_y)/2);
-	drawSprite(setting->color[0],
-		dx-2, (dy-2)/2,
-		dx+dw+2, (dy+dh+4)/2);
+	drawPopSprite(setting->color[0],
+		dx, dy/2,
+		dx+dw, (dy+dh)/2);
 	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 	for(i=len=0; i<n; i++){
 		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -672,12 +672,12 @@ int menu(const char *path, const char *file)
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 32;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
-	int mFrame_Y1 = mSprite_Y1+1;  //Top edge of frame
+	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame
 	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
 	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
 	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT/2; //Bottom edge of frame
 	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite
-	int mSprite_Y2 = mFrame_Y2+2;  //Bottom edge of sprite (+2 correct ???)
+	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite
 
 	memset(enable, TRUE, NUM_MENU);
 	if(!strncmp(path,"host",4)){
@@ -772,7 +772,7 @@ int menu(const char *path, const char *file)
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
-			drawSprite(setting->color[0],
+			drawPopSprite(setting->color[0],
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
 			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
@@ -1420,9 +1420,9 @@ int keyboard(char *out, int max)
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
-			drawSprite(setting->color[0],
-				KEY_X-2, KEY_Y-1,
-				KEY_X+KEY_W+3, KEY_Y+KEY_H+2);
+			drawPopSprite(setting->color[0],
+				KEY_X, KEY_Y,
+				KEY_X+KEY_W, KEY_Y+KEY_H);
 			drawFrame(
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
@@ -1971,10 +1971,10 @@ void getFilePath(char *out, int cnfmode)
 					sprintf(tmp, "[%dB free]", freeSpace);
 				ret=strlen(tmp);
 				drawSprite(setting->color[0],
-					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-					SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2);
+					SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*FONT_WIDTH, (Menu_message_y)/2,
+					SCREEN_WIDTH-SCREEN_MARGIN, (Menu_message_y+FONT_HEIGHT)/2);
 				printXY(tmp,
-					SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
+					SCREEN_WIDTH-SCREEN_MARGIN-ret*FONT_WIDTH,
 					(Menu_message_y)/2,
 					setting->color[2], TRUE);
 			}

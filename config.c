@@ -20,6 +20,7 @@ enum
 	DEF_SWAPKEYS = FALSE,
 	DEF_HOSTWRITE = FALSE,
 	DEF_BRIGHT = 50,
+	DEF_POPUP_OPAQUE = FALSE,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
@@ -105,8 +106,9 @@ void saveConfig(char *mainMsg, char *CNF)
 {
 	int ret, fd;
 	char c[MAX_PATH], tmp[26*MAX_PATH];
-	size_t CNF_size;
+	size_t CNF_size, CNF_step;
 
+	CNF_size = 0;
 	sprintf(tmp,
 		"CNF_version = 2.0\r\n"
 		"LK_auto_E1 = %s\r\n"
@@ -174,8 +176,17 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Menu_Frame, //Menu_Frame
 		setting->Brightness, //SKIN_Brightness
 		setting->TV_mode,    //TV_mode
-		&CNF_size       // This variable measure the size of sprintf data
+		&CNF_step       // This variable measure the size of sprintf data
   );
+	CNF_size += CNF_step;
+
+	sprintf(tmp+CNF_size,
+		"Popup_Opaque = %d\r\n"
+		"%n",           // %n causes NO output, but only a measurement
+		setting->Popup_Opaque, //Popup_Opaque
+		&CNF_step       // This variable measure the size of sprintf data
+  );
+	CNF_size += CNF_step;
 
 	strcpy(c, LaunchElfDir);
 	strcat(c, CNF);
@@ -258,6 +269,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->HOSTwrite = DEF_HOSTWRITE;
 	setting->Brightness = DEF_BRIGHT;
 	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL
+	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
@@ -341,6 +353,7 @@ failed_load:
 		else if(!strcmp(name,"Menu_Frame")) setting->Menu_Frame = atoi(value);
 		else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
 		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
+		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
 	}
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);
@@ -518,7 +531,7 @@ void Config_Skin(void)
 void Config_Screen(void)
 {
 	int i;
-	int s, max_s=19;		//define cursor index and its max value
+	int s, max_s=20;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	uint64 rgb[4][3];
@@ -644,6 +657,8 @@ void Config_Screen(void)
 						strcpy(setting->Menu_Title, tmp);
 				} else if(s==17) {
 					setting->Menu_Frame = !setting->Menu_Frame;
+				} else if(s==18) {
+					setting->Popup_Opaque = !setting->Popup_Opaque;
 				} else if(s==max_s-1) { //Always put 'RETURN' next to last
 					return;
 				} else if(s==max_s) { //Always put 'DEFAULT SCREEN SETTINGS' last
@@ -657,8 +672,10 @@ void Config_Screen(void)
 					setting->screen_y = SCREEN_Y;
 					setting->interlace = DEF_INTERLACE;
 					setting->Menu_Frame = DEF_MENU_FRAME;
+					setting->Brightness = DEF_BRIGHT;
+					setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 					updateScreenMode();
-					itoSetBgColor(setting->color[0]);
+					itoSetBgColor(GS_border_colour);
 					
 					for(i=0; i<4; i++) {
 						rgb[i][0] = setting->color[i] & 0xFF;
@@ -673,7 +690,7 @@ void Config_Screen(void)
 
 			//Display section
 			clrScr(setting->color[0]);
-			itoSetBgColor(setting->color[0]);
+			itoSetBgColor(GS_border_colour);
 
 			x = Menu_start_x;
 			y = Menu_start_y;
@@ -737,6 +754,13 @@ void Config_Screen(void)
 				sprintf(c, "  Menu Frame: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
+
+			if(setting->Popup_Opaque)
+				sprintf(c, "  Popups Opaque: ON");
+			else
+				sprintf(c, "  Popups Opaque: OFF");
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
 			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
@@ -765,7 +789,7 @@ void Config_Screen(void)
 				if(s>=17)            //if cursor at or beyond 'Menu Frame'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Menu Title'
 				if(s>=max_s-1)            //if cursor at or beyond 'RETURN'
-					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Menu Frame'
+					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Popups Opaque'
 			}
 			drawChar(127, x, y/2, setting->color[3]);  //draw cursor
 
@@ -775,7 +799,8 @@ void Config_Screen(void)
 					strcpy(c, "Å~:Add Åõ:Subtract");
 				else
 					strcpy(c, "Åõ:Add Å~:Subtract");
-			} else if(s==14||s==17) {  //if cursor at 'INTERLACE' or 'Main Menu Frame'
+			} else if(s==14||s==17||s==18) {
+				//if cursor at 'INTERLACE' or 'Menu Frame' or 'Popups Opaque'
 				if (swapKeys)
 					strcpy(c, "Å~:Change");
 				else

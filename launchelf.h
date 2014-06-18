@@ -39,6 +39,9 @@
 // polo needed for modified getfilepath
 #define SKIN_CNF 4
 
+//#define GS_border_colour itoSetBgColor(setting->color[0]) /* Old method */
+#define GS_border_colour 0 /* New method */
+
 enum
 {
 	SCREEN_MARGIN = 16,
@@ -73,6 +76,7 @@ typedef struct
 	int HOSTwrite;
 	int Brightness;
 	int TV_mode;
+	int Popup_Opaque;
 } SETTING;
 
 typedef struct
@@ -115,6 +119,7 @@ extern int			Menu_tooltip_y;
 
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
+void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void setupito(int ito_vmode);
 void updateScreenMode(void);

@@ -400,7 +400,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.59 ¡",
+	printXY(" ¡ LaunchELF v3.60 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
@@ -414,6 +414,16 @@ void setScrTmp(const char *msg0, const char *msg1)
 //--------------------------------------------------------------
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 ){
 	if ( testskin == 1 ) {
+		setBrightness(setting->Brightness);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1-1, x1, y1, x2, y2-1, x2, y2,0);
+		setBrightness(50);
+	}else{
+		itoSprite(color, x1, y1, x2, y2, 0);
+	}
+}
+//--------------------------------------------------------------
+void drawPopSprite( uint64 color, int x1, int y1, int x2, int y2 ){
+	if ( testskin == 1 && !setting->Popup_Opaque) {
 		setBrightness(setting->Brightness);
 		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ), x1, y1-1, x1, y1, x2, y2-1, x2, y2,0);
 		setBrightness(50);
@@ -468,7 +478,7 @@ void setupito(int ito_vmode)
 
 	itoGsEnvSubmit(&screen_env);
 	initScr();
-	itoSetBgColor(setting->color[0]);
+	itoSetBgColor(GS_border_colour);
 }
 
 //--------------------------------------------------------------
@@ -492,9 +502,10 @@ void loadSkin(int Picture)
 		strcpy(skinpath, "mass:");
 		strcat(skinpath, setting->skin+6);
 	}else if(!strncmp(setting->skin, "hdd0:/", 6)){
-		loadHddModules();
-		char party[40];
+		char party[MAX_PATH];
 		char *p;
+
+		loadHddModules();
 		sprintf(party, "hdd0:%s", setting->skin+6);
 		p = strchr(party, '/');
 		sprintf(skinpath, "pfs0:%s", p);

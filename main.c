@@ -783,7 +783,7 @@ void decConfig()
 	loadConfig(mainMsg, CNF);
 	updateScreenMode();
 	loadSkin(BACKGROUND_PIC);
-	itoSetBgColor(setting->color[0]);
+	itoSetBgColor(GS_border_colour);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -807,7 +807,7 @@ void incConfig()
 	loadConfig(mainMsg, CNF);
 	updateScreenMode();
 	loadSkin(BACKGROUND_PIC);
-	itoSetBgColor(setting->color[0]);
+	itoSetBgColor(GS_border_colour);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
