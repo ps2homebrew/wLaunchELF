@@ -1,5 +1,19 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF wip7 (2014.04.06)
+-l_oliveira: Added message about HDL game unloading
+-Rewritten tutorial for compiling uLaunchelf. You need to specify $PS2SDKSRC (which is actually git repository) and run prepare_main.sh or restore_ps2sdk.sh.
+-fixed one warning in the libcdvd library
+-now all libraries will install into $PS2DEV
+-partially reverted hdd_manager - now it loads hdl_game partitions much (i mean MUCH MORE) faster (thanks to l_oliveira)
+-all source text files converted into linux format
+-returned special symbols like triangle, square etc.
+-now samba modules compile only when SMB flag is set (by default SMB = 0)
+-changed cdinit argument so now ule dont have to freeze with disc control on on SCPH-5xxxx
+-removed libjpg library, now is used the one from ps2sdk-ports
+-fixed some warnings in vmc
+-and of course everything is built with latest ps2sdk
+
 LaunchELF wip6 (2014.03.26)
 -crazycat: 64-bit support (files larger than 4Gb)
 -SP193: added support for disks larger than 1Tb

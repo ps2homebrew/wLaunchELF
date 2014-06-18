@@ -2,7 +2,7 @@
 #define LAUNCHELF_H
 
 #define ULE_VERSION "v4.42e_HDD"
-#define ULE_VERDATE "2013.10.27"
+#define ULE_VERDATE "2014.03.30"
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 

@@ -2010,7 +2010,7 @@ int Vmc_Umount ( iop_file_t* f, const char* fsname )
 //----------------------------------------------------------------------------
 // Not Implemented for the moment.
 //----------------------------------------------------------------------------
-int Vmc_Lseek64 ( iop_file_t* f, long long offset, int whence )
+long long Vmc_Lseek64 ( iop_file_t* f, long long offset, int whence )
 {
 	
 	return VMCFS_ERR_IMPLEMENTED;

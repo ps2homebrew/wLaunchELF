@@ -2,7 +2,9 @@
 //File name:   main.c
 //---------------------------------------------------------------------------
 #include "launchelf.h"
+#ifdef SMB
 #include "SMB_test.h"
+#endif
 
 //dlanor: I'm correcting all these erroneous 'u8 *name' declarations
 //dlanor: They are not pointers at all, but pure block addresses
@@ -21,8 +23,10 @@ extern void smsutils_irx;
 extern int  size_smsutils_irx;
 extern void ps2host_irx;
 extern int  size_ps2host_irx;
+#ifdef SMB
 extern void smbman_irx;
 extern int  size_smbman_irx;
+#endif
 extern void vmc_fs_irx;
 extern int  size_vmc_fs_irx;
 extern void ps2ftpd_irx;
@@ -253,10 +257,11 @@ void ShowDebugInfo(void)
 	int	i, event, post_event=0;
 	int row;
 
+#ifdef SMB
 	load_smbman();
 	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
 	smbCurrentServer = 0;
-
+#endif
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
 	while(1) {
@@ -264,6 +269,7 @@ void ShowDebugInfo(void)
 		waitAnyPadReady();
 		if(readpad() && new_pad)
 		{	event |= 2;
+#ifdef SMB
 			if(new_pad & PAD_CIRCLE)
 			{ if(smbCurrentServer+1 < smbServerListCount)
 					smbCurrentServer++;
@@ -283,6 +289,7 @@ void ShowDebugInfo(void)
 			{	smbServerList[smbCurrentServer].Server_Logon_f = 0;
 			}
 			else
+#endif
 			{
 				if(setting->GUI_skin[0])
 				{	GUI_active = 1;
@@ -309,6 +316,7 @@ void ShowDebugInfo(void)
 			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
 			row = PrintRow(-1, TextRow);
 
+#ifdef SMB
 			int si = smbCurrentServer;
 			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
 			PrintRow(row+1, TextRow);
@@ -330,6 +338,7 @@ void ShowDebugInfo(void)
 			PrintRow(-1, TextRow);
 			sprintf(TextRow, "ÿ0 Index++  ÿ1 Index--  ÿ2 Logon  ÿ3 Forget Logon");
 			PrintRow(-1, TextRow); 
+#endif
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -431,7 +440,7 @@ static void getIpConfig(void)
 	if(uLE_related(path, "uLE:/IPCONFIG.DAT")==1)
 		fd = genOpen(path, O_RDONLY);
 	else
-		fd = -1;
+		fd=-1;
 
 	if (fd >= 0) 
 	{	bzero(buf, IPCONF_MAX_LEN);
@@ -820,6 +829,7 @@ void	load_ps2host(void)
 //------------------------------
 //endfunc load_ps2host
 //---------------------------------------------------------------------------
+#ifdef SMB
 void	load_smbman(void)
 {
 	int ret;
@@ -831,6 +841,7 @@ void	load_smbman(void)
 		have_smbman = 1;
 	}
 }
+#endif
 //------------------------------
 //endfunc load_smbman
 //---------------------------------------------------------------------------
@@ -930,7 +941,7 @@ void loadCdModules(void)
 	
 	if	(!have_cdvd) {
 		SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
-		cdInit(CDVD_INIT_INIT);
+		cdInit(CDVD_INIT_NOCHECK);   // CDVD_INIT_NOCHECK init without check for a disc. Reduces risk of a lockup if the drive is in a erroneous state.
 		CDVD_Init();
 		have_cdvd = 1;
 	}
@@ -1047,6 +1058,7 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 		//Loading some module from HDD
 		char party[MAX_PATH];
 		char *p;
+
 		loadHddModules();
 		sprintf(party, "hdd0:%s", argPath+6);
 		p = strchr(party, '/');
@@ -1980,17 +1992,15 @@ ELFnotFound:
 // dlanor: but changed now, as the original was badly bugged
 void Reset()
 {
-	SifIopReset("rom0:UDNL rom0:EELOADCNF",0);
-	while(!SifIopSync());
-	fioExit();
-	SifExitIopHeap();
-	SifLoadFileExit();
-	SifExitRpc();
-	SifExitCmd();
-
 	SifInitRpc(0);
-	FlushCache(0);
-	FlushCache(2);
+	//Reset IOP borrowed from uLaunchelf
+	while(!SifIopReset(NULL, 0)){};
+	while(!SifIopSync()){};
+	SifInitRpc(0);
+	SifLoadFileInit();
+	fioInit();
+	sbv_patch_enable_lmb();
+	sbv_patch_disable_prefix_check();
 
 	have_cdvd     = 0;
 	have_usbd     = 0;
@@ -2034,7 +2044,9 @@ int uLE_detect_TV_mode()
 //endfunc uLE_detect_TV_mode
 //---------------------------------------------------------------------------
 
+#ifdef SMB
 #include "SMB_test.c"
+#endif
 
 //---------------------------------------------------------------------------
 int main(int argc, char *argv[])
@@ -2058,7 +2070,17 @@ int main(int argc, char *argv[])
 	for(i=0; (i<argc)&&(i<8); i++)
 		boot_argv[i] = argv[i];
 
+	force_IOP = 1;
 	SifInitRpc(0);
+	if (force_IOP == 1){
+		while(!SifIopReset(NULL, 0)){};
+		while(!SifIopSync()){};
+		SifInitRpc(0);
+		SifLoadFileInit();
+		fioInit();
+		sbv_patch_enable_lmb();
+		sbv_patch_disable_prefix_check();
+	}
 	CheckModules();
 	loadBasicModules();
 	mcInit(MC_TYPE_MC);

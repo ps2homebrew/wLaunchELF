@@ -655,6 +655,7 @@ void setPartyList(void)
 			strcmp(dirEnt.name, "__net") &&
 			strcmp(dirEnt.name, "__system") &&
 			strcmp(dirEnt.name, "__sysconf") &&
+			strcmp(dirEnt.name, "__contents") &&   // this is where PSBBN used to store it's downloaded contents. Adding it is useful.
 			strcmp(dirEnt.name, "__common"))
 			continue;
 	*/	

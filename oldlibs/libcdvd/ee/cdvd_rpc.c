@@ -120,7 +120,7 @@ void CDVD_FlushCache()
 
 unsigned int CDVD_GetSize()
 {
-	if(!cdvd_inited) return;
+	if(!cdvd_inited) return -1;
 
 	SifCallRpc(&cd0,CDVD_GETSIZE,0,(void*)(&sbuff[0]),0,(void*)(&sbuff[0]),4,0,0);
 

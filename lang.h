@@ -369,6 +369,8 @@ lang(323, About_uLE, "About uLE")
 //---------------------------------------------------------------------------
 // New MISC entry for "OSDSYS(MC)" launch (for FMCB on incompatible consoles)
 lang(324, OSDSYS, "OSDSYS")
+// for hdl_game_unload
+lang(325, Unload_HDL_Game_Info, "Unload HDL Game Info")
 //---------------------------------------------------------------------------
 //End of file:  lang.h
 //---------------------------------------------------------------------------
