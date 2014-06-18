@@ -956,7 +956,7 @@ void Init(void)
 //--------------------------------------------------------------
 int New(int Win)
 {
-	int i, ret=0;
+	int ret=0;
 
 	TextSize[Win]=1;
 	
@@ -976,9 +976,8 @@ int New(int Win)
 		drawMsg("Failed Creating File");
 	}
 
-	i=0;
-	while(i<40000000) // print operation result during 2 sec.
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	return ret;
 }
@@ -1035,16 +1034,14 @@ abort:
 		drawMsg("Failed Opening File");
 	}
 
-	i=0;
-	while(i<40000000) // print operation result during 2 sec.
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	return ret;
 }
 //--------------------------------------------------------------
 void Close(int Win)
 {
-	int i;
 	char msg[MAX_PATH];
 
 	memset(TextBuffer[Win], 0, TextSize[Win]+256); // 256 To Avoid Crash 256???
@@ -1063,14 +1060,13 @@ void Close(int Win)
 
 	drawMsg(msg);
 
-	i=0;
-	while(i<40000000) // print operation result during 2 sec.
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
 void Save(int Win)
 {
-	int fd, i, ret=0;
+	int fd, ret=0;
 
 	char filePath[MAX_PATH];
 
@@ -1100,14 +1096,13 @@ abort:
 		drawMsg("Failed Saving File");
 	}
 
-	i=0;
-	while(i<40000000) // print operation result during 2 sec.
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
 void Save_As(int Win)
 {
-	int fd, i, ret=0;
+	int fd, ret=0;
 	char tmp[MAX_PATH], oldPath[MAX_PATH], filePath[MAX_PATH];
 	char *p;
 
@@ -1160,9 +1155,8 @@ abort:
 		drawMsg("Failed Saving File");
 	}
 
-	i=0;
-	while(i<40000000) // print operation result during 2 sec.
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
 void TextEditor(void)

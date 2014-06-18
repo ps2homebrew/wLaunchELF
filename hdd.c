@@ -197,10 +197,8 @@ void GetHddInfo(void)
 end:
 	drawMsg("HDD Information Read");
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
-
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 }
 //------------------------------
 //endfunc GetHddInfo
@@ -455,9 +453,8 @@ int CreateParty(char *party, int size)
 		drawMsg("Failed Creating New Partition");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	return ret;
 }
@@ -496,9 +493,8 @@ int RemoveParty(PARTYINFO Info)
 		drawMsg("Failed Removing Current Partition");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	return ret;
 }
@@ -556,9 +552,8 @@ int RenameParty(PARTYINFO Info, char *newName)
 		drawMsg("Failed Renaming Partition");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 end:
 	return ret;
@@ -616,9 +611,8 @@ end2:
 		drawMsg("Failed Renaming Game");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 end1:
 	return ret;
@@ -659,9 +653,8 @@ int ExpandParty(PARTYINFO Info, int size)
 		drawMsg("Failed Expanding Current Partition");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	return ret;
 }
@@ -670,7 +663,7 @@ int ExpandParty(PARTYINFO Info, int size)
 //--------------------------------------------------------------
 int FormatHdd(void)
 {
-	int i, ret=0;
+	int ret=0;
 	
 	drawMsg("Formating HDD...");
 
@@ -682,9 +675,8 @@ int FormatHdd(void)
 		drawMsg("HDD Format Failed");
 	}
 
-	i=0;
-	while(i<25000000) // print operation result during 1 sec
-	 i++;
+	WaitTime=Timer();
+	while(Timer()<WaitTime+1500); // print operation result during 1.5 sec.
 
 	GetHddInfo();
 

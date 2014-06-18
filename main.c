@@ -76,6 +76,8 @@ int numCNF=0;
 int maxCNF;
 int swapKeys;
 
+u64 WaitTime;
+
 #define IPCONF_MAX_LEN  (3*16)
 char if_conf[IPCONF_MAX_LEN];
 int if_conf_len;
@@ -953,7 +955,7 @@ void reloadConfig()
 	loadConfig(mainMsg, CNF);
 	Validate_CNF_Path();
 	updateScreenMode();
-	loadSkin(BACKGROUND_PIC);
+	loadSkin(BACKGROUND_PIC, 0, 0);
 	itoSetBgColor(GS_border_colour);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
@@ -1087,6 +1089,9 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/TextEditor")){
 		TextEditor();
 		return;
+	}else if(!stricmp(path, "MISC/JpgViewer")){
+		JpgViewer();
+		return;
 	}else if(!stricmp(path, "MISC/Configure")){
 		config(mainMsg, CNF);
 		return;
@@ -1142,6 +1147,7 @@ void RunElf(const char *path)
 	padPortClose(1,0);
 	padPortClose(0,0);
 	if(ps2kbd_opened) PS2KbdClose();
+	TimerEnd();
 	RunLoaderElf(fullpath, party);
 }
 //------------------------------
@@ -1212,7 +1218,6 @@ int main(int argc, char *argv[])
 	int cdvd_booted = 0;
 	int	host_booted = 0;
 	int ito_vmode;
-
 
 	SifInitRpc(0);
 	CheckModules();
@@ -1331,9 +1336,11 @@ int main(int argc, char *argv[])
 	}
 */
 	setupito(ito_vmode);
-	loadSkin(BACKGROUND_PIC);
+	loadSkin(BACKGROUND_PIC, 0, 0);
 
 	startKbd();
+	TimerInit();
+	WaitTime=0LL;
 
 	//Here nearly everything is ready for the main menu event loop
 	//But before we start that, we need to validate CNF_Path

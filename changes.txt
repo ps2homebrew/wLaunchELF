@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.80 (2006.07.19)
+-Changed some incorrect strings in the supplied example LAUNCHELF.CNF
+-Merged JPG viewer contributed by Polo
+-Merged EE timer functions contributed by Polo
+-Modified paste progress calculations for better precision
+
 LaunchELF v3.79 (2006.07.01)
 -Changed "MISC/Configurator" to "MISC/Configure"
 -Fixed a bug that made TextEditor unable to save files on HDD

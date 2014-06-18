@@ -3,12 +3,6 @@
 //--------------------------------------------------------------
 #include "launchelf.h"
 
-typedef struct{
-	char name[256];
-	char title[16*4+1];
-	mcTable stats;
-} FILEINFO;
-
 typedef struct
 {
 	unsigned char unknown;
@@ -61,8 +55,6 @@ int browser_cut;
 int nclipFiles, nmarks, nparties;
 int title_show;
 int title_sort;
-#define DIM_mountedParty 2
-char mountedParty[DIM_mountedParty][MAX_NAME];
 char parties[MAX_PARTITIONS][MAX_NAME];
 char clipPath[MAX_PATH], LastDir[MAX_NAME], marks[MAX_ENTRY];
 FILEINFO clipFiles[MAX_ENTRY];
@@ -98,6 +90,8 @@ int host_elflist = 0;
 int host_use_Bsl = 1;	//By default assume that host paths use backslash
 
 unsigned long written_size; //Used for pasting progress report
+u64 PasteTime;              //Used for pasting progress report
+
 
 //char debugs[4096]; //For debug display strings. Comment it out when unused
 //--------------------------------------------------------------
@@ -1422,6 +1416,10 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	int ret=-1, pfsout=-1, pfsin=-1, in_fd=-1, out_fd=-1, buffSize;
 	int dummy;
 	mcTable stats;
+	int speed=0;
+	int remain_time=0, TimeDiff=0;
+	long old_size=0, SizeDiff=0;
+	u64 OldTime=0LL;
 
 	sprintf(out, "%s%s", outPath, file.name);
 	sprintf(in, "%s%s", inPath, file.name);
@@ -1670,12 +1668,72 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		buff = (char*)malloc(buffSize); //Allocate 32KB buffer
 	}
 
+	old_size = written_size;  //Note initial progress data pos
+	OldTime = Timer();	      //Note initial progress time
+
 	while(size>0){ // ----- The main copying loop starts here -----
-		sprintf(progress,
-			"Pasted file bytes:\n"
-			"    %10lu",
-			written_size
-		);
+
+		TimeDiff = Timer()-OldTime;
+		OldTime = Timer();
+		SizeDiff = written_size-old_size;
+		old_size = written_size;
+		if(SizeDiff){													//if anything was written this time
+			speed = (SizeDiff * 1000)/TimeDiff;   //calc real speed
+			remain_time = size / speed;           //calc time remaining for that speed
+		}else if(TimeDiff){                   //if nothing written though time passed
+			speed = 0;                            //set speed as zero
+			remain_time = -1;                     //set time remaining as unknown
+		}else{                                //if nothing written and no time passed
+			speed = -1;                           //set speed as unknown
+			remain_time = -1;                     //set time remaining as unknown
+		}
+
+		sprintf(progress, "Pasting file : %s", file.name);
+
+		strcat(progress, "\nRemain  Size : ");
+		if(size<=1024)
+			sprintf(tmp, "%lu bytes", (long)size); // bytes
+		else
+			sprintf(tmp, "%lu Kbytes", (long)size/1024); // Kbytes
+		strcat(progress, tmp);
+
+		strcat(progress, "\nCurrent Speed: ");
+		if(speed==-1)
+			strcpy(tmp, "Unknown");
+		else if(speed<=1024)
+			sprintf(tmp, "%d bytes/sec", speed); // bytes/sec
+		else
+			sprintf(tmp, "%d Kbytes/sec", speed/1024); //Kbytes/sec
+		strcat(progress, tmp);
+
+		strcat(progress, "\nRemain  Time : ");
+		if(remain_time==-1)
+			strcpy(tmp, "Unknown");
+		else if(remain_time<60)
+			sprintf(tmp, "%d sec", remain_time); // sec
+		else if(remain_time<3600)
+			sprintf(tmp, "%d m %d sec", remain_time/60, remain_time%60); // min,sec
+		else
+			sprintf(tmp, "%d h %d m %d sec", remain_time/3600, (remain_time%3600)/60, remain_time%60); // hour,min,sec
+		strcat(progress, tmp);
+
+		strcat(progress, "\n\nWritten Total: ");
+		sprintf(tmp, "%ld Kbytes", written_size/1024); //Kbytes
+		strcat(progress, tmp);
+
+		strcat(progress, "\nAverage Speed: ");
+		TimeDiff = Timer()-PasteTime;
+		if(TimeDiff == 0)
+			strcpy(tmp, "Unknown");
+		else {
+			speed = (written_size * 1000)/TimeDiff;   //calc real speed
+			if(speed<=1024)
+				sprintf(tmp, "%d bytes/sec", speed); // bytes/sec
+			else
+				sprintf(tmp, "%d Kbytes/sec", speed/1024); //Kbytes/sec
+		}
+		strcat(progress, tmp);
+
 		nonDialog(progress);
 		drawMsg(file.name);
 		if(readpad() && new_pad){
@@ -2153,7 +2211,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			strcpy(files[nfiles].name, "mass:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		}
-		if	(!cnfmode) {
+		if	(!cnfmode || JPG_CNF) {
 			//This condition blocks selecting any CONFIG items on PC
 			strcpy(files[nfiles].name, "host:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
@@ -2189,6 +2247,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		strcpy(files[nfiles].name, "HddManager");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "TextEditor");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "JpgViewer");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Configure");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
@@ -2828,6 +2888,7 @@ void subfunc_Paste(char *mess, char *path)
 	int i, ret=-1;
 	
 	written_size = 0;
+	PasteTime = Timer();	      //Note initial pasting time
 	drawMsg("Pasting...");
 	if(!strcmp(path,clipPath)) goto finished;
 	

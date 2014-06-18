@@ -5,8 +5,9 @@
 #include "font5200.c"
 
 itoGsEnv	screen_env;
-int				testskin;
-int				testsetskin;
+int				testskin, testsetskin, testjpg, testthumb;
+int       picWidth, picHeight;
+float     picW, picH, picCoeff;
 int				SCREEN_WIDTH	= 640;
 int				SCREEN_HEIGHT = 448;
 int				SCREEN_X			= 158;
@@ -364,9 +365,8 @@ int ScaleBitmap( u8* pInBuff, u16 wWidth, u16 wHeight, u8** pOutBuff, u16 wNewWi
  int lRet;
 
  // check for valid size
- if( wWidth > wNewWidth && wHeight < wNewHeight ) return 0;
-
- if( wHeight > wNewHeight && wWidth < wNewWidth ) return 0;
+ if( (wWidth  > wNewWidth  && wHeight < wNewHeight) ||
+ 		 (wHeight > wNewHeight && wWidth  < wNewWidth ) ) return 0;
 
  // allocate memory
  *pOutBuff = ( u8* ) memalign(   128, (  ( 3 * wNewWidth + 3 ) & ~3  ) * wNewHeight   );
@@ -402,7 +402,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.79 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.80 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -505,89 +505,137 @@ void updateScreenMode(void)
 	itoGsEnvSubmit(&screen_env);
 }
 //--------------------------------------------------------------
-void loadSkin(int Picture)
+void loadSkin(int Picture, char *Path, int Offset)
 {
-	if( Picture == BACKGROUND_PIC )testskin = 0;
-		else testsetskin = 0;
-	char skinpath[MAX_PATH];
+	char  tmpPath[MAX_PATH], skinpath[MAX_PATH];
+
+	strcpy(tmpPath, "\0");
+	if( Picture == BACKGROUND_PIC ){
+		strcpy(tmpPath, setting->skin);
+		testskin = 0;
+	}else if( Picture == PREVIEW_PIC ){
+		strcpy(tmpPath, setting->skin);
+		testsetskin = 0;
+	}else if( Picture == JPG_PIC ){
+		strcpy(tmpPath, Path);
+		testjpg = 0;
+	}else if( Picture == THUMB_PIC ){
+		strcpy(tmpPath, Path);
+		testthumb = 0;
+	}
+
 	strcpy(skinpath, "\0");
-	if(!strncmp(setting->skin, "mass", 4)){
+	if(!strncmp(tmpPath, "mass", 4)){
 		loadUsbModules();
 		strcpy(skinpath, "mass:");
-		strcat(skinpath, setting->skin+6);
-	}else if(!strncmp(setting->skin, "hdd0:/", 6)){
+		strcat(skinpath, tmpPath+6);
+	}else if(!strncmp(tmpPath, "hdd0:/", 6)){
 		char party[MAX_PATH];
 		char *p;
 
 		loadHddModules();
-		sprintf(party, "hdd0:%s", setting->skin+6);
+		sprintf(party, "hdd0:%s", tmpPath+6);
 		p = strchr(party, '/');
 		sprintf(skinpath, "pfs0:%s", p);
 		*p = 0;
 		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
-	}else if(!strncmp(setting->skin, "cdfs", 4)){
+	}else if(!strncmp(tmpPath, "cdfs", 4)){
 		loadCdModules();
-		strcpy(skinpath, setting->skin);
+		strcpy(skinpath, tmpPath);
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
 	}else{
-		strcpy(skinpath,setting->skin);
+		strcpy(skinpath,tmpPath);
 	}
-	FILE*	File = fopen( skinpath, "r" );
+
+	FILE *File = fopen(skinpath, "r");
+	
+	picW=0, picH=0, picCoeff=0;
  
 	if( File != NULL ) {
 
 		jpgData* Jpg;
-		u8*      Buf;
 		u8*      ImgData;
+		u8*      ImgData1;
 		u8*      ResData;
-		long     Size;
 
-		fseek ( File, 0, SEEK_END ); 
-		Size = ftell ( File ); 
-		fseek ( File, 0, SEEK_SET ); 
-
-		if( Size ){
-			if( ( Buf = malloc( Size ) ) > 0 ){
-				fread( Buf, 1, Size, File );
-				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
-					if( (ImgData = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) ) ) > 0){
-						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
-						 	if( Picture == BACKGROUND_PIC ){
-						 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
-						 			itoLoadTexture ( ResData,
-						 			 0,
-						 			 SCREEN_WIDTH, ITO_RGB24,
-						 			 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
-									itoGsFinish();
-									testskin = 1;
-								} /* end if */
-						 	} else {
-						 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
-						 			itoLoadTexture ( ResData,
-						 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
-						 			 SCREEN_WIDTH/2, ITO_RGB24,
-						 			 0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 );
-									itoGsFinish();
-									testsetskin = 1;
-								} /* end if */
-						 	} /* end else */
-							jpgClose( Jpg );//This really should be moved, but jpg funcs may object
-							free(ResData); //This really should be moved, but jpg funcs may object
-						} /* end if((jpgReadImage(...)) != -1) */
-					free(ImgData);
-					} /* end if( (ImgData = malloc(...)) > 0 ) */
-				} /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
-			free(Buf);
-			} /* end if( ( Buf = malloc( Size ) ) > 0 ) */
-		} /* end if( Size ) */
+		if( ( Jpg = jpgOpenFILE ( File, JPG_WIDTH_FIX ) ) > 0 ){
+			if( (ImgData = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) ) ) > 0){
+				if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
+				 	if( Picture == BACKGROUND_PIC ){
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
+				 			itoLoadTexture ( ResData,
+				 			 0,
+				 			 SCREEN_WIDTH, ITO_RGB24,
+				 			 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
+							itoGsFinish();
+							testskin = 1;
+						} /* end if */
+				 	} else if( Picture == PREVIEW_PIC ){
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
+				 			itoLoadTexture ( ResData,
+				 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
+				 			 SCREEN_WIDTH/2, ITO_RGB24,
+				 			 0, 0, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 );
+							itoGsFinish();
+							testsetskin = 1;
+						} /* end if */
+				 	} else if( Picture == JPG_PIC ){
+				 		picW=Jpg->width;
+				 		picH=Jpg->height;
+				 		if(TV_mode == TV_mode_NTSC)
+				 			picCoeff=(picW/picH)+0.0952f;
+						else if(TV_mode == TV_mode_PAL)
+				 			picCoeff=(picW/picH)-0.0833f;
+				 		if(Jpg->width > Jpg->height){
+scaleW:
+				 			picWidth=SCREEN_WIDTH;
+				 			if((picHeight=picWidth/picCoeff)>SCREEN_HEIGHT) goto scaleH;
+				 		}else{
+scaleH:
+				 			picHeight=SCREEN_HEIGHT;
+				 			if((picWidth=picHeight*picCoeff)>SCREEN_WIDTH) goto scaleW;
+				 		}
+				 		if((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, SCREEN_WIDTH, Jpg->height))!=0){
+				 			if((ScaleBitmap(ImgData1, SCREEN_WIDTH, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2))!=0){
+				 				itoLoadTexture ( ResData,
+				 				 0,
+				 				 SCREEN_WIDTH, ITO_RGB24,
+				 				 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
+								itoGsFinish();
+								testjpg = 1;
+							} /* end if */
+						} /* end if */
+				 	} else if( Picture == THUMB_PIC ){
+				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, 64, 32 ) ) != 0 ){
+				 			itoLoadTexture ( ResData,
+				 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4+Offset,
+				 			 64, ITO_RGB24,
+				 			 0, 0, 64, 32 );
+							itoGsFinish();
+							testthumb = 1;
+						} /* end if */
+				 	} /* end else */
+					jpgClose( Jpg );//This really should be moved, but jpg funcs may object
+					free(ResData); //This really should be moved, but jpg funcs may object
+				} /* end if((jpgReadImage(...)) != -1) */
+			free(ImgData);
+			free(ImgData1);
+			} /* end if( (ImgData = malloc(...)) > 0 ) */
+		} /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
 		fclose( File );
 	} /* end if( File != NULL ) */
-	if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
-	if(!strncmp(setting->skin, "hdd0:/", 6))
+	if(!strncmp(tmpPath, "cdfs", 4)) CDVD_Stop();
+	if(!strncmp(tmpPath, "hdd0:/", 6))
 		unmountParty(0);
 }
-
+//--------------------------------------------------------------
+void loadIcon(void)
+{
+	itoLoadTexture ( icon_folder, SCREEN_WIDTH*SCREEN_HEIGHT/2*4, 16, ITO_RGBA32, 0, 0, 16, 16 );
+	itoLoadTexture ( icon_warning, SCREEN_WIDTH*SCREEN_HEIGHT/2*4+16*16*4, 16, ITO_RGBA32, 0, 0, 16, 16 );
+	itoGsFinish();
+}
 //--------------------------------------------------------------
 // Set Skin Brightness
 void setBrightness(int Brightness)

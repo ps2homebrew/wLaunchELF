@@ -47,6 +47,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   CNF_PATH_CNF,    // CNF Path override choice
   TEXT_CNF,        // No restriction choice 
   DIR_CNF,         // Directory choice 
+  JPG_CNF,				 // Jpg viewer choice
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -127,10 +128,16 @@ void RunLoaderElf(char *filename, char *);
 /* draw.c */
 #define BACKGROUND_PIC	0
 #define PREVIEW_PIC			1
+#define JPG_PIC					2
+#define THUMB_PIC				3
+
+unsigned char icon_folder[1024];
+unsigned char icon_warning[1024];
 
 extern itoGsEnv screen_env;
-extern int      testskin;
-extern int      testsetskin;
+extern int      testskin, testsetskin, testjpg, testthumb;
+extern int      picWidth, picHeight;
+extern float    picW, picH, picCoeff;
 extern int      SCREEN_WIDTH;
 extern int      SCREEN_HEIGHT;
 extern int      SCREEN_X;
@@ -154,12 +161,13 @@ void updateScreenMode(void);
 void clrScr(uint64 color);
 int log(int Value);
 void setBrightness(int Brightness);
-void loadSkin(int Picture);
+void loadSkin(int Picture, char *Path, int Offset);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
 void drawChar(unsigned char c, int x, int y, uint64 colour);
 int printXY(const unsigned char *s, int x, int y, uint64 colour, int);
 int printXY_sjis(const unsigned char *s, int x, int y, uint64 colour, int);
+void loadIcon(void);
 
 /* pad.c */
 extern u32 new_pad;
@@ -181,6 +189,14 @@ void loadConfig(char *, char *);
 void config(char *, char *);
 
 /* filer.c */
+typedef struct{
+	char name[256];
+	char title[16*4+1];
+	mcTable stats;
+} FILEINFO;
+
+#define DIM_mountedParty 2
+char mountedParty[DIM_mountedParty][MAX_NAME];
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
@@ -200,6 +216,7 @@ int genDopen(char *path);
 int genDclose(int fd);
 int mountParty(const char *party);
 void unmountParty(int party_ix);
+int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode);
 
 /* hdd.c */
 void DebugDisp(char *Message);
@@ -207,5 +224,15 @@ void hddManager(void);
 
 /* editor.c */
 void TextEditor(void);
+
+/* timer.c */
+extern u64 WaitTime;
+
+void TimerInit(void);
+u64  Timer(void);
+void TimerEnd(void);
+
+/* jpgviewer.c */
+void JpgViewer(void);
 
 #endif

@@ -7,3 +7,5 @@ Note that you must apply the changes above to the SOURCE of PS2SDK, not to a bin
 The same basic rules apply to how you update sources of other projects for which we have made modified sources in our work on LaunchELF, though that will be less of a problem since they have much simpler source folder trees than PS2SDK does. However, don't forget to also copy the compiled binaries of such projects into the 'modules' folder of LaunchELF.
 
 NB: Some of the details described above apply only to 'Windows' systems, so users of other systems may need to modify the procedures slightly.
+
+As of uLaunchELF v3.80 the 'changed sources for external projects' also include some stuff for 'libjpg'. Please note that these files are not intended for the PS2SDK release of libjpg, but are intended for the libjpg release previously modified by 'ntba2' for his release of 'myPS2'.

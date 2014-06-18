@@ -53,9 +53,9 @@ LK_Start_E1    =
 # though that is not the way it's handled for real defaulting. Use empty
 # strings to disable the keys entirely (for 'child safe' installations)
 # ----------------------------------------------------------------------
-LK_Select_E1 = MISC/Configurator
-LK_Left_E1   = MISC/Load Prev CNF
-LK_Right_E1  = MISC/Load Next CNF
+LK_Select_E1 = MISC/Configure
+LK_Left_E1   = MISC/Load CNF--
+LK_Right_E1  = MISC/Load CNF++
 # ----------------------------------------------------------------------
 # After the launch key definitions we have the variables for diverse
 # settings, most of which use obvious naming schemes and have their

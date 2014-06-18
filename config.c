@@ -516,7 +516,7 @@ void Config_Skin(void)
 
 	strcpy(skinSave, setting->skin);
 
-	loadSkin(PREVIEW_PIC);
+	loadSkin(PREVIEW_PIC, 0, 0);
 
 	s=1;
 	event = 1;  //event = initial entry
@@ -555,7 +555,7 @@ void Config_Skin(void)
 				event |= 2;  //event |= valid pad command
 				if(s==1) {
 					setting->skin[0] = '\0';
-					loadSkin(PREVIEW_PIC);
+					loadSkin(PREVIEW_PIC, 0, 0);
 				} else if(s==3) {
 					if((Brightness > 0)&&(testsetskin == 1)) {
 						Brightness--;
@@ -567,9 +567,9 @@ void Config_Skin(void)
 				event |= 2;  //event |= valid pad command
 				if(s==1) {
 					getFilePath(setting->skin, SKIN_CNF);
-					loadSkin(PREVIEW_PIC);
+					loadSkin(PREVIEW_PIC, 0, 0);
 				} else if(s==2) {
-					loadSkin(BACKGROUND_PIC);
+					loadSkin(BACKGROUND_PIC, 0, 0);
 					setting->Brightness = Brightness;
 					return;
 				} else if(s==3) {
@@ -807,7 +807,7 @@ void Config_Screen(void)
 					return;
 				} else if(s==max_s) { //Always put 'DEFAULT SCREEN SETTINGS' last
 					setting->skin[0] = '\0';
-					loadSkin(BACKGROUND_PIC);
+					loadSkin(BACKGROUND_PIC, 0, 0);
 					setting->color[0] = DEF_COLOR1;
 					setting->color[1] = DEF_COLOR2;
 					setting->color[2] = DEF_COLOR3;
@@ -1641,7 +1641,7 @@ cancel_exit:
 				setting = tmpsetting;
 				updateScreenMode();
 				strcpy(setting->skin, skinSave);
-				loadSkin(BACKGROUND_PIC);
+				loadSkin(BACKGROUND_PIC, 0, 0);
 				mainMsg[0] = 0;
 				break;
 			}
