@@ -1674,7 +1674,7 @@ void saveNetworkSettings(char *Message)
 	if (in_fd >= 0) {
 
 		size = fioLseek(in_fd, 0, SEEK_END);
-		printf("size of existing file is %ibtyes\n\r",size);
+		printf("size of existing file is %ibytes\n\r",size);
 
 		ipconfigfile = (char *)malloc(size);
 

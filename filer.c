@@ -3170,6 +3170,12 @@ void getFilePath(char *out, int cnfmode)
 				if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
 					//pushed R3 for a folder (navigate to uLE CNF folder)
 					strcpy(path, LaunchElfDir);
+					if( (p = strchr(path, ':')) ){ //device separator ?
+						if( p[1] != '/' ){ //missing path separator ? (mass: & host:)
+							p[1] = '/';      //insert path separator
+							strcpy(p+2, LaunchElfDir+(p-path)+1); //append rest of pathname
+						}
+					}
 					browser_cd=TRUE;
 				}else{
 					//pushed R3 for a file (treat as uLE-related)

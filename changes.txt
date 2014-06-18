@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.16 (2008.06.16)
+-Fixed missing driver inits for cases where uLE is launched from host: with IOP reset ON
+-Fixed a bug causing launch to crash if an elf was launched through a "uLE:/" path when stored in the same folder as the uLE elf on mass: or host:.
+
 LaunchELF v4.15 (2008.06.14)
 -Fixed a bug preventing initial CNF load from defaulting to mc?:/SYS-CONF/
 

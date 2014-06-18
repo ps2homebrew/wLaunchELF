@@ -1353,19 +1353,25 @@ ELFnotFound:
 		p = strchr(party, '/');
 		sprintf(fullpath, "pfs0:%s", p);
 		*p = 0;
-	}else if(!strncmp(path, "mass:/", 6)){
+	}else if(!strncmp(path, "mass:", 5)){
 		loadUsbModules();
 		if(checkELFheader(path)<=0)
 			goto ELFnotFound;
 		//coming here means the ELF is fine
 		party[0] = 0;
 		strcpy(fullpath, "mass:");
-		strcat(fullpath, path+6);
-	}else if(!strncmp(path, "host:/", 6)){
+		if(path[5] == '/')
+			strcat(fullpath, path+6);
+		else
+			strcat(fullpath, path+5);
+	}else if(!strncmp(path, "host:", 5)){
 		initHOST();
 		party[0] = 0;
 		strcpy(fullpath, "host:");
-		strcat(fullpath, path+6);
+		if(path[5] == '/')
+			strcat(fullpath, path+6);
+		else
+			strcat(fullpath, path+5);
 		makeHostPath(fullpath, fullpath);
 		if(checkELFheader(fullpath)<=0)
 				goto ELFnotFound;
@@ -1681,6 +1687,11 @@ int main(int argc, char *argv[])
 		if(!strncmp(LaunchElfDir, "mass:", 5))
 		{	initsbv_patches();
 			loadUsbModules();
+		}
+		else if(!strncmp(LaunchElfDir, "host:", 5))
+		{	getIpConfig();
+			initsbv_patches();
+			initHOST();
 		}
 	}
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
