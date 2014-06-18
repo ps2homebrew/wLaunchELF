@@ -58,10 +58,12 @@ int readpad_no_KB(void)
 				if(++test_joy==2) test_joy=0;
 				if(test_joy){
 					joy_value=0;
-					if(buttons_t[port].rjoy_h >= 0xf0){
+					if(buttons_t[port].rjoy_h >= 0xbf){
 						paddata_t[port]=PAD_R3_H1;
-					}else if(buttons_t[port].rjoy_h <= 0x0f){
+						joy_value=buttons_t[port].rjoy_h-0xbf;
+					}else if(buttons_t[port].rjoy_h <= 0x40){
 						paddata_t[port]=PAD_R3_H0;
+						joy_value=-(buttons_t[port].rjoy_h-0x40);
 					}else if(buttons_t[port].rjoy_v <= 0x40){
 						paddata_t[port]=PAD_R3_V0;
 						joy_value=-(buttons_t[port].rjoy_v-0x40);

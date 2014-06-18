@@ -32,14 +32,10 @@ static void Command_List( void )
 
 	int Command_ch_w = 34; //Total characters in longest Command Name.
 	int Command_ch_h = 9;  //Total Command lines number.
-	int cSprite_Y1 = SCREEN_HEIGHT/2-((Command_ch_h+1)*FONT_HEIGHT)/2; //Top edge of sprite.
-	int cSprite_X2 = SCREEN_WIDTH/2+((Command_ch_w+3)*FONT_WIDTH)/2;   //Right edge of sprite.
-	int cFrame_Y1 = cSprite_Y1;   //Top edge of frame.
-	int cFrame_X2 = cSprite_X2-3; //Right edge of frame (-3 correct ???).
-	int cFrame_X1 = cFrame_X2-(Command_ch_w+3)*FONT_WIDTH;  //Left edge of frame.
-	int cFrame_Y2 = cFrame_Y1+(Command_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame.
-	int cSprite_X1 = cFrame_X1-1; //Left edge of sprite.
-	int cSprite_Y2 = cFrame_Y2;   //Bottom edge of sprite.
+	int cSprite_Y1 = SCREEN_HEIGHT/2-((Command_ch_h+1)*FONT_HEIGHT)/2; //Top edge
+	int cSprite_X2 = SCREEN_WIDTH/2+((Command_ch_w+3)*FONT_WIDTH)/2;   //Right edge
+	int cSprite_X1 = cSprite_X2-(Command_ch_w+3)*FONT_WIDTH-4;         //Left edge
+	int cSprite_Y2 = cSprite_Y1+(Command_ch_h+1)*FONT_HEIGHT;          //Bottom edge
 
 	event = 1;  //event = initial entry.
 	while(1){
@@ -55,13 +51,11 @@ static void Command_List( void )
 		if(event||post_event){ //NB: We need to update two frame buffers per event.
 
 			//Display section.
-			//drawPopSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
-			gsKit_prim_sprite(gsGlobal, cSprite_X1, cSprite_Y1,
-				cSprite_X2, cSprite_Y2, 0, setting->color[0]);
-			drawFrame(cFrame_X1, cFrame_Y1, cFrame_X2, cFrame_Y2, setting->color[1]);
+			drawOpSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
+			drawFrame(cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2, setting->color[1]);
 
-			y=cFrame_Y1+FONT_HEIGHT/2;
-			x=cFrame_X1+2*FONT_WIDTH;
+			y=cSprite_Y1+FONT_HEIGHT/2;
+			x=cSprite_X1+2*FONT_WIDTH;
 
 			printXY("Start: Start/Stop Slideshow", x, y, setting->color[3], TRUE);
 			y+=FONT_HEIGHT;
@@ -71,11 +65,11 @@ static void Command_List( void )
 			y+=FONT_HEIGHT;
 			printXY("Left/Right Pad: Prev/Next Picture", x, y, setting->color[3], TRUE);
 			y+=FONT_HEIGHT;
+			printXY("Up/Down Pad: Rotate Picture", x, y, setting->color[3], TRUE);
+			y+=FONT_HEIGHT;
 			printXY("Left Joystick: Panorama", x, y, setting->color[3], TRUE);
 			y+=FONT_HEIGHT;
 			printXY("Right Joystick Vertical: Zoom", x, y, setting->color[3], TRUE);
-			y+=FONT_HEIGHT;
-			printXY("Right Joystick Horizontal: Rotate", x, y, setting->color[3], TRUE);
 			y+=FONT_HEIGHT;
 			if (swapKeys)
 				printXY("ÿ1: FullScreen Mode", x, y, setting->color[3], TRUE);
@@ -257,7 +251,7 @@ static void View_Input( void ) {
 			}else if(new_pad & PAD_LEFT){ // Prev Pic
 				SlideShowSkip=-1;
 				break;
-			}else if(new_pad & PAD_R3_H1){ // Rotate Pic +
+			}else if(new_pad & PAD_UP){ // Rotate Pic +
 		    if(PanZoom!=1.0f){
 		    	for ( i = 0; i < 35; ++i ) {
 						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
@@ -269,7 +263,7 @@ static void View_Input( void ) {
 				WaitTime=Timer();
 				while(Timer()<WaitTime+500); // Wait To Ensure Switch
 				View_Render();
-			}else if(new_pad & PAD_R3_H0){ // Rotate Pic -
+			}else if(new_pad & PAD_DOWN){ // Rotate Pic -
 		    if(PanZoom!=1.0f){
 		    	for ( i = 0; i < 35; ++i ) {
 						if (  ( PanZoom -= 0.05F ) <= 1.0F  ) PanZoom = 1.0F;
@@ -816,15 +810,13 @@ frame:
 			} //ends for, so all browser rows were fixed above
 			thumb_load=FALSE;
 			if(jpg_browser_nfiles > rows) { //if more files than available rows, use scrollbar
-				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*8, Frame_start_y,
 					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/jpg_browser_nfiles);
 				y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/jpg_browser_nfiles);
-				gsKit_prim_sprite(gsGlobal,
-				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11,
-				 (y0+Menu_start_y-4),
-				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1,
-				 (y1+Menu_start_y-4), 0, setting->color[1]);
+				drawOpSprite(setting->color[1],
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*6, (y0+Menu_start_y-4),
+				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*2, (y1+Menu_start_y-4));
 			} //ends clause for scrollbar
 			msg0[0]='\0';
 			if(jpg_browser_pushed)

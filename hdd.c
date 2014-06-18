@@ -269,25 +269,17 @@ int sizeSelector(int size)
 			printXY("128MB             32GB", mSprite_X1+FONT_WIDTH,
 				mSprite_Y1+FONT_HEIGHT*3, setting->color[3], TRUE);
 
-			gsKit_prim_line(gsGlobal,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5,
-			 mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5,
-			 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-1,
-			 mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-1,
-			 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5-LINE_THICKNESS+1,
+				mSprite_X2-2*FONT_WIDTH-FONT_WIDTH/2, mSprite_Y1+FONT_HEIGHT*5);
 
 			scrollBar = (size*100/32640)*(19*FONT_WIDTH)/100;
 
-			gsKit_prim_line(gsGlobal,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar, mSprite_Y1+FONT_HEIGHT*5-FONT_HEIGHT/2,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar, mSprite_Y1+FONT_HEIGHT*5+FONT_HEIGHT/2,
-			 1, setting->color[2]);
-			gsKit_prim_line(gsGlobal,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1, mSprite_Y1+FONT_HEIGHT*5-FONT_HEIGHT/2,
-			 mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-1, mSprite_Y1+FONT_HEIGHT*5+FONT_HEIGHT/2,
-			 1, setting->color[2]);
+			drawOpSprite(setting->color[1],
+				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar-LINE_THICKNESS+1,
+				mSprite_Y1+FONT_HEIGHT*5-FONT_HEIGHT/2,
+				mSprite_X1+2*FONT_WIDTH+FONT_WIDTH/2+(int)scrollBar,
+				mSprite_Y1+FONT_HEIGHT*5+FONT_HEIGHT/2);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
@@ -320,12 +312,8 @@ int MenuParty(PARTYINFO Info)
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
-	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame
-	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
-	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
-	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame
-	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite
-	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite
+	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
+	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
 
 	memset(enable, TRUE, NUM_MENU);
 
@@ -383,9 +371,9 @@ int MenuParty(PARTYINFO Info)
 			drawPopSprite(setting->color[0],
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
-			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
+			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
-			for(i=0,y=mFrame_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
+			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==CREATE)			strcpy(tmp, "Create");
 				else if(i==REMOVE)		strcpy(tmp, "Remove");
 				else if(i==RENAME)	strcpy(tmp, "Rename");
@@ -395,11 +383,11 @@ int MenuParty(PARTYINFO Info)
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
@@ -830,8 +818,9 @@ void hddManager(void)
 			else
 				y += FONT_HEIGHT+11;
 
-			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-3, SCREEN_WIDTH/2-20, y-3, 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				SCREEN_MARGIN, y-4,
+				SCREEN_WIDTH/2-20, y-3);
 
 			if(hddConnected==0)
 				strcpy(c, "CONNECTED:  NO / FORMATED:  NO");
@@ -843,18 +832,18 @@ void hddManager(void)
 			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
 			printXY(c, x, y, setting->color[3], TRUE);
 
-			gsKit_prim_line(gsGlobal, SCREEN_WIDTH/2-20, Frame_start_y, SCREEN_WIDTH/2-20, Frame_end_y,
-			 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal, SCREEN_WIDTH/2-21, Frame_start_y, SCREEN_WIDTH/2-21, Frame_end_y,
-			 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				SCREEN_WIDTH/2-21, Frame_start_y,
+				SCREEN_WIDTH/2-20, Frame_end_y);
 
 			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+11;
 			else
 				y += FONT_HEIGHT+12;
 
-			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-5, SCREEN_WIDTH/2-20, y-5, 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				SCREEN_MARGIN, y-5,
+				SCREEN_WIDTH/2-20, y-4);
 
 			if(hddFormated==1){
 
@@ -907,8 +896,9 @@ void hddManager(void)
 				else
 					y += ray+20;
 
-				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-4, SCREEN_WIDTH/2-20, y-4, 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, y-5, SCREEN_WIDTH/2-20, y-5, 1, setting->color[1]);
+				drawOpSprite(setting->color[1],
+					SCREEN_MARGIN, y-5,
+					SCREEN_WIDTH/2-20, y-4);
 
 				Treat = PartyInfo[browser_sel].Treatment;
 				if(Treat == TREAT_SYSTEM){
@@ -1031,14 +1021,13 @@ void hddManager(void)
 					y += FONT_HEIGHT;
 				} //ends for, so all browser rows were fixed above
 				if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
-					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*8, Frame_start_y,
 						SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 					y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
 					y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/browser_nfiles);
-					gsKit_prim_sprite(gsGlobal,
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-4),
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-4),
-					 0, setting->color[1]);
+					drawOpSprite(setting->color[1],
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*6, (y0+Menu_start_y-4),
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*2, (y1+Menu_start_y-4));
 				} //ends clause for scrollbar
 			} //ends hdd formated
 			//Tooltip section

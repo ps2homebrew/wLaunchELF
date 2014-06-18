@@ -653,8 +653,9 @@ void loadUsbModules(void)
 	int ret;
 
 	loadUsbDModule();
-	if	(have_usbd && !have_usb_mass) {
-		SifExecModuleBuffer(&usb_mass_irx, size_usb_mass_irx, 0, NULL, &ret);
+	if(	have_usbd
+	&&	!have_usb_mass
+	&&	loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx)){
 		delay(3);
 		ret = usb_mass_bindRpc();
 		have_usb_mass = 1;
@@ -835,8 +836,10 @@ void	ShowFont(void)
 {
 	int	i, j, event, post_event=0;
 	char Hex[18] = "0123456789ABCDEF";
-	int	mat_w = (16*2+3)*FONT_WIDTH+2,  mat_h = (9*2+2)*FONT_HEIGHT+2;
-	int mat_x = (SCREEN_WIDTH-mat_w)/2, mat_y = (SCREEN_HEIGHT-mat_h)/2;
+	int	mat_w = (3+16*2)*FONT_WIDTH+LINE_THICKNESS;
+	int mat_h = (2+9*2)*FONT_HEIGHT+LINE_THICKNESS;
+	int mat_x = (SCREEN_WIDTH-mat_w)/2;
+	int mat_y = (SCREEN_HEIGHT-mat_h)/2;
 	int ch_x  = mat_x+FONT_WIDTH/2+1,   ch_y  = mat_y+FONT_HEIGHT/2+1;
 	int px, ly, cy;
 	u64 col_0=setting->color[0], col_1=setting->color[1], col_3=setting->color[3];
@@ -846,17 +849,14 @@ void	ShowFont(void)
 	while(1) {
 		//Display section
 		if(event||post_event) { //NB: We need to update two frame buffers per event
-			gsKit_prim_sprite(gsGlobal, mat_x, mat_y, mat_x+mat_w, mat_y+mat_h , 1, col_0);
-			gsKit_prim_line(gsGlobal, mat_x, mat_y, mat_x+mat_w, mat_y, 1, col_1);
-			gsKit_prim_line(gsGlobal, mat_x, mat_y, mat_x, mat_y+mat_h, 1, col_1);
-			gsKit_prim_line(gsGlobal, mat_x+1, mat_y, mat_x+1, mat_y+mat_h, 1, col_1);
+			drawOpSprite(col_0, mat_x, mat_y, mat_x+mat_w-1, mat_y+mat_h-1);
+			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w, mat_y+LINE_THICKNESS-1);
+			drawOpSprite(col_1, mat_x, mat_y, mat_x+LINE_THICKNESS-1, mat_y+mat_h-1);
 			px=mat_x+3*FONT_WIDTH;
-			gsKit_prim_line(gsGlobal, px, mat_y, px, mat_y+mat_h, 1, col_1);
-			gsKit_prim_line(gsGlobal, px+1, mat_y, px+1, mat_y+mat_h, 1, col_1);
+			drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);
 			for(j=0; j<16; j++) {
 				px += 2*FONT_WIDTH;
-				gsKit_prim_line(gsGlobal, px, mat_y, px, mat_y+mat_h, 1, col_1);
-				gsKit_prim_line(gsGlobal, px+1, mat_y, px+1, mat_y+mat_h, 1, col_1);
+				drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);
 			}
 			cy=ch_y;
 			ly=mat_y;
@@ -880,7 +880,7 @@ void	ShowFont(void)
 					}
 				}
 				ly += FONT_HEIGHT*2;
-				gsKit_prim_line(gsGlobal, mat_x, ly, mat_x+mat_w, ly, 1, col_1);
+				drawOpSprite(col_1, mat_x, ly, mat_x+mat_w-1, ly+LINE_THICKNESS-1);
 				cy += FONT_HEIGHT*2;
 			}
 		}
@@ -1253,7 +1253,7 @@ int main(int argc, char *argv[])
 
 	if	(mass_booted)	//Fix untestable module for USB_mass booting
 	{	have_usbd = 1;
-		//have_usb_mass = 1;
+		have_usb_mass = 1;
 	}
 
 	strcpy(LaunchElfDir, argv[0]);
@@ -1263,7 +1263,7 @@ int main(int argc, char *argv[])
 	if	(p!=NULL)
 		*(p+1)=0;
 
-	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){
+	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
 		//Patch DMS4 Dev2 booting here, when we learn more about how it works
 		//Trying to mount that partition for loading CNF simply crashes...
 	}

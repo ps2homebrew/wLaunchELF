@@ -230,6 +230,12 @@ Menu_Show_Titles = 1
 # ----------------------------------------------------------------------
 CNF_Path =
 # ----------------------------------------------------------------------
+# USBMASS_FILE is a string used to specify an alternate IRX file for the
+# USB mass storage driver, which uLaunchELF will then use instead of the
+# embedded one. You can set it in the 'STARTUP SETTINGS' screen.
+# ----------------------------------------------------------------------
+USBMASS_FILE =
+# ----------------------------------------------------------------------
 # From v3.84 two settings of JpgViewer are also saved here. These are
 # the slideshow interval timer (in seconds), and the picture transition
 # choice, a value from 1-4, with 1==NONE, 2==ZOOM 3==FADE, 4==BOTH.

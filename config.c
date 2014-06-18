@@ -184,6 +184,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Menu_Show_Titles = %d\r\n"
 		"PathPad_Lock = %d\r\n"
 		"CNF_Path = %s\r\n"
+		"USBMASS_FILE = %s\r\n"
 		"JpgView_Timer = %d\r\n"
 		"JpgView_Trans = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
@@ -219,6 +220,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Show_Titles,  //Menu_Show_Titles
 		setting->PathPad_Lock, //PathPad_Lock
 		setting->CNF_Path,     //CNF_Path
+		setting->usbmass_file,  //USBMASS_FILE
 		setting->JpgView_Timer, //JpgView_Timer
 		setting->JpgView_Trans, //JpgView_Trans
 		&CNF_step       // This variable measures the size of sprintf data
@@ -344,6 +346,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
 	setting->LK_Flag[1] = 1;
 	setting->usbd_file[0] = '\0';
+	setting->usbmass_file[0] = '\0';
 	setting->usbkbd_file[0] = '\0';
 	setting->kbdmap_file[0] = '\0';
 	setting->skin[0] = '\0';
@@ -497,6 +500,7 @@ failed_load:
 		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
 		else if(!strcmp(name,"PathPad_Lock")) setting->PathPad_Lock = atoi(value);
 		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
+		else if(!strcmp(name,"USBMASS_FILE")) strcpy(setting->usbmass_file,value);
 		else if(!strcmp(name,"JpgView_Timer")) setting->JpgView_Timer = atoi(value);
 		else if(!strcmp(name,"JpgView_Trans")) setting->JpgView_Trans = atoi(value);
 		else {
@@ -1027,7 +1031,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=11;		//define cursor index and its max value
+	int s, max_s=12;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -1074,6 +1078,7 @@ void Config_Startup(void)
 				else if(s==8) setting->usbkbd_file[0] = '\0';
 				else if(s==9) setting->kbdmap_file[0] = '\0';
 				else if(s==10) setting->CNF_Path[0] = '\0';
+				else if(s==11) setting->usbmass_file[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -1103,7 +1108,9 @@ void Config_Startup(void)
 					if((tmp = strrchr(setting->CNF_Path, '/')))
 						tmp[1] = '\0';
 				}
-				else
+				else if(s==11)
+					getFilePath(setting->usbmass_file, USBMASS_IRX_CNF);
+				else if(s==max_s)
 					return;
 			}
 			else if(new_pad & PAD_TRIANGLE)
@@ -1183,6 +1190,13 @@ void Config_Startup(void)
 			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
+			if(strlen(setting->usbmass_file)==0)
+				sprintf(c, "  USB_Mass IRX: DEFAULT");
+			else
+				sprintf(c, "  USB_Mass IRX: %s",setting->usbmass_file);
+			printXY(c, x, y, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			printXY("  RETURN", x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
@@ -1209,8 +1223,8 @@ void Config_Startup(void)
 					sprintf(c, "ÿ1:Change");
 				else
 					sprintf(c, "ÿ0:Change");
-			} else if((s==4)||(s==8)||(s==9)||(s==10)) {
-			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path
+			} else if((s==4)||(s==8)||(s==9)||(s==10)||(s==11)) {
+			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
 				if (swapKeys)
 					sprintf(c, "ÿ1:Browse ÿ0:Clear");
 				else

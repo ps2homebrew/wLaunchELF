@@ -110,12 +110,8 @@ int MenuEditor(void)
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines.
 	int mSprite_Y1 = 64;           //Top edge of sprite.
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite.
-	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame.
-	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???).
-	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame.
-	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame.
-	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite.
-	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite.
+	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
+	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
 
 	memset(enable, TRUE, NUM_MENU);
 
@@ -167,9 +163,9 @@ int MenuEditor(void)
 			drawPopSprite(setting->color[0],
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
-			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
+			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
-			for(i=0,y=mFrame_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
+			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==NEW)			strcpy(tmp, "New");
 				else if(i==OPEN)			strcpy(tmp, "Open");
 				else if(i==CLOSE)		strcpy(tmp, "Close");
@@ -181,11 +177,11 @@ int MenuEditor(void)
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(Menu_Sel<NUM_MENU)
-				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+Menu_Sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+Menu_Sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section.
 			x = SCREEN_MARGIN;
@@ -1383,29 +1379,27 @@ abort:
 			if(TextSize[Active_Window]==0)
 				goto end;
 
-			gsKit_prim_sprite(gsGlobal, SCREEN_MARGIN, Frame_start_y, SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y,
-			 0, COL_NORM_BG);
+			drawOpSprite(COL_NORM_BG,
+				SCREEN_MARGIN, Frame_start_y,
+				SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y);
 
 			if(KeyBoard_Active){ //Display Virtual KeyBoard Section.
 
-				drawPopSprite(setting->color[0], SCREEN_MARGIN, KEY_Y+6, SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y);
-
-				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, KEY_Y+6, SCREEN_WIDTH-SCREEN_MARGIN, KEY_Y+6,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, SCREEN_MARGIN, KEY_Y+7, SCREEN_WIDTH-SCREEN_MARGIN, KEY_Y+7,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X-63, KEY_Y+6, KEY_X-63, Frame_end_y,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X-64, KEY_Y+6, KEY_X-64, Frame_end_y,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X+32, KEY_Y+6, KEY_X+32, Frame_end_y,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X+33, KEY_Y+6, KEY_X+33, Frame_end_y,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X+KEY_W+32, KEY_Y+6, KEY_X+KEY_W+32, Frame_end_y,
-				 1, setting->color[1]);
-				gsKit_prim_line(gsGlobal, KEY_X+KEY_W+33, KEY_Y+6, KEY_X+KEY_W+33, Frame_end_y,
-				 1, setting->color[1]);
+				drawPopSprite(setting->color[0],
+					SCREEN_MARGIN, KEY_Y+6,
+					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y);
+				drawOpSprite(setting->color[1],
+					SCREEN_MARGIN, KEY_Y+6,
+					SCREEN_WIDTH-SCREEN_MARGIN, KEY_Y+6+LINE_THICKNESS-1);
+				drawOpSprite(setting->color[1],
+					KEY_X-64, KEY_Y+6,
+					KEY_X-64+LINE_THICKNESS-1, Frame_end_y);
+				drawOpSprite(setting->color[1],
+					KEY_X+32, KEY_Y+6,
+					KEY_X+32+LINE_THICKNESS-1, Frame_end_y);
+				drawOpSprite(setting->color[1],
+					KEY_X+KEY_W+32, KEY_Y+6,
+					KEY_X+KEY_W+32+LINE_THICKNESS-1, Frame_end_y);
 
 				if(Mark[MARK_ON])
 					color=setting->color[2];
@@ -1495,13 +1489,13 @@ abort:
 					if(Mark[MARK_ON] && Mark[MARK_PRINT]>0){ //Mark Text.
 						if(Mark[MARK_SIZE]>0){
 							if(Top_Width+tmpLen+j == (Editor_Cur-Mark[MARK_PRINT])){
-								gsKit_prim_sprite(gsGlobal, x,y,x+8,y+8, 0, COL_MARK_BG);
+								drawOpSprite(COL_MARK_BG, x, y-1, x+FONT_WIDTH, y+FONT_HEIGHT-1);
 								Mark[MARK_COLOR]=1;
 								Mark[MARK_PRINT]--;
 							}
 						}else if(Mark[MARK_SIZE]<0){
 							if(Top_Width+tmpLen+j == (Editor_Cur+Mark[MARK_PRINT]-1)){
-								gsKit_prim_sprite(gsGlobal, x,y,x+8,y+8, 0, COL_MARK_BG);
+								drawOpSprite(COL_MARK_BG, x, y-1, x+FONT_WIDTH, y+FONT_HEIGHT-1);
 								Mark[MARK_COLOR]=1;
 								if((Mark[MARK_PRINT]++) == (-Mark[MARK_SIZE]))
 									Mark[MARK_PRINT]=0;
@@ -1557,23 +1551,21 @@ abort:
 end:
 			if(Editor_nRowsNum > Rows_Num) { //if more lines than available Rows_Num, use scrollbar.
 				if(KeyBoard_Active){
-					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*8, Frame_start_y,
 						SCREEN_WIDTH-SCREEN_MARGIN, KEY_Y+6, setting->color[1]);
-					y0=(KEY_Y+6-Menu_start_y+8) * ((double)Top_Height/Editor_nRowsNum);
-					y1=(KEY_Y+6-Menu_start_y+8) * ((double)(Top_Height+Rows_Num)/Editor_nRowsNum);
-					gsKit_prim_sprite(gsGlobal,
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-2),
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-10),
-					 0, setting->color[1]);
+					y0=(KEY_Y+6-Menu_start_y+8)*((double)Top_Height/Editor_nRowsNum);
+					y1=(KEY_Y+6-Menu_start_y+8)*((double)(Top_Height+Rows_Num)/Editor_nRowsNum);
+					drawOpSprite(setting->color[1],
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*6, (y0+Menu_start_y-2),
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*2, (y1+Menu_start_y-10));
 				}else{
-					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+					drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*8, Frame_start_y,
 						SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
-					y0=(Menu_end_y-Menu_start_y+8) * ((double)Top_Height/Editor_nRowsNum);
-					y1=(Menu_end_y-Menu_start_y+8) * ((double)(Top_Height+Rows_Num)/Editor_nRowsNum);
-					gsKit_prim_sprite(gsGlobal,
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-2),
-					 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-6),
-					 0, setting->color[1]);
+					y0=(Menu_end_y-Menu_start_y+8)*((double)Top_Height/Editor_nRowsNum);
+					y1=(Menu_end_y-Menu_start_y+8)*((double)(Top_Height+Rows_Num)/Editor_nRowsNum);
+					drawOpSprite(setting->color[1],
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*6, (y0+Menu_start_y-2),
+						SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*2, (y1+Menu_start_y-6));
 				} //ends clause for scrollbar with KeyBoard.
 			} //ends clause for scrollbar.
 

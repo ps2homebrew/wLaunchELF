@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.84 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.85 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -479,6 +479,16 @@ void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
 	}
 }
 //--------------------------------------------------------------
+//drawOpSprite exists only to eliminate the use of primitive sprite functions
+//that are specific to the graphics lib used (currently gsKit). So normally
+//it will merely be a 'wrapper' function for one of the lib calls, except
+//that it will also perform any coordinate adjustments (if any)implemented for
+//the functions drawSprite and drawPopSprite, to keep all of them compatible.
+//
+void drawOpSprite( u64 color, int x1, int y1, int x2, int y2 ){
+	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
+}
+//--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
 	strncpy(LastMessage, msg, MAX_TEXT_LINE);
@@ -501,6 +511,9 @@ void setupGS(int gs_vmode)
 {
 	// GS Init
 	gsGlobal = gsKit_init_global(gs_vmode);
+
+	// Clear Screen
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	// Screen Position Init
 	gsGlobal->StartX = setting->screen_x; 
@@ -527,9 +540,6 @@ void setupGS(int gs_vmode)
 	dmaKit_chan_init(DMA_CHANNEL_FROMSPR);
 	dmaKit_chan_init(DMA_CHANNEL_TOSPR);
 
-	// Clear Screen
-	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
-
 	// Screen Init
 	gsKit_init_screen(gsGlobal);
 	gsKit_mode_switch(gsGlobal, GS_ONESHOT);
@@ -552,13 +562,19 @@ void updateScreenMode(int adapt_XY)
 
 		TV_mode = New_TV_mode;
   
+		// Clear screen before changing value
+		gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+
 		if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
 			gsGlobal->Mode = GS_MODE_PAL;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 512;
 			if(adapt_XY){
 				setting->screen_x+=20;
-				setting->screen_y+=22;
+				if(setting->interlace)
+					setting->screen_y+=22;
+				else
+					setting->screen_y+=11;
 			}
 			Menu_end_y     = Menu_start_y + 26*FONT_HEIGHT;
 		}else{                      //else use NTSC mode (forced or auto)
@@ -567,7 +583,10 @@ void updateScreenMode(int adapt_XY)
 			SCREEN_HEIGHT  = 448;
 			if(adapt_XY){
 				setting->screen_x-=20;
-				setting->screen_y-=22;
+				if(setting->interlace)
+					setting->screen_y-=22;
+				else
+					setting->screen_y-=11;
 			}
 			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
 		} /* end else */
@@ -586,6 +605,7 @@ void updateScreenMode(int adapt_XY)
 	if(setting->interlace != Old_Interlace){
 		Old_Interlace = setting->interlace;
 
+		// Clear screen before changing value
 		gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 		// Interlace Init
@@ -716,21 +736,6 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 							testsetskin = 1;
 						} /* end if */
 				 	} else if( Picture == JPG_PIC ){
-				 		if(PicRotate==1){ // 90°
-				 			ImgData1 = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) +1);
-				 			RotateBitmap(ImgData, Jpg->width, Jpg->height, ImgData1, PicRotate);
-				 			W=Jpg->width;
-				 			Jpg->width=Jpg->height;
-				 			Jpg->height=W;
-				 		}else if(PicRotate==3){ // -90°
-				 			ImgData1 = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) +1);
-				 			RotateBitmap(ImgData, Jpg->width, Jpg->height, ImgData1, PicRotate);
-				 			W=Jpg->width;
-				 			Jpg->width=Jpg->height;
-				 			Jpg->height=W;
-				 		}else{
-				 			memcpy(&ImgData1, &ImgData, sizeof(ImgData));
-						}
 				 		PicW=Jpg->width;
 				 		PicH=Jpg->height;
 				 		if(TV_mode == TV_mode_NTSC)
@@ -754,8 +759,24 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 				 				PicWidth=512;
 				 			}
 				 		}
-				 		if((ScaleBitmap(ImgData1, Jpg->width, Jpg->height, &ImgData2, (int)PicWidth, Jpg->height))!=0){
-				 			if((ScaleBitmap(ImgData2, (int)PicWidth, Jpg->height, (void*)&TexPicture.Mem, (int)PicWidth, (int)PicHeight))!=0){
+				 		if((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height))!=0){
+				 			if((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight))!=0){
+						 		if((PicRotate==1) || (PicRotate==3)){ // Rotate picture
+						 			(void*)TexPicture.Mem = malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
+						 			RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void*)TexPicture.Mem, PicRotate);
+						 			W=PicW;
+						 			PicW=PicH;
+						 			PicH=W;
+							 		if(TV_mode == TV_mode_NTSC)
+							 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
+									else if(TV_mode == TV_mode_PAL)
+							 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);
+							 		W=PicWidth;
+						 			PicWidth=PicHeight;
+						 			PicHeight=W;
+						 		}else{
+						 			memcpy((void*)&TexPicture.Mem, &ImgData2, sizeof(ImgData2));
+								}
 				 				TexPicture.PSM = GS_PSM_CT24;
 								TexPicture.VramClut = 0;
 								TexPicture.Clut = NULL;
@@ -874,19 +895,17 @@ void drawScr(void)
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
 	updateScr_1 = 1;
-	gsKit_prim_line(gsGlobal, x1, y1-1, x2, y1-1, 1, color);
-	if(setting->interlace)
-		gsKit_prim_line(gsGlobal, x1, y1-2, x2, y1-2, 1, color);
+	//Top horizontal edge
+	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y1+LINE_THICKNESS-1, 1, color);
 
-	gsKit_prim_line(gsGlobal, x2, y1, x2, y2, 1, color);
-	gsKit_prim_line(gsGlobal, x2-1, y1, x2-1, y2, 1, color);
-	
-	gsKit_prim_line(gsGlobal, x2, y2-1, x1, y2-1, 1, color);
-	if(setting->interlace)
-		gsKit_prim_line(gsGlobal, x2, y2-2, x1, y2-2, 1, color);
+	//Bottom horizontal
+	gsKit_prim_sprite(gsGlobal, x1, y2-LINE_THICKNESS+1, x2, y2, 1, color);
 
-	gsKit_prim_line(gsGlobal, x1, y2, x1, y1, 1, color);
-	gsKit_prim_line(gsGlobal, x1+1, y2, x1+1, y1, 1, color);
+	//Left vertical edge
+	gsKit_prim_sprite(gsGlobal, x1, y1, x1+LINE_THICKNESS-1, y2, 1, color);
+
+	//Right vertical edge
+	gsKit_prim_sprite(gsGlobal, x2-LINE_THICKNESS+1, y1, x2, y2, 1, color);
 }
 
 //--------------------------------------------------------------

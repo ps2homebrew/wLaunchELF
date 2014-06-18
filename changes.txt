@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.85 (2006.08.08)
+-Merged in JpgViewer changes by Polo. It now uses DPad Up/Down for picture rotation.
+-Merged in display init changes by Polo. This should eliminate screen border garbage, and fix a problem with non-interlaced TV mode shifts between PAL and NTSC.
+-Fixed a bug that prevented v3.79-v3.84 from finding a CNF in the same folder as the ELF when started from a USB mass storage device.
+-Added function wrapper 'drawOpSprite' for calls to gsKit_prim_sprite.
+-Purged most use of gsKit_prim_line from the program, as its coordinate handling is not compatible with other gsKit_prim_ functions, and is also inconsistent within itself. (This was the main cause of incorrect dialog boxes.) I've used 'drawOpSprite' in its place.
+-Purged most direct gsKit calls for line and rectangle operations from other source files than "draw.c" which now handles most such calls for most other sections of the program. Exceptions are the JpgViewer, the circle drawing in HddManager, and the jpg loading of "main.c", which still use some such gsKit functions directly.
+-Implemented a new CNF variable "USBMASS_FILE", which may be used to specify another 'usb_mass' driver than the one embedded in the program. This choice can be set by the user in the submenu "Startup Settings..."
+
 LaunchELF v3.84 (2006.08.01)
 -Merged in gsKit non-interlace support contributed by Polo
 -Merged in Analog controls for JPG viewer contributed by Polo

@@ -52,6 +52,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
   TEXT_CNF,        // No restriction choice 
   DIR_CNF,         // Directory choice 
   JPG_CNF,				 // Jpg viewer choice
+	USBMASS_IRX_CNF, // USB_MASS.IRX choice for startup
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -79,6 +80,7 @@ typedef struct
 	int  LK_Flag[15];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
+	char usbmass_file[MAX_PATH];
 	char kbdmap_file[MAX_PATH];
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
@@ -162,6 +164,7 @@ extern int       PicRotate, FullScreen;
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 );
 void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 );
+void drawOpSprite( u64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void drawLastMsg(void);
 void setupGS(int gs_vmode);

@@ -69,7 +69,9 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"KBD", // cnfmode KBDMAP_FILE_CNF
 	"CNF", // cnfmode CNF_PATH_CNF
 	"*",   // cnfmode TEXT_CNF
-	""     // cnfmode DIR_CNF
+	"",    // cnfmode DIR_CNF
+	"JPG", // cnfmode JPG_CNF
+	"IRX"  // cnfmode USBMASS_IRX_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
@@ -81,7 +83,9 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"kbd", // cnfmode KBDMAP_FILE_CNF
 	"cnf", // cnfmode CNF_PATH_CNF
 	"*",   // cnfmode TEXT_CNF
-	""     // cnfmode DIR_CNF
+	"",    // cnfmode DIR_CNF
+	"jpg", // cnfmode JPG_CNF
+	"irx"  // cnfmode USBMASS_IRX_CNF
 };
 
 int host_ready   = 0;
@@ -939,12 +943,8 @@ int menu(const char *path, const char *file)
 	int menu_ch_h = NUM_MENU;      //Total number of menu lines
 	int mSprite_Y1 = 64;           //Top edge of sprite
 	int mSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite
-	int mFrame_Y1 = mSprite_Y1;  //Top edge of frame
-	int mFrame_X2 = mSprite_X2-3;  //Right edge of frame (-3 correct ???)
-	int mFrame_X1 = mFrame_X2-(menu_ch_w+3)*FONT_WIDTH;    //Left edge of frame
-	int mFrame_Y2 = mFrame_Y1+(menu_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame
-	int mSprite_X1 = mFrame_X1-1;  //Left edge of sprite
-	int mSprite_Y2 = mFrame_Y2;  //Bottom edge of sprite
+	int mSprite_X1 = mSprite_X2-(menu_ch_w+3)*FONT_WIDTH;   //Left edge of sprite
+	int mSprite_Y2 = mSprite_Y1+(menu_ch_h+1)*FONT_HEIGHT;  //Bottom edge of sprite
 
 	memset(enable, TRUE, NUM_MENU);
 	if(!strncmp(path,"host",4)){
@@ -1047,9 +1047,9 @@ int menu(const char *path, const char *file)
 			drawPopSprite(setting->color[0],
 				mSprite_X1, mSprite_Y1,
 				mSprite_X2, mSprite_Y2);
-			drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
+			drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
 
-			for(i=0,y=mFrame_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
+			for(i=0,y=mSprite_Y1+FONT_HEIGHT/2; i<NUM_MENU; i++){
 				if(i==COPY)			strcpy(tmp, "Copy");
 				else if(i==CUT)		strcpy(tmp, "Cut");
 				else if(i==PASTE)	strcpy(tmp, "Paste");
@@ -1062,11 +1062,11 @@ int menu(const char *path, const char *file)
 				if(enable[i])	color = setting->color[3];
 				else			color = setting->color[1];
 
-				printXY(tmp, mFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+				printXY(tmp, mSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 				y+=FONT_HEIGHT;
 			}
 			if(sel<NUM_MENU)
-				drawChar(127, mFrame_X1+FONT_WIDTH, mFrame_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(127, mSprite_X1+FONT_WIDTH, mSprite_Y1+(FONT_HEIGHT/2+sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
@@ -1978,8 +1978,9 @@ int keyboard(char *out, int max)
 			drawFrame(
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+20, KEY_X+KEY_W-1, KEY_Y+20, 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+21, KEY_X+KEY_W-1, KEY_Y+21, 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				KEY_X, KEY_Y+20,
+				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
 			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
@@ -2039,9 +2040,9 @@ int keyboard2(char *out, int max)
 {
 	int event, post_event=0;
 	const int	KEY_W=276,
-				KEY_H=84,  //NB: This is not real height, but height/2
+				KEY_H=168,
 				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
-				KEY_Y=((SCREEN_HEIGHT - 2*KEY_H)/2),
+				KEY_Y=((SCREEN_HEIGHT - KEY_H)/2),
 				WFONTS=13,
 				HFONTS=7;
 	char *KEY="ABCDEFGHIJKLM"
@@ -2145,8 +2146,9 @@ int keyboard2(char *out, int max)
 			drawFrame(
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+10, KEY_X+KEY_W-1, KEY_Y+10, 1, setting->color[1]);
-			gsKit_prim_line(gsGlobal,KEY_X, KEY_Y+11, KEY_X+KEY_W-1, KEY_Y+11, 1, setting->color[1]);
+			drawOpSprite(setting->color[1],
+				KEY_X, KEY_Y+20,
+				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
 			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
@@ -2155,23 +2157,23 @@ int keyboard2(char *out, int max)
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
 					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
-					KEY_Y+16 + (i/WFONTS)*8,
+					KEY_Y+28 + (i/WFONTS)*16,
 					setting->color[3]);
 			printXY("OK                       CANCEL",
-				KEY_X+2+4 + 20 - 12, KEY_Y+16 + HFONTS*8, setting->color[3], TRUE);
+				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
 				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
 			else
 				x = KEY_X+2+4 + 25*8;
-			y = KEY_Y+16 + (sel/WFONTS)*8;
+			y = KEY_Y+28 + (sel/WFONTS)*16;
 			drawChar(127, x, y, setting->color[3]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+10);
+			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+16);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
@@ -2206,7 +2208,9 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		strcpy(files[nfiles].name, "cdfs:");
 		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
-		if((cnfmode!=USBD_IRX_CNF)&&(cnfmode!=USBKBD_IRX_CNF)) {
+		if(	(cnfmode!=USBD_IRX_CNF)
+			&&(cnfmode!=USBKBD_IRX_CNF)
+			&&(cnfmode!=USBMASS_IRX_CNF)) {
 			//This condition blocks selecting USB drivers from USB devices
 			strcpy(files[nfiles].name, "mass:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
@@ -2314,11 +2318,13 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 // this function and the submenu functions that it calls
 //--------------------------------------------------------------
 // sincro: ADD USBD_IRX_CNF mode for found IRX file for USBD.IRX
-// example: getFilePath(setting->usbd, USBD_IRX_CNF);
+// example: getFilePath(setting->usbd_file, USBD_IRX_CNF);
 // polo: ADD SKIN_CNF mode for found jpg file for SKIN
 // example: getFilePath(setting->skin, SKIN_CNF);
 // dlanor: ADD USBKBD_IRX_CNF mode for found IRX file for USBKBD.IRX
-// example: getFilePath(setting->usbd, USBKBD_IRX_CNF);
+// example: getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
+// dlanor: ADD USBMASS_IRX_CNF mode for found IRX file for usb_mass
+// example: getFilePath(setting->usbmass_file, USBMASS_IRX_CNF);
 static int browser_cd, browser_up, browser_repos, browser_pushed;
 static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
@@ -2347,8 +2353,10 @@ void getFilePath(char *out, int cnfmode)
 
 	strcpy(ext, cnfmode_extL[cnfmode]);
 
-	if(	(cnfmode==USBD_IRX_CNF) || (cnfmode==USBKBD_IRX_CNF)
-	||	(	(!strncmp(LastDir, "MISC/", 5)) && (cnfmode > LK_ELF_CNF)))
+	if(	(cnfmode==USBD_IRX_CNF)
+		||(cnfmode==USBKBD_IRX_CNF)
+		||(cnfmode==USBMASS_IRX_CNF)
+		||(	(!strncmp(LastDir, "MISC/", 5)) && (cnfmode > LK_ELF_CNF)))
 		path[0] = '\0';			    //start in main root if recent folder unreasonable
 	else
 		strcpy(path, LastDir);	//If reasonable, start in recent folder
@@ -2400,12 +2408,7 @@ void getFilePath(char *out, int cnfmode)
 					//pushed OK for a file
 					sprintf(out, "%s%s", path, files[browser_sel].name);
 					// Must to include a function for check IRX Header 
-					if( (cnfmode!=USBD_IRX_CNF)
-						&&(cnfmode!=USBKBD_IRX_CNF)
-						&&(cnfmode!=KBDMAP_FILE_CNF)
-						&&(cnfmode!=SKIN_CNF)
-						&&(cnfmode!=CNF_PATH_CNF)
-						&&(cnfmode!=TEXT_CNF)
+					if( ((cnfmode==LK_ELF_CNF) || (cnfmode==NON_CNF))
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
 						sprintf(msg0, "This file isn't an ELF.");
@@ -2429,7 +2432,7 @@ void getFilePath(char *out, int cnfmode)
 					strcpy(out, path);
 					break;
 				}
-			}else if(cnfmode){
+			}else if(cnfmode){ //Some file is to be selected, not in normal browser mode
 				if(new_pad & PAD_SQUARE) {
 					if(!strcmp(ext,"*")) strcpy(ext, cnfmode_extL[cnfmode]);
 					else				 strcpy(ext, "*");
@@ -2692,14 +2695,13 @@ void getFilePath(char *out, int cnfmode)
 				y += font_height;
 			} //ends for, so all browser rows were fixed above
 			if(browser_nfiles > rows) { //if more files than available rows, use scrollbar
-				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-15, Frame_start_y,
+				drawFrame(SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*8, Frame_start_y,
 					SCREEN_WIDTH-SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 				y0=(Menu_end_y-Menu_start_y+8) * ((double)top/browser_nfiles);
 				y1=(Menu_end_y-Menu_start_y+8) * ((double)(top+rows)/browser_nfiles);
-				gsKit_prim_sprite(gsGlobal,
-				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-11, (y0+Menu_start_y-4),
-				 SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-1, (y1+Menu_start_y-4),
-				 0, setting->color[1]);
+				drawOpSprite(setting->color[1],
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*6, (y0+Menu_start_y-4),
+					SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS*2, (y1+Menu_start_y-4));
 			} //ends clause for scrollbar
 			if(nclipFiles) { //if Something in clipboard, emulate LED indicator
 				u64 LED_colour, RIM_colour = GS_SETREG_RGBA(0,0,0,0);
@@ -2709,8 +2711,8 @@ void getFilePath(char *out, int cnfmode)
 
 				if(browser_cut) LED_colour = GS_SETREG_RGBA(0xC0,0,0,0); //Red LED == CUT
 				else            LED_colour = GS_SETREG_RGBA(0,0xC0,0,0); //Green LED == COPY
-				gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, RIM_colour);
-				gsKit_prim_sprite(gsGlobal, x1+RIM_w, (y1+RIM_w), x2-RIM_w, (y2-RIM_w), 0, LED_colour);
+				drawOpSprite(RIM_colour, x1, y1, x2, y2);
+				drawOpSprite(LED_colour, x1+RIM_w, y1+RIM_w, x2-RIM_w, y2-RIM_w);
 			} //ends clause for clipboard indicator
 			if(browser_pushed)
 				sprintf(msg0, "Path: %s", path);
