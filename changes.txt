@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.47  (2006.02.22)
+-Corrected a serious bug in the IOP Reset routine (reverse logic for SifIopSync).
+
 LaunchELF v3.46  (2006.02.20)
 -Modified the ELF loader of LaunchELF to improve compatibility with PS2Link. This resulted in slightly smaller code, and as a side effect the loader will no longer display the name of the ELF to be loaded on screen. The major benefit is that LaunchELF will work well with the new version of PS2Link, also released this night. Thanks go to Drakonite for his advice on how to improve this compatibility.
 

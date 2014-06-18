@@ -809,10 +809,11 @@ void incConfig()
 //endfunc incConfig
 //--------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
+// dlanor: but changed now, as the original was badly bugged
 void Reset()
 {
 	SifIopReset("rom0:UDNL rom0:EELOADCNF",0);
-	while(SifIopSync());
+	while(!SifIopSync());
 	fioExit();
 	SifExitIopHeap();
 	SifLoadFileExit();
@@ -854,7 +855,6 @@ int main(int argc, char *argv[])
 	int	host_booted = 0;
 
 	SifInitRpc(0);
-	while(SifIopSync());
 	CheckModules();
 	loadBasicModules();
 	mcInit(MC_TYPE_MC);
