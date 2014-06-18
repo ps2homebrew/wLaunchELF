@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.42c"
-#define ULE_VERDATE "2013.03.22"
+#define ULE_VERSION "v4.42d"
+#define ULE_VERDATE "2013.03.24"
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 

@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.42d (2013.03.24)
+-Fixed incomplete ps2sdk update in the prior version.
+-Updated ps2sdk and existing source files to github rev 912.
+
 LaunchELF v4.42c (2013.03.22)
 -Removed existing kernel patcher and kernel patch for v0 japanese consoles as a patch is currently available within newer ps2sdk versions on github.
 -Changed the preliminary SMB implementation to use latest ps2sdk smbman.
