@@ -1,5 +1,23 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.06 (2006.10.13)
+ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
+-Changed partition filter and removed the codebreaker partition from the hdd partition listing.
+-Fixed a future year attribute issue with dlanor's fix.
+ps2sdk changes:
+-Changed tcpip to use the older working version of lwip(revision 1158).
+-Changed to an older working version of iomanX(revision 1332).
+outside source file additions and changes:
+ ps2ftpd\src\FileSystem.c
+ ps2sdk\iop\tcpip\tcpip\makefile
+ ps2sdk\iop\tcpip\tcpip\src\ps2ip.c
+ ps2sdk\iop\tcpip\tcpip\src\include\lwipopts.h
+ ps2sdk\iop\system\iomanx\makefile
+ ps2sdk\iop\system\iomanx\src\exports.tab
+ ps2sdk\iop\system\iomanx\src\imports.lst
+ ps2sdk\iop\system\iomanx\src\iomanX.c
+ ps2sdk\iop\system\iomanx\src\irx_imports.h
+
 LaunchELF v4.05 (2006.10.05)
 -Modified USB mass: driver to reduce delays in browsing large directories
 -Fixed USB mass: driver to permit file/folder names beginning with a period ('.')

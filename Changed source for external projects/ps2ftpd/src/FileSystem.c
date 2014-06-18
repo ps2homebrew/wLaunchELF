@@ -351,7 +351,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 					if( ent.stat.mtime[6] != 0 )
 					{
-						pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+						pInfo->m_TS.m_iYear = (ent.stat.mtime[7] << 8) + ent.stat.mtime[6];
 						pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
 						pInfo->m_TS.m_iDay = ent.stat.mtime[4];
 
@@ -373,15 +373,15 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					printf( "Name:          \t%s\n", ent.name );
 					printf( "Size:          \t%li\n", (u32)ent.stat.size );
 					printf( "Mode:          \t0x%04X\n", ent.stat.mode );
-					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
+					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], (ent.stat.ctime[7] << 8) + ent.stat.ctime[6] );
 					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
-					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );
+					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], (ent.stat.mtime[7] << 8) + ent.stat.mtime[6] );
 					printf( "%02i:%02i:%02i\n", ent.stat.mtime[3], ent.stat.mtime[2], ent.stat.mtime[1] );
 					if( !strcmp(pContext->m_kFile.device->name, "mass") )
-						printf( "Accessed:      \t%02i/%02i/%i\n", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+						printf( "Accessed:      \t%02i/%02i/%i\n", ent.stat.atime[5], ent.stat.atime[4], (ent.stat.atime[7] << 8) + ent.stat.atime[6] );
 					else if( strcmp(pContext->m_kFile.device->name, "mc") )
 					{
-						printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+						printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], (ent.stat.atime[7] << 8) + ent.stat.atime[6] );
 						printf( "%02i:%02i:%02i\n", ent.stat.atime[3], ent.stat.atime[2], ent.stat.atime[1] );
 					}
 					printf( "System time:   \t%02i/%02i/%i \t", tm.month, tm.day, tm.year );
@@ -401,20 +401,16 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 				{
 					// hdd partition filter: skip over certain ps2 hdd partitions
 					while( !strcmp(pContext->m_kFile.device->name, "hdd") && 
-						( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
-							(!strncmp(ent.name, "__", 2) &&
-								strcmp(ent.name, "__boot") &&
-								strcmp(ent.name, "__common")) ) )
+						( (ent.stat.attr != 0x0000 || ent.stat.mode != 0x0100) || 
+							(!strncmp(ent.name, "PP.", 3) && !strcmp(ent.name+(strlen(ent.name))-4, ".PCB")) ) )
 					{
 						// move to next entry and check if it's the last
 						if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) == 0 )
 						{
 							// check last entry
 							if( !strcmp(pContext->m_kFile.device->name, "hdd") && 
-								( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
-									(!strncmp(ent.name, "__", 2) &&
-										strcmp(ent.name, "__boot") &&
-										strcmp(ent.name, "__common")) ) )
+								( (ent.stat.attr != 0x0000 || ent.stat.mode != 0x0100) || 
+									(!strncmp(ent.name, "PP.", 3) && !strcmp(ent.name+(strlen(ent.name))-4, ".PCB")) ) )
 								return -1;
 
 							break;
@@ -435,7 +431,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 						pInfo->m_eType = FIO_S_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 					}
 
-					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+					pInfo->m_TS.m_iYear = (ent.stat.mtime[7] << 8) + ent.stat.mtime[6];
 					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
 					pInfo->m_TS.m_iDay = ent.stat.mtime[4];
 
@@ -452,11 +448,11 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					printf( "Size:          \t%li\n", (u32)ent.stat.size );
 					printf( "Mode:          \t0x%04X\n", ent.stat.mode );
 					printf( "Attr:          \t0x%04X\n", ent.stat.attr );
-					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], ent.stat.ctime[6]+1792 );
+					printf( "Created:       \t%02i/%02i/%i \t", ent.stat.ctime[5], ent.stat.ctime[4], (ent.stat.ctime[7] << 8) + ent.stat.ctime[6] );
 					printf( "%02i:%02i:%02i\n", ent.stat.ctime[3], ent.stat.ctime[2], ent.stat.ctime[1] );
-					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], ent.stat.mtime[6]+1792 );
+					printf( "Modified:      \t%02i/%02i/%i \t", ent.stat.mtime[5], ent.stat.mtime[4], (ent.stat.mtime[7] << 8) + ent.stat.mtime[6] );
 					printf( "%02i:%02i:%02i\n", ent.stat.mtime[3], ent.stat.mtime[2], ent.stat.mtime[1] );
-					printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], ent.stat.atime[6]+1792 );
+					printf( "Accessed:      \t%02i/%02i/%i \t", ent.stat.atime[5], ent.stat.atime[4], (ent.stat.atime[7] << 8) + ent.stat.atime[6] );
 					printf( "%02i:%02i:%02i\n", ent.stat.atime[3], ent.stat.atime[2], ent.stat.atime[1] );
 					printf( "System time:   \t%02i/%02i/%i \t", tm.month, tm.day, tm.year );
 					printf( "%02i:%02i:%02i  (%i days between)\n\n", tm.hour, tm.min, tm.sec, pInfo->m_iDaysBetween );
