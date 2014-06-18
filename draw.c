@@ -400,7 +400,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.65 ¡",
+	printXY(" ¡ LaunchELF v3.66 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	
 	printXY(msg0, x, Menu_message_y/2, setting->color[2], TRUE);
@@ -536,12 +536,11 @@ void loadSkin(int Picture)
 		if( Size ){
 			if( ( Buf = malloc( Size ) ) > 0 ){
 				fread( Buf, 1, Size, File );
-				fclose( File );
 				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
-					if( ( ImgData = malloc (  Jpg -> width * Jpg -> height * ( Jpg -> bpp / 8 ) ) ) > 0 ){
+					if( (ImgData = malloc( Jpg->width * Jpg->height * ( Jpg->bpp / 8 ) ) ) > 0){
 						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
 						 	if( Picture == BACKGROUND_PIC ){
-						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
+						 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH, SCREEN_HEIGHT/2 ) ) != 0 ){
 						 			itoLoadTexture ( ResData,
 						 			 0,
 						 			 SCREEN_WIDTH, ITO_RGB24,
@@ -550,7 +549,7 @@ void loadSkin(int Picture)
 									testskin = 1;
 								} /* end if */
 						 	} else {
-						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
+						 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, &ResData, SCREEN_WIDTH/2, SCREEN_HEIGHT/4 ) ) != 0 ){
 						 			itoLoadTexture ( ResData,
 						 			 SCREEN_WIDTH*SCREEN_HEIGHT/2*4,
 						 			 SCREEN_WIDTH/2, ITO_RGB24,
@@ -559,16 +558,17 @@ void loadSkin(int Picture)
 									testsetskin = 1;
 								} /* end if */
 						 	} /* end else */
-							jpgClose( Jpg );
-							free(ResData);
-						} /* end if */
-					} /* end if */
+							jpgClose( Jpg );//This really should be moved, but jpg funcs may object
+							free(ResData); //This really should be moved, but jpg funcs may object
+						} /* end if((jpgReadImage(...)) != -1) */
 					free(ImgData);
-				} /* end if */
-			} /* end if */
+					} /* end if( (ImgData = malloc(...)) > 0 ) */
+				} /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
 			free(Buf);
-		} /* end if */
-	} /* end if */
+			} /* end if( ( Buf = malloc( Size ) ) > 0 ) */
+		} /* end if( Size ) */
+		fclose( File );
+	} /* end if( File != NULL ) */
 	if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
 	if(!strncmp(setting->skin, "hdd0:/", 6)) fileXioUmount("pfs0:");
 }

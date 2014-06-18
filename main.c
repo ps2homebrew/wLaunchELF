@@ -33,6 +33,8 @@ extern u8 *iopmod_irx;
 extern int size_iopmod_irx;
 extern u8 *usbd_irx;
 extern int size_usbd_irx;
+extern u8 *usbkbd_irx;
+extern int size_usbkbd_irx;
 extern u8 *usb_mass_irx;
 extern int size_usb_mass_irx;
 extern u8 *cdvd_irx;
@@ -123,6 +125,8 @@ int	have_ps2atad  = 0;
 int have_ps2hdd   = 0;
 int have_ps2fs    = 0;
 int have_ps2netfs = 0;
+;
+int ps2kbd_opened = 0;
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
@@ -489,20 +493,20 @@ void	load_ps2netfs(void)
 //--------------------------------------------------------------
 void loadBasicModules(void)
 {
-	if	(!have_sio2man)
-	{	SifLoadModule("rom0:SIO2MAN", 0, NULL);
+	if	(!have_sio2man) {
+		SifLoadModule("rom0:SIO2MAN", 0, NULL);
 		have_sio2man = 1;
 	}
-	if	(!have_mcman)
-	{	SifLoadModule("rom0:MCMAN", 0, NULL);
+	if	(!have_mcman) {
+		SifLoadModule("rom0:MCMAN", 0, NULL);
 		have_mcman = 1;
 	}
-	if	(!have_mcserv)
-	{	SifLoadModule("rom0:MCSERV", 0, NULL);
+	if	(!have_mcserv) {
+		SifLoadModule("rom0:MCSERV", 0, NULL);
 		have_mcserv = 1;
 	}
-	if	(!have_padman)
-	{	SifLoadModule("rom0:PADMAN", 0, NULL);
+	if	(!have_padman) {
+		SifLoadModule("rom0:PADMAN", 0, NULL);
 		have_padman = 1;
 	}
 }
@@ -513,8 +517,8 @@ void loadCdModules(void)
 {
 	int ret;
 	
-	if	(!have_cdvd)
-	{	SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
+	if	(!have_cdvd) {
+		SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
 		cdInit(CDVD_INIT_INIT);
 		CDVD_Init();
 		have_cdvd = 1;
@@ -523,16 +527,123 @@ void loadCdModules(void)
 //------------------------------
 //endfunc loadCdModules
 //--------------------------------------------------------------
+// loadExternalFile below will use the given path, and read the
+// indicated file into a buffer it allocates for that purpose.
+// The buffer address and size are returned via pointer variables,
+// and the size is also returned as function value. Both those
+// instances of size will be forced to Zero if any error occurs,
+// and in such cases the buffer pointer returned will be NULL.
+// NB: Release of the allocated memory block, if/when it is not
+// needed anymore, is entirely the responsibility of the caller,
+// though, of course, none is allocated if the file is not found.
+//--------------------------------------------------------------
+int	loadExternalFile(char *argPath, u8 **fileBaseP, int *fileSizeP)
+{ //The first three variables are local variants similar to the arguments
+	char filePath[MAX_PATH];
+	void *fileBase;
+	int fileSize;
+	FILE*	File;
+
+	fileBase = NULL;
+	fileSize = 0;
+
+	if(!strncmp(argPath, "mass:/", 6)){
+		//Loading some module from USB mass:
+		//NB: This won't be for USB drivers, due to protection elsewhere
+		loadUsbModules();
+		strcpy(filePath, "mass:");
+		strcat(filePath, argPath+6);
+	}else if(!strncmp(argPath, "hdd0:/", 6)){
+		//Loading some module from HDD
+		char party[MAX_PATH];
+		char *p;
+
+		loadHddModules();
+		sprintf(party, "hdd0:%s", argPath+6);
+		p = strchr(party, '/');
+		sprintf(filePath, "pfs0:%s", p);
+		*p = 0;
+		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
+	}else if(!strncmp(argPath, "cdfs", 4)){
+		loadCdModules();
+		strcpy(filePath, argPath);
+		CDVD_FlushCache();
+		CDVD_DiskReady(0);
+	}else{
+		strcpy(filePath, argPath);
+	}
+	//Here 'filePath' is a valid path for fio or fileXio operations
+	//Which means we can now use generic file I/O
+	File = fopen( filePath, "r" );
+ 	if( File != NULL ) {
+		fseek(File, 0, SEEK_END);
+		fileSize = ftell(File);
+		fseek(File, 0, SEEK_SET);
+		if(fileSize) {
+			if((fileBase = malloc(fileSize)) > 0 ) {
+				fread(fileBase, 1, fileSize, File );
+			} else
+				fileSize =0;
+		}
+		fclose(File);
+	}
+	*fileBaseP = fileBase;
+	*fileSizeP = fileSize;
+	return fileSize;
+}
+//------------------------------
+//endfunc loadExternalFile
+//--------------------------------------------------------------
+// loadExternalModule below will use the given path and attempt
+// to load the indicated file into a temporary buffer, and from
+// that buffer send it on to the IOP as a driver module, after
+// which the temporary buffer will be freed. If the file is not
+// found, or some error occurs in its reading or buffer allocation
+// then the default internal module specified by the 2nd and 3rd
+// arguments will be used, except if the base is NULL or the size
+// is zero, in which case a value of 0 is returned. A value of
+// 0 is also returned if loading of default module fails. But
+// normally the value returned will be the size of the module.
+//--------------------------------------------------------------
+int loadExternalModule(char *modPath, u8 *defBase, int defSize)
+{
+	u8 *extBase;
+	int extSize;
+	int external;       //Flags loading of external file into buffer
+	int ext_OK, def_OK; //Flags success for external and default module
+	int	dummy;
+
+	ext_OK = (def_OK = 0);
+	if( (!(external = loadExternalFile(modPath, &extBase, &extSize)))
+		||((ext_OK = SifExecModuleBuffer(extBase, extSize, 0, NULL, &dummy)) < 0) ) {
+		if(defBase && defSize) {
+			def_OK = SifExecModuleBuffer(defBase, defSize, 0, NULL, &dummy);
+		}
+	}
+	if(external) free(extBase);
+	if(ext_OK) return extSize;
+	if(def_OK) return defSize;
+	return 0;
+}
+//------------------------------
+//endfunc loadExternalModule
+//--------------------------------------------------------------
+void loadUsbDModule(void)
+{
+	if( (!have_usbd)
+		&&(loadExternalModule(setting->usbd_file, &usbd_irx, size_usbd_irx))
+	) have_usbd = 1;
+}
+//------------------------------
+//endfunc loadUsbDModule
+//--------------------------------------------------------------
 void loadUsbModules(void)
 {
 	int ret;
-	
-	if	(!have_usbd)
-	{	SifExecModuleBuffer(&usbd_irx, size_usbd_irx, 0, NULL, &ret);
-		have_usbd = 1;
-	}
-	if	(!have_usb_mass)	
-	{	SifExecModuleBuffer(&usb_mass_irx, size_usb_mass_irx, 0, NULL, &ret);
+
+	loadUsbDModule();
+	if	(have_usbd && !have_usb_mass) {
+		SifExecModuleBuffer(&usb_mass_irx, size_usb_mass_irx, 0, NULL, &ret);
 		delay(3);
 		ret = usb_mass_bindRpc();
 		have_usb_mass = 1;
@@ -540,6 +651,16 @@ void loadUsbModules(void)
 }
 //------------------------------
 //endfunc loadUsbModules
+//--------------------------------------------------------------
+void loadKbdModules(void)
+{
+	loadUsbDModule();
+	if( (have_usbd && !have_ps2kbd)
+		&&(loadExternalModule(setting->usbkbd_file,&ps2kbd_irx, size_ps2kbd_irx))
+	)	have_ps2kbd = 1;
+}
+//------------------------------
+//endfunc loadKbdModules
 //--------------------------------------------------------------
 void poweroffHandler(int i)
 {
@@ -553,12 +674,12 @@ void loadHddModules(void)
 	int ret;
 	int i=0;
 	
-	if(!have_HDD_modules)
-	{	drawMsg("Loading HDD Modules...");
+	if(!have_HDD_modules) {
+		drawMsg("Loading HDD Modules...");
 		hddPreparePoweroff();
 		hddSetUserPoweroffCallback((void *)poweroffHandler,(void *)i);
-		if	(!have_poweroff)
-		{	SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
+		if	(!have_poweroff) {
+			SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
 			have_poweroff = 1;
 		}
 		load_iomanx();
@@ -594,18 +715,6 @@ void loadNetModules(void)
 }
 //------------------------------
 //endfunc loadNetModules
-//--------------------------------------------------------------
-void loadKbdModules(void)
-{
-	int ret;
-	
-	if	(!have_ps2kbd)
-	{	SifExecModuleBuffer(&ps2kbd_irx, size_ps2kbd_irx, 0, NULL, &ret);
-		have_ps2kbd = 1;
-	}
-}
-//------------------------------
-//endfunc loadKbdModules
 //--------------------------------------------------------------
 // Read SYSTEM.CNF for MISC/PS2Disc launch command
 int ReadCNF(char *LK_Path)
@@ -779,7 +888,7 @@ void RunElf(const char *path)
 	free(elisaFnt);
 	padPortClose(1,0);
 	padPortClose(0,0);
-	PS2KbdClose();
+	if(ps2kbd_opened) PS2KbdClose();
 	RunLoaderElf(fullpath, party);
 }
 //------------------------------
@@ -1013,8 +1122,11 @@ int main(int argc, char *argv[])
 	setupito(ito_vmode);
 	loadSkin(BACKGROUND_PIC);
 
-	loadKbdModules();
-	PS2KbdInit();
+	if(setting->usbkbd_used) {
+		loadKbdModules();
+		PS2KbdInit();
+		ps2kbd_opened = 1;
+	}
 
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state

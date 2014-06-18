@@ -22,6 +22,7 @@ enum
 	DEF_BRIGHT = 50,
 	DEF_POPUP_OPAQUE = FALSE,
 	DEF_INIT_DELAY = 0,
+	DEF_USBKBD_USED = 1,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
@@ -162,6 +163,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		"TV_mode = %d\r\n"
 		"Popup_Opaque = %d\r\n"
 		"Init_Delay = %d\r\n"
+		"USBKBD_USED = %d\r\n"
+		"USBKBD_FILE = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
@@ -176,7 +179,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->resetIOP,   //Init_Reset_IOP
 		setting->numCNF,     //Menu_Pages
 		setting->swapKeys,   //GUI_Swap_Keys
-		setting->usbd,       //USBD_FILE
+		setting->usbd_file,  //USBD_FILE
 		setting->HOSTwrite,  //NET_HOST_write
 		setting->skin,       //SKIN_FILE
 		setting->Menu_Title, //Menu_Title
@@ -185,6 +188,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->TV_mode,    //TV_mode
 		setting->Popup_Opaque, //Popup_Opaque
 		setting->Init_Delay,   //Init_Delay
+		setting->usbkbd_used,  //USBKBD_USED
+		setting->usbkbd_file,  //USBKBD_FILE
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -276,7 +281,8 @@ void loadConfig(char *mainMsg, char *CNF)
 	for(i=0; i<30; i++) PathPad[i][0] = 0;
 
 	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
-	setting->usbd[0] = '\0';
+	setting->usbd_file[0] = '\0';
+	setting->usbkbd_file[0] = '\0';
 	setting->skin[0] = '\0';
 	setting->Menu_Title[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
@@ -298,6 +304,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 	setting->Init_Delay = DEF_INIT_DELAY;
+	setting->usbkbd_used = DEF_USBKBD_USED;
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
@@ -371,7 +378,7 @@ failed_load:
 		else if(!strcmp(name,"Init_Reset_IOP")) setting->resetIOP = atoi(value);
 		else if(!strcmp(name,"Menu_Pages")) setting->numCNF = atoi(value);
 		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
-		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd,value);
+		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd_file,value);
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
 		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
 		else if(!strcmp(name,"Menu_Title")){
@@ -383,6 +390,8 @@ failed_load:
 		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
 		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
 		else if(!strcmp(name,"Init_Delay")) setting->Init_Delay = atoi(value);
+		else if(!strcmp(name,"USBKBD_USED")) setting->usbkbd_used = atoi(value);
+		else if(!strcmp(name,"USBKBD_FILE")) strcpy(setting->usbkbd_file,value);
 		else if(!strcmp(name,"LK_auto_Title"))     strncpy(setting->LK_Title[0], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Circle_Title"))   strncpy(setting->LK_Title[1], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Cross_Title"))    strncpy(setting->LK_Title[2], value, MAX_ELF_TITLE-1);
@@ -491,7 +500,12 @@ void Config_Skin(void)
 					return;
 				}
 			}
-		}
+			else if(new_pad & PAD_TRIANGLE) {
+				setting->skin[0] = '\0';
+				strcpy(setting->skin, skinSave);
+				return;
+			}
+		} //end if(readpad())
 		
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
@@ -570,7 +584,7 @@ void Config_Skin(void)
 				else
 					strcpy(c, "Åõ:OK");
 			}
-
+			strcat(c, " Å¢:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -736,6 +750,8 @@ void Config_Screen(void)
 					}
 				}
 			}
+			else if(new_pad & PAD_TRIANGLE)
+				return;
 		}
 
 		if(event||post_event){ //NB: We need to update two frame buffers per event
@@ -874,6 +890,7 @@ void Config_Screen(void)
 					strcpy(c, "Åõ:OK");
 			}
 		
+			strcat(c, " Å¢:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -889,7 +906,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=7;		//define cursor index and its max value
+	int s, max_s=9;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -930,8 +947,9 @@ void Config_Startup(void)
 			{
 				event |= 2;  //event |= valid pad command
 				if(s==2 && setting->numCNF>1) setting->numCNF--;
-				else if(s==4) setting->usbd[0] = '\0';
+				else if(s==4) setting->usbd_file[0] = '\0';
 				else if(s==6 && setting->Init_Delay>0) setting->Init_Delay--;
+				else if(s==8) setting->usbkbd_file[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -943,14 +961,20 @@ void Config_Startup(void)
 				else if(s==3)
 					setting->swapKeys = !setting->swapKeys;
 				else if(s==4)
-					getFilePath(setting->usbd, USBD_IRX_CNF);
+					getFilePath(setting->usbd_file, USBD_IRX_CNF);
 				else if(s==5)
 					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
 				else if(s==6)
 					setting->Init_Delay++;
+				else if(s==7)
+					setting->usbkbd_used = !setting->usbkbd_used;
+				else if(s==8)
+					getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
 				else
 					return;
 			}
+			else if(new_pad & PAD_TRIANGLE)
+				return;
 		}
 
 		if(event||post_event){ //NB: We need to update two frame buffers per event
@@ -983,10 +1007,10 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			if(strlen(setting->usbd)==0)
+			if(strlen(setting->usbd_file)==0)
 				sprintf(c, "  USBD IRX: DEFAULT");
 			else
-				sprintf(c, "  USBD IRX: %s",setting->usbd);
+				sprintf(c, "  USBD IRX: %s",setting->usbd_file);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1004,6 +1028,20 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
+			if(setting->usbkbd_used)
+				sprintf(c, "  USB Keyboard Used: ON");
+			else
+				sprintf(c, "  USB Keyboard Used: OFF");
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
+			if(strlen(setting->usbkbd_file)==0)
+				sprintf(c, "  USB Keyboard IRX: DEFAULT");
+			else
+				sprintf(c, "  USB Keyboard IRX: %s",setting->usbkbd_file);
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
@@ -1015,12 +1053,12 @@ void Config_Startup(void)
 			drawChar(127, x, y/2, setting->color[3]);
 
 			//Tooltip section
-			if (s == 1) {
+			if ((s==1)||(s==7)) { //resetIOP || usbkbd_used
 				if (swapKeys)
 					strcpy(c, "Å~:Change");
 				else
 					strcpy(c, "Åõ:Change");
-			} else if (s == 2) {
+			} else if ((s==2)||(s==6)) { //numCNF || Init_Delay
 				if (swapKeys)
 					strcpy(c, "Å~:Add Åõ:Subtract");
 				else
@@ -1030,11 +1068,11 @@ void Config_Startup(void)
 					sprintf(c, "Å~:Change");
 				else
 					sprintf(c, "Åõ:Change");
-			} else if(s == 4) {
+			} else if((s==4)||(s==8)) { //usbd_file || usbkbd_file
 				if (swapKeys)
-					sprintf(c, "Å~:Select Åõ:Clear");
+					sprintf(c, "Å~:Browse Åõ:Clear");
 				else
-					sprintf(c, "Åõ:Select Å~:Clear");
+					sprintf(c, "Åõ:Browse Å~:Clear");
 			} else if(s == 5) {
 				if (swapKeys)
 					sprintf(c, "Å~:Change");
@@ -1047,6 +1085,7 @@ void Config_Startup(void)
 					strcpy(c, "Åõ:OK");
 			}
 		
+			strcat(c, " Å¢:Return");
 			setScrTmp("", c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1292,6 +1331,8 @@ void Config_Network(void)
 				else
 					return;
 			}
+			else if(new_pad & PAD_TRIANGLE)
+				return;
 		}
 
 		if(event||post_event){ //NB: We need to update two frame buffers per event
@@ -1358,6 +1399,7 @@ void Config_Network(void)
 					strcpy(c, "Åõ:OK");
 			}
 	
+			strcat(c, " Å¢:Return");
 			setScrTmp(NetMsg, c);
 		}//ends if(event||post_event)
 		drawScr();
@@ -1475,17 +1517,19 @@ void config(char *mainMsg, char *CNF)
 					break;
 				}
 				else if(s==CANCEL)
-				{
-					free(setting);
-					setting = tmpsetting;
-					updateScreenMode();
-					strcpy(setting->skin, skinSave);
-					loadSkin(BACKGROUND_PIC);
-					mainMsg[0] = 0;
-					break;
-				}
+					goto cancel_exit;
 			}
-		}
+			else if(new_pad & PAD_TRIANGLE) {
+cancel_exit:
+				free(setting);
+				setting = tmpsetting;
+				updateScreenMode();
+				strcpy(setting->skin, skinSave);
+				loadSkin(BACKGROUND_PIC);
+				mainMsg[0] = 0;
+				break;
+			}
+		} //end if(readpad())
 		
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
@@ -1610,6 +1654,7 @@ void config(char *mainMsg, char *CNF)
 					sprintf(c, "Åõ:OK");
 			}
 
+			strcat(c, " Å¢:Return");
 			setScrTmp(localMsg, c);
 		}//ends if(event||post_event)
 		drawScr();

@@ -1,5 +1,17 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.66 (2006.05.11)
+-Added Triangle as quick exit button for all CONFIG menus, and at top level this acts the same way as the 'Cancel' command. The purpose of this is to allow you to exit and recover original settings, if you accidentally create settings that make the screen text invisible. All you need do in such a case is to press Triangle repeatedly. When you reach the main menu, all settings will have been restored.
+-Added ability to complete boot without any gamepad connected. Note that you'll need a USB keyboard to use uLaunchELF without gamepad, and that this keyboard must be enabled in the CNF (also default). If you connect a gamepad after booting, then it needs to be a Sony original, or fully compatible, otherwise it may fail to work correctly.
+-Added startup setting to enable (also default) or disable the USB keyboard driver. This setting uses the new CNF variable USBKBD_USED.
+-Added startup setting for external keyboard driver as alternative to that built in. Note however that this is not compatible to Sony drivers, but only to those from PS2SDK. This setting uses the new CNF variable USBKBD_FILE.
+-Modified browser for CNF paths, to block browsing USB to set USB drivers (can't work)
+-Modified browser for CNF paths, to block browsing MISC for anything except launch keys
+-Fixed a bug in the initialization of the keyboard, which made it work only if mass: had already been accessed in the boot process (either for booting, or for skin loading).
+-Fixed a bug causing the wrong tooltip to be shown for Init_Delay in 'STARTUP SETTINGS'
+-Fixed a bug which has prevented external USBD.IRX drivers from being used. This bug never reported any errors, but merely caused the internal driver to be used at all times. The new routine will only fall back on the internal driver if loading of the external one really fails, or if no external driver was specified.
+-Fixed a bug in skin loading that caused a file handle never to be closed if a JPG file was selected with zero size, or a size for which memory allocation fails. (Not likely to happen, but still a bad bug.)
+
 LaunchELF v3.65 (2006.05.09)
 -Implemented 'Rename' for PS1 MC files (still not possible for PS2 MC)
 -Merged support for USB keyboard in filename entry, contributed by Polo

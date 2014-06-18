@@ -35,10 +35,11 @@
 
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
-// sincro needed for modified getfilepath
-#define USBD_IRX_CNF 3
-// polo needed for modified getfilepath
-#define SKIN_CNF 4
+enum {  // Define getFilePath flags to browse for configurable file paths
+	USBD_IRX_CNF = 3,   // sincro needed for modified getFilePath
+	SKIN_CNF = 4,       // polo needed for modified getFilePath
+	USBKBD_IRX_CNF = 5, // dlanor needed for modified getFilePath
+};
 
 //#define GS_border_colour itoSetBgColor(setting->color[0]) /* Old method */
 #define GS_border_colour 0 /* New method */
@@ -62,7 +63,8 @@ typedef struct
 {
 	char LK_Path[15][MAX_PATH];
 	char LK_Title[15][MAX_ELF_TITLE];
-	char usbd[MAX_PATH];
+	char usbd_file[MAX_PATH];
+	char usbkbd_file[MAX_PATH];
 	char skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
 	int  Menu_Frame;
@@ -81,6 +83,7 @@ typedef struct
 	int TV_mode;
 	int Popup_Opaque;
 	int Init_Delay;
+	int usbkbd_used;
 } SETTING;
 
 typedef struct

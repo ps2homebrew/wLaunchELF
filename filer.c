@@ -1667,7 +1667,7 @@ int keyboard(char *out, int max)
 		}
 
 		//Kbd response section
-		if(PS2KbdRead(&KeyPress)) {
+		if(setting->usbkbd_used && PS2KbdRead(&KeyPress)) {
 
 			event |= 2;  //event |= pad command
 
@@ -1719,7 +1719,7 @@ int keyboard(char *out, int max)
 				}
 			}
 			KeyPress = '\0';
-		} //ends if(PS2KbdRead(&KeyPress))
+		} //ends if(setting->usbkbd_used && PS2KbdRead(&KeyPress))
 
 		t++;
 
@@ -1779,7 +1779,16 @@ int keyboard(char *out, int max)
 //endfunc keyboard
 //--------------------------------------------------------------
 //keyboard2 below is used for testing output from a USB keyboard
-//it can be commented out when not used by the programmer
+//it can be commented out when not used by the programmer.
+//When using it for tests, simply replace the call to 'keyboard'
+//somewhere (Rename routine is a good choice) with a call to
+//'keyboard2' instead. It uses the old routines for virtual keys
+//via gamepad, so you can still enter proper strings that way,
+//but each key pressed on the USB keyboard will be expanded to a
+//sequence corresponding to sprintf(somestring," %02X ", key).
+//Thus four characters are added to the output string for each
+//such key, and after character 32 the cursor loops back to the
+//first character again.
 //--------------------------------------------------------------
 /*
 int keyboard2(char *out, int max)
@@ -1942,52 +1951,59 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 	char *p;
 	int nfiles, i, j, ret;
 	
+	nfiles = 0;
 	if(path[0]==0){
 		//-- Start case for browser root pseudo folder with device links --
-		strcpy(files[0].name, "mc0:");
-		strcpy(files[1].name, "mc1:");
-		strcpy(files[2].name, "hdd0:");
-		strcpy(files[3].name, "cdfs:");
-		strcpy(files[4].name, "mass:");
-		files[0].stats.attrFile = MC_ATTR_SUBDIR;
-		files[1].stats.attrFile = MC_ATTR_SUBDIR;
-		files[2].stats.attrFile = MC_ATTR_SUBDIR;
-		files[3].stats.attrFile = MC_ATTR_SUBDIR;
-		files[4].stats.attrFile = MC_ATTR_SUBDIR;
-		nfiles = 5;
-		if	(!cnfmode)
-		{	strcpy(files[nfiles].name, "host:");
+		strcpy(files[nfiles].name, "mc0:");
+		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		strcpy(files[nfiles].name, "mc1:");
+		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		strcpy(files[nfiles].name, "hdd0:");
+		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		strcpy(files[nfiles].name, "cdfs:");
+		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		if((cnfmode!=USBD_IRX_CNF)&&(cnfmode!=USBKBD_IRX_CNF)) {
+			//This condition blocks selecting USB drivers from USB devices
+			strcpy(files[nfiles].name, "mass:");
 			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		}
-		for(i=0; i<nfiles; i++)
-			files[i].title[0]=0;
-		if(cnfmode){
+		if	(!cnfmode) {
+			//This condition blocks selecting any CONFIG items on PC
+			strcpy(files[nfiles].name, "host:");
+			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		}
+		if(cnfmode==1) {
+			//This condition blocks use of MISC pseudo-device for drivers and skins
+			//And allows this device only for launch keys, not for normal browsing
 			strcpy(files[nfiles].name, "MISC");
 			files[nfiles].stats.attrFile = MC_ATTR_SUBDIR;
 			nfiles++;
 		}
+		for(i=0; i<nfiles; i++)
+			files[i].title[0]=0;
 		vfreeSpace=FALSE;
 		//-- End case for browser root pseudo folder with device links --
 	}else if(!strcmp(path, "MISC/")){
 		//-- Start case for MISC command pseudo folder with function links --
-		strcpy(files[0].name, "..");
-		files[0].stats.attrFile = MC_ATTR_SUBDIR;
-		strcpy(files[1].name, "FileBrowser");
-		files[1].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[2].name, "PS2Browser");
-		files[2].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[3].name, "PS2Disc");
-		files[3].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[4].name, "PS2Net");
-		files[4].stats.attrFile = MC_ATTR_FILE;
-		nfiles = 5;
-//Next 5 line section is only for use while debugging (also needs updating)
+		nfiles = 0;
+		strcpy(files[nfiles].name, "..");
+		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+		if(cnfmode) { //Stop recursive FileBrowser entry, only allow it for launch keys
+			strcpy(files[nfiles].name, "FileBrowser");
+			files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		}
+		strcpy(files[nfiles].name, "PS2Browser");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "PS2Disc");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "PS2Net");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+//Next 5 line section is only for use while debugging
 /*
-		strcpy(files[5].name, "IOP Reset");
-		files[5].stats.attrFile = MC_ATTR_FILE;
-		strcpy(files[6].name, "Debug Screen");
-		files[6].stats.attrFile = MC_ATTR_FILE;
-		nfiles += 2;
+		strcpy(files[nfiles].name, "IOP Reset");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Debug Screen");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 */
 //End of section used only for debugging
 		for(i=0; i<nfiles; i++)
@@ -2022,7 +2038,6 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 			sort(&files[1], 0, nfiles-2);
 		//-- End case for normal folder with file/folder links --
 	}
-	
 	return nfiles;
 }
 //------------------------------
@@ -2037,6 +2052,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 // example: getFilePath(setting->usbd, USBD_IRX_CNF);
 // polo: ADD SKIN_CNF mode for found jpg file for SKIN
 // example: getFilePath(setting->skin, SKIN_CNF);
+// dlanor: ADD USBKBD_IRX_CNF mode for found IRX file for USBKBD.IRX
+// example: getFilePath(setting->usbd, USBKBD_IRX_CNF);
 static int browser_cd, browser_up, browser_pushed;
 static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
@@ -2063,11 +2080,16 @@ void getFilePath(char *out, int cnfmode)
 	browser_nfiles=0;
 
 	if(cnfmode==TRUE) strcpy(ext, "elf");
-	else if(cnfmode==USBD_IRX_CNF) strcpy(ext, "irx");
+	else if((cnfmode==USBD_IRX_CNF)
+		||    (cnfmode==USBKBD_IRX_CNF))strcpy(ext, "irx");
 	else if(cnfmode==SKIN_CNF) strcpy(ext, "jpg");
 	else		strcpy(ext, "*");
 
-	if(cnfmode!=USBD_IRX_CNF) strcpy(path, LastDir);
+	if( (cnfmode!=USBD_IRX_CNF)
+		&&(cnfmode!=USBKBD_IRX_CNF))
+		strcpy(path, LastDir);			//If not choosing a driver, start in recent folder
+	else
+		path[0] = '\0';							//In choosing a driver, start in main root
 	mountedParty[0][0]=0;
 	mountedParty[1][0]=0;
 	clipPath[0] = 0;
@@ -2115,7 +2137,10 @@ void getFilePath(char *out, int cnfmode)
 					//pushed OK for a file
 					sprintf(out, "%s%s", path, files[browser_sel].name);
 					// Must to include a function for check IRX Header 
-					if((cnfmode!=USBD_IRX_CNF)&&(cnfmode!=SKIN_CNF)&&(checkELFheader(out)<0)){
+					if( (cnfmode!=USBD_IRX_CNF)
+						&&(cnfmode!=USBKBD_IRX_CNF)
+						&&(cnfmode!=SKIN_CNF)
+						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
 						sprintf(msg0, "This file isn't ELF.");
 						out[0] = 0;
@@ -2137,7 +2162,7 @@ void getFilePath(char *out, int cnfmode)
 					if(cnfmode==TRUE){
 						if(!strcmp(ext,"*")) strcpy(ext, "elf");
 						else				 strcpy(ext, "*");
-					}else if(cnfmode==USBD_IRX_CNF){
+					}else if((cnfmode==USBD_IRX_CNF)||(cnfmode==USBKBD_IRX_CNF)){
 						if(!strcmp(ext,"*")) strcpy(ext, "irx");
 						else				 strcpy(ext, "*");
 					}else if(cnfmode==SKIN_CNF){
@@ -2398,7 +2423,7 @@ void getFilePath(char *out, int cnfmode)
 					else
 						sprintf(msg1, "›:OK ~:Cancel ¢:Up  :ELF->* R2:PathPad");
 				}
-			}else if(cnfmode==USBD_IRX_CNF){
+			}else if((cnfmode==USBD_IRX_CNF)||(cnfmode==USBKBD_IRX_CNF)){
 				if(!strcmp(ext, "*")) {
 					if (swapKeys)
 						sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->IRX R2:PathPad");

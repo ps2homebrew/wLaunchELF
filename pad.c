@@ -70,7 +70,7 @@ int readpad(void)
 	if((ret=readpad_no_KB()) && new_pad)
 		return ret;
 
-	if(!PS2KbdRead(&KeyPress))
+	if((!setting->usbkbd_used)||(!PS2KbdRead(&KeyPress)))
 		return 0;
 	if(KeyPress != PS2KBD_ESCAPE_KEY)
 		command = KeyPress;
@@ -212,14 +212,15 @@ void waitPadReady(int port, int slot)
 	}
 }
 //---------------------------------------------------------------------------
-// Wait for any PAD, but only accept connected states
+// Wait for any PAD, but also accept disconnected states
 void waitAnyPadReady(void)
 {
 	int state_1, state_2;
 
 	state_1 = padGetState(0, 0);
 	state_2 = padGetState(1, 0);
-	while((state_1 != PAD_STATE_STABLE) && (state_2 != PAD_STATE_STABLE)
+	while((state_1 != PAD_STATE_DISCONN) && (state_2 != PAD_STATE_DISCONN)
+		&& (state_1 != PAD_STATE_STABLE) && (state_2 != PAD_STATE_STABLE)
 		&& (state_1 != PAD_STATE_FINDCTP1) && (state_2 != PAD_STATE_FINDCTP1)){
 		state_1 = padGetState(0, 0);
 		state_2 = padGetState(1, 0);

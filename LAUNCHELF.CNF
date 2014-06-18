@@ -156,7 +156,23 @@ Popup_Opaque = 0
 # commands intended for uLaunchELF. Its value specifies how many seconds
 # of extra delay to use, with the default value being zero.
 # ----------------------------------------------------------------------
-Init_delay = 0
+Init_Delay = 0
+# ----------------------------------------------------------------------
+# USBKBD_USED allows you to disable initialization of the USB keyboard
+# driver. This is mainly useful when you need to test some specific
+# software without any USB drivers active. For example, when testing
+# software that should provide its own USB drivers. Such a test would
+# be ruined if USB drivers were already active when starting the test.
+# ----------------------------------------------------------------------
+USBKBD_USED = 1
+# ----------------------------------------------------------------------
+# USBKBD_FILE is a string used to specify an alternate IRX file for the
+# USB keyboard driver, which uLaunchELF will then use instead of the
+# embedded one. You can set it in the 'STARTUP SETTINGS' screen.
+# Note that this is only compatible with PS2SDK drivers, not Sony stuff.
+# Just leave this string undefined (empty) to use the built-in driver.
+# ----------------------------------------------------------------------
+USBKBD_FILE =
 # ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them
