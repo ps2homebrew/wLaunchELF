@@ -69,7 +69,6 @@ enum
 void Reset();
 
 int TV_mode;
-int trayopen=FALSE;
 int selected=0;
 int timeout=0;
 int init_delay=0;
@@ -165,8 +164,34 @@ char SystemCnf_VMODE[10]; //Arbitrary, same deal. As yet unused
 char default_ESR_path[] = "mc:/BOOT/ESR.ELF";
 
 char ROMVER_data[20]; 	//16 byte file read from rom0:ROMVER at init
-CdvdDiscType_t cdmode;
+CdvdDiscType_t cdmode;      //Last detected disc type
+CdvdDiscType_t old_cdmode;  //used for disc change detection
+CdvdDiscType_t uLE_cdmode;  //used for smart disc detection
 
+typedef struct{
+	int type;
+	char name[16];
+}	DiscType;
+
+DiscType DiscTypes[] = {
+	{CDVD_TYPE_NODISK,           "!"},
+	{CDVD_TYPE_DETECT,           "??"},
+	{CDVD_TYPE_DETECT_CD,        "CD ?"},
+	{CDVD_TYPE_DETECT_DVDSINGLE, "DVD ?"},
+	{CDVD_TYPE_DETECT_DVDDUAL,   "DVD 2?"},
+	{CDVD_TYPE_UNKNOWN,          "???"},
+	{CDVD_TYPE_PS1CD,            "PS1 CD"},
+	{CDVD_TYPE_PS1CDDA,          "PS1 CDDA"},
+	{CDVD_TYPE_PS2CD,            "PS2 CD"},
+	{CDVD_TYPE_PS2CDDA,          "PS2 CDDA"},
+	{CDVD_TYPE_PS2DVD,           "PS2 DVD"},
+	{CDVD_TYPE_ESRDVD_0,         "ESR DVD (off)"},
+	{CDVD_TYPE_ESRDVD_1,         "ESR DVD (on)"},
+	{CDVD_TYPE_CDDA,             "Audio CD"},
+	{CDVD_TYPE_DVDVIDEO,         "Video DVD"},
+	{CDVD_TYPE_ILLEGAL,          "????"},
+	{0x00,                       ""}//end of list
+}; //ends DiscTypes array
 //---------------------------------------------------------------------------
 //executable code
 //---------------------------------------------------------------------------
@@ -838,6 +863,8 @@ int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
 	case CDVD_TYPE_PS2CD:
 	case CDVD_TYPE_PS2CDDA:
 	case CDVD_TYPE_PS2DVD:
+//	case CDVD_TYPE_ESRDVD_0:
+//	case CDVD_TYPE_ESRDVD_1:
 	case CDVD_TYPE_CDDA:
 	case CDVD_TYPE_DVDVIDEO:
 		return 1;
@@ -857,9 +884,25 @@ int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
 //---------------------------------------------------------------------------
 int uLE_cdStop(void)
 {
-	if (uLE_cdDiscValid())
+	int	test;
+
+	old_cdmode = cdmode;
+	test = uLE_cdDiscValid();
+	uLE_cdmode = cdmode;
+	if (test){ //if stable detection of a real disc is achieved
+		if((cdmode !=old_cdmode) //if this was a new detection
+		&& ((cdmode == CDVD_TYPE_DVDVIDEO) || (cdmode == CDVD_TYPE_PS2DVD))){
+			load_chkesr_module(); //prepare to check for ESR disc
+			test = Check_ESR_Disc();
+			printf("Check_ESR_Disc => %d\n", test);
+			if(test > 0){	//ESR Disc ?
+				uLE_cdmode = (cdmode == CDVD_TYPE_PS2DVD)
+					? CDVD_TYPE_ESRDVD_1 : CDVD_TYPE_ESRDVD_0 ;
+			}
+		}
 		CDVD_Stop();
-	return cdmode;
+	}
+	return uLE_cdmode;
 }
 //------------------------------
 //endfunc uLE_cdStop
@@ -1544,7 +1587,6 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		party[0]=0;
-		trayopen=FALSE;
 		readSystemCnf();
 		if(BootDiscType==2){ //Boot a PS2 disc
 			strcpy(fullpath, SystemCnf_BOOT2);
@@ -1559,9 +1601,10 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 		}
 		if(uLE_cdDiscValid()){
 			if(cdmode == CDVD_TYPE_DVDVIDEO){
-
 				load_chkesr_module(); //prepare to check for ESR disc
-				if((x=Check_ESR_Disc())){	//ESR Disc, so launch ESR
+				x = Check_ESR_Disc();
+				printf("Check_ESR_Disc => %d\n", x);
+				if(x > 0){	//ESR Disc, so launch ESR
 					if(setting->LK_Flag[15] && setting->LK_Path[15][0])
 						strcpy(path, setting->LK_Path[15]);
 					else
@@ -1826,7 +1869,6 @@ int main(int argc, char *argv[])
 	int event, post_event=0;
 	char RunPath[MAX_PATH];
 	int RunELF_index, nElfs=0;
-	CdvdDiscType_t old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
 	int host_or_hdd_booted = 0;
 	int mass_booted = 0; //flags boot made with compatible mass drivers
@@ -2015,18 +2057,23 @@ int main(int argc, char *argv[])
 	while(1){
 		//Background event section
 		if(setting->discControl){
-			old_cdmode = cdmode;
-			cdmode = uLE_cdStop();
-			if(cdmode!=old_cdmode)
+			uLE_cdStop(); //Test disc state and if needed stop disc (updates cdmode)
+			if(cdmode != old_cdmode){ //if disc detection changed state
 				event |= 4;  //event |= disc change detection
-			if(cdmode==CDVD_TYPE_NODISK){
-				trayopen = TRUE;
-				strcpy(mainMsg, LNG(No_Disc));
-			}else if(cdmode>=0x01 && cdmode<=0x04){
-				sprintf(mainMsg, "%s == 0x%02X", LNG(Detecting_Disc), cdmode);
-			}else if(trayopen==TRUE){
-				trayopen=FALSE;
-				sprintf(mainMsg, "%s == 0x%02X", LNG(Stop_Disc), cdmode);
+				if(cdmode==CDVD_TYPE_NODISK){
+					sprintf(mainMsg, "%s ", LNG(No_Disc));
+				}else if(cdmode>=0x01 && cdmode<=0x04){
+					sprintf(mainMsg, "%s == ", LNG(Detecting_Disc));
+				}else{
+					sprintf(mainMsg, "%s == ", LNG(Stop_Disc));
+				}
+				printf("uLE_cdmode == %d\n", uLE_cdmode);
+				for(i=0; DiscTypes[i].name[0]; i++){
+					if(DiscTypes[i].type == uLE_cdmode){
+						strcat(mainMsg, DiscTypes[i].name);
+						break;
+					}
+				}
 			}
 		}
 

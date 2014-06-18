@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.36 (2009.01.19)
+-Fixed 'disc control' bugs in FileBrowser and JpgViewer browser
+-Improved recognition of disc types, displayed in main menu. ESR discs are shown as "ESR DVD (off)" if ESR driver needs to be activated to access disc contents, but as "ESR DVD (on)" if no driver activation is needed (if already running, or when used with a modchip)
+-Upgraded USBHDFSD of uLE to SVN rev 1516 by radad, fixing a bug in FAT16 usage
+
 LaunchELF v4.35 (2009.01.17)
 -Merged in the latest USBHDFSD version by radad (SVN rev 1513) to further improve compatibility
 

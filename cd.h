@@ -18,6 +18,8 @@ typedef enum {
 	CDVD_TYPE_PS2CD,			// PS2 CD with no CDDA tracks
 	CDVD_TYPE_PS2CDDA,			// PS2 CD with CDDA tracks
 	CDVD_TYPE_PS2DVD,			// PS2 DVD
+	CDVD_TYPE_ESRDVD_0,		// ESR-patched DVD, as seen without ESR driver active
+	CDVD_TYPE_ESRDVD_1,		// ESR-patched DVD, as seen with ESR driver active
 
 	CDVD_TYPE_CDDA =	0xFD,		// CDDA
 	CDVD_TYPE_DVDVIDEO,			// DVD Video

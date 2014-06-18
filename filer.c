@@ -3705,7 +3705,7 @@ int getFilePath(char *out, int cnfmode)
 			browser_cd=FALSE;
 			browser_up=FALSE;
 		} //ends if(browser_cd)
-		if(strncmp(path,"cdfs",4) && setting->discControl)
+		if(setting->discControl && !strncmp(path,"cdfs",4))
 			CDVD_Stop();
 		if(top > browser_nfiles-rows)	top=browser_nfiles-rows;
 		if(top < 0)				top=0;
