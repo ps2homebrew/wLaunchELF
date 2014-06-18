@@ -463,12 +463,7 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 	snprintf(host_path, MAX_PATH-1, "%s", path);
 	if	(!strncmp(path, "host:/", 6))
 		strcpy(host_path+5, path+6);
-	info--;
-	if	((host_elflist) && !strcmp(host_path, "host:"))
-	{	strcpy(info[0].name, "..");
-		clear_mcTable(&info[0].stats);
-		info[0].stats.attrFile = MC_ATTR_norm_folder;
-		hostcount++;
+	if	((host_elflist) && !strcmp(host_path, "host:")){
 		if	((hfd = fioOpen("host:elflist.txt", O_RDONLY)) < 0)
 			return 0;
 		if	((size = fioLseek(hfd, 0, SEEK_END)) <= 0)
@@ -511,7 +506,7 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 		return 0;
 	strcpy(host_path, Win_path);
 	while ((rv = fioDread(hfd, &hostcontent)))
-	{	if (strcmp(hostcontent.name, "."))
+	{	if (strcmp(hostcontent.name, ".")&&strcmp(hostcontent.name, ".."))
 		{
 			snprintf(Win_path, MAX_PATH-1, "%s%s", host_path, hostcontent.name);
 			strcpy(info[hostcount].name, hostcontent.name);
@@ -523,13 +518,13 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 			{	fioDclose(tfd);
 				info[hostcount++].stats.attrFile = MC_ATTR_norm_folder;
 			}
-			if (hostcount > max)
+			if (hostcount >= max)
 				break;
 		}
 	}
 	fioDclose(hfd);
 	strcpy (info[hostcount].name, "\0");
-	return hostcount-1;
+	return hostcount;
 }
 //--------------------------------------------------------------
 int getDir(const char *path, FILEINFO *info)

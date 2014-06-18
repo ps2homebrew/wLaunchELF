@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.43  (2006.02.16)
+-This release is purely a bugfix for an old bug in the HOST interface. That bug was mostly harmless in older versions, but became capable of freezing the console in v3.41u and v3.42.
+
 LaunchELF v3.42  (2006.02.15) NB: switched date format to YYYY.MM.DD
 -Implemented mcPaste command in submenu. Like the old Paste command this copies all selected files and folders (recursively), but it is specially intended for MC backups. It can only be used either to copy from MC to non-MC (making backups from MC) or to copy from non-MC to MC (restoring backups to MC). These backups on non-MC media will have an extra file in each folder, holding the original MC attributes and timestamps of all files in that folder. This data will be used when restoring the backups to MC, so that games will accept the restored files as being the originals. The 'extra' files are filtered out from such copying so they don't appear among the restored files on MC. Those 'extra' files all use the same filename, which is "PS2_MC_Backup_Attributes.BUP.bin" (to avoid any confusion with 'real' files).
 
