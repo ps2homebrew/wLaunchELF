@@ -570,7 +570,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					if( !ppkDevices[unit] )
 						continue;
 
-					if( !(ppkDevices[unit]->type & IOP_DT_FS) )
+					if( !(ppkDevices[unit]->type & (IOP_DT_FS | IOP_DT_BLOCK)) )
 						continue;
 
 					strcpy(pInfo->m_Name,ppkDevices[unit]->name);
@@ -1023,7 +1023,7 @@ iop_device_t* FileSystem_ScanDevice( const char* pDevice, int iNumDevices, const
 	{
 		if( (NULL != ppkDevices[i]) ) // note, last compare is to avoid a bug when mounting partitions right now that I have to track down
 		{
-			if( (ppkDevices[i]->type & IOP_DT_FS))
+			if( (ppkDevices[i]->type & (IOP_DT_FS | IOP_DT_BLOCK)))
 			{
 				if( !strncmp(pPath,ppkDevices[i]->name,strlen(ppkDevices[i]->name)) )
 					return ppkDevices[i];

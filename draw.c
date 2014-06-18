@@ -921,11 +921,8 @@ void clrScr(u64 color)
 //--------------------------------------------------------------
 void drawScr(void)
 {
-	int sanity_check = 0;
-
 	if(updateScr_2){            //Did we render anything last time
-		while((Timer() < updateScr_t+5) && (sanity_check++ < 10000));
-															//if so, delay to complete rendering
+		while(Timer() < updateScr_t+5);  //if so, delay to complete rendering
 	}
 	gsKit_sync_flip(gsGlobal);  //Await sync and flip buffers
 	gsKit_queue_exec(gsGlobal); //Start rendering recent transfers for NEXT time

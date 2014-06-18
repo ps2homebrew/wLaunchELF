@@ -54,6 +54,7 @@ FileSystem.c
 -Forced memory card items to two, mc/0 and mc/1, in order to prevent the possible trigger of a buffer overflow noted by jimmikaelkaele for use with the new mc drivers.
 -Changed PFS items to only look for 4 mount points as before. This change was only made do to the earlier change of DEVICE_UNITS being set to ten for USB devices.
 -Fixed an issues that prevented PS1 memory cards from appearing in the listing with the new mc drivers. Now should work correctly for either driver.
+-Added a fix to better resolve the hard drive compatibility issue with later ps2sdk updates.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

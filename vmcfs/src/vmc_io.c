@@ -304,8 +304,7 @@ int Vmc_Open ( iop_file_t *f, const char *path1, int flags, int mode )
 		}
 
 	}
-
-	if ( ( ! ( dirent.mode & DF_EXISTS ) ) || ( flags & O_TRUNC ) ) // File found but is hidden, or trunc the file
+	else if ( ( ! ( dirent.mode & DF_EXISTS ) ) || ( flags & O_TRUNC ) ) // File found but is hidden, or trunc the file
 	{
 
 		if ( flags & O_TRUNC )
@@ -725,7 +724,11 @@ int Vmc_Write (  iop_file_t* f, void* buffer, int size )
 			//  mark the free cluster as eof
 			setFatEntry ( fprivdata->gendata.fd, free_cluster, EOF_CLUSTER, fprivdata->gendata.indir_fat_clusters, FAT_SET );
 
-			fprivdata->file_cluster = free_cluster;
+			// check if last write operation finished at cluster end
+			if(fprivdata->cluster_offset == 0)
+				fprivdata->file_cluster = free_cluster;
+			else
+				fprivdata->file_cluster = last_cluster;
 
 		}
 
@@ -2007,7 +2010,7 @@ int Vmc_Umount ( iop_file_t* f, const char* fsname )
 //----------------------------------------------------------------------------
 // Not Implemented for the moment.
 //----------------------------------------------------------------------------
-int Vmc_Lseek64 ( iop_file_t* f, long long offset, int whence )
+long long Vmc_Lseek64 ( iop_file_t* f, long long offset, int whence )
 {
 	
 	return VMCFS_ERR_IMPLEMENTED;

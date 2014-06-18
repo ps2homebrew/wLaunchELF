@@ -1,5 +1,16 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.41 (2010.05.30)
+-Updated ps2sdk and existing source files to SVN rev 1682.
+-Fixed some compiler warnings with the vmcfs driver do to changes in the latest ps2sdk revision.
+-Removed the modified screen update delay methods, restoring previous functionality.
+
+LaunchELF v4.40i (2010.04.09)
+-Updated ps2sdk and existing source files to SVN rev 1678 and removed a previous source file as it's no longer needed.
+-Updated the vmcfs driver with Polo35's changes to vmc_io.c in order to possibly fix virtual memorycard corruptions.
+ps2ftpd new additions and changes:
+-Added a fix to better resolve the hard drive compatibility issue with later ps2sdk updates.
+
 LaunchELF v4.40h (2010.02.12)
 -Modified screen update delay methods, so as to avoid freezing in PCSX2 use due to their incomplete implementation of EE timers.
 -Reverted to use MCMAN and MCSERV modules from bios, as required not only for compatibility to PCSX2, but also for compatibility to v0 PS2 consoles. 
