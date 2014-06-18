@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.14 (2008.06.13)
+-EP added 2 changed source files for PS2SDK, to eliminate a conflict between those libs and the method used by uLE for loading JPG files from HDD.
+
 LaunchELF v4.13d beta (2008.06.12)
 -removed loadConfig adaption of CNFs from obsolete uLE versions
 -Fixed some bugs in "Save As" command of TextEditor
