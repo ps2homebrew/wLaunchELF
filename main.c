@@ -1583,6 +1583,13 @@ int uLE_related(char *pathout, char *pathin)
 		sprintf(pathout, "%s%s", LaunchElfDir, pathin+5);
 		if( exists(pathout) )
 			return 1;
+		ret = fileXioMount("pfs0:", "hdd0:__sysconf", FIO_MT_RDWR);
+		if (ret > 0)
+		{
+			sprintf(pathout, "%s%s", "pfs0:/FMCB/", pathin+5);
+			if( exists(pathout) )
+				return 1;		
+		}
 		sprintf(pathout, "%s%s", "mc0:/SYS-CONF/", pathin+5);
 		if( !strncmp(LaunchElfDir, "mc1", 3) )
 			pathout[2] = '1';
@@ -1702,18 +1709,35 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 			strcpy(path, setting->LK_Path[16]);
 		else
 			strcpy(path, default_OSDSYS_path);
-
+		
+		loadHddModules();
+		fileXioUmount("pfs0");		
+		fileXioMount("pfs0:", "hdd0:__system", FIO_MT_RDONLY);
 
 		fd =genOpen(path, O_RDONLY);
 		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		if(strncmp(path, "mc:", 3) != 0) goto ELFnotFound;
-		strcpy(fullpath, path);
-		path[2] = '0';
-		strcpy(path+3, fullpath+2);
+		if(strncmp(path, "mc:", 3) == 0){
+			strcpy(fullpath, path);
+			path[2] = '0';
+			strcpy(path+3, fullpath+2);
+			fd =genOpen(path, O_RDONLY);
+			if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+			path[2] = '1';
+			fd =genOpen(path, O_RDONLY);
+			if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+			}
+		strcpy(path,"pfs0:/osd/osdmain.elf");
 		fd =genOpen(path, O_RDONLY);
 		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		path[2] = '1';
+		strcpy(path,"pfs0:/osd100/hosdsys.elf");
 		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		strcpy(path,"pfs0:/p2lboot/osdboot.elf");
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		strcpy(path,"pfs0:/osd/hosdsys.elf");
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
 		if(fd < 0) goto ELFnotFound;
 close_fd_and_launch_OSDSYS:
 		genClose(fd);

@@ -104,3 +104,26 @@ int Check_ESR_Disc(void)
 
          return result;
  } */
+ //CheckEsr with old libcdvd
+ /* int Check_ESR_Disc(void){
+		CdRMode ReadMode;
+		int result;
+		unsigned char SectorBuffer[2112];
+		
+		ReadMode.trycount=5;
+		ReadMode.spindlctrl=CdSpinStm;
+		ReadMode.datapattern=CdSecS2048;
+		ReadMode.pad=0;
+
+		result=CdRead(14, 1, SectorBuffer, &ReadMode); // read LBA 14
+		cdSync(0);
+		if(result!=0){
+			if(cdGetError()==0)
+				result=(!strncmp(SectorBuffer + 37, "+NSR", 4))?1:0;
+			else
+				result=-1;
+			}
+		else result=-1;
+
+		return result;
+ } */
