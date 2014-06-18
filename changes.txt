@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.39y beta (2009.04.06)
+-Merged in new MCMAN and MCSERV modules by jimmikaelkael
+-Modified FileBrowser to allow renaming of all MC file/folder objects
+-Fixed "DEVICE_UNITS" again, to really allow 10 USB drives/partitions in FTP
+
 LaunchELF v4.39 (2009.02.17)
 -Updated gsKit and existing source files to SVN rev 1470.
 -Upgraded USBHDFSD to SVN rev 1534 by radad.

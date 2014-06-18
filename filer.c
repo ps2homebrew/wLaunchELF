@@ -14,6 +14,8 @@ typedef struct
 	unsigned short year;    // date/time (year)
 } PS2TIME __attribute__((aligned (2)));
 
+#define MC_SFI 0xFEED //flag value used for mcSetFileInfo at MC file restoration
+
 #define MC_ATTR_norm_folder 0x8427  //Normal folder on PS2 MC
 #define MC_ATTR_prot_folder 0x842F  //Protected folder on PS2 MC
 #define MC_ATTR_PS1_folder  0x9027  //PS1 save folder on PS2 MC
@@ -1389,7 +1391,7 @@ int menu(const char *path, FILEINFO *file)
 {
 	u64 color;
 	char enable[NUM_MENU], tmp[80];
-	int x, y, i, sel, test;
+	int x, y, i, sel;
 	int event, post_event = 0;
 	int menu_disabled = 0;
 	int write_disabled = 0;
@@ -1446,12 +1448,16 @@ int menu(const char *path, FILEINFO *file)
 		enable[RENAME] = FALSE;
 	}
 
+/* commented due to MC modules by jimmikaelkael (allow rename)
 	if(!strncmp(path, "mc", 2)){
+		int test;
+
 		mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
 		mcSync(0, NULL, &test);
 		if (mctype_PSx == 2) //PS2 MC ?
 			enable[RENAME] = FALSE;
 	}
+*/
 
 	if(nmarks==0){
 		if(!strcmp(file->name, "..")){
@@ -1461,8 +1467,9 @@ int menu(const char *path, FILEINFO *file)
 			enable[RENAME] = FALSE;
 			enable[GETSIZE] = FALSE;
 		}
-	}else
+	}else{
 		enable[RENAME] = FALSE;
+	}
 
 	if((file->stats.attrFile & MC_ATTR_SUBDIR)
 		|| !strncmp(path, "vmc", 3)
@@ -1836,7 +1843,11 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 			mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
 			mcSync(0, NULL, &test);
 			if (mctype_PSx == 2) //PS2 MC ?
-				ret = -1;
+				strncpy((void *)file->stats.name, name, 32);
+				mcSetFileInfo(path[2]-'0', 0, oldPath+4, &file->stats, 0x0010); //Fix file stats
+				mcSync(0, NULL, &test);
+				if(ret == -4)
+					ret = -17;
 			else{               //PS1 MC !
 				strncpy((void *)file->stats.name, name, 32);
 				mcSetFileInfo(path[2]-'0', 0, oldPath+4, &file->stats, 0x0010); //Fix file stats
@@ -2197,7 +2208,7 @@ PSU_error:
 				strncat(tmp, files[0].stats.name, 32);
 				mcGetInfo(tmp[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 				mcSync(0, NULL, &dummy);
-				mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &files[0].stats, 0xFFFF); //Fix file stats
+				mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &files[0].stats, MC_SFI); //Fix file stats
 				mcSync(0, NULL, &dummy);
 			} //ends main for loop of valid PM_PSU_RESTORE mode
 			genClose(PM_file[recurses+1]); //Close the PSU file
@@ -2244,7 +2255,7 @@ PSU_error:
 					strncat(tmp, stats.name, 32);
 					mcGetInfo(tmp[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 					mcSync(0, NULL, &dummy);
-					mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &stats, 0xFFFF); //Fix file stats
+					mcSetFileInfo(tmp[2]-'0', 0, &tmp[4], &stats, MC_SFI); //Fix file stats
 					mcSync(0, NULL, &dummy);
 				} else {
 					genClose(in_fd);
@@ -2257,7 +2268,7 @@ PSU_error:
 			if(!strncmp(out, "mc", 2)){  //Handle folder copied to MC
 				mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 				mcSync(0, NULL, &dummy);
-				ret = 0xFFFF; //default request for changing entire mcTable
+				ret = MC_SFI; //default request for changing entire mcTable
 				if(strncmp(in, "mc", 2)){  //Handle file copied from non-MC to MC
 					file.stats.attrFile = MC_ATTR_norm_folder; //normalize MC folder attribute
 					if(!strncmp(in, "host", 4)){  //Handle folder copied from host: to MC
@@ -2296,7 +2307,7 @@ PSU_error:
 			//It has to be done last, as timestamps would change when fixing files
 			mcGetInfo(out[2]-'0', 0, &dummy, &dummy, &dummy);  //Wakeup call
 			mcSync(0, NULL, &dummy);
-			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, 0xFFFF); //Fix folder stats
+			mcSetFileInfo(out[2]-'0', 0, &out[4], &file.stats, MC_SFI); //Fix folder stats
 			mcSync(0, NULL, &dummy);
 		}
 //the return code below is used if there were no errors copying a folder
@@ -2354,7 +2365,7 @@ non_PSU_RESTORE_init:
 		if	(!strncmp(in, "host:/", 6))
 			makeHostPath(in+5, in+6);
 		in_fd = genOpen(in, O_RDONLY);
-		if(in_fd<0) goto error;
+		if(in_fd<0) goto copy_file_exit;
 		size = genLseek(in_fd,0,SEEK_END);
 		genLseek(in_fd,0,SEEK_SET);
 	}
@@ -2382,7 +2393,7 @@ non_PSU_RESTORE_init:
 		genLimObjName(out, 0);                              //Limit dest file name
 		genRemove(out);                                     //Remove old file if present
 		out_fd=genOpen(out, O_WRONLY | O_TRUNC | O_CREAT);  //Create new file
-		if(out_fd<0) goto error;
+		if(out_fd<0) goto copy_file_exit;
 	}
 
 //Here the output file has been opened, indicated by 'out_fd'
@@ -2494,7 +2505,7 @@ non_PSU_RESTORE_init:
 				if(PM_flag[recurses]!=PM_PSU_BACKUP)
 					genRemove(out);
 				ret = -1;   // flag generic error
-				goto error;	// go deal with it
+				goto copy_file_exit;	// go deal with it
 			}
 		}
 		//buffSize = genRead(in_fd, buff, buffSize);
@@ -2508,7 +2519,7 @@ non_PSU_RESTORE_init:
 			if(PM_flag[recurses]!=PM_PSU_BACKUP)
 				genRemove(out);
 			ret = -1;   // flag generic error
-			goto error;
+			goto copy_file_exit;
 		}
 		size -= buffSize;
 		written_size += buffSize;
@@ -2517,14 +2528,34 @@ non_PSU_RESTORE_init:
 //Here the file has been copied. without error, as indicated by 'ret' above
 //but we also need to copy attributes and timestamps (as yet only for MC)
 //For PSU backup output padding may be needed, but not output file closure
+	if(PM_flag[recurses]==PM_PSU_BACKUP){
+		if(psu_pad_size){
+			pad_psu_header(&PSU_head);
+			if(psu_pad_size >= sizeof(PSU_head)){
+				genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
+				psu_pad_size -= sizeof(PSU_head);
+			}
+			if(psu_pad_size)
+				genWrite(out_fd, (void *) &PSU_head, psu_pad_size);
+		}
+		out_fd = -1;   //prevent output file closure below
+		goto copy_file_exit;
+	}
+
 	if(PM_flag[recurses]==PM_MC_BACKUP){         //MC Backup mode file paste closure
 		size = genWrite(PM_file[recurses], (void *) &file.stats, 64);
 		if(size != 64) return -1; //Abort if attribute file crashed
 	}
+
+	if(out_fd>=0){
+		genClose(out_fd);
+		out_fd = -1; //prevent dual closure attempt
+	}
+
 	if(!strncmp(out, "mc", 2)){  //Handle file copied to MC
 		mcGetInfo(out[2]-'0', 0, &mctype_PSx, &dummy, &dummy); //Wakeup call & MC type check
 		mcSync(0, NULL, &dummy);
-		ret = 0xFFFF; //default request for changing entire mcTable
+		ret = MC_SFI; //default request for changing entire mcTable
 		if(strncmp(in, "mc", 2)){  //Handle file copied from non-MC to MC
 			file.stats.attrFile = MC_ATTR_norm_file; //normalize MC file attribute
 			if(!strncmp(in, "host", 4)){  //Handle folder copied from host: to MC
@@ -2558,22 +2589,10 @@ non_PSU_RESTORE_init:
 			dummy = fioChstat(out, &fio_stat, ret); //(no such devices yet)
 		}
 	}
-	if(PM_flag[recurses]==PM_PSU_BACKUP){
-		if(psu_pad_size){
-			pad_psu_header(&PSU_head);
-			if(psu_pad_size >= sizeof(PSU_head)){
-				genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
-				psu_pad_size -= sizeof(PSU_head);
-			}
-			if(psu_pad_size)
-				genWrite(out_fd, (void *) &PSU_head, psu_pad_size);
-		}
-		out_fd = -1;   //prevent output file closure below
-	}
 
 //The code below is also used for all errors in copying a file,
 //but those cases are distinguished by a negative value in 'ret'
-error:
+copy_file_exit:
 	free(buff);
 	if(PM_flag[recurses]!=PM_PSU_RESTORE){ //Avoid closing PSU file here for PSU Restore
 		if(in_fd>=0){
@@ -3516,7 +3535,7 @@ int getFilePath(char *out, int cnfmode)
 									strcpy(cursorEntry, files[first_deleted-1].name);
 							} else {
 								strcpy(cursorEntry, files[browser_sel].name);
-								strcpy(msg0, LNG(Delete_Failed));
+								sprintf(msg0, "%s Err=%d", LNG(Delete_Failed), ret);
 								browser_pushed = FALSE;
 							}
 							browser_cd=TRUE;
@@ -4006,6 +4025,8 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 			sprintf(mess+text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
 			text_pos += text_inc;
 		}
+		sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
+		text_pos += text_inc;
 	}
 //----- End of sections that show attributes -----
 	browser_pushed = FALSE;

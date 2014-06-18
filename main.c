@@ -50,6 +50,10 @@ extern void hdl_info_irx;
 extern int  size_hdl_info_irx;
 extern void chkesr_irx;
 extern int size_chkesr_irx;
+extern void mcman_irx;
+extern int  size_mcman_irx;
+extern void mcserv_irx;
+extern int  size_mcserv_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -798,16 +802,18 @@ void	load_ps2netfs(void)
 //---------------------------------------------------------------------------
 void loadBasicModules(void)
 {
+	int ret;
+
 	if	(!have_sio2man) {
 		SifLoadModule("rom0:SIO2MAN", 0, NULL);
 		have_sio2man = 1;
 	}
 	if	(!have_mcman) {
-		SifLoadModule("rom0:MCMAN", 0, NULL);
+		SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret);
 		have_mcman = 1;
 	}
 	if	(!have_mcserv) {
-		SifLoadModule("rom0:MCSERV", 0, NULL);
+		SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret);
 		have_mcserv = 1;
 	}
 	if	(!have_padman) {
@@ -2058,27 +2064,37 @@ int main(int argc, char *argv[])
 	event = 1;   //event = initial entry
 	//----- Start of main menu event loop -----
 	while(1){
-		//Background event section
-		if(setting->discControl){
-			uLE_cdStop(); //Test disc state and if needed stop disc (updates cdmode)
-			if(cdmode != old_cdmode){ //if disc detection changed state
-				event |= 4;  //event |= disc change detection
-				if(cdmode==CDVD_TYPE_NODISK){
-					sprintf(mainMsg, "%s ", LNG(No_Disc));
-				}else if(cdmode>=0x01 && cdmode<=0x04){
-					sprintf(mainMsg, "%s == ", LNG(Detecting_Disc));
-				}else{
-					sprintf(mainMsg, "%s == ", LNG(Stop_Disc));
-				}
-				for(i=0; DiscTypes[i].name[0]; i++){
-					if(DiscTypes[i].type == uLE_cdmode){
-						strcat(mainMsg, DiscTypes[i].name);
-						break;
-					}
-				}
-			}
-		}
+		int DiscType_ix;
 
+		//Background event section
+		if(!setting->discControl)
+			goto done_discControl;
+	
+		uLE_cdStop(); //Test disc state and if needed stop disc (updates cdmode)
+		if(cdmode == old_cdmode) //if disc detection did not change state
+			goto done_discControl;
+
+		event |= 4;  //event |= disc change detection
+		if(cdmode<=0)
+			sprintf(mainMsg, "%s ", LNG(No_Disc));
+		else if(cdmode>=1 && cdmode<=4)
+			sprintf(mainMsg, "%s == ", LNG(Detecting_Disc));
+		else //if(cdmode>=5)
+			sprintf(mainMsg, "%s == ", LNG(Stop_Disc));
+
+		DiscType_ix = 0;
+		for(i=0; DiscTypes[i].name[0]; i++)
+			if(DiscTypes[i].type == uLE_cdmode)
+				DiscType_ix = i;
+
+		sprintf(mainMsg+strlen(mainMsg), DiscTypes[DiscType_ix].name);
+		//Comment out the debug output below when not needed
+		/*
+		sprintf(mainMsg+strlen(mainMsg),
+			"  cdmode==%d  uLE_cdmode==%d  type_ix==%d",
+			cdmode, uLE_cdmode, DiscType_ix);
+		//*/
+done_discControl:
 		if(poweroff_delay) {
 			CurrTime = Timer();
 			if(CurrTime > (poweroff_start + poweroff_delay)){

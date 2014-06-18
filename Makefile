@@ -1,8 +1,9 @@
 EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
-	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o ps2smap.o ps2hdd.o\
-	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o vmcfs.o fakehost.o  \
-	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
+	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o\
+	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
+	cdvd.o ps2ftpd.o ps2host.o vmcfs.o fakehost.o ps2kbd.o\
+	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
@@ -18,6 +19,12 @@ run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF
 reset: clean
 	ps2client -h 192.168.0.10 reset
+
+mcman.s:
+	bin2s $(PS2SDK)/iop/irx/mcman.irx mcman.s mcman_irx
+
+mcserv.s:
+	bin2s $(PS2SDK)/iop/irx/mcserv.irx mcserv.s mcserv_irx
 
 usbd.s:
 	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx

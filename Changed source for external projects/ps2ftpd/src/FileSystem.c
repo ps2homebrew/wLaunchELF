@@ -38,7 +38,7 @@ extern char* itoa(char* in, int val);
 
 #define DEVINFOARRAY(d,ofs) ((iop_device_t **)((d)->text_start + (d)->text_size + (d)->data_size + (ofs)))
 
-#define DEVICE_UNITS 4
+#define DEVICE_UNITS 10
 
 // buffer used for concating filenames internally
 static char buffer[512];
