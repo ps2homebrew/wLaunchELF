@@ -45,6 +45,8 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
 	USBKBD_IRX_CNF,  // USB keyboard IRX choice (only PS2SDK)
   KBDMAP_FILE_CNF, // USB keyboard mapping table choice
   CNF_PATH_CNF,    // CNF Path override choice
+  TEXT_CNF,        // No restriction choice 
+  DIR_CNF,         // Directory choice 
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -199,5 +201,8 @@ extern int swapKeys;
 
 /* hdd.c */
 void hddManager(void);
+
+/* editor.c */
+void TextEditor(void);
 
 #endif

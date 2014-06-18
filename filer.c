@@ -74,7 +74,9 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"JPG", // cnfmode SKIN_CNF
 	"IRX", // cnfmode USBKBD_IRX_CNF
 	"KBD", // cnfmode KBDMAP_FILE_CNF
-	"CNF"  // cnfmode CNF_PATH_CNF
+	"CNF", // cnfmode CNF_PATH_CNF
+	"*",   // cnfmode TEXT_CNF
+	""     // cnfmode DIR_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
@@ -84,7 +86,9 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"jpg", // cnfmode SKIN_CNF
 	"irx", // cnfmode USBKBD_IRX_CNF
 	"kbd", // cnfmode KBDMAP_FILE_CNF
-	"cnf"  // cnfmode CNF_PATH_CNF
+	"cnf", // cnfmode CNF_PATH_CNF
+	"*",   // cnfmode TEXT_CNF
+	""     // cnfmode DIR_CNF
 };
 
 int host_ready   = 0;
@@ -2151,6 +2155,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "HddManager");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "TextEditor");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Set CNF_Path");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "Load CNF");
@@ -2300,6 +2306,7 @@ void getFilePath(char *out, int cnfmode)
 						&&(cnfmode!=KBDMAP_FILE_CNF)
 						&&(cnfmode!=SKIN_CNF)
 						&&(cnfmode!=CNF_PATH_CNF)
+						&&(cnfmode!=TEXT_CNF)
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
 						sprintf(msg0, "This file isn't ELF.");
@@ -2318,7 +2325,12 @@ void getFilePath(char *out, int cnfmode)
 					vfreeSpace=FALSE;
 				}
 			}
-			if(cnfmode){
+			if(cnfmode==DIR_CNF){
+				if(new_pad & PAD_START) {
+					strcpy(out, path);
+					break;
+				}
+			}else if(cnfmode){
 				if(new_pad & PAD_SQUARE) {
 					if(!strcmp(ext,"*")) strcpy(ext, cnfmode_extL[cnfmode]);
 					else				 strcpy(ext, "*");
@@ -2598,7 +2610,18 @@ void getFilePath(char *out, int cnfmode)
 				sprintf(msg0, "Path: %s", path);
 
 			//Tooltip section
-			if(cnfmode) {//cnfmode indicates configurable file selection
+			if(cnfmode==DIR_CNF) {//cnfmode Directory Add Start to select dir
+				if (swapKeys)
+					strcpy(msg1, "ÿ1:OK ÿ0:Cancel ÿ3:Up ÿ2:");
+				else
+					strcpy(msg1, "ÿ0:OK ÿ1:Cancel ÿ3:Up ÿ2:");
+				if(ext[0] == '*')
+					strcat(msg1, "*->");
+				strcat(msg1, cnfmode_extU[cnfmode]);
+				if(ext[0] != '*')
+					strcat(msg1, "->*");
+				strcat(msg1, " R2:PathPad Start:Choose");
+			}else if(cnfmode) {//cnfmode indicates configurable file selection
 				if (swapKeys)
 					strcpy(msg1, "ÿ1:OK ÿ0:Cancel ÿ3:Up ÿ2:");
 				else

@@ -358,18 +358,31 @@ void loadConfig(char *mainMsg, char *CNF)
 	if((tst = genFixPath(path, cnf_path)) >= 0)
 		fd = genOpen(cnf_path, O_RDONLY);
 	if(fd<0) {
-		if(!strncmp(LaunchElfDir, "mc", 2))
-			mcport = LaunchElfDir[2]-'0';
-		else
-			mcport = CheckMC();
-		if(mcport==1 || mcport==0){
-			char strtmp[MAX_PATH];
-			sprintf(strtmp, "mc%d:/SYS-CONF/", mcport);
-			strcpy(path, strtmp);
-			strcat(path, CNF);
-			fd = genOpen(path, O_RDONLY);
-			if(fd>=0)
-				strcpy(LaunchElfDir, strtmp);
+		char strtmp[MAX_PATH], *p;
+		int  pos;
+
+		p = strrchr(path, '.');
+		if(*(p-1)!='F')
+			p--;
+		pos = (p-path);
+		strcpy(strtmp, path);
+		strcpy(strtmp+pos-9, "LNCHELF");
+		strcpy(strtmp+pos-2, path+pos);
+		if((tst = genFixPath(strtmp, cnf_path)) >= 0)
+			fd = genOpen(cnf_path, O_RDONLY);
+		if(fd<0) {
+			if(!strncmp(LaunchElfDir, "mc", 2))
+				mcport = LaunchElfDir[2]-'0';
+			else
+				mcport = CheckMC();
+			if(mcport==1 || mcport==0){
+				sprintf(strtmp, "mc%d:/SYS-CONF/", mcport);
+				strcpy(path, strtmp);
+				strcat(path, CNF);
+				fd = genOpen(path, O_RDONLY);
+				if(fd>=0)
+					strcpy(LaunchElfDir, strtmp);
+			}
 		}
 	}
 	if(fd<0) {

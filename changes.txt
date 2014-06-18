@@ -1,7 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.77 (2006.06.11)
+-Merged in the text editor contributed by Polo
+-Changed ELF file names from BOOTc.ELF + BOOT.ELF to BOOT.ELF + uncompressed_BOOT.ELF
+-Added support for using uLaunchELF on such CDVD filesystems that are limited to 8+3 characters for filename+extension, by also allowing a CNF file to be loaded even when renamed LNCHELF.CNF (or LNCHELF1.CNF etc for multiple CNFs). This patch only applies to loading CNFs. CNF files saved will always use the longer form of the name (LAUNCHELF.CNF etc).
+
 LaunchELF v3.76 (2006.06.09)
--Added abilty to display HDL game info and to rename such games (for the gamelist). This feature is based on a modified version of an IRX module contributed by Polo.
+-Added ability to display HDL game info and to rename such games (for the gamelist). This feature is based on a modified version of an IRX module contributed by Polo.
 
 LaunchELF v3.75 (2006.06.06)
 -Speed optimized various aspects of HddManager

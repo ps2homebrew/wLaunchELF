@@ -1084,6 +1084,9 @@ void RunElf(const char *path)
 	}else if(!stricmp(path, "MISC/HddManager")){
 		hddManager();
 		return;
+	}else if(!stricmp(path, "MISC/TextEditor")){
+		TextEditor();
+		return;
 	}else if(!stricmp(path, "MISC/Set CNF_Path")){
 		Set_CNF_Path();
 		return;
