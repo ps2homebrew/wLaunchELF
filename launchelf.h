@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.40d"
-#define ULE_VERDATE "2010.01.24"
+#define ULE_VERSION "v4.40e"
+#define ULE_VERDATE "2010.01.26"
 
 #include <stdio.h>
 #include <tamtypes.h>
@@ -159,6 +159,7 @@ void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
+void setupPowerOff(void);
 int uLE_related(char *pathout, char *pathin);
 int uLE_detect_TV_mode();
 int exists(char *path);

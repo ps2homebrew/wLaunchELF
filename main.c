@@ -746,6 +746,7 @@ void	load_ps2host(void)
 {
 	int ret;
 
+	setupPowerOff(); //resolves the stall out when opening host: from LaunchELF's FileBrowser
 	load_ps2ip();
 	if	(!have_ps2host)
 	{	SifExecModuleBuffer(&ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
