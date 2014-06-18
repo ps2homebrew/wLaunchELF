@@ -101,6 +101,8 @@ typedef struct
 	int usbkbd_used;
 	int Show_Titles;
 	int PathPad_Lock;
+	int JpgView_Timer;
+	int JpgView_Trans;
 } SETTING;
 
 typedef struct
@@ -163,7 +165,7 @@ void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void drawLastMsg(void);
 void setupGS(int gs_vmode);
-void updateScreenMode(void);
+void updateScreenMode(int adapt_XY);
 void clrScr(u64 color);
 int log(int Value);
 void setBrightness(int Brightness);
@@ -185,6 +187,7 @@ void loadIcon(void);
 #define PAD_L3_H0 0x400000
 #define PAD_L3_H1 0x800000
 
+extern u32 joy_value;
 extern u32 new_pad;
 int setupPad(void);
 int readpad(void);

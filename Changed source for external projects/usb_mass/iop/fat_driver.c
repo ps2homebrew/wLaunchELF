@@ -388,6 +388,7 @@ void fat_getPartitionTable ( fat_part* part ) {
        part -> record[ i ].sid == 1    ||  // fat 16, fat 12
        part -> record[ i ].sid == 0x0B ||
        part -> record[ i ].sid == 0x0C     // fat 32 
+       part -> record[ i ].sid == 0x0E     // fat 16 LBA //dlanor: from SVN 20060801
   ) workPartition = i;
 
  }  /* end for */
@@ -986,30 +987,29 @@ int fat_readFile(fat_bpb* bpb, fat_dir* fatDir, unsigned int filePos, unsigned c
 //------------------------------
 //endfunc fat_readFile
 //--------------------------------------------------------------
-int fat_mountCheck() {
+int fat_mountCheck()
+{
 	int mediaStatus;
 	int ret;
 
 #ifdef _PS2_
 	mediaStatus = mass_stor_getStatus(); 
-	if (mediaStatus < 0) {
+	if (mediaStatus < 0)
+	{
 		mounted = 0;
 		return mediaStatus;
 	}
-	if ((mediaStatus & 0x03) == 3) { /* media is ready for operation */
+	if ((mediaStatus & 0x03) == 3)
+	{ /* media is ready for operation */
 		/* in the meantime the media was reconnected and maybe changed - force unmount*/
-		if ((mediaStatus & 0x04) == 4) { 
-			mounted = 0;
-		}
-		if (mounted) { /* and is mounted */
-        		return 1;
-        	}
-	        ret = fat_initDriver();
+		if ((mediaStatus & 0x04) == 4) { mounted = 0; }
+		else if (mounted) { return 1; }
+		ret = fat_initDriver();
 		return ret;
 	}
-	if (mounted) { /* fs mounted but media is not ready - force unmount */
-		mounted = 0;
-	}
+
+	/* fs mounted but media is not ready - force unmount */
+	if (mounted) { mounted = 0; }
 	return -10;
 #else
 	return 1;
@@ -1102,7 +1102,9 @@ int fat_getFirstDirentry(char * dirName, fat_dir* fatDir) {
 	if (ret < 0) {
 		return ret;
 	}
-	if ( ((dirName[0] == '/') && dirName[1] == 0) || // the root directory
+   if ((dirName == NULL) || (dirName[0] == 0) ||
+      (dirName[0] == '.') ||
+      ((dirName[0] == '/' || dirName[0]=='\\') && ((dirName[1] == 0) || (dirName[1] == '.')))) // the root directory
 		dirName[0] == 0 || dirName == NULL) {
 			direntryCluster = 0;
 	} else {
@@ -1125,6 +1127,8 @@ int fat_getFirstDirentry(char * dirName, fat_dir* fatDir) {
 int fat_initDriver() {
 	int ret;
 
+	mounted = 0;
+
 	lastChainCluster = 0xFFFFFFFF;
 	lastChainResult = -1;
 
@@ -1142,7 +1146,8 @@ int fat_initDriver() {
 	fat_dumpPartitionTable();
 	fat_dumpPartitionBootSector();
 #endif
-	fs_init(NULL);
+//	fs_init(NULL);
+
 	mounted = 1;
 
 }
@@ -1223,12 +1228,24 @@ int fs_findFileSlotByName(const char* name) {
 //------------------------------
 //endfunc fs_findFileSlotByName
 //--------------------------------------------------------------
-int fs_init(iop_device_t *driver) {
+
+void fs_reset(void)
+{
 	int i;
-	mounted = 0;
-	for (i = 0; i < MAX_FILES; i++) {
-		fsRec[i].fd = -1;
-	}
+	for (i = 0; i < MAX_FILES; i++) { fsRec[i].fd = -1; }
+}
+
+int fs_inited = 0;
+
+int fs_init(iop_device_t *driver)
+{
+    if(fs_inited) { return(1); }
+
+	mass_stor_init();
+	fs_reset();
+//    fat_initDriver();
+
+    fs_inited = 1;
 	return 1;
 }
 //------------------------------
@@ -1240,14 +1257,13 @@ int fs_open(iop_file_t* fd, const char *name, int mode, ...) {
 	int ret;
 	unsigned int cluster;
 	char escapeNotExist;
+	int timeout = 1000;
 
 	XPRINTF("fs_open called: %s mode=%X \n", name, mode) ;
 
         //check if media mounted
         ret = fat_mountCheck();
-        if (ret < 0) {
-        	return ret;
-        }
+        if (ret < 0) { return ret; }
 
 #ifndef WRITE_SUPPORT		
 	//read only support

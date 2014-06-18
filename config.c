@@ -29,6 +29,8 @@ enum
 	DEF_USBKBD_USED = 1,
 	DEF_SHOW_TITLES = 1,
 	DEF_PATHPAD_LOCK = 0,
+	DEF_JPGVIEW_TIMER = 5,
+	DEF_JPGVIEW_TRANS = 2,
 	
 	DEFAULT=0,
 	SHOW_TITLES=12,
@@ -182,6 +184,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Menu_Show_Titles = %d\r\n"
 		"PathPad_Lock = %d\r\n"
 		"CNF_Path = %s\r\n"
+		"JpgView_Timer = %d\r\n"
+		"JpgView_Trans = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
@@ -215,6 +219,8 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Show_Titles,  //Menu_Show_Titles
 		setting->PathPad_Lock, //PathPad_Lock
 		setting->CNF_Path,     //CNF_Path
+		setting->JpgView_Timer, //JpgView_Timer
+		setting->JpgView_Trans, //JpgView_Trans
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -369,6 +375,8 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->usbkbd_used = DEF_USBKBD_USED;
 	setting->Show_Titles = DEF_SHOW_TITLES;
 	setting->PathPad_Lock = DEF_PATHPAD_LOCK;
+	setting->JpgView_Timer = -1; //only used to detect missing variable
+	setting->JpgView_Trans = -1; //only used to detect missing variable
 
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
@@ -489,6 +497,8 @@ failed_load:
 		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
 		else if(!strcmp(name,"PathPad_Lock")) setting->PathPad_Lock = atoi(value);
 		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
+		else if(!strcmp(name,"JpgView_Timer")) setting->JpgView_Timer = atoi(value);
+		else if(!strcmp(name,"JpgView_Trans")) setting->JpgView_Trans = atoi(value);
 		else {
 			for(i=0; i<15; i++){
 				sprintf(tsts, "LK_%s_Title", LK_ID[i]);
@@ -511,10 +521,13 @@ failed_load:
 	free(RAM_p);
 	if(CNF_version < 3){
 		if(X_flag) setting->screen_x *= 4;
-		if(Y_flag && ((!IL_flag) || (!setting->interlace)))
+		if(Y_flag && !IL_flag)
 				setting->screen_y = setting->screen_y*2 - 2;
 	}
-	setting->interlace = 1;  //Interlace is currently forced on
+	if(setting->JpgView_Timer < 0)
+		setting->JpgView_Timer = DEF_JPGVIEW_TIMER;
+	if((setting->JpgView_Trans < 1) || (setting->JpgView_Trans > 4))
+		setting->JpgView_Trans = DEF_JPGVIEW_TRANS;
 	sprintf(mainMsg, "Loaded Config (%s)", path);
 	return;
 }
@@ -768,14 +781,12 @@ void Config_Screen(void)
 				} else if(s==25) {
 					if(setting->screen_x > 0) {
 						setting->screen_x--;
-						gsGlobal->StartX = setting->screen_x;
-						updateScreenMode();
+						updateScreenMode(0);
 					}
 				} else if(s==26) {
 					if(setting->screen_y > 0) {
 						setting->screen_y--;
-						gsGlobal->StartY = setting->screen_y;
-						updateScreenMode();
+						updateScreenMode(0);
 					}
 				} else if(s==29) {  //cursor is at Menu_Title
 						setting->Menu_Title[0] = '\0';
@@ -792,18 +803,16 @@ void Config_Screen(void)
 					}
 				}else if(s==24){
 					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
-					updateScreenMode();
+					updateScreenMode(1);
 				} else if(s==25) {
 					setting->screen_x++;
-					gsGlobal->StartX = setting->screen_x;
-					updateScreenMode();
+					updateScreenMode(0);
 				} else if(s==26) {
 					setting->screen_y++;
-					gsGlobal->StartY = setting->screen_y;
-					updateScreenMode();
+					updateScreenMode(0);
 				} else if(s==27) {
-					//RA NB: change this clause to allow interlace mode choice
-					setting->interlace = DEF_INTERLACE;
+					setting->interlace = !setting->interlace;
+					updateScreenMode(1);
 				} else if(s==28) {
 					Config_Skin();
 				} else if(s==29) {  //cursor is at Menu_Title
@@ -835,7 +844,7 @@ void Config_Screen(void)
 					setting->Menu_Frame = DEF_MENU_FRAME;
 					setting->Brightness = DEF_BRIGHT;
 					setting->Popup_Opaque = DEF_POPUP_OPAQUE;
-					updateScreenMode();
+					updateScreenMode(0);
 					
 					for(i=0; i<8; i++) {
 						rgb[i][0] = setting->color[i] & 0xFF;
@@ -904,12 +913,10 @@ void Config_Screen(void)
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
 
-			sprintf(c, "  Interlace: ON (locked)");
-//RA NB: Remove 1 line above, and uncomment 4 lines below, to allow non-interlace mode
-//			if(setting->interlace)
-//				sprintf(c, "  Interlace: ON");
-//			else
-//				sprintf(c, "  Interlace: OFF");
+			if(setting->interlace)
+				sprintf(c, "  Interlace: ON");
+			else
+				sprintf(c, "  Interlace: OFF");
 			printXY(c, x, y, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			y += FONT_HEIGHT / 2;
@@ -1648,7 +1655,7 @@ void config(char *mainMsg, char *CNF)
 cancel_exit:
 				free(setting);
 				setting = tmpsetting;
-				updateScreenMode();
+				updateScreenMode(0);
 				strcpy(setting->skin, skinSave);
 				loadSkin(BACKGROUND_PIC, 0, 0);
 				mainMsg[0] = 0;

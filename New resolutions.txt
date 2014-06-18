@@ -15,6 +15,19 @@ PAL with Interlace ON:
 Screen_X = 652
 Screen_Y = 72
 
+From version 3.84 the gsKit versions also support non-interlaced modes, and
+while these are not default, you may still find it useful to know that they
+use the following offsets to cover the same screen area (almost) as achieved
+in interlace modes using the settings that were described above:
+
+NTSC with Interlace OFF:
+Screen_X = 632
+Screen_Y = 26
+
+PAL with Interlace OFF:
+Screen_X = 652
+Screen_Y = 37
+
 -----------------------------------------------------------------------------
 The text below relates to an older version update, and is no longer valid.
 -----------------------------------------------------------------------------

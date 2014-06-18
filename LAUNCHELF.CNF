@@ -230,6 +230,17 @@ Menu_Show_Titles = 1
 # ----------------------------------------------------------------------
 CNF_Path =
 # ----------------------------------------------------------------------
+# From v3.84 two settings of JpgViewer are also saved here. These are
+# the slideshow interval timer (in seconds), and the picture transition
+# choice, a value from 1-4, with 1==NONE, 2==ZOOM 3==FADE, 4==BOTH.
+# To save latest slideshow settings, just enter the main configuration
+# menu and exit it again using the OK command. This resaves the file.
+# Viewer settings found in a CNF will be used instead of the original
+# defaults, which are the values shown below.
+# ----------------------------------------------------------------------
+JpgView_Timer = 5
+JpgView_Trans = 2
+# ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them
 # to define your own titles that will be used instead of ELF names in

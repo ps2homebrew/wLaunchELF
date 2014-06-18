@@ -8,6 +8,7 @@ struct padButtonStatus buttons_t[2];
 u32 paddata, paddata_t[2];
 u32 old_pad = 0, old_pad_t[2] = {0, 0};
 u32 new_pad, new_pad_t[2];
+u32 joy_value;
 static int test_joy;
 
 //---------------------------------------------------------------------------
@@ -56,22 +57,30 @@ int readpad_no_KB(void)
 				paddata_t[port] = 0xffff ^ buttons_t[port].btns;
 				if(++test_joy==2) test_joy=0;
 				if(test_joy){
-					if(buttons_t[port].rjoy_h >= 0xf0)
+					joy_value=0;
+					if(buttons_t[port].rjoy_h >= 0xf0){
 						paddata_t[port]=PAD_R3_H1;
-					else if(buttons_t[port].rjoy_h <= 0x0f)
+					}else if(buttons_t[port].rjoy_h <= 0x0f){
 						paddata_t[port]=PAD_R3_H0;
-					else if(buttons_t[port].rjoy_v <= 0x0f)
+					}else if(buttons_t[port].rjoy_v <= 0x40){
 						paddata_t[port]=PAD_R3_V0;
-					else if(buttons_t[port].rjoy_v >= 0xf0)
+						joy_value=-(buttons_t[port].rjoy_v-0x40);
+					}else if(buttons_t[port].rjoy_v >= 0xbf){
 						paddata_t[port]=PAD_R3_V1;
-					else if(buttons_t[port].ljoy_h >= 0xf0)
+						joy_value=buttons_t[port].rjoy_v-0xbf;
+					}else if(buttons_t[port].ljoy_h >= 0xbf){
 						paddata_t[port]=PAD_L3_H1;
-					else if(buttons_t[port].ljoy_h <= 0x0f)
+						joy_value=buttons_t[port].ljoy_h-0xbf;
+					}else if(buttons_t[port].ljoy_h <= 0x40){
 						paddata_t[port]=PAD_L3_H0;
-					else if(buttons_t[port].ljoy_v <= 0x0f)
+						joy_value=-(buttons_t[port].ljoy_h-0x40);
+					}else if(buttons_t[port].ljoy_v <= 0x40){
 						paddata_t[port]=PAD_L3_V0;
-					else if(buttons_t[port].ljoy_v >= 0xf0)
+						joy_value=-(buttons_t[port].ljoy_v-0x40);
+					}else if(buttons_t[port].ljoy_v >= 0xbf){
 						paddata_t[port]=PAD_L3_V1;
+						joy_value=buttons_t[port].ljoy_v-0xbf;
+					}
 				}
 				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];
 				if(old_pad_t[port]==paddata_t[port]){

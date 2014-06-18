@@ -4,7 +4,7 @@
 #include "launchelf.h"
 
 static char	 msg0[MAX_PATH], msg1[MAX_PATH], jpgpath[MAX_PATH];
-static int   SlideShowTime, SlideShowTrans, SlideShowBegin, SlideShowStart, SlideShowStop, SlideShowSkip;
+static int   SlideShowTime=5, SlideShowTrans=2, SlideShowBegin, SlideShowStart, SlideShowStop, SlideShowSkip;
 static int	 Brightness, TimeRemain, PrintLen;
 static float PanPosX, PanPosY, PanPosX1, PanPosY1;
 static float PanZoom, PanOffsetX, PanOffsetY;
@@ -55,7 +55,9 @@ static void Command_List( void )
 		if(event||post_event){ //NB: We need to update two frame buffers per event.
 
 			//Display section.
-			drawPopSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
+			//drawPopSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
+			gsKit_prim_sprite(gsGlobal, cSprite_X1, cSprite_Y1,
+				cSprite_X2, cSprite_Y2, 0, setting->color[0]);
 			drawFrame(cFrame_X1, cFrame_Y1, cFrame_X2, cFrame_Y2, setting->color[1]);
 
 			y=cFrame_Y1+FONT_HEIGHT/2;
@@ -213,39 +215,39 @@ static void View_Input( void ) {
 		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad()){
-			if(new_pad & PAD_R3_V0){ 
-				if( PanZoom < 2.75f ) { // PanZoom In
-					PanZoom += 0.01f;
+			if(new_pad & PAD_R3_V0){ // PanZoom In
+				if( PanZoom < 2.75f ) {
+					PanZoom += 0.01f*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
 			}else if(new_pad & PAD_R3_V1){ // PanZoom Out
 				if( PanZoom > 1.0f ) {
-					PanZoom -= 0.01f;
+					PanZoom -= 0.01f*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
 			}else if(new_pad & PAD_L3_H1){ // Move Right
 				if ( PanOffsetX < 0.95f ) {
-					PanOffsetX += 0.05f/PanZoom;
+					PanOffsetX += 0.05f/PanZoom*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
 			}else if(new_pad & PAD_L3_H0){ // Move Left
 				if ( PanOffsetX > -0.95f ) {
-					PanOffsetX -= 0.05f/PanZoom;
+					PanOffsetX -= 0.05f/PanZoom*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
 			}else if(new_pad & PAD_L3_V1){ // Move Down
 				if ( PanOffsetY < 0.95f ) {
-					PanOffsetY += 0.05f/PanZoom;
+					PanOffsetY += 0.05f/PanZoom*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
 			}else if(new_pad & PAD_L3_V0){ // Move Up
 				if ( PanOffsetY > -0.95f ) {
-					PanOffsetY -= 0.05f/PanZoom;
+					PanOffsetY -= 0.05f/PanZoom*joy_value/32;
 					SlideShowStart=0;
 					View_Render();
 				} /* end if */
@@ -452,8 +454,8 @@ void JpgViewer( void )
 	jpg_browser_nfiles=0;
 	old_jpg_browser_sel=0;
 	
-	SlideShowTime=5;
-	SlideShowTrans=2;
+	SlideShowTime = setting->JpgView_Timer;
+	SlideShowTrans = setting->JpgView_Trans;
 	SlideShowBegin=SlideShowStart=SlideShowStop=SlideShowSkip=0;
 	FullScreen=PicRotate=PrintLen=0;
 
@@ -594,6 +596,8 @@ end:
 					fileXioUmount("pfs1:");
 					mountedParty[1][0]=0;
 				}
+				setting->JpgView_Timer = SlideShowTime;
+				setting->JpgView_Trans = SlideShowTrans;
 				return;
 			} else if(new_pad & PAD_START){
 				if(path[0]!=0){

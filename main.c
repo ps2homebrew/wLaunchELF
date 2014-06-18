@@ -954,7 +954,7 @@ void reloadConfig()
 
 	loadConfig(mainMsg, CNF);
 	Validate_CNF_Path();
-	updateScreenMode();
+	updateScreenMode(0);
 	loadSkin(BACKGROUND_PIC, 0, 0);
 	
 	timeout = (setting->timeout+1)*SCANRATE;

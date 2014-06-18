@@ -218,9 +218,7 @@ int hddFormat(iop_file_t *f, ...)
 		header->length=(1024*256);	// 128MB
 		header->type=APA_TYPE_MBR;
 		strcpy(header->id,"__mbr");
-//		strncpy(header->mbr.magic, mbrMagic, 31);
-//		header->mbr.magic[31] = '\0';
-		strncpy(header->mbr.magic, mbrMagic, 0x20);
+		memcpy(header->mbr.magic, mbrMagic, 32);
 
 		header->mbr.version=APA_MBR_VERSION;
 		header->mbr.nsector=0;

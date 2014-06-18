@@ -17,6 +17,7 @@ u64       BrightColor;
 int updateScr_1;     //dlanor: flags screen updates for drawScr()
 int updateScr_2;     //dlanor: used for anti-flicker delay in drawScr()
 u64 updateScr_t = 0; //dlanor: exit time of last drawScr()
+int  Old_Interlace;
 
 char LastMessage[MAX_TEXT_LINE+2];
 
@@ -444,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.83 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.84 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -510,11 +511,24 @@ void setupGS(int gs_vmode)
 	gsGlobal->DoubleBuffering = GS_SETTING_OFF;
 	gsGlobal->ZBuffering      = GS_SETTING_OFF;
 
+	// Interlace Init
+	if(setting->interlace){
+		gsGlobal->Interlace = GS_INTERLACED;
+		gsGlobal->Field     = GS_FIELD;
+	}else{
+		gsGlobal->Interlace = GS_NONINTERLACED;
+		gsGlobal->Field     = GS_FRAME;
+	}
+	Old_Interlace = setting->interlace;
+
 	// DMAC Init
 	dmaKit_init(D_CTRL_RELE_OFF,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC, D_CTRL_STD_OFF, D_CTRL_RCYC_8);
 	dmaKit_chan_init(DMA_CHANNEL_GIF);
 	dmaKit_chan_init(DMA_CHANNEL_FROMSPR);
 	dmaKit_chan_init(DMA_CHANNEL_TOSPR);
+
+	// Clear Screen
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	// Screen Init
 	gsKit_init_screen(gsGlobal);
@@ -523,7 +537,7 @@ void setupGS(int gs_vmode)
 }
 
 //--------------------------------------------------------------
-void updateScreenMode(void)
+void updateScreenMode(int adapt_XY)
 {
 	int New_TV_mode = setting->TV_mode;
 
@@ -542,15 +556,19 @@ void updateScreenMode(void)
 			gsGlobal->Mode = GS_MODE_PAL;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 512;
-			setting->screen_x+=20;
-			setting->screen_y+=22;
+			if(adapt_XY){
+				setting->screen_x+=20;
+				setting->screen_y+=22;
+			}
 			Menu_end_y     = Menu_start_y + 26*FONT_HEIGHT;
 		}else{                      //else use NTSC mode (forced or auto)
 			gsGlobal->Mode = GS_MODE_NTSC;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 448;
-			setting->screen_x-=20;
-			setting->screen_y-=22;
+			if(adapt_XY){
+				setting->screen_x-=20;
+				setting->screen_y-=22;
+			}
 			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
 		} /* end else */
 		Frame_end_y      = Menu_end_y + 4;
@@ -563,7 +581,32 @@ void updateScreenMode(void)
 		// Init screen modes
 		SetGsCrt(gsGlobal->Interlace, gsGlobal->Mode, gsGlobal->Field);
 
-	} // end TV_Mode unchanged
+	} // end TV_Mode change
+
+	if(setting->interlace != Old_Interlace){
+		Old_Interlace = setting->interlace;
+
+		gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+
+		// Interlace Init
+		if(setting->interlace){
+			gsGlobal->Interlace = GS_INTERLACED;
+			gsGlobal->Field     = GS_FIELD;
+			if(adapt_XY){
+				setting->screen_y = (setting->screen_y-1)*2;
+			}
+		}else{
+			gsGlobal->Interlace = GS_NONINTERLACED;
+			gsGlobal->Field     = GS_FRAME;
+			if(adapt_XY){
+				setting->screen_y = setting->screen_y/2+1;
+			}
+		}
+
+		// Init screen modes
+		SetGsCrt(gsGlobal->Interlace, gsGlobal->Mode, gsGlobal->Field);
+
+	} // end Interlace change
 
 	// Init screen position
 	gsGlobal->StartX = setting->screen_x;
@@ -831,15 +874,17 @@ void drawScr(void)
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
 	updateScr_1 = 1;
-	gsKit_prim_line(gsGlobal, x1, y1, x2, y1, 1, color);
-	gsKit_prim_line(gsGlobal, x1, y1+1, x2, y1+1, 1, color);
-	
+	gsKit_prim_line(gsGlobal, x1, y1-1, x2, y1-1, 1, color);
+	if(setting->interlace)
+		gsKit_prim_line(gsGlobal, x1, y1-2, x2, y1-2, 1, color);
+
 	gsKit_prim_line(gsGlobal, x2, y1, x2, y2, 1, color);
 	gsKit_prim_line(gsGlobal, x2-1, y1, x2-1, y2, 1, color);
 	
-	gsKit_prim_line(gsGlobal, x2, y2, x1, y2, 1, color);
 	gsKit_prim_line(gsGlobal, x2, y2-1, x1, y2-1, 1, color);
-	
+	if(setting->interlace)
+		gsKit_prim_line(gsGlobal, x2, y2-2, x1, y2-2, 1, color);
+
 	gsKit_prim_line(gsGlobal, x1, y2, x1, y1, 1, color);
 	gsKit_prim_line(gsGlobal, x1+1, y2, x1+1, y1, 1, color);
 }

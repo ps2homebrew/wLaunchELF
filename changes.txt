@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.84 (2006.08.01)
+-Merged in gsKit non-interlace support contributed by Polo
+-Merged in Analog controls for JPG viewer contributed by Polo
+-Upgraded PS2SDK libs from ps2dev.org SVN
+-Upgraded usb_mass driver from ps2dev.org SVN. Note that this includes huge changes to the detection and initialization of USB storage devices. This means that such as did not work before may do so now, and even 'hotplugging' now seems to work well with many devices.
+-Corrected a bug introduced by gsKit changes and affecting multiple CNF loading. As a consequence of these changes it's now possible to switch between CNFs using different TV modes and interlace settings. So switching between PAL and NTSC CNFs no longer requires a restart, but will immediately switch the TV mode.
+-Implemented CNF file variables JpgView_Timer and JpgView_Trans, which will override the defaults for slideshow timer interval and picture transition choice.
+
 LaunchELF v3.83 (2006.08.01)
 -Corrected a timer variable to be 'u64' instead of 'int'
 
