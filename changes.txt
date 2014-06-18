@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.86 (2006.08.08)
+-Fixed a bug that caused some horizontal frame lines to be lost in non-interlaced modes
+-Fixed a bug making text 'fuzzy' when aligned to odd pixel rows in non-interlaced modes
+
 LaunchELF v3.85 (2006.08.08)
 -Merged in JpgViewer changes by Polo. It now uses DPad Up/Down for picture rotation.
 -Merged in display init changes by Polo. This should eliminate screen border garbage, and fix a problem with non-interlaced TV mode shifts between PAL and NTSC.

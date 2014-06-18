@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.85 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.86 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -460,6 +460,10 @@ void setScrTmp(const char *msg0, const char *msg1)
 }
 //--------------------------------------------------------------
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
+	if(!setting->interlace){
+		y1 = y1 & -2;
+		y2 = ((y2-1) & -2) + 1;
+	}
 	if ( testskin == 1 ) {
 		setBrightness(setting->Brightness);
 		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -470,6 +474,10 @@ void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
 }
 //--------------------------------------------------------------
 void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
+	if(!setting->interlace){
+		y1 = y1 & -2;
+		y2 = ((y2-1) & -2) + 1;
+	}
 	if ( testskin == 1 && !setting->Popup_Opaque) {
 		setBrightness(setting->Brightness);
 		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -486,6 +494,10 @@ void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
 //the functions drawSprite and drawPopSprite, to keep all of them compatible.
 //
 void drawOpSprite( u64 color, int x1, int y1, int x2, int y2 ){
+	if(!setting->interlace){
+		y1 = y1 & -2;
+		y2 = ((y2-1) & -2) + 1;
+	}
 	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
 }
 //--------------------------------------------------------------
@@ -895,6 +907,12 @@ void drawScr(void)
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
 	updateScr_1 = 1;
+
+	if(!setting->interlace){
+		y1 = y1 & -2;
+		y2 = ((y2-1) & -2) + 1;
+	}
+
 	//Top horizontal edge
 	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y1+LINE_THICKNESS-1, 1, color);
 
@@ -916,6 +934,11 @@ void drawChar(unsigned char c, int x, int y, u64 colour)
 	unsigned char cc;
 
 	updateScr_1 = 1;
+
+	if(!setting->interlace){
+		y = y & -2;
+	}
+
 	if(c < 0x20)       ix=(0x5F-0x20)*8;
 	else if(c >= 0xAA) ix=(0x5F-0x20)*8;
 	else               ix=(c-0x20)*8;
@@ -942,6 +965,11 @@ void drawChar2(int n, int x, int y, u64 colour)
 	u8 b;
 	
 	updateScr_1 = 1;
+
+	if(!setting->interlace){
+		y = y & -2;
+	}
+
 	for(i=0; i<8; i++)
 	{
 		b = elisaFnt[n+i];
