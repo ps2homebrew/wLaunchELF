@@ -1,8 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.38 (2009.01.22)
+-Fixed a bug affecting two of the timeout functions changed in v4.37
+-Modified CDVD tray checking for browsing to cdfs:
+
 LaunchELF v4.37 (2009.01.21)
 -Changed VSync-based timeouts to use Timer() instead, to eliminate PAL/NTSC variations and cure an old bug causing uncontrolled button repeats
--Changed libcdvd tray checking, to eliminate a case of FileBrowser freezing
+-Changed CDVD tray checking, to eliminate a case of FileBrowser freezing
 
 LaunchELF v4.36 (2009.01.19)
 -Fixed 'disc control' bugs in FileBrowser and JpgViewer browser

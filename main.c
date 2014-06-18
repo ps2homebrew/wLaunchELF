@@ -232,11 +232,8 @@ int	PrintPos(int row_f, int column, char *text_p)
 //Function to show a screen with debugging info
 //------------------------------
 void ShowDebugInfo(void)
-{	char uLE_rel_path[MAX_PATH], uLE_gen_path[MAX_PATH], TextRow[256];
+{	char TextRow[256];
 	int	i, event, post_event=0;
-
-	i = uLE_related(uLE_rel_path, "uLE:/LAUNCHELF.CNF");
-	genFixPath("uLE:/LAUNCHELF.CNF", uLE_gen_path);
 
 	event = 1;   //event = initial entry
 	//----- Start of event loop -----
@@ -844,11 +841,8 @@ void load_chkesr_module(void)
 	if(have_chkesr)
 		return;
 
-	printf("Loading chkesr module\n");
-
 	SifExecModuleBuffer(&chkesr_irx, size_chkesr_irx, 0, NULL, &ret);
 	chkesr_rpc_Init();
-
 	have_chkesr = 1;
 }
 //------------------------------
@@ -859,6 +853,7 @@ int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
 	if (!have_cdvd) {
 		loadCdModules();
 	}
+
 	cdmode = cdGetDiscType();
 
 	switch(cdmode){
@@ -2075,7 +2070,6 @@ int main(int argc, char *argv[])
 				}else{
 					sprintf(mainMsg, "%s == ", LNG(Stop_Disc));
 				}
-				printf("uLE_cdmode == %d\n", uLE_cdmode);
 				for(i=0; DiscTypes[i].name[0]; i++){
 					if(DiscTypes[i].type == uLE_cdmode){
 						strcat(mainMsg, DiscTypes[i].name);
@@ -2098,18 +2092,22 @@ int main(int argc, char *argv[])
 			CurrTime = Timer();
 			if(CurrTime > (init_delay_start + init_delay)){
 				init_delay = 0;
-				timeout_start = Timer();
+				timeout_start = CurrTime;
 			}else{
 				init_delay = init_delay_start + init_delay - CurrTime;
+				init_delay_start = CurrTime;
 			}
 			if((init_delay/1000) != (prev_init_delay/1000))
 				event |= 8;  //event |= visible delay change
 		}else if(timeout && !user_acted){
 			prev_timeout = timeout;
 			CurrTime = Timer();
-			timeout = (CurrTime > (timeout_start + timeout))
-				? 0 
-				: (timeout_start + timeout - CurrTime);
+			if(CurrTime > (timeout_start + timeout)){
+				timeout = 0;
+			}else{
+				timeout = timeout_start + timeout - CurrTime;
+				timeout_start = CurrTime;
+			}
 			if((timeout/1000) != (prev_timeout/1000))
 				event |= 8;  //event |= visible timeout change
 		}

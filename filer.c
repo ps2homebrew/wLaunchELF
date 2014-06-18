@@ -578,18 +578,25 @@ int readCD(const char *path, FILEINFO *info, int max)
 	u64 wait_start;
 
 	loadCdModules();
-	if(cdGetDiscType() < CDVD_TYPE_UNKNOWN){
+	if(cdGetDiscType() <= CDVD_TYPE_UNKNOWN){
 		wait_start = Timer();
-		while((Timer() < wait_start+500) && (cdGetDiscType() < CDVD_TYPE_UNKNOWN)){
-			if(cdGetDiscType() == CDVD_TYPE_NODISK)
+		while((Timer() < wait_start+500) && !uLE_cdDiscValid()){
+			if(cdmode == CDVD_TYPE_NODISK)
 				return 0;
+		}
+		if(cdmode == CDVD_TYPE_NODISK)
+			return 0;
+		if((cdmode < CDVD_TYPE_PS1CD) || (cdmode > CDVD_TYPE_PS2DVD)){
+			if(setting->discControl)
+				uLE_cdStop();
+			return 0;
 		}
 	}
 	
 	strcpy(dir, &path[5]);
 	CDVD_FlushCache();
 	n = CDVD_GetDir(dir, NULL, CDVD_GET_FILES_AND_DIRS, TocEntryList, MAX_ENTRY, dir);
-	
+
 	for(i=j=0; i<n; i++)
 	{
 		if(TocEntryList[i].fileProperties & 0x02 &&
@@ -3714,7 +3721,7 @@ int getFilePath(char *out, int cnfmode)
 			browser_up=FALSE;
 		} //ends if(browser_cd)
 		if(setting->discControl && !strncmp(path,"cdfs",4))
-			CDVD_Stop();
+			uLE_cdStop();
 		if(top > browser_nfiles-rows)	top=browser_nfiles-rows;
 		if(top < 0)				top=0;
 		if(browser_sel >= browser_nfiles)		browser_sel=browser_nfiles-1;

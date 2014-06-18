@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.37"
-#define ULE_VERDATE "2009.01.21"
+#define ULE_VERSION "v4.38"
+#define ULE_VERDATE "2009.01.22"
 
 #include <stdio.h>
 #include <tamtypes.h>
@@ -151,6 +151,7 @@ extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
 extern int TV_mode;
 extern int swapKeys;
 extern int GUI_active;// Skin and Main Skin switch
+extern CdvdDiscType_t cdmode; //Last detected disc type
 
 void load_vmcfs(void);
 void load_ps2host(void);
@@ -161,6 +162,8 @@ void loadHdlInfoModule(void);
 int uLE_related(char *pathout, char *pathin);
 int uLE_detect_TV_mode();
 int exists(char *path);
+int uLE_cdDiscValid(void);
+int uLE_cdStop(void);
 
 /* elf.c */
 int checkELFheader(char *filename);
