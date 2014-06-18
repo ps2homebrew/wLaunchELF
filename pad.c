@@ -5,11 +5,12 @@
 
 static char padBuf_t[2][256] __attribute__((aligned(64)));
 struct padButtonStatus buttons_t[2];
+u32 padtype_t[2];
 u32 paddata, paddata_t[2];
 u32 old_pad = 0, old_pad_t[2] = {0, 0};
 u32 new_pad, new_pad_t[2];
-u32 joy_value;
-static int test_joy;
+u32 joy_value = 0;
+static int test_joy = 0;
 
 //---------------------------------------------------------------------------
 // read PAD, without KB, and allow no auto-repeat. This is needed in code
@@ -55,8 +56,7 @@ int readpad_no_KB(void)
 			ret[port] = padRead(port, 0, &buttons_t[port]);
 			if (ret[port] != 0){
 				paddata_t[port] = 0xffff ^ buttons_t[port].btns;
-				if(++test_joy==2) test_joy=0;
-				if(test_joy){
+				if((padtype_t[port] == 2) && (1 & (test_joy++))){//DualShock && time for joy scan
 					joy_value=0;
 					if(buttons_t[port].rjoy_h >= 0xbf){
 						paddata_t[port]=PAD_R3_H1;
@@ -322,24 +322,33 @@ int setupPad(void)
 	padInit(0);
 
 	for(port=0; port<2; port++){
+		padtype_t[port] = 0;  //Assume that we don't have a proper PS2 controller
 		if((ret = padPortOpen(port, 0, &padBuf_t[port][0])) == 0)
 			return 0;
 		waitPadReady(port, 0);
 		state = padGetState(port, 0);
-		if(state != PAD_STATE_DISCONN){
+		if(state != PAD_STATE_DISCONN){ //if anything connected to this port
 			modes = padInfoMode(port, 0, PAD_MODETABLE, -1);
-			if (modes != 0){
-				i = 0;
-				do{
+			if (modes != 0){ //modes != 0, so it may be a dualshock type
+				for(i=0; i<modes; i++){
 					if (padInfoMode(port, 0, PAD_MODETABLE, i) == PAD_TYPE_DUALSHOCK){
-						padSetMainMode(port, 0, PAD_MMODE_DUALSHOCK, PAD_MMODE_LOCK);
+						padtype_t[port] = 2; //flag normal PS2 controller
 						break;
 					}
-					i++;
-				} while (i < modes);
+				} //ends for (modes)
+			} else { //modes == 0, so this is a digital controller
+				padtype_t[port] = 1; //flag digital controller
 			}
+			if(padtype_t[port] == 2)                                        //if DualShock
+				padSetMainMode(port, 0, PAD_MMODE_DUALSHOCK, PAD_MMODE_LOCK);   //Set DualShock
+			else                                                            //else
+				padSetMainMode(port, 0, PAD_MMODE_DIGITAL, PAD_MMODE_UNLOCK);   //Set Digital
+			waitPadReady(port, 0);                                          //Await completion
+		} else {                                          //Nothing is connected to this port
+				padSetMainMode(port, 0, PAD_MMODE_DUALSHOCK, PAD_MMODE_LOCK); //Fake DualShock
+				waitPadReady(port, 0);                                        //Await completion
 		}
-	}
+	} //ends for (port)
 	return 1;
 }
 //---------------------------------------------------------------------------

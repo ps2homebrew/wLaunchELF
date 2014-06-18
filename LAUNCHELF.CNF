@@ -259,6 +259,17 @@ JpgView_Trans = 2
 PSU_HugeNames = 0
 PSU_DateNames = 0
 # ----------------------------------------------------------------------
+# PSU_NoOverwrite was added in v3.93, to eliminate redundant backups.
+# It's only useful to set it non-zero when PSU_DateNames is also set, as
+# it is otherwise ignored. When used, backup of timestamped PSU files
+# check for an identical PSU filename at the destination, and if such
+# a file already exists the operation exits without error, as if a new
+# backup had been made. Thus you can select all saves on an MC and use
+# psuPaste to backup only those that have changed since last time.
+# This improvement was contributed by 'ffgriever' at ps2-scene.
+# ----------------------------------------------------------------------
+PSU_NoOverwrite = 0
+# ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them
 # to define your own titles that will be used instead of ELF names in

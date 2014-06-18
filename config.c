@@ -33,6 +33,7 @@ enum
 	DEF_JPGVIEW_TRANS = 2,
 	DEF_PSU_HUGENAMES = 0,
 	DEF_PSU_DATENAMES = 0,
+	DEF_PSU_NOOVERWRITE = 0,
 	
 	DEFAULT=0,
 	SHOW_TITLES=12,
@@ -191,6 +192,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"JpgView_Trans = %d\r\n"
 		"PSU_HugeNames = %d\r\n"
 		"PSU_DateNames = %d\r\n"
+		"PSU_NoOverwrite = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
@@ -229,6 +231,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->JpgView_Trans, //JpgView_Trans
 		setting->PSU_HugeNames, //PSU_HugeNames
 		setting->PSU_DateNames, //PSU_DateNames
+		setting->PSU_NoOverwrite, //PSU_NoOverwrite
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -388,6 +391,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->JpgView_Trans = -1; //only used to detect missing variable
 	setting->PSU_HugeNames = DEF_PSU_HUGENAMES;
 	setting->PSU_DateNames = DEF_PSU_DATENAMES;
+	setting->PSU_NoOverwrite = DEF_PSU_NOOVERWRITE;
 
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
@@ -513,6 +517,7 @@ failed_load:
 		else if(!strcmp(name,"JpgView_Trans")) setting->JpgView_Trans = atoi(value);
 		else if(!strcmp(name,"PSU_HugeNames")) setting->PSU_HugeNames = atoi(value);
 		else if(!strcmp(name,"PSU_DateNames")) setting->PSU_DateNames = atoi(value);
+		else if(!strcmp(name,"PSU_NoOverwrite")) setting->PSU_NoOverwrite = atoi(value);
 		else {
 			for(i=0; i<15; i++){
 				sprintf(tsts, "LK_%s_Title", LK_ID[i]);

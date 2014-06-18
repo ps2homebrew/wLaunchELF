@@ -36,13 +36,15 @@ enum
 	NUM_MENU
 };
 
-#define PM_NORMAL     0 //PasteMode value for normal copies
-#define PM_MC_BACKUP  1 //PasteMode value for gamesave backup from MC
-#define PM_MC_RESTORE 2 //PasteMode value for gamesave restore to MC
+#define PM_NORMAL     0  //PasteMode value for normal copies
+#define PM_MC_BACKUP  1  //PasteMode value for gamesave backup from MC
+#define PM_MC_RESTORE 2  //PasteMode value for gamesave restore to MC
 #define PM_PSU_BACKUP  3 //PasteMode value for gamesave backup from MC to PSU
 #define PM_PSU_RESTORE 4 //PasteMode value for gamesave restore to MC from PSU
+#define PM_RENAME 5      //PasteMode value for normal copies with new names
 #define MAX_RECURSE  16 //Maximum folder recursion for MC Backup/Restore
 
+int PasteProgress_f = 0;  //Flags progress report having been made in Pasting
 int PasteMode;            //Top-level PasteMode flag
 int PM_flag[MAX_RECURSE]; //PasteMode flag for each 'copy' recursion level
 int PM_file[MAX_RECURSE]; //PasteMode attribute file descriptors
@@ -212,7 +214,18 @@ int mountParty(const char *party)
 	i = j;
 	strcpy(pfs_str, "pfs0:");
 	pfs_str[3] += i;
-	if(fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0)
+	for(j=0; j<=4; j++){ //for loop to kill FTP partition mounts, to release partitions
+		if(fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
+			break; //break from the loop on successful mount
+		//Here mount has failed, which may mean that FTP server stole the partition
+		//j is the index for the next mountpoint to kill in trying to release it
+		i=0;  //as we'll kill at least PFS0, we may as well use that for mounting
+		if(j<4)	            //if j<4, then we try to kill that mountpoint
+			unmountParty(j);  //unmount partition
+	} //ends for loop to kill FTP partition mounts, to release partitions
+	//Here j indicates what happened above with the following meanings:
+	//0..4==Success after killing j mountpoints,  5==Failure
+	if(j>4)
 		return -1;
 	strcpy(mountedParty[i], party);
 return_i:
@@ -342,9 +355,16 @@ int ynDialog(const char *message)
 void nonDialog(char *message)
 {
 	char msg[80*30]; //More than this can't be shown on screen, even in PAL
-	int dh, dw, dx, dy;
+	static int dh, dw, dx, dy;    //These are static, to allow cleanup
 	int a=6, b=4, c=2, n, tw;
 	int i, len, ret;
+
+	if(message==NULL){ //NULL message means cleanup for last nonDialog
+		drawSprite(setting->color[0],
+			dx, dy,
+			dx+dw, (dy+dh));
+		return;
+	}
 
 	strcpy(msg, message);
 
@@ -994,7 +1014,9 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
 	psu_header PSU_head;
 	int i, tst, PSU_content, psu_pad_pos;
 	char *cp;
-	
+
+	out[0] = '\0'; //Start by making an empty result string, for failures
+
 	//Avoid title usage in browser root or partition list
 	if(path[0]==0 || !strcmp(path,"hdd0:/")) return -1;
 
@@ -1010,7 +1032,7 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
 		if(file->stats.attrFile & MC_ATTR_SUBDIR) strcat(dir, "/");
 	}
 
-	ret = -1;
+	ret = -1;  //Assume that result will be failure, to simplify aborts
 
 	if((file->stats.attrFile & MC_ATTR_SUBDIR)==0){
 		//Here we know that the object needing a title is a file
@@ -1037,7 +1059,9 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
 			}
 			//Here the PSU file pointer is positioned for reading next header
 		}//ends for
-	}
+		//Coming here means that the search for icon.sys failed
+		goto finish;  //So go finish off this function
+	}//ends if clause for files needing a title
 
 	//Here we know that the object needing a title is a folder
 	//First try to find a valid PS2 icon.sys file inside the folder
@@ -1186,6 +1210,9 @@ int menu(const char *path, const char *file)
 			      || (!swapKeys && new_pad & PAD_CIRCLE) ){
 				event |= 2;  //event |= valid pad command
 				break;
+			}else if(new_pad & PAD_SQUARE && sel==PASTE){
+				event |= 2;  //event |= valid pad command
+				break;
 			}
 		}
 
@@ -1223,10 +1250,15 @@ int menu(const char *path, const char *file)
 			drawSprite(setting->color[0],
 				0, y,
 				SCREEN_WIDTH, y+FONT_HEIGHT);
+
 			if (swapKeys)
-				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				strcpy(tmp, "ÿ1:OK ÿ0:Cancel");
 			else
-				printXY("ÿ0:OK ÿ1:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
+				strcpy(tmp, "ÿ0:OK ÿ1:Cancel");
+			if(sel==PASTE)
+				strcat(tmp, " ÿ2:Paste+Rename");
+			strcat(tmp, " ÿ3:Back");
+			printXY(tmp, x, y, setting->color[2], TRUE);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -1556,7 +1588,7 @@ int newdir(const char *path, const char *name)
 //--------------------------------------------------------------
 int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
-	FILEINFO files[MAX_ENTRY];
+	FILEINFO newfile, files[MAX_ENTRY];
 	char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH],
 		progress[MAX_PATH*4],
 		*buff=NULL, inParty[MAX_NAME], outParty[MAX_NAME];
@@ -1575,8 +1607,16 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	int psu_pad_size = 0, PSU_restart_f = 0;
 	char *cp, *np;
 
-	PM_flag[recurses+1] = PM_NORMAL;  //at first assume normal mode for next level
-	PM_file[recurses+1] = -1;         //also assume that no special file is needed
+	PM_flag[recurses+1] = PM_NORMAL;  //assume normal mode for next level
+	PM_file[recurses+1] = -1;         //assume that no special file is needed
+	newfile = file;                   //assume that no renaming is to be done
+
+	if(PasteMode==PM_RENAME && recurses==0){ //if renaming requested and valid
+		if(keyboard(newfile.name, 36)<=0)   //if name entered by user made the result invalid
+			strcpy(newfile.name, file.name);  //  recopy newname from file.name
+	} //ends if clause for renaming name entry
+	//Here the struct 'newfile' is FILEINFO for destination, regardless of renaming
+	//for non-renaming cases this is always identical to the struct 'file'
 
 restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 
@@ -1590,29 +1630,31 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 
 	if(!strncmp(outPath, "hdd", 3)){
 		hddout = TRUE;
-		getHddParty(outPath, &file, outParty, out);
+		getHddParty(outPath, &newfile, outParty, out);
 		pfsout = mountParty(outParty);
 		out[3]=pfsout+'0';
 	}else
-		sprintf(out, "%s%s", outPath, file.name);
+		sprintf(out, "%s%s", outPath, newfile.name);
+
+	if(!strcmp(in, out)) return 0;  //if in and out are identical our work is done.
 
 //Here 'in' and 'out' are complete pathnames for the object to copy
 //patched to contain appropriate 'pfs' refs where args used 'hdd'
 //The physical device specifiers remain in 'inPath' and 'outPath'
 
-//Here we have an object to copy, which may be either file or folder
+//Here we have an object to copy, which may be either a file or a folder
 	if(file.stats.attrFile & MC_ATTR_SUBDIR){
 //Here we have a folder to copy, starting with an attempt to create it
 //This is where we must act differently for PSU backup, creating a PSU file instead
 		if(PasteMode==PM_PSU_BACKUP){
 			if(recurses)
-				return -1;
+				return -1;  //abort, as subfolders are not copied to PSU backups
 			i = strlen(out)-1;
 			if(out[i]=='/')
 				out[i] = 0;
 			strcpy(tmp, out);
 			np = tmp+strlen(tmp)-strlen(file.name); //np = start of the pure filename
-			cp = tmp+strlen(tmp);                   //cp = end of the pure filename
+			cp = tmp+strlen(tmp);                      //cp = end of the pure filename
 			if(!setting->PSU_HugeNames)
 				cp = np;                              //cp = start of the pure filename
 
@@ -1648,8 +1690,17 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 
 			strcat(tmp, ".psu");	//add the PSU file extension
 
-			if	(!strncmp(tmp, "host:/", 6))
+			if(!strncmp(tmp, "host:/", 6))
 				makeHostPath(tmp+5, tmp+6);
+
+			if(setting->PSU_DateNames && setting->PSU_NoOverwrite){
+				if(0 <= (out_fd = genOpen(tmp, O_RDONLY))){ //Name conflict ?
+					genClose(out_fd);
+					out_fd=-1;
+					return 0;
+				}
+			}
+
 			genRemove(tmp);
 			if(0 > (out_fd = genOpen(tmp, O_WRONLY | O_TRUNC | O_CREAT)))
 				return -1;	//return error on failure to create PSU file
@@ -1682,17 +1733,15 @@ PSU_error:
 			size = genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
 			if(size != sizeof(PSU_head)) goto PSU_error;
 		} else { //any other PasteMode than PM_PSU_BACKUP
-			ret = newdir(outPath, file.name);
+			ret = newdir(outPath, newfile.name);
 			if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
-				//if(title_show) ret=getGameTitle(outPath, &file, tmp);
-				//if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
-				ret = getGameTitle(outPath, &file, file.title);
-				transcpy_sjis(tmp, file.title);
+				ret = getGameTitle(outPath, &newfile, newfile.title);
+				transcpy_sjis(tmp, newfile.title);
 				sprintf(progress,
 					"Name conflict for this folder:\n"
 					"%s%s/\n"
 					"\n"
-					"With gamesave title:\n", outPath, file.name);
+					"With gamesave title:\n", outPath, newfile.name);
 				if(tmp[0])
 					strcat(progress, tmp);
 				else
@@ -1703,9 +1752,9 @@ PSU_error:
 				||	(PasteMode == PM_MC_RESTORE)
 				||	(PasteMode == PM_PSU_RESTORE)
 				) {
-					ret = delete(outPath, &file);  //Attempt recursive delete
+					ret = delete(outPath, &newfile);  //Attempt recursive delete
 					if(ret < 0) return -1;
-					if(newdir(outPath, file.name) < 0) return -1;
+					if(newdir(outPath, newfile.name) < 0) return -1;
 				}
 				drawMsg("Pasting...");
 			} else if(ret < 0){
@@ -1746,8 +1795,8 @@ PSU_error:
 		}
 		if(PM_flag[recurses+1]==PM_NORMAL){  //Normal mode folder paste preparation
 		}
-		sprintf(out, "%s%s/", outPath, file.name);  //restore phys dev spec to 'out'
-		sprintf(in, "%s%s/", inPath, file.name);    //restore phys dev spec to 'in'
+		sprintf(out, "%s%s/", outPath, newfile.name);  //restore phys dev spec to 'out'
+		sprintf(in, "%s%s/", inPath, file.name);       //restore phys dev spec to 'in'
 
 		if(PasteMode == PM_PSU_RESTORE && PSU_restart_f) {
 			nfiles = PSU_content;
@@ -2054,7 +2103,10 @@ non_PSU_RESTORE_init:
 		}
 		strcat(progress, tmp);
 
-		nonDialog(progress);
+		if(PasteProgress_f)  //if progress report was used earlier in this pasting
+			nonDialog(NULL);     //order cleanup for that screen area
+		nonDialog(progress); //Make new progress report
+		PasteProgress_f = 1; //and note that it was done for next time
 		drawMsg(file.name);
 		if(readpad() && new_pad){
 			if(-1 == ynDialog("Continue transfer ?")) {
@@ -3207,7 +3259,7 @@ void subfunc_Paste(char *mess, char *path)
 	written_size = 0;
 	PasteTime = Timer();	      //Note initial pasting time
 	drawMsg("Pasting...");
-	if(!strcmp(path,clipPath)) goto finished;
+	if(!strcmp(path,clipPath) && PasteMode!=PM_RENAME) goto finished;
 	
 	for(i=0; i<nclipFiles; i++){
 		strcpy(tmp, clipFiles[i].name);
@@ -3216,6 +3268,7 @@ void subfunc_Paste(char *mess, char *path)
 		drawMsg(tmp);
 		PM_flag[0] = PM_NORMAL; //Always use normal mode at top level
 		PM_file[0] = -1;        //Thus no attribute file is used here
+		PasteProgress_f = 0;    //Note that next progress report is the first one
 		ret=copy(path, clipPath, clipFiles[i], 0);
 		if(ret < 0) break;
 		if(browser_cut){
@@ -3239,7 +3292,10 @@ finished:
 //--------------------------------------------------------------
 void submenu_func_Paste(char *mess, char *path)
 {
-	PasteMode = PM_NORMAL;
+	if(new_pad & PAD_SQUARE)
+		PasteMode = PM_RENAME;
+	else
+		PasteMode = PM_NORMAL;
 	subfunc_Paste(mess, path);
 }
 //------------------------------

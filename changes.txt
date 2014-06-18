@@ -1,5 +1,14 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.93 (2006.08.19)
+-Fixed a new bug that let FTP server interfere with FileBrowser through PFS0
+-Fixed an old bug that let FTP server interfere with FileBrowser through PFS1..PFS3
+-Fixed a new bug in title handling that caused weird results with some PSU backups
+-Improved screen cleanup for some command progress reports
+-Merged PSU_NoOverwrite implementation contributed by ffgriever at ps2-scene. This eliminates redundant backup work when a timestamped PSU filename is identical to the one that would have been used for a new backup file. NB: Setting it requires text editing.
+-Changed pad initialization to cater for digital controllers, and to unlock the controller mode switch (explicitly) for digital or unrecognized (even absent) controller. This has cured some problems that occurred with faulty detection of gamepads and their types. But some cases still exist where you need to set the type manually, by pressing the analog mode button between the joysticks.
+-Added Paste+Rename command, which only affects top level selections. It is used by pressing the 'Square' button instead of the normal OK button ('Circle' or 'Cross'), with the 'Paste' command selected in the R1 menu. This works only for standard 'Paste'. Its intended use is for installing stuff to memory cards using new folder names, and to allow 'pseudo' renaming on MC and mass: by using a combination of 'Cut' and 'Paste+Rename'. But you should never do this unless you have as much free space as the data selected, and can accept the copying delay (which can be huge on these slow media).
+
 LaunchELF v3.92 (2006.08.15)
 -Fixed a new bug (v3.88) that interfered with free space calculations for HDD
 -Improved PSU title naming, so it works even if title mode was activated after 'Copy'

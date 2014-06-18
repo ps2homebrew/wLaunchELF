@@ -107,6 +107,7 @@ typedef struct
 	int JpgView_Trans;
 	int PSU_HugeNames;
 	int PSU_DateNames;
+	int PSU_NoOverwrite;
 } SETTING;
 
 typedef struct
@@ -214,8 +215,8 @@ void config(char *, char *);
 
 /* filer.c */
 typedef struct{
-	char name[256];
-	char title[16*4+1];
+	char name[MAX_NAME];
+	char title[32*2+1];
 	mcTable stats;
 } FILEINFO;
 
