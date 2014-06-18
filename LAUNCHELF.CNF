@@ -199,12 +199,12 @@ Menu_Frame = 1
 # 50, for using the JPG as-is, lower values will darken it while higher
 # values will brighten it. The maximum value allowed is 100.
 # ----------------------------------------------------------------------
-Show_Menu = 1
+SKIN_Brightness = 50
 # ----------------------------------------------------------------------
 # Show_Menu flags whether or not the main menu is visible when a GUI
 # skin is selected. By default it will be visible.
 # ----------------------------------------------------------------------
-SKIN_Brightness = 50
+Show_Menu = 1
 # ----------------------------------------------------------------------
 # TV_mode is used to seup the video mode to suit your TV. You may use
 # the following values in the current implementation:

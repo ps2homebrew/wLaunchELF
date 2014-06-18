@@ -1,5 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.27 (2008.09.04)
+-Added ability of MISC/PS2Disc subprogram to also boot PS1 discs
+(Based on ideas and examples contributed by jimmikaelkael @ psx-scene)
+
+LaunchELF v4.26 (2008.09.02)
+-Fixed a bug preventing detection of PAL/NTSC mode on some slim PStwo units.
+(Now reads "rom0:ROMVER" instead of using gsKit's function "gsKit_detect_signal")
+
 LaunchELF v4.25 (2008.08.19)
 -Fixed a bug preventing proper updates of IPCONFIG.DAT (open file)
 -Fixed a bug preventing Cancel command from working in some file selections

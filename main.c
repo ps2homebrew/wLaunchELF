@@ -1,6 +1,6 @@
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //File name:   main.c
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 #include "launchelf.h"
 
 //dlanor: I'm correcting all these erroneous 'u8 *name' declarations
@@ -151,9 +151,16 @@ int boot_argc;
 char *boot_argv[8];
 char boot_path[MAX_PATH];
 
-//--------------------------------------------------------------
+//Variables for SYSTEM.CNF processing
+int  BootDiscType = 0;
+char SystemCnf_BOOT[MAX_PATH];
+char SystemCnf_BOOT2[MAX_PATH];
+char SystemCnf_VER[10];   //Arbitrary. Real value should always be shorter
+char SystemCnf_VMODE[10]; //Arbitrary, same deal. As yet unused
+
+//---------------------------------------------------------------------------
 //executable code
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //Function to print a text row to the 'gs' screen
 //------------------------------
 int	PrintRow(int row_f, char *text_p)
@@ -168,7 +175,7 @@ int	PrintRow(int row_f, char *text_p)
 }  
 //------------------------------
 //endfunc PrintRow
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
 void ShowDebugInfo(void)
@@ -215,7 +222,7 @@ void ShowDebugInfo(void)
 }
 //------------------------------
 //endfunc ShowDebugInfo
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //Function to check for presence of key modules
 //------------------------------
 void	CheckModules(void)
@@ -238,7 +245,7 @@ void	CheckModules(void)
 }
 //------------------------------
 //endfunc CheckModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // Parse network configuration from IPCONFIG.DAT
 // Now completely rewritten to fix some problems
 //------------------------------
@@ -287,7 +294,7 @@ static void getIpConfig(void)
 }
 //------------------------------
 //endfunc getIpConfig
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void setLaunchKeys(void)
 {
 	if(!setting->LK_Flag[12])
@@ -299,7 +306,7 @@ void setLaunchKeys(void)
 }
 //------------------------------
 //endfunc setLaunchKeys()
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 int drawMainScreen(void)
 {
 	int nElfs=0;
@@ -435,7 +442,7 @@ int drawMainScreen(void)
 }
 //------------------------------
 //endfunc drawMainScreen
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 int drawMainScreen2(int TV_mode)
 {
 	int nElfs=0;
@@ -525,7 +532,7 @@ int drawMainScreen2(int TV_mode)
 }
 //------------------------------
 //endfunc drawMainScreen2
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void delay(int count)
 {
 	int i;
@@ -537,7 +544,7 @@ void delay(int count)
 }
 //------------------------------
 //endfunc delay
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void initsbv_patches(void)
 {
 	if(!have_sbv_patches)
@@ -549,7 +556,7 @@ void initsbv_patches(void)
 }
 //------------------------------
 //endfunc initsbv_patches
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_iomanx(void)
 {
 	int ret;
@@ -561,7 +568,7 @@ void	load_iomanx(void)
 }
 //------------------------------
 //endfunc load_iomanx
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_filexio(void)
 {
 	int ret;
@@ -573,7 +580,7 @@ void	load_filexio(void)
 }
 //------------------------------
 //endfunc load_filexio
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2dev9(void)
 {
 	int ret;
@@ -586,7 +593,7 @@ void	load_ps2dev9(void)
 }
 //------------------------------
 //endfunc load_ps2dev9
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2ip(void)
 {
 	int ret;
@@ -605,7 +612,7 @@ void	load_ps2ip(void)
 }
 //------------------------------
 //endfunc load_ps2ip
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2atad(void)
 {
 	int ret;
@@ -628,7 +635,7 @@ void	load_ps2atad(void)
 }
 //------------------------------
 //endfunc load_ps2atad
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2host(void)
 {
 	int ret;
@@ -641,7 +648,7 @@ void	load_ps2host(void)
 }
 //------------------------------
 //endfunc load_ps2host
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_vmcfs(void)
 {
 	int ret;
@@ -655,7 +662,7 @@ void	load_vmcfs(void)
 }
 //------------------------------
 //endfunc load_vmcfs
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2ftpd(void)
 {
 	int 	ret;
@@ -673,7 +680,7 @@ void	load_ps2ftpd(void)
 }
 //------------------------------
 //endfunc load_ps2ftpd
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void	load_ps2netfs(void)
 {
 	int ret;
@@ -686,7 +693,7 @@ void	load_ps2netfs(void)
 }
 //------------------------------
 //endfunc load_ps2netfs
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadBasicModules(void)
 {
 	if	(!have_sio2man) {
@@ -708,7 +715,7 @@ void loadBasicModules(void)
 }
 //------------------------------
 //endfunc loadBasicModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadCdModules(void)
 {
 	int ret;
@@ -722,7 +729,7 @@ void loadCdModules(void)
 }
 //------------------------------
 //endfunc loadCdModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // loadExternalFile below will use the given path, and read the
 // indicated file into a buffer it allocates for that purpose.
 // The buffer address and size are returned via pointer variables,
@@ -732,7 +739,7 @@ void loadCdModules(void)
 // NB: Release of the allocated memory block, if/when it is not
 // needed anymore, is entirely the responsibility of the caller,
 // though, of course, none is allocated if the file is not found.
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 { //The first three variables are local variants similar to the arguments
 	char filePath[MAX_PATH];
@@ -789,7 +796,7 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 }
 //------------------------------
 //endfunc loadExternalFile
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // loadExternalModule below will use the given path and attempt
 // to load the indicated file into a temporary buffer, and from
 // that buffer send it on to the IOP as a driver module, after
@@ -800,7 +807,7 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 // is zero, in which case a value of 0 is returned. A value of
 // 0 is also returned if loading of default module fails. But
 // normally the value returned will be the size of the module.
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 int loadExternalModule(char *modPath, void *defBase, int defSize)
 {
 	void *extBase;
@@ -823,7 +830,7 @@ int loadExternalModule(char *modPath, void *defBase, int defSize)
 }
 //------------------------------
 //endfunc loadExternalModule
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadUsbDModule(void)
 {
 	if( (!have_usbd)
@@ -832,7 +839,7 @@ void loadUsbDModule(void)
 }
 //------------------------------
 //endfunc loadUsbDModule
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadUsbModules(void)
 {
 	//int ret;
@@ -848,7 +855,7 @@ void loadUsbModules(void)
 }
 //------------------------------
 //endfunc loadUsbModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadKbdModules(void)
 {
 	loadUsbDModule();
@@ -858,7 +865,7 @@ void loadKbdModules(void)
 }
 //------------------------------
 //endfunc loadKbdModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadHdlInfoModule(void)
 {
 	int ret;
@@ -872,14 +879,14 @@ void loadHdlInfoModule(void)
 }
 //------------------------------
 //endfunc loadHdlInfoModule
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void poweroffHandler(int i)
 {
 	hddPowerOff();
 }
 //------------------------------
 //endfunc poweroffHandler
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void setupPowerOff(void) {
 	int ret;
 
@@ -898,7 +905,7 @@ void setupPowerOff(void) {
 }
 //------------------------------
 //endfunc setupPowerOff
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void loadHddModules(void)
 {
 	if(!have_HDD_modules) {
@@ -910,7 +917,7 @@ void loadHddModules(void)
 }
 //------------------------------
 //endfunc loadHddModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // Load Network modules by EP (modified by RA)
 //------------------------------
 void loadNetModules(void)
@@ -935,7 +942,7 @@ void loadNetModules(void)
 }
 //------------------------------
 //endfunc loadNetModules
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void startKbd(void)
 {
 	int kbd_fd;
@@ -967,65 +974,65 @@ void startKbd(void)
 }
 //------------------------------
 //endfunc startKbd
-//--------------------------------------------------------------
-// Read SYSTEM.CNF for MISC/PS2Disc launch command
-int ReadCNF(char *LK_Path)
+//---------------------------------------------------------------------------
+//scanSystemCnf will check for a standard variable of a SYSTEM.CNF file
+//------------------------------
+int scanSystemCnf(unsigned char *name, unsigned char *value)
 {
-	char *systemcnf;
-	int fd;
-	int size;
-	int n;
-	int i;
-	
-	loadCdModules();
-	/*
-	CDVD_FlushCache();
-	CDVD_DiskReady(0);
-	*/
-	i = 0x10000;
-	while(i--) asm("nop\nnop\nnop\nnop");
-	fd = fioOpen("cdrom0:\\SYSTEM.CNF;1",1);
-	if(fd>=0) {
-		size = fioLseek(fd,0,SEEK_END);
-		fioLseek(fd,0,SEEK_SET);
-		systemcnf = (char*)malloc(size+1);
-		fioRead(fd, systemcnf, size);
-		systemcnf[size]=0; //RA NB: [size] means the first byte after file bytes
-		//RA NB: An old error used systemcnf[size+1] above
-		//RA NB: which zeroes one byte beyond the allocated buffer
-		//RA NB: leaving an unknown byte to be accepted at buffer end
-		//RA NB: That byte may be zeroed by malloc, but we shouldn't rely on it
-		for(n=0; systemcnf[n]!=0; n++){
-			if(!strncmp(&systemcnf[n], "BOOT2", 5)) {
-				n+=5;
-				break;
-			}
-		}
-		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++; //skip spaces
-		if(systemcnf[n]!=0 ) n++;                        //skip '='
-		while(systemcnf[n]!=0 && systemcnf[n]==' ') n++; //skip spaces
-		if(systemcnf[n]==0){ //termination without any pathname
-			free(systemcnf);
-			return 0;
-		}
-		
-		for(i=0; systemcnf[n+i]!=0; i++) {
-			LK_Path[i] = systemcnf[n+i];
-			if(i>2)
-				if(!strncmp(&LK_Path[i-1], ";1", 2)) {
-					LK_Path[i+1]=0;
-					break;
-				}
-		}
-		fioClose(fd);
-		free(systemcnf);
-		return 1;
-	}
-	return 0;
+	if(!strcmp(name,"BOOT")) strncat(SystemCnf_BOOT, value, MAX_PATH-1);
+	else if(!strcmp(name,"BOOT2")) strncat(SystemCnf_BOOT2, value, MAX_PATH-1);
+	else if(!strcmp(name,"VER")) strncat(SystemCnf_VER, value, 9);
+	else if(!strcmp(name,"VMODE")) strncat(SystemCnf_VMODE, value, 9);
+	else
+		return 0; //when no matching variable
+	return 1; //when matching variable found
 }
 //------------------------------
-//endfunc ReadCNF
-//--------------------------------------------------------------
+//endfunc scanSystemCnf
+//---------------------------------------------------------------------------
+//readSystemCnf will read standard settings from a SYSTEM.CNF file
+//------------------------------
+int readSystemCnf(void)
+{
+	int dummy, var_cnt;
+	unsigned char *RAM_p, *CNF_p, *name, *value;
+
+	BootDiscType = 0;
+	SystemCnf_BOOT[0]  = '\0';
+	SystemCnf_BOOT2[0] = '\0';
+	SystemCnf_VER[0]   = '\0';
+	SystemCnf_VMODE[0] = '\0';
+
+	if( (RAM_p = preloadCNF("cdrom0:\\SYSTEM.CNF;1")) != NULL){
+		CNF_p = RAM_p;
+		for(var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
+			dummy = scanSystemCnf(name, value);
+		free(RAM_p);
+	}
+
+	if(SystemCnf_BOOT2[0]) BootDiscType = 2;
+	else if(SystemCnf_BOOT[0]) BootDiscType = 1;
+
+	if(!SystemCnf_BOOT[0]) strcpy(SystemCnf_BOOT, "???");
+	if(!SystemCnf_VER[0]) strcpy(SystemCnf_VER, "???");
+
+	if(RAM_p == NULL){ //if SYSTEM.CNF was not found test for PS1 special cases
+		if(exists("cdrom0:\\PSXMYST\\MYST.CCS;1")){
+			strcpy(SystemCnf_BOOT, "SLPS_000.24");
+			BootDiscType = 1;
+		}else if(exists("cdrom0:\\CDROM\\LASTPHOT\\ALL_C.NBN;1")){
+			strcpy(SystemCnf_BOOT, "SLPS_000.65");
+			BootDiscType = 1;
+		}else if(exists("cdrom0:\\PSX.EXE;1")){
+			BootDiscType = 1;
+		}
+	}
+
+	return BootDiscType; //0==none, 1==PS1, 2==PS2
+}
+//------------------------------
+//endfunc readSystemCnf
+//---------------------------------------------------------------------------
 void	ShowFont(void)
 {
 	int test_type=0;
@@ -1138,7 +1145,7 @@ done_test:
 }
 //------------------------------
 //endfunc ShowFont
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void triggerPowerOff(void)
 {
 	char filepath[MAX_PATH] = "xyz:/imaginary/hypothetical/doesn't.exist";
@@ -1153,7 +1160,7 @@ void triggerPowerOff(void)
 }
 //------------------------------
 //endfunc triggerPowerOff
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void Validate_CNF_Path(void)
 {
 	char cnf_path[MAX_PATH];
@@ -1165,7 +1172,7 @@ void Validate_CNF_Path(void)
 }
 //------------------------------
 //endfunc Validate_CNF_Path
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 void Set_CNF_Path(void)
 {
 	char	*tmp;
@@ -1184,7 +1191,7 @@ void Set_CNF_Path(void)
 }
 //------------------------------
 //endfunc Set_CNF_Path
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //Reload CNF, possibly after a path change
 int reloadConfig()
 {
@@ -1224,7 +1231,7 @@ int reloadConfig()
 }
 //------------------------------
 //endfunc reloadConfig
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // Config Cycle Left  (--) by EP
 void decConfig()
 {
@@ -1237,7 +1244,7 @@ void decConfig()
 }
 //------------------------------
 //endfunc decConfig
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // Config Cycle Right (++) by EP
 void incConfig()
 {
@@ -1250,7 +1257,7 @@ void incConfig()
 }
 //------------------------------
 //endfunc incConfig
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //exists.  Tests if a file exists or not
 //------------------------------
 int exists(char *path)
@@ -1265,7 +1272,7 @@ int exists(char *path)
 }
 //------------------------------
 //endfunc exists
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //uLE_related.  Tests if an uLE_related file exists or not
 // Returns:
 //  1 == uLE related path with file present
@@ -1296,7 +1303,27 @@ int uLE_related(char *pathout, char *pathin)
 }
 //------------------------------
 //endfunc uLE_related
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
+//CleanUp releases uLE stuff preparatory to launching some other application
+//------------------------------
+void	CleanUp(void)
+{
+	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
+	drawScr();
+	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
+	drawScr();
+	free(setting);
+	free(elisaFnt);
+	free(External_Lang_Buffer);
+	free(FontBuffer);
+	padPortClose(1,0);
+	padPortClose(0,0);
+	if(ps2kbd_opened) PS2KbdClose();
+	TimerEnd();
+}
+//------------------------------
+//endfunc CleanUp
+//---------------------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
 void RunElf(char *pathin)
@@ -1365,9 +1392,17 @@ void RunElf(char *pathin)
 		strcpy(mainMsg, LNG(Failed));
 		party[0]=0;
 		trayopen=FALSE;
-		if(!ReadCNF(fullpath))
+		if(!readSystemCnf())
 			return;  //This should be extended with a fitting error message
-		goto CheckELF_fullpath;
+		if(BootDiscType==2){ //Boot a PS2 disc
+			strcpy(fullpath, SystemCnf_BOOT2);
+			goto CheckELF_fullpath;
+		}
+		if(BootDiscType==1){ //Boot a PS1 disc
+			char *args[2] = {SystemCnf_BOOT, SystemCnf_VER};
+			CleanUp();
+			LoadExecPS2("rom0:PS1DRV", 2, args);
+		}
 	}else if(!stricmp(path, setting->Misc_FileBrowser)){
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
@@ -1477,23 +1512,12 @@ ELFnotFound:
 	}
 
 ELFchecked:
-	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
-	drawScr();
-	clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
-	drawScr();
-	free(setting);
-	free(elisaFnt);
-	free(External_Lang_Buffer);
-	free(FontBuffer);
-	padPortClose(1,0);
-	padPortClose(0,0);
-	if(ps2kbd_opened) PS2KbdClose();
-	TimerEnd();
+	CleanUp();
 	RunLoaderElf(fullpath, party);
 }
 //------------------------------
 //endfunc RunElf
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 // dlanor: but changed now, as the original was badly bugged
 void Reset()
@@ -1530,7 +1554,24 @@ void Reset()
 }
 //------------------------------
 //endfunc Reset
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
+int uLE_detect_TV_mode()
+{
+	int ROMVER_fd;
+	char ROMVER_file[20]; //16 byte file
+
+	ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
+	if(ROMVER_fd < 0)
+		return TV_mode_NTSC; //NTSC is default mode for unidentified console
+	genRead(ROMVER_fd, ROMVER_file, 16);
+	genClose(ROMVER_fd);
+	if(ROMVER_file[4] == 'E')
+		return TV_mode_PAL; //PAL mode is identified by 'E' for Europe
+	return TV_mode_NTSC;  //All other cases need NTSC
+}
+//------------------------------
+//endfunc uLE_detect_TV_mode
+//---------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
 	char *p, CNF_pathname[MAX_PATH];
@@ -1620,7 +1661,7 @@ int main(int argc, char *argv[])
 
 	LastDir[0] = 0;
 
-	if(gsKit_detect_signal()==GS_MODE_PAL) {  //Test console TV mode
+	if(uLE_detect_TV_mode() == TV_mode_PAL) {  //Test console TV mode
 		SCREEN_X			= 652;
 		SCREEN_Y			= 72;
 	} else {
@@ -1639,10 +1680,7 @@ int main(int argc, char *argv[])
 
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
-		if(gsKit_detect_signal()==GS_MODE_PAL)             //Let console decide
-			TV_mode = TV_mode_PAL;
-		else
-			TV_mode = TV_mode_NTSC;
+		TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
 	}
 
 	if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
@@ -1845,6 +1883,6 @@ int main(int argc, char *argv[])
 }
 //------------------------------
 //endfunc main
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
 //End of file: main.c
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------

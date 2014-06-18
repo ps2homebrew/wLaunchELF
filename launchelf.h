@@ -157,6 +157,8 @@ void loadUsbModules(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
 int uLE_related(char *pathout, char *pathin);
+int uLE_detect_TV_mode();
+int exists(char *path);
 
 /* elf.c */
 int checkELFheader(char *filename);
@@ -246,6 +248,10 @@ extern SETTING *setting;
 void initConfig(void);
 int loadConfig(char *, char *);  //0==OK, -1==load failed
 void config(char *, char *);
+int	get_CNF_string(unsigned char **CNF_p_p,
+                   unsigned char **name_p_p,
+                   unsigned char **value_p_p); //main CNF name,value parser
+unsigned char *preloadCNF(char *path); //loads file into RAM it allocates
 
 /* filer.c */
 typedef struct{

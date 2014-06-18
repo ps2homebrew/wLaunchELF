@@ -85,22 +85,22 @@ int readpad_no_KB(void)
 					}
 				}
 				new_pad_t[port] = paddata_t[port] & ~old_pad_t[port];
-				if(old_pad_t[port]==paddata_t[port]){
+				if(old_pad_t[port]==paddata_t[port]){ //if no change of pad data
 					n[port]++;
-					if(gsKit_detect_signal()==GS_MODE_NTSC){
-						if(n[port]>=25){
+					if(TV_mode == TV_mode_NTSC){ //Fix repeats for NTSC
+						if(n[port]>=25){ //NTSC initial repeat delay == 25 loops (0.416 sec)
 							new_pad_t[port]=paddata_t[port];
-							if(nn[port]++ < 20)	n[port]=20;
-							else			n[port]=23;
+							if(nn[port]++ < 20)	n[port]=20; //early repeats use 25-20 loops
+							else			n[port]=23;           //later repeats use 25-23 loops
 						}
-					}else{
-						if(n[port]>=21){
+					}else{ //Fix repeats for PAL
+						if(n[port]>=21){ //PAL initial repeat delay == 21 loops (0.42 sec)
 							new_pad_t[port]=paddata_t[port];
-							if(nn[port]++ < 20)	n[port]=17;
-							else			n[port]=19;
+							if(nn[port]++ < 20)	n[port]=17; //early repeats use 21-17 loops
+							else			n[port]=19;           //later repeats use 21-19 loops
 						}
 					}
-				}else{
+				}else{ //pad data has changed !
 					n[port]=0;
 					nn[port]=0;
 					old_pad_t[port] = paddata_t[port];

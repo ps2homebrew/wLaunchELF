@@ -434,7 +434,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.25 ÿ4",
+	printXY(" ÿ4 LaunchELF v4.27 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -554,10 +554,7 @@ void updateScreenMode(int adapt_XY)
 	int New_TV_mode = setting->TV_mode;
 
 	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)){ //If no forced request
-		if(gsKit_detect_signal()==GS_MODE_PAL)             //Let console decide
-			New_TV_mode = TV_mode_PAL;
-		else
-			New_TV_mode = TV_mode_NTSC;
+		New_TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
 	}
 
 	if(New_TV_mode != TV_mode){
