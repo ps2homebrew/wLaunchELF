@@ -1173,7 +1173,7 @@ void McDataChecksum(void *buf, void *ecc) // Export #20
 }
 
 //--------------------------------------------------------------
-int mcman_getcnum (int port, int slot)
+int mcman_getcnum(int port, int slot)
 {
 	return ((port & 1) << 3) + slot;
 }

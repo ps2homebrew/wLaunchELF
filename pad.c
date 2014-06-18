@@ -35,7 +35,8 @@ int readpad_noKBnoRepeat(void)
 			new_pad_t[port]=0;
 		}  //ends 'if' testing for state valid for padRead
 	}  //ends for
-	new_pad = new_pad_t[0]|new_pad_t[1];
+	new_pad = new_pad_t[0]|new_pad_t[1]; //This has only new button bits
+	paddata = paddata_t[0]|paddata_t[1]; //This has all pressed button bits
 	return (ret[0]|ret[1]);
 }
 //------------------------------
@@ -109,6 +110,7 @@ int readpad_no_KB(void)
 		}  //ends 'if' testing for state valid for padRead
 	}  //ends for
 	new_pad = new_pad_t[0]|new_pad_t[1];
+	paddata = paddata_t[0]|paddata_t[1]; //This has all pressed button bits
 	return (ret[0]|ret[1]);
 }
 //------------------------------

@@ -13,9 +13,9 @@
 #include "mcman.h"
 
 // mc driver vars
-int mcman_mc_port;
-int mcman_mc_slot;
-int mcman_io_sema;
+static int mcman_mc_port = 0;
+static int mcman_mc_slot = 0;
+static int mcman_io_sema = 0;
 
 // mc driver ops functions prototypes
 int mc_init(iop_device_t *iop_dev);
@@ -159,6 +159,12 @@ int mcman_modloadcb(char *filename, int *unit, u8 *arg3)
 //-------------------------------------------------------------- 
 void mcman_unit2card(u32 unit)
 {
+ 	mcman_mc_port = unit & 1;
+ 	mcman_mc_slot = (unit >> 1) & (MCMAN_MAXSLOT - 1);	
+	
+	// original mcman/xmcman code below is silly and I doubt it
+	// can support more than 2 units anyway...
+	/*
 	register u32 mask = 0xF0000000;
 
 	while (!(unit & mask)) {
@@ -167,17 +173,17 @@ void mcman_unit2card(u32 unit)
 			break;
 	}
 
- 	mcman_mc_port = unit & 0xF;
- 	if (mask < 0xF) {  
-		mcman_mc_slot = 0;    
-
+ 	mcman_mc_port = unit & 0xf;
+ 	mcman_mc_slot = 0;
+ 	
+ 	if (mask < 0xf) {  
 		while (mask) {
-			mcman_mc_slot = ((u32)(unit >> mask)) / ((u32)(mask & (mask >> 0x3))) \
+			mcman_mc_slot = ((u32)(unit & mask)) / ((u32)(mask & (mask >> 0x3))) \
 				+ (((mcman_mc_slot << 2) + mcman_mc_slot) << 1);
 			mask >>= 4;
 		}
 	}
-	else mcman_mc_slot = 0;
+	*/
 }
 
 //-------------------------------------------------------------- 
@@ -360,6 +366,7 @@ int mc_dopen(iop_file_t *f, char *dirname)
 		if (r >= 0)
 			f->privdata = (void*)r;
 	}
+	
 	SignalSema(mcman_io_sema);
 	
 	return mcman_ioerrcode(r);
@@ -401,6 +408,7 @@ int mc_getstat(iop_file_t *f, char *filename, fio_stat_t *stat)
 	if (r >= -1) {
 		r = mcman_getstat(mcman_mc_port, mcman_mc_slot, filename, stat);
 	}
+	
 	SignalSema(mcman_io_sema);
 	
 	return mcman_ioerrcode(r);
