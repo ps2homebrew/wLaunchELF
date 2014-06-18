@@ -263,7 +263,7 @@ aborted_1:
 	char *tmp;
 
 	if(strlen(setting->Misc)>0){
-		for(i=0; i<15; i++){	//Loop to rename the ELF paths with new language for launch keys
+		for(i=0; i<16; i++){	//Loop to rename the ELF paths with new language for launch keys
 			if((i<12) || (setting->LK_Flag[i]!=0)){
 				if(!strncmp(setting->LK_Path[i], setting->Misc, strlen(setting->Misc))){
 					tmp  = strrchr(setting->LK_Path[i], '/');
@@ -297,6 +297,8 @@ aborted_1:
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(ShowFont));
 					else if(!strcmp(tmp+1, setting->Misc_Debug_Info+strlen(setting->Misc)))
 						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Debug_Info));
+					else if(!strcmp(tmp+1, setting->Misc_About_uLE+strlen(setting->Misc)))
+						sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(About_uLE));
 				} // end if Misc
 			} // end if LK assigned
 		} // end for
@@ -317,7 +319,8 @@ aborted_1:
 	sprintf(setting->Misc_Set_CNF_Path , "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
 	sprintf(setting->Misc_Load_CNF     , "%s/%s", LNG(MISC), LNG(Load_CNF));
 	sprintf(setting->Misc_ShowFont     , "%s/%s", LNG(MISC), LNG(ShowFont));
-	sprintf(setting->Misc_Debug_Info     , "%s/%s", LNG(MISC), LNG(Debug_Info));
+	sprintf(setting->Misc_Debug_Info   , "%s/%s", LNG(MISC), LNG(Debug_Info));
+	sprintf(setting->Misc_About_uLE    , "%s/%s", LNG(MISC), LNG(About_uLE));
 
 }
 //Ends Load_External_Language

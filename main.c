@@ -48,6 +48,8 @@ extern void ps2kbd_irx;
 extern int  size_ps2kbd_irx;
 extern void hdl_info_irx;
 extern int  size_hdl_info_irx;
+extern void chkesr_irx;
+extern int size_chkesr_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -140,6 +142,8 @@ int have_ps2hdd   = 0;
 int have_ps2fs    = 0;
 int have_ps2netfs = 0;
 
+int have_chkesr   = 0;
+
 int force_IOP = 0; //flags presence of incompatible drivers, so we must reset IOP
 
 int menu_LK[15];  //holds RunElf index for each valid main menu entry
@@ -158,6 +162,9 @@ char SystemCnf_BOOT2[MAX_PATH];
 char SystemCnf_VER[10];   //Arbitrary. Real value should always be shorter
 char SystemCnf_VMODE[10]; //Arbitrary, same deal. As yet unused
 
+char default_ESR_path[] = "mc:/BOOT/ESR.ELF";
+
+char ROMVER_data[20]; 	//16 byte file read from rom0:ROMVER at init
 CdvdDiscType_t cdmode;
 
 //---------------------------------------------------------------------------
@@ -177,6 +184,21 @@ int	PrintRow(int row_f, char *text_p)
 }  
 //------------------------------
 //endfunc PrintRow
+//---------------------------------------------------------------------------
+//Function to print a text row with text positioning
+//------------------------------
+int	PrintPos(int row_f, int column, char *text_p)
+{	static int row;
+	int x = (Menu_start_x + 4 + column*FONT_WIDTH);
+	int y;
+
+	if(row_f >= 0) row = row_f;
+	y = (Menu_start_y + FONT_HEIGHT*row++);
+	printXY(text_p, x, y, setting->color[3], TRUE, 0);
+	return row;
+}  
+//------------------------------
+//endfunc PrintPos
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
@@ -224,6 +246,56 @@ void ShowDebugInfo(void)
 }
 //------------------------------
 //endfunc ShowDebugInfo
+//---------------------------------------------------------------------------
+//Function to show a screen with program credits ("About uLE")
+//------------------------------
+void Show_About_uLE(void)
+{	char TextRow[256];
+	int	event, post_event=0;
+	int hpos = 16;
+
+	event = 1;   //event = initial entry
+	//----- Start of event loop -----
+	while(1) {
+		//Pad response section
+		waitAnyPadReady();
+		if(readpad() && new_pad){
+			event |= 2;
+			if (setting->GUI_skin[0]) {
+				GUI_active = 1;
+				loadSkin(BACKGROUND_PIC, 0, 0);
+			}
+			break;
+		}
+
+		//Display section
+		if(event||post_event) { //NB: We need to update two frame buffers per event
+			clrScr(setting->color[0]);
+			sprintf(TextRow, "About uLaunchELF %s  %s:", ULE_VERSION, ULE_VERDATE);
+			PrintPos(03,hpos,TextRow);
+			PrintPos(05,hpos,"Project maintainers:");
+			PrintPos(-1,hpos,"  Eric Price       (aka: 'E P')");
+			PrintPos(-1,hpos,"  Ronald Andersson (aka: 'dlanor')");
+			PrintPos(-1,hpos,"");
+			PrintPos(-1,hpos,"Other contributors:");
+			PrintPos(-1,hpos,"  Polo35, radad, Drakonite, sincro");
+			PrintPos(-1,hpos,"  kthu, Slam-Tilt, chip, pixel, Hermes");
+			PrintPos(-1,hpos,"  and others in the PS2Dev community");
+			PrintPos(-1,hpos,"");
+			PrintPos(-1,hpos,"Main release site:");
+			PrintPos(-1,hpos,"  \"http://psx-scene.com/forums/\"");
+			PrintPos(-1,hpos,"");
+			PrintPos(-1,hpos,"Ancestral project: LaunchELF v3.41");
+			PrintPos(-1,hpos,"Created by:        Mirakichi");
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	} //ends while
+	//----- End of event loop -----
+}
+//------------------------------
+//endfunc Show_About_uLE
 //---------------------------------------------------------------------------
 //Function to check for presence of key modules
 //------------------------------
@@ -449,7 +521,7 @@ int drawMainScreen2(int TV_mode)
 {
 	int nElfs=0;
 	int i;
-	int x, y, xo_config, yo_config, yo_first, yo_step;
+	int x, y, xo_config=0, yo_config=0, yo_first=0, yo_step=0;
 	u64 color;
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
@@ -732,6 +804,25 @@ void loadCdModules(void)
 //------------------------------
 //endfunc loadCdModules
 //---------------------------------------------------------------------------
+void load_chkesr_module(void)
+{
+	// load chkesr and other modules (EROMDRV) needed to read DVDV
+	
+	int ret;
+
+	if(have_chkesr)
+		return;
+
+	printf("Loading chkesr module\n");
+
+	SifExecModuleBuffer(&chkesr_irx, size_chkesr_irx, 0, NULL, &ret);
+	chkesr_rpc_Init();
+
+	have_chkesr = 1;
+}
+//------------------------------
+//endfunc load_chkesr_module
+//---------------------------------------------------------------------------
 int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
 {
 	if (!have_cdvd) {
@@ -784,6 +875,7 @@ int uLE_cdStop(void)
 int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 { //The first three variables are local variants similar to the arguments
 	char filePath[MAX_PATH];
+	char *pathSep;
 	void *fileBase;
 	int fileSize;
 	FILE*	File;
@@ -791,12 +883,16 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 	fileBase = NULL;
 	fileSize = 0;
 
-	if(!strncmp(argPath, "mass:/", 6)){
+	pathSep = strchr(argPath, '/');
+
+	if(!strncmp(argPath, "mass", 4)){
 		//Loading some module from USB mass:
 		//NB: This won't be for USB drivers, due to protection elsewhere
 		loadUsbModules();
-		strcpy(filePath, "mass:");
-		strcat(filePath, argPath+6);
+		strcpy(filePath, argPath);
+		if(pathSep && (pathSep-argPath<7) && pathSep[-1]==':')
+			strcpy(filePath+(pathSep-argPath), pathSep+1);
+
 	}else if(!strncmp(argPath, "hdd0:/", 6)){
 		//Loading some module from HDD
 		char party[MAX_PATH];
@@ -808,6 +904,7 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 		sprintf(filePath, "pfs0:%s", p);
 		*p = 0;
 		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
+
 	}else if(!strncmp(argPath, "cdfs", 4)){
 		loadCdModules();
 		strcpy(filePath, argPath);
@@ -847,7 +944,8 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 // arguments will be used, except if the base is NULL or the size
 // is zero, in which case a value of 0 is returned. A value of
 // 0 is also returned if loading of default module fails. But
-// normally the value returned will be the size of the module.
+// normally the value returned will be 1 for an internal default
+// module, but 2 for an external module..
 //---------------------------------------------------------------------------
 int loadExternalModule(char *modPath, void *defBase, int defSize)
 {
@@ -865,8 +963,8 @@ int loadExternalModule(char *modPath, void *defBase, int defSize)
 		}
 	}
 	if(external) free(extBase);
-	if(ext_OK) return extSize;
-	if(def_OK) return defSize;
+	if(ext_OK) return 2;
+	if(def_OK) return 1;
 	return 0;
 }
 //------------------------------
@@ -888,11 +986,15 @@ void loadUsbModules(void)
 	loadUsbDModule();
 	if(	have_usbd
 	&&	!have_usb_mass
-	&&	loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx)){
+	&&	(USB_mass_loaded = loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx))){
 		delay(3);
 		//ret = usb_mass_bindRpc(); //dlanor: disused in switching to usbhdfsd
 		have_usb_mass = 1;
 	}
+	if(USB_mass_loaded == 1) //if using the internal mass driver
+		USB_mass_max_drives = USB_MASS_MAX_DRIVES; //allow multiple drives
+	else
+		USB_mass_max_drives = 1; //else allow only one mass drive
 }
 //------------------------------
 //endfunc loadUsbModules
@@ -1373,13 +1475,20 @@ void RunElf(char *pathin)
 	static char path[MAX_PATH];
 	static char fullpath[MAX_PATH];
 	static char party[40];
+	char *pathSep;
 	char *p;
 	int x, t=0;
+	char dvdpl_path[] = "mc0:/BREXEC-DVDPLAYER/dvdplayer.elf";
+	int dvdpl_update;
 
 	if(pathin[0]==0) return;
 	
 	if( !uLE_related(path, pathin) ) //1==uLE_rel 0==missing, -1==other dev
 		return;
+
+Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
+
+	pathSep = strchr(path, '/');
 
 	if(!strncmp(path, "mc", 2)){
 		party[0] = 0;
@@ -1391,6 +1500,7 @@ void RunElf(char *pathin)
 			goto ELFchecked;
 		fullpath[2]='1';
 		goto CheckELF_fullpath;
+
 	}else if(!strncmp(path, "vmc", 3)){
 		x = path[3] - '0';
 		if((x<0)||(x>1)||!vmcMounted[x])
@@ -1406,18 +1516,19 @@ void RunElf(char *pathin)
 		sprintf(fullpath, "pfs0:%s", p);
 		*p = 0;
 		goto ELFchecked;
-	}else if(!strncmp(path, "mass:", 5)){
+
+	}else if(!strncmp(path, "mass", 4)){
 		loadUsbModules();
 		if((t=checkELFheader(path))<=0)
 			goto ELFnotFound;
 		//coming here means the ELF is fine
 		party[0] = 0;
-		strcpy(fullpath, "mass:");
-		if(path[5] == '/')
-			strcat(fullpath, path+6);
-		else
-			strcat(fullpath, path+5);
+
+		strcpy(fullpath, path);
+		if(pathSep && (pathSep-path<7) && pathSep[-1]==':')
+			strcpy(fullpath+(pathSep-path), pathSep+1);
 		goto ELFchecked;
+
 	}else if(!strncmp(path, "host:", 5)){
 		initHOST();
 		party[0] = 0;
@@ -1428,6 +1539,7 @@ void RunElf(char *pathin)
 			strcat(fullpath, path+5);
 		makeHostPath(fullpath, fullpath);
 		goto CheckELF_fullpath;
+
 	}else if(!stricmp(path, setting->Misc_PS2Disc)){
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		party[0]=0;
@@ -1446,45 +1558,81 @@ void RunElf(char *pathin)
 		}
 		if(uLE_cdDiscValid()){
 			if(cdmode == CDVD_TYPE_DVDVIDEO){
-				//ESR Disc test case //Not yet implemented
-				//DVD Video test case
-				char arg0[20], arg1[20], arg2[20];
-				char *args[3] = {arg0, arg1, arg2};
+
+				load_chkesr_module(); //prepare to check for ESR disc
+				if((x=Check_ESR_Disc())){	//ESR Disc, so launch ESR
+					if(setting->LK_Flag[15] && setting->LK_Path[15][0])
+						strcpy(path, setting->LK_Path[15]);
+					else
+						strcpy(path, default_ESR_path);
+
+					goto Recurse_for_ESR;
+				}
+
+				//DVD Video Disc, so launch DVD player
+				char arg0[20], arg1[20], arg2[20], arg3[40];
+				char *args[4] = {arg0, arg1, arg2, arg3};
+				char kelf_loader[40];
 				char MG_region[10];
-				int i, pos, tst;
+				int i, pos, tst, argc;
 
 				if ((tst = SifLoadModule("rom0:ADDDRV", 0, NULL)) < 0)
 					goto Fail_DVD_Video;
 
-				strcpy(MG_region, "ACEJMORU");
 				strcpy(arg0, "-k rom1:EROMDRVA");
 				strcpy(arg1, "-m erom0:UDFIO");
 				strcpy(arg2, "-x erom0:DVDPLA");
-				pos = strlen(arg0)-1;
+				argc = 3;
+				strcpy(kelf_loader, "moduleload2 rom1:UDNL rom1:DVDCNF");
 
+				strcpy(MG_region, "ACEJMORU");
+				pos = strlen(arg0)-1;
 				for(i=0; i<9 ; i++){ //NB: MG_region[8] is a string terminator
 					arg0[pos] = MG_region[i];
 					tst = SifLoadModuleEncrypted(arg0+3, 0, NULL);
 					if(tst >= 0)
-						goto have_DVDELF;
+						break;
 				}
-				goto Fail_PS2Disc;
 
-have_DVDELF:
 				pos = strlen(arg2);
 				if(i == 8)
 					strcpy(&arg2[pos-3], "ELF");
 				else
 					arg2[pos-1] = MG_region[i];
+				//At this point all args are ready to use internal DVD player
+
+				//We must check for an updated player on MC
+				dvdpl_path[6] = ROMVER_data[4];
+				dvdpl_update = 0;
+				for(i=0; i<2; i++){
+					dvdpl_path[2] = '0'+i;
+					if(exists(dvdpl_path)){
+						dvdpl_update = 1;
+						break;
+					}
+				}
+
+				if((tst < 0) && (dvdpl_update == 0))
+						goto Fail_PS2Disc; //We must abort if no working kelf found
+
+				if(dvdpl_update){	// Launch DVD player from memory card
+					strcpy(arg0, "-m rom0:SIO2MAN");
+					strcpy(arg1, "-m rom0:MCMAN");
+					strcpy(arg2, "-m rom0:MCSERV");
+					sprintf(arg3, "-x %s", dvdpl_path); // -x :elf is encrypted for mc
+					argc = 4;
+					strcpy(kelf_loader, "moduleload");
+				}
 
 				CleanUp();
-				LoadExecPS2("moduleload2 rom1:UDNL rom1:DVDCNF", 3, args);
+				LoadExecPS2(kelf_loader, argc, args);
+
 Fail_DVD_Video:
 				sprintf(mainMsg, "DVD-Video %s", LNG(Failed));
 				goto Done_PS2Disc;
 			}
 			if(cdmode == CDVD_TYPE_CDDA){
-Fail_CDDA:
+//Fail_CDDA:
 				sprintf(mainMsg, "CDDA %s", LNG(Failed));
 				goto Done_PS2Disc;
 			}
@@ -1578,6 +1726,13 @@ Done_PS2Disc:
 		}
 		ShowDebugInfo();
 		return;
+	}else if(!stricmp(path, setting->Misc_About_uLE)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
+		Show_About_uLE();
+		return;
 	}else if(!strncmp(path, "cdfs", 4)){
 		loadCdModules();
 		CDVD_FlushCache();
@@ -1591,6 +1746,9 @@ CheckELF_path:
 CheckELF_fullpath:
 		if((t=checkELFheader(fullpath))<=0)
 			goto ELFnotFound;
+ELFchecked:
+		CleanUp();
+		RunLoaderElf(fullpath, party);
 	}else{ //Invalid path
 		t = 0;
 ELFnotFound:
@@ -1600,10 +1758,6 @@ ELFnotFound:
 			sprintf(mainMsg, "%s: %s.", LNG(This_file_isnt_an_ELF), fullpath);
 		return;
 	}
-
-ELFchecked:
-	CleanUp();
-	RunLoaderElf(fullpath, party);
 }
 //------------------------------
 //endfunc RunElf
@@ -1648,14 +1802,15 @@ void Reset()
 int uLE_detect_TV_mode()
 {
 	int ROMVER_fd;
-	char ROMVER_file[20]; //16 byte file
 
 	ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
 	if(ROMVER_fd < 0)
 		return TV_mode_NTSC; //NTSC is default mode for unidentified console
-	genRead(ROMVER_fd, ROMVER_file, 16);
+	genRead(ROMVER_fd, ROMVER_data, 16);
 	genClose(ROMVER_fd);
-	if(ROMVER_file[4] == 'E')
+	ROMVER_data[16] = 0;
+
+	if(ROMVER_data[4] == 'E')
 		return TV_mode_PAL; //PAL mode is identified by 'E' for Europe
 	return TV_mode_NTSC;  //All other cases need NTSC
 }
@@ -1795,7 +1950,7 @@ int main(int argc, char *argv[])
 	swapKeys = setting->swapKeys;
 	if(setting->resetIOP)
 	{	Reset();
-		if(!strncmp(LaunchElfDir, "mass:", 5))
+		if(!strncmp(LaunchElfDir, "mass", 4))
 		{	initsbv_patches();
 			loadUsbModules();
 		}

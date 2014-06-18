@@ -212,7 +212,9 @@ int MenuEditor(void)
 //--------------------------------------------------------------
 void Virt_KeyBoard_Entry(void)
 {
-	int i, Operation=0;
+	int i, Operation;
+
+	Operation=0;
 
 	if(new_pad & PAD_UP){ // Virtual KeyBoard move up.
 		if(!KeyBoard_Cur)
@@ -258,10 +260,14 @@ void Virt_KeyBoard_Entry(void)
 	}else if((!swapKeys && new_pad & PAD_CROSS)
 	      || (swapKeys && new_pad & PAD_CIRCLE) ){ // Virtual KeyBoard Backspace
 		if(Editor_Cur>0){
+			if(		TextMode[Active_Window]==OTHER
+				&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+				&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+			){
+				Editor_Cur += 1; //Backspace at LF of CRLF must work after LF instead
+			}
 			if(Mark[MARK_ON]){
 				Mark[MARK_OUT]=Editor_Cur;
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_OUT]]=='\n')
-					Mark[MARK_OUT]=Editor_Cur+1;
 				if(Mark[MARK_OUT]<Mark[MARK_IN]){
 					Mark[MARK_TMP]=Mark[MARK_IN];
 					Mark[MARK_IN]=Mark[MARK_OUT];
@@ -271,12 +277,13 @@ void Virt_KeyBoard_Entry(void)
 				Mark[MARK_SIZE]=Mark[MARK_OUT]-Mark[MARK_IN];
 				del1= -Mark[MARK_SIZE], del2=0, del3= -Mark[MARK_SIZE], del4= -Mark[MARK_SIZE];
 				Mark[MARK_ON]=0;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-				del1=-1, del2=1, del3=-2, del4=-1;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur-1]=='\n'){
-				del1=-2, del2=0, del3=-2, del4=-2;
+			}else if(TextMode[Active_Window]==OTHER
+				&&	TextBuffer[Active_Window][Editor_Cur-1]=='\n'
+				&&	Editor_Cur>1
+				&&	TextBuffer[Active_Window][Editor_Cur-2]=='\r'){
+				del1=-2, del2=0, del3=-2, del4=-2; //Backspace CRLF
 			}else{
-				del1=-1, del2=0, del3=-1, del4=-1;
+				del1=-1, del2=0, del3=-1, del4=-1; //Backspace single char
 			}
 			Operation=-1;
 		}
@@ -286,22 +293,32 @@ void Virt_KeyBoard_Entry(void)
 		if(!KeyBoard_Cur){ // Virtual KeyBoard MARK.
 			Mark[MARK_ON]=!Mark[MARK_ON];
 			if(Mark[MARK_ON]){
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur -= 1; //Marking at LF of CRLF must start at CR instead
+				}
 				if(Mark[MARK_COPY] || Mark[MARK_CUT])
 					free(TextBuffer[EDIT]);
 				Mark[MARK_ON]=1, Mark[MARK_COPY]=0, Mark[MARK_CUT]=0,
 				Mark[MARK_IN]=0, Mark[MARK_OUT]=0, Mark[MARK_TMP]=0,
 				Mark[MARK_SIZE]=0, Mark[MARK_PRINT]=0, Mark[MARK_COLOR]=0;
 				Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur;
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_IN]]=='\n')
-					Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur-1;
 			}
 			Mark[MARK_START]=1;
 			//ends Virtual KeyBoard MARK.
 		}else if(KeyBoard_Cur == WFONTS){ // Virtual KeyBoard COPY.
 			if(Mark[MARK_ON]){
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur += 1; //Mark end at LF of CRLF must include LF as well
+				}
 				Mark[MARK_OUT]=Editor_Cur;
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_OUT]]=='\n')
-					Mark[MARK_OUT]=Editor_Cur+1;
 				if(Mark[MARK_OUT]<Mark[MARK_IN]){
 					Mark[MARK_TMP]=Mark[MARK_IN];
 					Mark[MARK_IN]=Mark[MARK_OUT];
@@ -319,9 +336,14 @@ void Virt_KeyBoard_Entry(void)
 			//ends Virtual KeyBoard COPY.
 		}else if(KeyBoard_Cur == 2*WFONTS){ // Virtual KeyBoard CUT.
 			if(Mark[MARK_ON]){
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur += 1; //Mark end at LF of CRLF must include LF as well
+				}
 				Mark[MARK_OUT]=Editor_Cur;
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_OUT]]=='\n')
-					Mark[MARK_OUT]=Editor_Cur+1;
 				if(Mark[MARK_OUT]<Mark[MARK_IN]){
 					Mark[MARK_TMP]=Mark[MARK_IN];
 					Mark[MARK_IN]=Mark[MARK_OUT];
@@ -373,44 +395,55 @@ abort:
 			if((Editor_RetMode++)>=4)
 				Editor_RetMode=OTHER;
 		}else if(KeyBoard_Cur == 5*WFONTS-1){ // Virtual KeyBoard RETURN.
-			if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-			 Editor_Insert && Editor_RetMode==OTHER){
-				ins1= 2, ins2=-1, ins3=1, ins4=-1, ins5=1;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-			 Editor_Insert){
-				ins1= 1, ins2=-2, ins3=2, ins4=-1, ins5=0;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-			 Editor_RetMode==OTHER){
-				ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-				ins1= 0, ins2=-2, ins3=0, ins4=1, ins5=0;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' &&
-			 Editor_RetMode==OTHER){
-				ins1= 1, ins2= 0, ins3= 2, ins4=2, ins5=2;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n'){
-				ins1= 0, ins2=-1, ins3= 1, ins4=2, ins5=1;
-			}else if((Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0') && Editor_RetMode==OTHER){
-				ins1= 2, ins2= 0, ins3= 2, ins4=0, ins5=2;
-			}else if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
-				ins1= 1, ins2=-1, ins3= 1, ins4=0, ins5=1;
-			}else if(Editor_RetMode==OTHER){
-				ins1= 1, ins2= 0, ins3= 2, ins4=1, ins5=2;
-			}else{
-				ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
+
+			if(		TextMode[Active_Window]==OTHER
+				&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+				&&	Editor_Cur>0
+				&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+			){
+				Editor_Cur -= 1; //Entry at LF of CRLF must work at CR instead
 			}
+			if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0')
+				if(Editor_RetMode==OTHER)
+					ins1=2, ins2=0, ins3=2, ins4=0, ins5=2; //Insert CRLF
+				else
+					ins1=1, ins2=0, ins3=1, ins4=0, ins5=1; //Insert LF/CR
+			else
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\r'
+					&&	TextBuffer[Active_Window][Editor_Cur+1]=='\n'
+				){ //OWrite Return at CRLF
+					if(Editor_RetMode==OTHER)
+						ins1=0, ins2=0, ins3=2, ins4=2, ins5=2; //OWrite CRLF at CRLF
+					else
+						ins1=0, ins2=0, ins3=1, ins4=2, ins5=1; //OWrite LF/CR at CRLF
+				}else{ //OWrite return at normal char
+					if(Editor_RetMode==OTHER)
+						ins1=1, ins2=0, ins3=2, ins4=1, ins5=2; //OWrite CRLF at char
+					else
+						ins1=0, ins2=0, ins3=1, ins4=1, ins5=1; //OWrite LF/CR at char
+				}
 			Operation=2;
 			//ends Virtual KeyBoard RETURN.
 		}else{  // Virtual KeyBoard Any other char + Space + Tabulation.
-			if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-				ins1=0, ins2=-1, ins3=0, ins4= 1, ins5= 0;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' && !Editor_Insert){
-				ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1;
-			}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' && Editor_Insert){
-				ins1=1, ins2=-1, ins3=0, ins4=-1, ins5=-1;
-			}else if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
-				ins1=1, ins2= 0, ins3=1, ins4= 0, ins5= 1;
+			if(		TextMode[Active_Window]==OTHER
+				&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+				&&	Editor_Cur>0
+				&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+			){
+				Editor_Cur -= 1; //Entry at LF of CRLF must work at CR instead
+			}
+			if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
+				ins1=1, ins2=0, ins3=1, ins4=0, ins5=1; //Insert char normally
 			}else{
-				ins1=0, ins2= 0, ins3=1, ins4= 1, ins5= 1;
+				if(TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\r'
+					&&	TextBuffer[Active_Window][Editor_Cur+1]=='\n'
+				){ //OWrite char at CRLF
+					ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1; //OWrite at CR of CRLF
+				}else{ //OWrite return at normal char
+					ins1=0, ins2= 0, ins3=1, ins4= 1, ins5= 1; //OWrite normal char
+				}
 			}
 			if(KeyBoard_Cur == 3*WFONTS-1) // Tabulation.
 				Operation=3;
@@ -421,61 +454,75 @@ abort:
 		}
 		//ends Virtual KeyBoard Select.
 	}
+
 	if(Operation>0){ // Perform Add Char / Paste. Can Be Simplify???
 		TextBuffer[TMP] = malloc(TextSize[Active_Window]+ins1+256); // 256 To Avoid Crash 256???
 		strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
-		memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
-		free(TextBuffer[Active_Window]);
+		//memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???		free(TextBuffer[Active_Window]);
 		TextBuffer[Active_Window] = malloc(TextSize[Active_Window]+ins1+256); // 256 To Avoid Crash 256???
 		strcpy(TextBuffer[Active_Window], TextBuffer[TMP]);
-		if(Operation==1){ // Paste.
-			for(i=0; i<ins2; i++)
-				TextBuffer[Active_Window][i+Editor_Cur]=TextBuffer[EDIT][i];
-		}else if(Operation==2){ // Return.
-			if(Editor_RetMode==OTHER){
-				TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
-				TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
-			}else if(Editor_RetMode==UNIX){
-				TextBuffer[Active_Window][Editor_Cur+ins2+1]='\r';
-			}else if(Editor_RetMode==MAC){
-				TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
-			}
-		}else if(Operation==3) // Tabulation.
-			TextBuffer[Active_Window][Editor_Cur+ins2]='\t';
-		else if(Operation==4) // Space.
-			TextBuffer[Active_Window][Editor_Cur+ins2]=' ';
-		else if(Operation==5) // Any Char.
-			TextBuffer[Active_Window][Editor_Cur+ins2]=KEY[KeyBoard_Cur];
-		TextBuffer[Active_Window][Editor_Cur+ins3]='\0';
-		strcat(TextBuffer[Active_Window], TextBuffer[TMP]+(Editor_Cur+ins4));
-		memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
-		free(TextBuffer[TMP]);
-		Editor_Cur+=ins5, TextSize[Active_Window]+=ins1;
-		t=0;
-	}else if(Operation<0){ // Perform Del Char / Cut. Can Be Simplify???
+	}
+
+	switch(Operation){
+	case 0:
+		break;
+	case -1:// Perform Del Char / Cut. Can Be Simplify???
 		TextBuffer[TMP] = malloc(TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 		strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
 		TextBuffer[Active_Window][Editor_Cur+del1]='\0';
 		strcat(TextBuffer[Active_Window], TextBuffer[TMP]+(Editor_Cur+del2));
 		strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
-		memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+		//memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 		free(TextBuffer[Active_Window]);
 		TextBuffer[Active_Window] = malloc(TextSize[Active_Window]+del3+256); // 256 To Avoid Crash 256???
 		strcpy(TextBuffer[Active_Window], TextBuffer[TMP]);
-		memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+		//memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 		free(TextBuffer[TMP]);
 		Editor_Cur+=del3, TextSize[Active_Window]+=del4;
 		t=0;
+		break;
+	case 1:	// Paste.
+		for(i=0; i<ins2; i++)
+			TextBuffer[Active_Window][i+Editor_Cur]=TextBuffer[EDIT][i];
+		goto common;
+	case 2:	// Return.
+		if(Editor_RetMode==OTHER){
+			TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
+			TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
+		}else if(Editor_RetMode==UNIX){
+			TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
+		}else if(Editor_RetMode==MAC){
+			TextBuffer[Active_Window][Editor_Cur+ins2]='\n';
+		}
+		goto common;
+	case 3:	// Tabulation.
+		TextBuffer[Active_Window][Editor_Cur+ins2]='\t';
+		goto common;
+	case 4: // Space.
+		TextBuffer[Active_Window][Editor_Cur+ins2]=' ';
+		goto common;
+	case 5:	// Any Char.
+		TextBuffer[Active_Window][Editor_Cur+ins2]=KEY[KeyBoard_Cur];
+		goto common;
+	common:
+		TextBuffer[Active_Window][Editor_Cur+ins3]='\0';
+		strcat(TextBuffer[Active_Window], TextBuffer[TMP]+(Editor_Cur+ins4));
+		//memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+		free(TextBuffer[TMP]);
+		Editor_Cur+=ins5, TextSize[Active_Window]+=ins1;
+		t=0;
+		break;
 	}
-	Operation=0;
 }
 //------------------------------
 //endfunc Virt_KeyBoard_Entry
 //--------------------------------------------------------------
 int KeyBoard_Entry(void)
 {
-	int i, ret=0, Operation=0;
+	int i, ret=0, Operation;
 	unsigned char KeyPress;
+
+	Operation=0;
 
 	if(PS2KbdRead(&KeyPress)) { //KeyBoard Response Section.
 
@@ -511,6 +558,13 @@ int KeyBoard_Entry(void)
 				Editor_Insert = !Editor_Insert;
 			else if(KeyPress == 0x26){ // Key Delete.
 				if(Editor_Cur<Editor_nChar){
+					if(		TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+						&&	Editor_Cur>0
+						&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+					){
+						Editor_Cur -= 1; //Delete at LF of CRLF must work at CR instead
+					}
 					if(Mark[MARK_ON]){
 						Mark[MARK_OUT]=Editor_Cur;
 						if(Mark[MARK_OUT]<Mark[MARK_IN]){
@@ -522,12 +576,15 @@ int KeyBoard_Entry(void)
 						Mark[MARK_SIZE]=Mark[MARK_OUT]-Mark[MARK_IN];
 						del1= -Mark[MARK_SIZE], del2=0, del3= -Mark[MARK_SIZE], del4= -Mark[MARK_SIZE];
 						Mark[MARK_ON]=0;
-					}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n'){
-						del1=0, del2=2, del3=0, del4=-2;
+					}else if(TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\r'
+						&&	TextBuffer[Active_Window][Editor_Cur+1]=='\n'
+					){ //Delete at CRLF
+						del1=0, del2=2, del3=0, del4=-2; //delete CRLF
 					}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
 						del1=-1, del2=1, del3=-1, del4=-2;
 					}else{
-						del1=0, del2=1, del3=0, del4=-1;
+						del1=0, del2=1, del3=0, del4=-1; //delete single char
 					}
 					Operation=-1;
 				}
@@ -543,22 +600,32 @@ int KeyBoard_Entry(void)
 			}else if(KeyPress == 0x02){ // Key Ctrl+b MARK.
 				Mark[MARK_ON]=!Mark[MARK_ON];
 				if(Mark[MARK_ON]){
+					if(		TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+						&&	Editor_Cur>0
+						&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+					){
+						Editor_Cur -= 1; //Marking at LF of CRLF must start at CR instead
+					}
 					if(Mark[MARK_COPY] || Mark[MARK_CUT])
 						free(TextBuffer[EDIT]);
 					Mark[MARK_ON]=1, Mark[MARK_COPY]=0, Mark[MARK_CUT]=0,
 					Mark[MARK_IN]=0, Mark[MARK_OUT]=0, Mark[MARK_TMP]=0,
 					Mark[MARK_SIZE]=0, Mark[MARK_PRINT]=0, Mark[MARK_COLOR]=0;
 					Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur;
-					if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_IN]]=='\n')
-						Mark[MARK_IN]=Mark[MARK_OUT]=Editor_Cur-1;
 				}
 				Mark[MARK_START]=1;
 				//ends Key Ctrl+b MARK.
 			}else if(KeyPress == 0x03){ // Key Ctrl+c COPY.
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur += 1; //Mark end at LF of CRLF must include LF as well
+				}
 				if(Mark[MARK_ON]){
 					Mark[MARK_OUT]=Editor_Cur;
-					if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_OUT]]=='\n')
-						Mark[MARK_OUT]=Editor_Cur+1;
 					if(Mark[MARK_OUT]<Mark[MARK_IN]){
 						Mark[MARK_TMP]=Mark[MARK_IN];
 						Mark[MARK_IN]=Mark[MARK_OUT];
@@ -576,9 +643,14 @@ int KeyBoard_Entry(void)
 				//ends Key Ctrl+c COPY.
 			}else if(KeyPress == 0x18){ // Key Ctrl+x CUT.
 				if(Mark[MARK_ON]){
+					if(		TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+						&&	Editor_Cur>0
+						&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+					){
+						Editor_Cur += 1; //Mark end at LF of CRLF must include LF as well
+					}
 					Mark[MARK_OUT]=Editor_Cur;
-					if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Mark[MARK_OUT]]=='\n')
-						Mark[MARK_OUT]=Editor_Cur+1;
 					if(Mark[MARK_OUT]<Mark[MARK_IN]){
 						Mark[MARK_TMP]=Mark[MARK_IN];
 						Mark[MARK_IN]=Mark[MARK_OUT];
@@ -608,6 +680,12 @@ int KeyBoard_Entry(void)
 				//ends Key Ctrl+v PASTE.
 			}else if(KeyPress == 0x07){ // Key BackSpace.
 				if(Editor_Cur>0){
+					if(		TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+						&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+					){
+						Editor_Cur += 1; //Backspace at LF of CRLF must work after LF
+					}
 					if(Mark[MARK_ON]){
 						Mark[MARK_OUT]=Editor_Cur;
 						if(Mark[MARK_OUT]<Mark[MARK_IN]){
@@ -619,106 +697,129 @@ int KeyBoard_Entry(void)
 						Mark[MARK_SIZE]=Mark[MARK_OUT]-Mark[MARK_IN];
 						del1= -Mark[MARK_SIZE], del2=0, del3= -Mark[MARK_SIZE], del4= -Mark[MARK_SIZE];
 						Mark[MARK_ON]=0;
-					}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-						del1=-1, del2=1, del3=-1, del4=-2;
-					}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur-1]=='\n'){
-						del1=-2, del2=0, del3=-2, del4=-2;
+					}else if(TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur-1]=='\n'
+						&&	Editor_Cur>1
+						&&	TextBuffer[Active_Window][Editor_Cur-2]=='\r'){
+						del1=-2, del2=0, del3=-2, del4=-2; //Backspace CRLF
 					}else{
-						del1=-1, del2=0, del3=-1, del4=-1;
+						del1=-1, del2=0, del3=-1, del4=-1; //Backspace single char
 					}
 					Operation=-3;
 				}
 				//ends Key BackSpace.
 			}else if(KeyPress == 0x0A){ // Key Return.
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-				 Editor_Insert && Editor_RetMode==OTHER){
-					ins1= 2, ins2=-1, ins3=1, ins4=-1, ins5=1;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-				 Editor_Insert){
-					ins1= 1, ins2=-2, ins3=2, ins4=-1, ins5=0;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' &&
-				 Editor_RetMode==OTHER){
-					ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-					ins1= 0, ins2=-2, ins3=0, ins4=1, ins5=0;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' &&
-				 Editor_RetMode==OTHER){
-					ins1= 1, ins2= 0, ins3= 2, ins4=2, ins5=2;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n'){
-					ins1= 0, ins2=-1, ins3= 1, ins4=2, ins5=1;
-				}else if((Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0') && Editor_RetMode==OTHER){
-					ins1= 2, ins2= 0, ins3= 2, ins4=0, ins5=2;
-				}else if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
-					ins1= 1, ins2=-1, ins3= 1, ins4=0, ins5=1;
-				}else if(Editor_RetMode==OTHER){
-					ins1= 1, ins2= 0, ins3= 2, ins4=1, ins5=2;
-				}else{
-					ins1= 0, ins2=-1, ins3= 1, ins4=1, ins5=1;
+
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur -= 1; //Entry at LF of CRLF must work at CR instead
 				}
+				if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0')
+					if(Editor_RetMode==OTHER)
+						ins1=2, ins2=0, ins3=2, ins4=0, ins5=2; //Insert CRLF
+					else
+						ins1=1, ins2=0, ins3=1, ins4=0, ins5=1; //Insert LF/CR
+				else
+					if(		TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\r'
+						&&	TextBuffer[Active_Window][Editor_Cur+1]=='\n'
+					){ //OWrite Return at CRLF
+						if(Editor_RetMode==OTHER)
+							ins1=0, ins2=0, ins3=2, ins4=2, ins5=2; //OWrite CRLF at CRLF
+						else
+							ins1=0, ins2=0, ins3=1, ins4=2, ins5=1; //OWrite LF/CR at CRLF
+					}else{ //OWrite return at normal char
+						if(Editor_RetMode==OTHER)
+							ins1=1, ins2=0, ins3=2, ins4=1, ins5=2; //OWrite CRLF at char
+						else
+							ins1=0, ins2=0, ins3=1, ins4=1, ins5=1; //OWrite LF/CR at char
+					}
 				Operation=2;
 				//ends Key Return.
 			}else{ // All Other Keys.
-				if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n'){
-					ins1=0, ins2=-1, ins3=0, ins4= 1, ins5= 0;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur+1]=='\n' && !Editor_Insert){
-					ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1;
-				}else if(TextMode[Active_Window]==OTHER && TextBuffer[Active_Window][Editor_Cur]=='\n' && Editor_Insert){
-					ins1=1, ins2=-1, ins3=0, ins4=-1, ins5=-1;
-				}else if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
-					ins1=1, ins2= 0, ins3=1, ins4= 0, ins5= 1;
+				if(		TextMode[Active_Window]==OTHER
+					&&	TextBuffer[Active_Window][Editor_Cur]=='\n'
+					&&	Editor_Cur>0
+					&&	TextBuffer[Active_Window][Editor_Cur-1]=='\r'
+				){
+					Editor_Cur -= 1; //Entry at LF of CRLF must work at CR instead
+				}
+				if(Editor_Insert || TextBuffer[Active_Window][Editor_Cur]=='\0'){
+					ins1=1, ins2=0, ins3=1, ins4=0, ins5=1; //Insert char normally
 				}else{
-					ins1=0, ins2= 0, ins3=1, ins4= 1, ins5= 1;
+					if(TextMode[Active_Window]==OTHER
+						&&	TextBuffer[Active_Window][Editor_Cur]=='\r'
+						&&	TextBuffer[Active_Window][Editor_Cur+1]=='\n'
+					){ //OWrite char at CRLF
+						ins1=0, ins2= 0, ins3=1, ins4= 2, ins5= 1; //OWrite at CR of CRLF
+					}else{ //OWrite return at normal char
+						ins1=0, ins2= 0, ins3=1, ins4= 1, ins5= 1; //OWrite normal char
+					}
 				}
 				Operation=3;
 			}
 		}
-		if(Operation>0){ // Add Char / Paste. Can Be Simplify???
+
+		if(Operation>0){ // Perform Add Char / Paste. Can Be Simplify???
 			TextBuffer[TMP] = malloc(TextSize[Active_Window]+ins1+256); // 256 To Avoid Crash 256???
 			strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
-			memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
-			free(TextBuffer[Active_Window]);
+			//memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???		free(TextBuffer[Active_Window]);
 			TextBuffer[Active_Window] = malloc(TextSize[Active_Window]+ins1+256); // 256 To Avoid Crash 256???
 			strcpy(TextBuffer[Active_Window], TextBuffer[TMP]);
-			if(Operation==1){ // Paste.
-				for(i=0; i<ins2; i++)
-					TextBuffer[Active_Window][i+Editor_Cur]=TextBuffer[EDIT][i];
-			}else if(Operation==2){ // Return.
-				if(Editor_RetMode==OTHER){
-					TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
-					TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
-				}else if(Editor_RetMode==UNIX){
-					TextBuffer[Active_Window][Editor_Cur+ins2+1]='\r';
-				}else if(Editor_RetMode==MAC){
-					TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
-				}
-			}else if(Operation==3) // Any Other Char.
-				TextBuffer[Active_Window][Editor_Cur+ins2]=KeyPress;
-			TextBuffer[Active_Window][Editor_Cur+ins3]='\0';
-			strcat(TextBuffer[Active_Window], &TextBuffer[TMP][Editor_Cur+ins4]);
-			Editor_Cur+=ins5, TextSize[Active_Window]+=ins1;
-			memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
-			free(TextBuffer[TMP]);
-			t=0;
-		}else if(Operation<0){ // Del Char / Cut. Can Be Simplify???
+		}
+
+		switch(Operation){
+		case 0:
+			break;
+		case -1:// Perform Del Char / Cut. Can Be Simplify???
+		case -2:
+		case -3:
 			TextBuffer[TMP] = malloc(TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 			strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
 			TextBuffer[Active_Window][Editor_Cur+del1]='\0';
-			strcat(TextBuffer[Active_Window], &TextBuffer[TMP][Editor_Cur+del2]);
+			strcat(TextBuffer[Active_Window], TextBuffer[TMP]+(Editor_Cur+del2));
 			strcpy(TextBuffer[TMP], TextBuffer[Active_Window]);
-			memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+			//memset(TextBuffer[Active_Window], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 			free(TextBuffer[Active_Window]);
 			TextBuffer[Active_Window] = malloc(TextSize[Active_Window]+del3+256); // 256 To Avoid Crash 256???
 			strcpy(TextBuffer[Active_Window], TextBuffer[TMP]);
-			Editor_Cur+=del3, TextSize[Active_Window]+=del4;
-			memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+			//memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
 			free(TextBuffer[TMP]);
+			Editor_Cur+=del3, TextSize[Active_Window]+=del4;
 			t=0;
+			break;
+		case 1:	// Paste.
+			for(i=0; i<ins2; i++)
+				TextBuffer[Active_Window][i+Editor_Cur]=TextBuffer[EDIT][i];
+			goto common;
+		case 2:	// Return.
+			if(Editor_RetMode==OTHER){
+				TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
+				TextBuffer[Active_Window][Editor_Cur+ins2+1]='\n';
+			}else if(Editor_RetMode==UNIX){
+				TextBuffer[Active_Window][Editor_Cur+ins2]='\r';
+			}else if(Editor_RetMode==MAC){
+				TextBuffer[Active_Window][Editor_Cur+ins2]='\n';
+			}
+			goto common;
+		case 3:	// Normal characters
+			TextBuffer[Active_Window][Editor_Cur+ins2]=KeyPress;
+		common:
+			TextBuffer[Active_Window][Editor_Cur+ins3]='\0';
+			strcat(TextBuffer[Active_Window], TextBuffer[TMP]+(Editor_Cur+ins4));
+			//memset(TextBuffer[TMP], 0, TextSize[Active_Window]+256); // 256 To Avoid Crash 256???
+			free(TextBuffer[TMP]);
+			Editor_Cur+=ins5, TextSize[Active_Window]+=ins1;
+			t=0;
+			break;
 		}
+
 abort:
-		Operation=0;
 		KeyPress = '\0';
 	} //ends if(PS2KbdRead(&KeyPress)).
-	
 	return ret;
 }
 //------------------------------
@@ -1051,7 +1152,7 @@ void Close(int Win)
 {
 	char msg[MAX_PATH];
 
-	memset(TextBuffer[Win], 0, TextSize[Win]+256); // 256 To Avoid Crash 256???
+	//memset(TextBuffer[Win], 0, TextSize[Win]+256); // 256 To Avoid Crash 256???
 	free(TextBuffer[Win]);
 
 	if(Window[Win][CREATED])

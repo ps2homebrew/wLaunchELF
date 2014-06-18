@@ -3,14 +3,14 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o ps2smap.o ps2hdd.o\
 	ps2fs.o ps2netfs.o usbd.o usbhdfsd.o cdvd.o ps2ftpd.o ps2host.o vmcfs.o fakehost.o  \
 	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o
+	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 	-L$(PS2SDK)/sbv/lib -L$(PS2DEV)/libcdvd/lib -s
-EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
+EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lc  -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
 
@@ -86,11 +86,16 @@ loader.s:
 ps2kbd.s:
 	bin2s $(PS2SDK)/iop/irx/ps2kbd.irx ps2kbd.s ps2kbd_irx
 
+chkesr.s:
+	$(MAKE) -C chkesr
+	bin2s chkesr/chkesr.irx chkesr.s chkesr_irx
+
 clean:
 	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmcfs clean
+	$(MAKE) -C chkesr clean
 	rm -f *.o *.a *.s BOOT.ELF
 
 include $(PS2SDK)/samples/Makefile.pref

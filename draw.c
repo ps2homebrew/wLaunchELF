@@ -430,12 +430,14 @@ void RotateBitmap(u8* InBuff, u16 Width, u16 Height, u8* OutBuff, int Way) {
 void setScrTmp(const char *msg0, const char *msg1)
 {
 	int x, y;
-	
+	char temp_txt[64];
+
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.30 ÿ4",
-		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
+	sprintf(temp_txt, " ÿ4 LaunchELF %s ÿ4", ULE_VERSION);
+	printXY(temp_txt, SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*strlen(temp_txt), y,
+		setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
 	LastMessage[MAX_TEXT_LINE] = '\0';

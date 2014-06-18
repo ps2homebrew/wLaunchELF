@@ -1,5 +1,24 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.33 (2009.01.12)
+-Raised a debug constant which limited v4.32 USB_mass drives to 4 instead of 10
+-Added a horizontal offset to the "About uLE" display
+
+LaunchELF v4.32 (2009.01.11)
+-Upgraded USBHDFSD to SVN rev 1503 by radad, which cures the bug causing large-file corruption in the previous uLE release, and also adds support for multiple partitions (each accessed as a separate mass?: drive) and extends the hotplugging limits (max 5 simultaneous devices with a total of max 10 partitions). Exceeding the limits will cause no harm, but the additional devices/partitions will not be accessible.
+-Upgraded USBD to SVN rev 1494 by radad, making uLE "mass:" identical to that of old applications when using multiple USB drives in uLE.
+-Improved MISC/PS2Disc subprogram to support launch of either DVD-Video disc or ESR-patched disc (but might not recognize disc type if a modchip is active)
+-Added "ESR elf" entry to "Startup Settings..." configuration menu
+NB: If no ESR elf has been configured a default of "mc:/BOOT/ESR.ELF" is used
+
+LaunchELF v4.31 (2009.01.04)
+-Added new "MISC/About uLE" subprogram, displaying a program credits screen
+-Enhanced FileBrowser to support multiple hotplugged USB mass drives
+-Upgraded usbhdfsd to SVN rev 1490 by radad, for multiple USB drive support. Note that this may require running the new "setup.sh" script, for those who wish to compile uLE themselves. (Or use the new script "upgrade_usbhdfsd.sh".)
+-Fixed various issues with TextEditor (inability to insert CRLF at CRLF etc)
+-Fixed a partition unmounting issue, that sometimes caused non-fatal failure of the TextEditor to show proper partition contents when browsing for a text file
+NB: usbhdfsd rev 1490 is now known to have a bug in writing/deleting large files.
+
 LaunchELF v4.30 (2008.09.30)
 -Fixed HDD mountpoint issues in HddManager (due to changed methods from v4.23)
 
@@ -805,7 +824,8 @@ Mr. Mirakichi the original creator of the LaunchELF project, with special gratit
 
 dlanor who has also made various additions, fixes, and other work on the project.
 
-Polo35 for his work on the JPG skin implementation, and releated issues
+Polo35 for his work on JPG skinning/viewer, HddManager, TextEditor, etc
+radad for enhancing the usbhdfsd driver and some other assistance
 Drakonite for his help and advice on how to improve the ELF loader
 sincro for his USBD.IRX selector code
 kthu for the key swapping source changes, which allow the user to swap x and circle buttons.

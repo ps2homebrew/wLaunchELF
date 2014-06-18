@@ -153,6 +153,14 @@ typedef struct {                  //Offs:  Example content
 
 int	PSU_content;	//Used to count PSU content headers for the main header
 
+//USB_mass definitions for multiple drive usage
+char	USB_mass_ix[10] = {'0',0,0,0,0,0,0,0,0,0};
+int		USB_mass_max_drives = USB_MASS_MAX_DRIVES;
+u64		USB_mass_scan_time = 0;
+int		USB_mass_scanned = 0;
+int		USB_mass_loaded = 0;    //0==none, 1==internal, 2==external
+
+
 //char debugs[4096]; //For debug display strings. Comment it out when unused
 //--------------------------------------------------------------
 //executable code
@@ -704,22 +712,28 @@ limited:
 int genFixPath(char *inp_path, char *gen_path)
 {
 	char uLE_path[MAX_PATH], loc_path[MAX_PATH], party[MAX_NAME], *p;
+	char *pathSep;
 	int part_ix;
 
 	part_ix = 99;               //Assume valid non-HDD path
 	if( !uLE_related(uLE_path, inp_path) )
 		part_ix = -99; //Assume invalid uLE_related path
 	strcpy(gen_path, uLE_path); //Assume no path patching needed
+	pathSep = strchr(uLE_path, '/');
+
 	if(!strncmp(uLE_path, "cdfs", 4)){          //if using CD or DVD disc path
 		loadCdModules();
 		CDVD_FlushCache();
 		CDVD_DiskReady(0);
 	//end of clause for using a CD or DVD path
+
 	} else if(!strncmp(uLE_path, "mass", 4)){   //if using USB mass: path
 		loadUsbModules();
-		if(!strncmp(uLE_path+4, ":/", 2)) //if path needs patching
-			strcpy(gen_path+5, uLE_path+6); //patch it to suit driver
+
+		if(pathSep && (pathSep-uLE_path<7) && pathSep[-1]==':')
+			strcpy(gen_path+(pathSep-uLE_path), pathSep+1);
 	//end of clause for using a USB mass: path
+
 	} else if(!strncmp(uLE_path, "hdd0:/", 6)){ //If using HDD path
 		strcpy(loc_path, uLE_path+6);
 		if((p=strchr(loc_path, '/'))!=NULL){
@@ -1031,13 +1045,42 @@ int readHDD(const char *path, FILEINFO *info, int max)
 //------------------------------
 //endfunc readHDD
 //--------------------------------------------------------------
+void scan_USB_mass(void){
+	int i, dd;
+	char mass_path[8] = "mass0:/";
+
+	if(USB_mass_max_drives < 2)
+		goto done_scan;
+
+	if(USB_mass_scanned && ((Timer()-USB_mass_scan_time) < 5000))
+		return;
+
+	for(i=0; i<USB_mass_max_drives; i++){
+		mass_path[4] = '0'+i;
+		if((dd = fioDopen(mass_path)) < 0){
+			USB_mass_ix[i] = 0;
+			continue;
+		}
+		fioDclose(dd);
+		USB_mass_ix[i] = '0'+i;
+	}
+	USB_mass_scan_time = Timer();
+done_scan:
+	USB_mass_scanned =1;
+}
+//------------------------------
+//endfunc scan_USB_mass
+//--------------------------------------------------------------
 int readMASS(const char *path, FILEINFO *info, int max)
 {
 	fio_dirent_t record;
 	int n=0, dd=-1;
 	
 	loadUsbModules();
-	
+
+	if(!USB_mass_scanned)
+		scan_USB_mass();
+
 	if ((dd = fioDopen(path)) < 0) goto exit;  //exit if error opening directory
 	while(fioDread(dd, &record) > 0){
 		if((FIO_SO_ISDIR(record.stat.mode))
@@ -1705,18 +1748,26 @@ int delete(const char *path, const FILEINFO *file)
 			mcSync(0,NULL,NULL);
 			mcDelete(dir[2]-'0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);
+
 		}else if(!strncmp(path, "hdd", 3)){
 			ret = fileXioRmdir(hdddir);
+
 		}else if(!strncmp(path, "vmc", 3)){
 			ret = fileXioRmdir(dir);
 			(void) fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
+
 		}else if(!strncmp(path, "mass", 4)){
-			sprintf(dir, "mass0:%s%s", &path[5], file->name);
+			char *pathSep;
+
+			pathSep = strchr(path, '/');
+			strcpy(dir, path);
+			strcat(dir, file->name);
 			ret = fioRmdir(dir);
-			if (ret < 0){
-				dir[4] = 1 + '0';
+			if((ret < 0) && (dir[4] == ':')){
+				sprintf(dir, "mass0:%s%s", &path[5], file->name);
 				ret = fioRmdir(dir);
 			}
+
 		}else if(!strncmp(path, "host", 4)){
 			sprintf(dir, "%s%s", path, file->name);
 			ret = fioRmdir(dir);
@@ -2934,6 +2985,9 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 	nfiles = 0;
 	if(path[0]==0){
 		//-- Start case for browser root pseudo folder with device links --
+		if(USB_mass_scanned)	//if mass drives were scanned in earlier browsing
+			scan_USB_mass();		//then allow another scan here (timer dependent)
+
 		strcpy(files[nfiles].name, "mc0:");
 		files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
 		strcpy(files[nfiles].name, "mc1:");
@@ -2945,9 +2999,18 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		if(	(cnfmode!=USBD_IRX_CNF)
 			&&(cnfmode!=USBKBD_IRX_CNF)
 			&&(cnfmode!=USBMASS_IRX_CNF)) {
-			//This condition blocks selecting USB drivers from USB devices
-			strcpy(files[nfiles].name, "mass:");
-			files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+			//The condition above blocks selecting USB drivers from USB devices
+			for(i=0; i<10; i++){
+				if(USB_mass_ix[i]){
+					if(i == 0)
+						strcpy(files[nfiles].name, "mass:");
+					else{
+						strcpy(files[nfiles].name, "mass0:");
+						files[nfiles].name[4] = USB_mass_ix[i];
+					}
+					files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+				}
+			}
 		}
 		if	(!cnfmode || (cnfmode==JPG_CNF)) {
 			//This condition blocks selecting any CONFIG items on PC
@@ -3010,12 +3073,10 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 //Next 2 lines add an optional font test routine
 		strcpy(files[nfiles].name, LNG(ShowFont));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-//This section is only for use while debugging
-///*
 		strcpy(files[nfiles].name, LNG(Debug_Info));
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
-//*/
-//End of section used only for debugging
+		strcpy(files[nfiles].name, LNG(About_uLE));
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		for(i=0; i<nfiles; i++)
 			files[i].title[0]=0;
 		//-- End case for MISC command pseudo folder with function links --
@@ -3250,8 +3311,7 @@ int getFilePath(char *out, int cnfmode)
 	else
 		strcpy(path, LastDir);	//If reasonable, start in recent folder
 
-	for(i=0; i<MOUNT_LIMIT; i++)
-		mountedParty[i][0] = 0;
+	unmountAll();    //unmount all uLE-used mountpoints
 
 	clipPath[0] = 0;
 	nclipFiles = 0;

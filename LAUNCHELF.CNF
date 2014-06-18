@@ -48,6 +48,8 @@ Misc_Load_CNFnext = Load CNF++
 Misc_Set_CNF_Path = Set CNF_Path
 Misc_Load_CNF = Load CNF
 Misc_ShowFont = ShowFont
+Misc_Debug_Info = Debug Info
+Misc_About_uLE = About uLE
 # ----------------------------------------------------------------------
 # Next follows the 12 (as yet) launching links, here kept in traditional
 # order, though users are allowed to vary the order at will. For these

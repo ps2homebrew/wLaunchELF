@@ -364,5 +364,8 @@ lang(321, Save_Skin_CNF, "Save Skin CNF")
 // New FileBrowser command for virtual memory cards
 lang(322, Mount, "Mount")
 //---------------------------------------------------------------------------
+// New MISC entry for "About uLE" screen display
+lang(323, About_uLE, "About uLE")
+//---------------------------------------------------------------------------
 //End of file:  lang.h
 //---------------------------------------------------------------------------

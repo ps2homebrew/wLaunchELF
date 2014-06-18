@@ -1,0 +1,50 @@
+New "mass:" capabilities of uLE :
+---------------------------------
+
+In uLE v4.32 a new revision of the usbhdfsd driver is used, as improved by 'radad' to support multiple USB storage drives and partitions, and the uLE FileBrowser has likewise been improved by me ('dlanor') to support this. The current implementation will allow up to 5 simultaneously connected USB drives to be accessed, though you will need a USB hub to be able to connect so many, since the PS2 itself only has two USB ports. Each drive may also have more than one partition, each of which will then appear as an independent "mass?:" drive in uLE, with the maximum number of such logical drives being 10. Note however that fully incompatible partitions do not count here, such as NTFS drives. Such partitions will just be ignored by uLE.
+
+As before, uLE does not load USB_mass drivers until the user attempts to access mass:, and it is only when the user browses to the basic "mass:" device that the new features are enabled. Until then only that one "mass:" drive will be visible in the root device list of the FileBrowser.
+
+But once you have browsed to mass: uLE will scan the ports for USB drives, and will present these in the root device list the next time you browse there. The same also applies to devices added or removed by 'hotplugging' during a browser session, as the changes will then be displayed the next time you browse to the root device list. (If already there, press 'Triangle' to refresh the list.) But there is one limitation, as the scan for changes will be skipped if less than 5 seconds have passed since the previous scan.
+
+The maximum list of USB_mass drives currently looks like this:
+
+mass:
+mass1:
+mass2:
+mass3:
+mass4:
+mass5:
+mass6:
+mass7:
+mass8:
+mass9:
+
+
+Backwards compatibility with old applications' use of "mass:" :
+---------------------------------------------------------------
+
+When uLE is launched with a given drive set the assignation of logical drive numbers is made in such a fashion that "mass:" will be the same drive seen as "mass:" by most older applications, capable of accessing only one USB drive. This is to allow simple cooperative use of one drive between uLE and such applications. But if you hotplug drives after launching uLE, then this relationship will not necessarily hold true. For such cases you should relaunch uLE, to test which the 'real' "mass:" drive is, that old applications may access. This is important, for example, when you intend one of the drives to also be used by USBAdvance/USBExtreme, or by various emulators.
+
+Another thing to remember here is that current implementations of SMS, the media player, do not support more than one partition per USB drive, though it does allow multiple drives. So when using uLE to prepare media files for SMS on a USB drive, you should always use only the first partition. This applies mainly when using the internal drivers of SMS. If you use old external drivers with SMS, then it works just like other old applications.
+
+
+Additional considerations related to new "mass:" capabilities :
+---------------------------------------------------------------
+
+It is also permitted to use the form "mass0:" to access the "mass:" drive, but for compatibility reasons the "mass0:" form will not be displayed as such in the browser.
+
+One more important thing to realize is that hotplugging may leave 'holes' in the drive list, as the remaining drives will keep their old drive numbers when one or more other drives are removed. So if you started with a 4-drive setup and then remove the first and the third drives (mass: and mass2:), then the root device list will only show the following USB_mass drives:
+
+mass1:
+mass3:
+
+And if you then reinsert the drive that previously was mass2: into any free USB port and refresh the device list, that drive will then be shown as "mass:"...
+
+Even more confusingly: If you instead insert a drive having three partitions, then these will be designated as "mass:", "mass2:" and "mass4:" for the case above, as "mass1:" and "mass3:" are already used for other drives...
+
+This new FileBrowser capability may take some getting used to, and for safest usage I recommend having some file or folder in the root directory of each USB partition, that uniquely identifies both that particular drive and that particular partition. Otherwise you may mistake one drive for the other, with disastrous consequences when making a backup for example (restoring old stuff when you wanted to backup new stuff, or vice versa). So take care.
+
+And since this is a brand new feature based on a brand new driver revision, be aware that this stuff has not yet been as rigorously tested as the old drivers. So be careful, and try to always have a backup of the files you work with.
+
+Best regards: dlanor

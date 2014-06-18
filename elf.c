@@ -79,7 +79,13 @@ int checkELFheader(char *path)
 		if( (ret = mountParty(tmp)) < 0)
 			goto error;
 		fullpath[3] += ret;
-	}else if(!strncmp(fullpath, "mass:", 5) || !strncmp(fullpath, "host:", 5)){
+	}else if(!strncmp(fullpath, "mass", 4)){
+		char *pathSep;
+
+		pathSep = strchr(path, '/');
+		if(pathSep && (pathSep-path<7) && pathSep[-1]==':')
+			strcpy(fullpath+(pathSep-path), pathSep+1);
+	}else if(!strncmp(fullpath, "host:", 5)){
 		if(path[5] == '/')
 			strcpy(fullpath+5, path+6);
 	} else {

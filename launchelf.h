@@ -1,6 +1,9 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
+#define ULE_VERSION "v4.33"
+#define ULE_VERDATE "2009.01.11"
+
 #include <stdio.h>
 #include <tamtypes.h>
 #include <sifcmd.h>
@@ -79,9 +82,9 @@ enum
 typedef struct
 {
 	char CNF_Path[MAX_PATH];
-	char LK_Path[15][MAX_PATH];
-	char LK_Title[15][MAX_ELF_TITLE];
-	int  LK_Flag[15];
+	char LK_Path[16][MAX_PATH];
+	char LK_Title[16][MAX_ELF_TITLE];
+	int  LK_Flag[16];
 	char Misc[64];
 	char Misc_PS2Disc[64];
 	char Misc_FileBrowser[64];
@@ -98,6 +101,7 @@ typedef struct
 	char Misc_Load_CNF[64];
 	char Misc_ShowFont[64];
 	char Misc_Debug_Info[64];
+	char Misc_About_uLE[64];
 	char usbd_file[MAX_PATH];
 	char usbkbd_file[MAX_PATH];
 	char usbmass_file[MAX_PATH];
@@ -376,5 +380,20 @@ typedef enum {
    FORMAT_FULL, 
    FORMAT_FAST
 } Vmc_Format_Enum;
+
+
+// chkesr_rpc.c
+extern int  chkesr_rpc_Init(void);
+extern int  Check_ESR_Disc(void);
+
+//USB_mass definitions for multiple drive usage
+
+#define USB_MASS_MAX_DRIVES 10
+
+extern	char	USB_mass_ix[10];
+extern	int		USB_mass_max_drives;
+extern	u64		USB_mass_scan_time;
+extern	int		USB_mass_scanned;
+extern	int		USB_mass_loaded;    //0==none, 1==internal, 2==external
 
 #endif
