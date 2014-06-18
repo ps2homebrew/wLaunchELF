@@ -4,7 +4,7 @@ export BUP_DIR=$PS2DEV/uLE_BUP
 export PS2SDKSRC="$PS2DEV/ps2sdksrc"
 echo downloading new source from SVN to uLE_BUP
 cd $BUP_DIR
-svn co svn://svn.ps2dev.org/ps2/trunk/usbhdfsd --revision 1503 usbhdfsd
+svn co svn://svn.ps2dev.org/ps2/trunk/usbhdfsd --revision 1513 usbhdfsd
 echo deleting old work copy of source
 cd $PS2DEV
 rm -fr usbhdfsd/*

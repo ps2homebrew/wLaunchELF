@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.35 (2009.01.17)
+-Merged in the latest USBHDFSD version by radad (SVN rev 1513) to further improve compatibility
+
 LaunchELF v4.34 (2009.01.13)
 -Fixed some bugs that could sometimes prevent 'Left'/'Right' buttons from activating elf launches defined by user for those buttons
 -Changed to use fioGetstat instead of fioDopen+fioDclose to scan for USB drives
