@@ -2,7 +2,7 @@ EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o mass_rpc.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o ps2ip.o ps2smap.o ps2hdd.o\
 	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o fakehost.o  \
-	ps2kbd.o hdd.o
+	ps2kbd.o hdd.o hdl_rpc.o hdl_info.o
 
 EE_INCS := -I$(PS2DEV)/libito/include -I$(PS2DEV)/libjpg/include\
 	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
@@ -12,6 +12,7 @@ EE_LDFLAGS := -L$(PS2DEV)/libito/lib -L$(PS2DEV)/libjpg\
 EE_LIBS = -lpad -lito -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
+	rm -f hdl_info.s
 
 run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF
@@ -64,6 +65,10 @@ ps2netfs.s:
 fakehost.s:
 	bin2s $(PS2SDK)/iop/irx/fakehost.irx fakehost.s fakehost_irx
 
+hdl_info.s:
+	$(MAKE) -C hdl_info
+	bin2s hdl_info/hdl_info.irx hdl_info.s hdl_info_irx
+
 ps2host.s:
 	$(MAKE) -C ps2host
 	bin2s ps2host/ps2host.irx ps2host.s ps2host_irx
@@ -76,6 +81,7 @@ ps2kbd.s:
 	bin2s $(PS2SDK)/iop/irx/ps2kbd.irx ps2kbd.s ps2kbd_irx
 
 clean:
+	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	rm -f *.o *.a *.s BOOT.ELF

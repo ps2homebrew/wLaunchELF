@@ -33,6 +33,7 @@
 #include <libjpg.h>
 #include <libkbd.h>
 #include <floatlib.h>
+#include "hdl_rpc.h"
 
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
@@ -109,6 +110,7 @@ void	load_ps2host(void);
 void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
+void loadHdlInfoModule(void);
 
 /* elf.c */
 int checkELFheader(const char *filename);
@@ -171,9 +173,9 @@ void loadConfig(char *, char *);
 void config(char *, char *);
 
 /* filer.c */
-char mountedParty[2][MAX_NAME]; //NB: Must be cleared if you force unmounting
-int nparties; //Clearing this causes FileBrowser to refresh party list
-unsigned char *elisaFnt;
+extern char mountedParty[2][MAX_NAME]; //NB: Must be cleared if you force unmounting
+extern int nparties; //Clearing this causes FileBrowser to refresh party list
+extern unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
@@ -192,7 +194,8 @@ int genDclose(int fd);
 int mountParty(const char *party);
 
 /* main.c */
-int swapKeys;
+extern int TV_mode;
+extern int swapKeys;
 
 /* hdd.c */
 void hddManager(void);

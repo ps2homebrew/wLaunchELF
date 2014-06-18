@@ -1,0 +1,11 @@
+DECLARE_EXPORT_TABLE(hdl_srv, 1, 1)
+	DECLARE_EXPORT(_start)
+	DECLARE_EXPORT(_retonly)
+	DECLARE_EXPORT(shutdown)
+	DECLARE_EXPORT(_retonly)
+
+	DECLARE_EXPORT(HdlRenameGame)
+
+END_EXPORT_TABLE
+
+void _retonly() {}

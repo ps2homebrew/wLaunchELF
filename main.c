@@ -42,6 +42,8 @@ extern void cdvd_irx;
 extern int  size_cdvd_irx;
 extern void ps2kbd_irx;
 extern int  size_ps2kbd_irx;
+extern void hdl_info_irx;
+extern int  size_hdl_info_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -60,6 +62,7 @@ enum
 
 void Reset();
 
+int TV_mode;
 int trayopen=FALSE;
 int selected=0;
 int timeout=0;
@@ -111,6 +114,7 @@ int	have_ps2smap  = 0;
 int	have_ps2host  = 0;
 int	have_ps2ftpd  = 0;
 int	have_ps2kbd   = 0;
+int	have_hdl_info = 0;
 //State of Checkable Modules (valid header)
 int have_urgent   = 0;	//flags presence of urgently needed modules
 int	have_sio2man  = 0;
@@ -667,6 +671,20 @@ void loadKbdModules(void)
 //------------------------------
 //endfunc loadKbdModules
 //--------------------------------------------------------------
+void loadHdlInfoModule(void)
+{
+	int ret;
+
+	if(!have_hdl_info){
+		drawMsg("Loading HDL Info Module...");
+		SifExecModuleBuffer(&hdl_info_irx, size_hdl_info_irx, 0, NULL, &ret);
+		ret = Hdl_Info_BindRpc();
+		have_hdl_info = 1;
+	}
+}
+//------------------------------
+//endfunc loadHdlInfoModule
+//--------------------------------------------------------------
 void poweroffHandler(int i)
 {
 	hddPowerOff();
@@ -1181,7 +1199,7 @@ int main(int argc, char *argv[])
 	int mc_booted = 0;
 	int cdvd_booted = 0;
 	int	host_booted = 0;
-	int TV_mode, ito_vmode;
+	int ito_vmode;
 
 	SifInitRpc(0);
 	CheckModules();

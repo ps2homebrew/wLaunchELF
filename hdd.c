@@ -10,16 +10,17 @@ typedef struct{
 	s64  FreeSize;
 	s64  UsedSize;
 	int  FsGroup;
-	//GameInfo Game;  //Intended for HDL game info, but not yet implemented
+	GameInfo Game;  //Intended for HDL game info, implemented through IRX module
 	int  Count;
 	int  Treatment;
 } PARTYINFO;
 
 enum {//For Treatment codes
-	TREAT_PFS = 0,			//PFS partition for normal file access
-	TREAT_HDL,			//HDL game partition
-	TREAT_SYSTEM,		//System partition that must never be modified (__mbr)
-	TREAT_NOACCESS  //Inaccessible partition (but can be deleted)
+	TREAT_PFS = 0,   //PFS partition for normal file access
+	TREAT_HDL_RAW,	 //HDL game partition before reading GameInfo data
+	TREAT_HDL_GAME,  //HDL game partition after reading GameInfo data
+	TREAT_SYSTEM,		 //System partition that must never be modified (__mbr)
+	TREAT_NOACCESS   //Inaccessible partition (but can be deleted)
 };
 
 enum {//For menu commands
@@ -39,37 +40,50 @@ int  numParty;
 int  hddSize, hddFree, hddFreeSpace, hddUsed;
 int  hddConnected, hddFormated;
 
+char DbgMsg[MAX_TEXT_LINE*30];
+
 //--------------------------------------------------------------
-/*
-void DebugDispStat(iox_dirent_t *p)
+///*
+void DebugDisp(char *Message)
 {
-	char buf[MAX_TEXT_LINE*24]="";
-	int  done, stp, pos, i;
-	unsigned int *ip = &p->stat.private_0;
-	int *cp = (int *) p->stat.ctime;
-	int *ap = (int *) p->stat.atime;
-	int *mp = (int *) p->stat.mtime;
+	int  done;
 
 	for(done=0; done==0;){
-		pos = 0;
-		sprintf(buf+pos,"dirent.name == \"%s\"\n%n", p->name, &stp); pos+=stp;
-		sprintf(buf+pos,"dirent.unknown == %d\n%n", p->unknown, &stp); pos+=stp;
-		sprintf(buf+pos,"  mode == 0x%08X, attr == 0x%08X\n%n",p->stat.mode,p->stat.attr,&stp); pos+=stp;
-		sprintf(buf+pos,"hisize == 0x%08X, size == 0x%08X\n%n",p->stat.hisize,p->stat.size,&stp); pos+=stp;
-		sprintf(buf+pos,"ctime == 0x%08X%08X                      \n%n", cp[1],cp[0], &stp); pos+=stp;
-		sprintf(buf+pos,"atime == 0x%08X%08X\n%n", ap[1],ap[0], &stp); pos+=stp;
-		sprintf(buf+pos,"mtime == 0x%08X%08X\n%n", mp[1],mp[0], &stp); pos+=stp;
-		for(i=0; i<6; i++){
-			sprintf(buf+pos,"private_%d == 0x%08X\n%n", i, ip[i], &stp); pos+=stp;
-		}
-		nonDialog(buf);
+		nonDialog(Message);
 		drawLastMsg();
 		if(readpad() && new_pad){
 			done=1;
 		}
 	}
 }
-*/
+//*/
+//------------------------------
+//endfunc DebugDisp
+//--------------------------------------------------------------
+/*
+void DebugDispStat(iox_dirent_t *p)
+{
+	char buf[MAX_TEXT_LINE*24]="";
+	int  stp, pos, i;
+	unsigned int *ip = &p->stat.private_0;
+	int *cp = (int *) p->stat.ctime;
+	int *ap = (int *) p->stat.atime;
+	int *mp = (int *) p->stat.mtime;
+
+	pos = 0;
+	sprintf(buf+pos,"dirent.name == \"%s\"\n%n", p->name, &stp); pos+=stp;
+	sprintf(buf+pos,"dirent.unknown == %d\n%n", p->unknown, &stp); pos+=stp;
+	sprintf(buf+pos,"  mode == 0x%08X, attr == 0x%08X\n%n",p->stat.mode,p->stat.attr,&stp); pos+=stp;
+	sprintf(buf+pos,"hisize == 0x%08X, size == 0x%08X\n%n",p->stat.hisize,p->stat.size,&stp); pos+=stp;
+	sprintf(buf+pos,"ctime == 0x%08X%08X                      \n%n", cp[1],cp[0], &stp); pos+=stp;
+	sprintf(buf+pos,"atime == 0x%08X%08X\n%n", ap[1],ap[0], &stp); pos+=stp;
+	sprintf(buf+pos,"mtime == 0x%08X%08X\n%n", mp[1],mp[0], &stp); pos+=stp;
+	for(i=0; i<6; i++){
+		sprintf(buf+pos,"private_%d == 0x%08X\n%n", i, ip[i], &stp); pos+=stp;
+	}
+	DebugDisp(buf);
+}
+//*/
 //------------------------------
 //endfunc DebugDispStat
 //--------------------------------------------------------------
@@ -131,7 +145,7 @@ void GetHddInfo(void)
 			if(infoDirEnt.stat.mode == 0x0001)  //New test of partition type by 'mode'
 				Treat = TREAT_SYSTEM;
 			else if(!strncmp(infoDirEnt.name,"PP.HDL.",7))
-				Treat = TREAT_HDL;
+				Treat = TREAT_HDL_RAW;
 			else {
 				sprintf(tmp, "hdd0:%s", infoDirEnt.name);
 				partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
@@ -188,7 +202,9 @@ end:
 	while(i<25000000) // print operation result during 1 sec
 	 i++;
 
-} // ends GetHddInfo
+}
+//------------------------------
+//endfunc GetHddInfo
 //--------------------------------------------------------------
 int sizeSelector(int size)
 {
@@ -288,7 +304,9 @@ int sizeSelector(int size)
 		event = 0;
 	}//ends while
 	return size;
-}//ends sizeSelector
+}
+//------------------------------
+//endfunc sizeSelector
 //--------------------------------------------------------------
 int MenuParty(PARTYINFO Info)
 {
@@ -318,9 +336,12 @@ int MenuParty(PARTYINFO Info)
 	if(Info.FsGroup==FS_GROUP_APPLICATION){
 		enable[RENAME] = FALSE;
 	}
-	if(!strncmp(Info.Name,"PP.HDL.",7)){
-		enable[REMOVE] = FALSE;
+	if(Info.Treatment == TREAT_HDL_RAW){
 		enable[RENAME] = FALSE;
+		enable[EXPAND] = FALSE;
+	}
+	if(Info.Treatment == TREAT_HDL_GAME){
+		enable[RENAME] = TRUE;
 		enable[EXPAND] = FALSE;
 	}
 
@@ -395,7 +416,9 @@ int MenuParty(PARTYINFO Info)
 		event = 0;
 	}//ends while
 	return sel;
-}//ends menu
+}
+//------------------------------
+//endfunc MenuParty
 //--------------------------------------------------------------
 int CreateParty(char *party, int size)
 {
@@ -439,6 +462,8 @@ int CreateParty(char *party, int size)
 
 	return ret;
 }
+//------------------------------
+//endfunc CreateParty
 //--------------------------------------------------------------
 int RemoveParty(PARTYINFO Info)
 {
@@ -478,6 +503,8 @@ int RemoveParty(PARTYINFO Info)
 
 	return ret;
 }
+//------------------------------
+//endfunc RemoveParty
 //--------------------------------------------------------------
 int RenameParty(PARTYINFO Info, char *newName)
 {
@@ -537,7 +564,69 @@ int RenameParty(PARTYINFO Info, char *newName)
 end:
 	return ret;
 }
+//------------------------------
+//endfunc RenameParty
+//--------------------------------------------------------------
+int RenameGame(PARTYINFO Info, char *newName)
+{
+	//printf("Rename Game: %d\n", Info.Count);
 
+	int  i, fd, num=1, ret=0;
+	char tmpName[MAX_ENTRY];
+
+	drawMsg("Renaming Game...");
+
+	if(!strcmp(Info.Game.Name, newName))
+		goto end1;
+
+	tmpName[0]=0;
+	strcpy(tmpName, newName);
+	for(i=0; i<MAX_PARTITIONS; i++){
+		if(!strcmp(PartyInfo[i].Game.Name, tmpName)){
+			if(strlen(tmpName)>=32)
+				goto end2; //For this case HDL renaming can't be done
+			sprintf(tmpName, "%s%d", newName, num);
+			num++;
+		}
+	}
+	strcpy(newName, tmpName);
+
+	ret = HdlRenameGame(Info.Game.Name, newName);
+
+	if(ret==0){
+		strcpy(PartyInfo[Info.Count].Game.Name, newName);
+		if(mountParty("hdd0:HDLoader Settings")==0){
+			if((fd=genOpen("pfs0:/gamelist.log", O_RDONLY)) >= 0){
+				genClose(fd);
+				if(fileXioRemove("pfs0:/gamelist.log")!=0)
+					ret=0;
+			}
+		}
+		fileXioUmount("pfs0:");
+		mountedParty[0][0]=0;
+	}else{
+		sprintf(DbgMsg,"HdlRenameGame(\"%s\",\n  \"%s\")\n=> %d",Info.Game.Name, newName,ret);
+		DebugDisp(DbgMsg);
+	}
+
+
+	if(ret!=0){
+		strcpy(PartyInfo[Info.Count].Game.Name, newName);
+		drawMsg("Game Renamed");
+	}else{
+end2:
+		drawMsg("Failed Renaming Game");
+	}
+
+	i=0;
+	while(i<25000000) // print operation result during 1 sec
+	 i++;
+
+end1:
+	return ret;
+}
+//------------------------------
+//endfunc RenameGame
 //--------------------------------------------------------------
 int ExpandParty(PARTYINFO Info, int size)
 {
@@ -578,6 +667,8 @@ int ExpandParty(PARTYINFO Info, int size)
 
 	return ret;
 }
+//------------------------------
+//endfunc EpandParty
 //--------------------------------------------------------------
 int FormatHdd(void)
 {
@@ -601,7 +692,8 @@ int FormatHdd(void)
 
 	return ret;
 }
-
+//------------------------------
+//endfunc FormatHdd
 //--------------------------------------------------------------
 void hddManager(void)
 {
@@ -615,6 +707,7 @@ void hddManager(void)
 	int    ray=50;
 	uint64 Color;
 	char   tmp[MAX_PATH];
+	char	tooltip[MAX_TEXT_LINE];
 	int    top=0, rows;
 	int    event, post_event=0;
 	int    browser_sel=0,	browser_nfiles=0;
@@ -649,6 +742,17 @@ void hddManager(void)
 				fileXioUmount("pfs1:");
 				mountedParty[1][0]=0;
 				return;
+			}else if(new_pad & PAD_SQUARE){
+				if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){
+					loadHdlInfoModule();
+					ret=HdlGetGameInfo(PartyInfo[browser_sel].Name, &PartyInfo[browser_sel].Game);
+					if(ret==0)
+						PartyInfo[browser_sel].Treatment = TREAT_HDL_GAME;
+					else{
+						sprintf(DbgMsg, "HdlGetGameInfo(\"%s\",bf)\n=> %d", PartyInfo[browser_sel].Name, ret);
+						DebugDisp(DbgMsg);
+					}
+				}
 			}else if(new_pad & PAD_R1) { //Starts clause for R1 menu
 				ret = MenuParty(PartyInfo[browser_sel]);
 				tmp[0]=0;
@@ -674,13 +778,21 @@ void hddManager(void)
 				} else if(ret==RENAME){
 					drawMsg("Enter New Partition Name.");
 					drawMsg("Enter New Partition Name.");
-					strcpy(tmp, PartyInfo[browser_sel].Name+1);
-					if(keyboard(tmp, 36)>0){
-						if(ynDialog("Rename Current Partition ?")==1){
-							RenameParty(PartyInfo[browser_sel], tmp);
-							nparties = 0; //Tell FileBrowser to refresh party list
+					if(PartyInfo[browser_sel].Treatment == TREAT_HDL_GAME){//Rename HDL Game
+						strcpy(tmp, PartyInfo[browser_sel].Game.Name);
+						if(keyboard(tmp, 32)>0){
+							if(ynDialog("Rename Current Game ?")==1)
+								RenameGame(PartyInfo[browser_sel], tmp);
 						}
-					}
+					}else{//starts clause for normal partition RENAME
+						strcpy(tmp, PartyInfo[browser_sel].Name+1);
+						if(keyboard(tmp, 36)>0){
+							if(ynDialog("Rename Current Partition ?")==1){
+								RenameParty(PartyInfo[browser_sel], tmp);
+								nparties = 0; //Tell FileBrowser to refresh party list
+							}
+						}
+					}//ends clause for normal partition RENAME
 				} else if(ret==EXPAND){
 					drawMsg("Select New Partition Size In MB.");
 					drawMsg("Select New Partition Size In MB.");
@@ -721,7 +833,7 @@ void hddManager(void)
 			x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("HDD STATUS")*FONT_WIDTH)/2;
 			printXY("HDD STATUS", x, y/2, setting->color[3], TRUE);
 
-			if(setting->TV_mode == TV_mode_NTSC) 
+			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+10;
 			else
 				y += FONT_HEIGHT+11;
@@ -744,7 +856,7 @@ void hddManager(void)
 			itoLine(setting->color[1], SCREEN_WIDTH/2-21, Frame_start_y/2, 0,
 				setting->color[1], SCREEN_WIDTH/2-21, Frame_end_y/2, 0);
 
-			if(setting->TV_mode == TV_mode_NTSC) 
+			if(TV_mode == TV_mode_NTSC) 
 				y += FONT_HEIGHT+11;
 			else
 				y += FONT_HEIGHT+12;
@@ -764,13 +876,13 @@ void hddManager(void)
 				sprintf(c, "HDD FREE: %d MB", hddFreeSpace);
 				printXY(c, x, y/2, setting->color[3], TRUE);
 
-				if(setting->TV_mode == TV_mode_NTSC) 
+				if(TV_mode == TV_mode_NTSC) 
 					ray = 45;
 				else
 					ray = 55;
 
 				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x);
-				if(setting->TV_mode == TV_mode_NTSC) 
+				if(TV_mode == TV_mode_NTSC) 
 					y += ray+20;
 				else
 					y += ray+25;
@@ -784,7 +896,7 @@ void hddManager(void)
 					else
 						Color = setting->color[4];
 					x3 = ray*cosdgf(Angle);
-					if(setting->TV_mode == TV_mode_NTSC) 
+					if(TV_mode == TV_mode_NTSC) 
 						y3 = (ray-5)*sindgf(Angle);
 					else
 						y3 = (ray)*sindgf(Angle);
@@ -798,7 +910,7 @@ void hddManager(void)
 				sprintf(c, "%d%% FREE",hddFree);
 				printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
 
-				if(setting->TV_mode == TV_mode_NTSC) 
+				if(TV_mode == TV_mode_NTSC) 
 					y += ray+15;
 				else
 					y += ray+20;
@@ -825,14 +937,42 @@ void hddManager(void)
 					printXY(c, x, y/2, setting->color[3], TRUE);
 					y += FONT_HEIGHT;
 					pfsFree = 0;
-				} else if(Treat == TREAT_HDL){ //starts clause for HDL
+				} else if(Treat == TREAT_HDL_RAW){ //starts clause for HDL without GameInfo
 					//---------- Start of clause for HDL game partitions ----------
 					//dlanor NB: Not properly implemented yet
 					sprintf(c, "HDL SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
 					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT*4;
+					strcpy(c, "Info not loaded");
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					pfsFree = -1; //Disable lower pie chart display
+				} else if(Treat == TREAT_HDL_GAME){ //starts clause for HDL with GameInfo
+					y += FONT_HEIGHT/4;
+
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("GAME INFORMATION")*FONT_WIDTH)/2;
+					printXY("GAME INFORMATION", x, y/2, setting->color[3], TRUE);
+
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)
+						-(strlen(PartyInfo[browser_sel].Game.Name)*FONT_WIDTH)/2;
 					y += FONT_HEIGHT*2;
-					pfsFree = 0;
+					printXY(PartyInfo[browser_sel].Game.Name, x, y/2, setting->color[3], TRUE);
+
+					y += FONT_HEIGHT+FONT_HEIGHT/2+FONT_HEIGHT/4;
+					sprintf(c, "STARTUP: %s", PartyInfo[browser_sel].Game.Startup);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT+FONT_HEIGHT/2;
+					sprintf(c, "SIZE: %d MB", (int)PartyInfo[browser_sel].RawSize);
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
+					printXY(c, x, y/2, setting->color[3], TRUE);
+					y += FONT_HEIGHT+FONT_HEIGHT/2;
+					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen("TYPE: DVD GAME")*FONT_WIDTH)/2;
+					if(PartyInfo[browser_sel].Game.Is_Dvd==1)
+						printXY("TYPE: DVD GAME", x, y/2, setting->color[3], TRUE);
+					else
+						printXY("TYPE: CD  GAME", x, y/2, setting->color[3], TRUE);
+					pfsFree = -1; //Disable lower pie chart display
 					//---------- End of clause for HDL game partitions ----------
 			  }else{ //ends clause for HDL, starts clause for normal partitions
 					//---------- Start of clause for PFS partitions ----------
@@ -852,8 +992,9 @@ void hddManager(void)
 					//---------- End of clause for normal partitions (not HDL games) ----------
 				} //ends clause for normal partitions
 
+				if(pfsFree >= 0){ //Will be negative when skipping this graph
 					x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x);
-					if(setting->TV_mode == TV_mode_NTSC) 
+					if(TV_mode == TV_mode_NTSC) 
 						y += ray+20;
 					else
 						y += ray+25;
@@ -867,7 +1008,7 @@ void hddManager(void)
 						else
 							Color = setting->color[4];
 						x3 = ray*cosdgf(Angle);
-						if(setting->TV_mode == TV_mode_NTSC) 
+						if(TV_mode == TV_mode_NTSC) 
 							y3 = (ray-5)*sindgf(Angle);
 						else
 							y3 = (ray)*sindgf(Angle);
@@ -880,6 +1021,7 @@ void hddManager(void)
 
 					sprintf(c, "%d%% FREE",pfsFree);
 					printXY(c, x-FONT_WIDTH*4, y/2-FONT_HEIGHT/4, setting->color[3], TRUE);
+				}
 
 				rows = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
 
@@ -910,7 +1052,10 @@ void hddManager(void)
 				} //ends clause for scrollbar
 			} //ends hdd formated
 			//Tooltip section
-			setScrTmp("PS2 HDD MANAGER", "R1:MENU  ÿ3:Exit");
+			strcpy(tooltip, "R1:MENU  ÿ3:Exit");
+			if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW)
+				strcat(tooltip, "  ÿ2:Load HDL Game Info");
+			setScrTmp("PS2 HDD MANAGER", tooltip);
 
 		}//ends if(event||post_event)
 		drawScr();
@@ -920,4 +1065,6 @@ void hddManager(void)
 	
 	return;
 }
+//------------------------------
+//endfunc hddManager
 //--------------------------------------------------------------

@@ -1,6 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
-LaunchELF v3.74 (2006.06.06)
+LaunchELF v3.76 (2006.06.09)
+-Added abilty to display HDL game info and to rename such games (for the gamelist). This feature is based on a modified version of an IRX module contributed by Polo.
+
+LaunchELF v3.75 (2006.06.06)
 -Speed optimized various aspects of HddManager
 
 LaunchELF v3.74 (2006.06.05)
