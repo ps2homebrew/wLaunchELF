@@ -1,5 +1,20 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.73 (2006.06.02)
+-Added "MISC/Set CNF_Path" command that sets the CNF_Path variable by direct browsing. Note however that this does not work properly for HDD paths (yet). For those you can only use the CNF_Path variable in the "Startup Settings"
+-Added "MISC/Load CNF" command that simply reloads CNF (useful with CNF_Path variable)
+-Added CNF_Path variable (Startup Settings) to override normal CNF path choice
+-Fixed a PathPad bug causing free space of another device to be shown for host:
+-Fixed Overwrite query to show real folder names, never titles (not unique)
+-Fixed a bug in usb_mass that prevented backup of MC saves using backslash in names
+-Fixed a bug in HddManager that caused freezing with Sony-style protected partitions
+-Raised an index limit for partition arrays from 100 to 400 for larger disk support
+-Added progress messages to GetHddInfo function (mainly for debugging)
+-Changed HddManager to cause partition list refresh for the FileBrowser when needed
+-Changed HddManager to use configurable colours
+-Added four more configurable colours to Screen Settings for GUI graphs (eg: HddManager)
+-Merged HddManager contributed by Polo. It can be launched as MISC/HddManager
+
 LaunchELF v3.72 (2006.05.24)
 -Fixed a bug that sometimes caused incorrect display of free MC space
 -Fixed a bug that prevented correct display of file size sums of 4GB or more

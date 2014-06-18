@@ -893,6 +893,84 @@ void triggerPowerOff(void)
 //------------------------------
 //endfunc triggerPowerOff
 //--------------------------------------------------------------
+void Validate_CNF_Path(void)
+{
+	char cnf_path[MAX_PATH];
+
+	if(setting->CNF_Path[0] != '\0') {
+		if(genFixPath(setting->CNF_Path, cnf_path) >= 0)
+			strcpy(LaunchElfDir, setting->CNF_Path);
+	}
+}
+//------------------------------
+//endfunc Validate_CNF_Path
+//--------------------------------------------------------------
+void Set_CNF_Path(void)
+{
+	char	*tmp;
+
+	getFilePath(setting->CNF_Path, CNF_PATH_CNF);
+	if((tmp = strrchr(setting->CNF_Path, '/')))
+	tmp[1] = '\0';
+	Validate_CNF_Path();
+
+	if(!strcmp(setting->CNF_Path, LaunchElfDir))
+		strcpy(mainMsg, "Valid ");
+	else
+		strcpy(mainMsg, "Bogus ");
+	sprintf(mainMsg+6, "CNF_Path = \"%s\"", setting->CNF_Path);
+
+}
+//------------------------------
+//endfunc Set_CNF_Path
+//--------------------------------------------------------------
+//Reload CNF, possibly after a path change
+void reloadConfig()
+{
+	if (numCNF == 0)
+		strcpy(CNF, "LAUNCHELF.CNF");
+	else
+		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
+
+	loadConfig(mainMsg, CNF);
+	Validate_CNF_Path();
+	updateScreenMode();
+	loadSkin(BACKGROUND_PIC);
+	itoSetBgColor(GS_border_colour);
+	
+	timeout = (setting->timeout+1)*SCANRATE;
+	if(setting->discControl)
+		loadCdModules();
+}
+//------------------------------
+//endfunc reloadConfig
+//--------------------------------------------------------------
+// Config Cycle Left  (--) by EP
+void decConfig()
+{
+	if (numCNF > 0)
+		numCNF--;
+	else
+		numCNF = maxCNF-1;
+	
+	reloadConfig();
+}
+//------------------------------
+//endfunc decConfig
+//--------------------------------------------------------------
+// Config Cycle Right (++) by EP
+void incConfig()
+{
+	if (numCNF < maxCNF-1)
+		numCNF++;
+	else
+		numCNF = 0;
+	
+	reloadConfig();
+}
+//------------------------------
+//endfunc incConfig
+//--------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
 void RunElf(const char *path)
@@ -985,6 +1063,15 @@ void RunElf(const char *path)
 		hddPowerOff();
 		poweroff_delay = SCANRATE/4; //trigger delay for those without net adapter
 		return;
+	}else if(!stricmp(path, "MISC/HddManager")){
+		hddManager();
+		return;
+	}else if(!stricmp(path, "MISC/Set CNF_Path")){
+		Set_CNF_Path();
+		return;
+	}else if(!stricmp(path, "MISC/Load CNF")){
+		reloadConfig();
+		return;
 //Next clause is for an optional font test routine
 	}else if(!stricmp(path, "MISC/ShowFont")){
 		ShowFont();
@@ -1044,54 +1131,6 @@ void RunSelectedElf(void)
 }
 //------------------------------
 //endfunc RunSelectedElf
-//--------------------------------------------------------------
-// Config Cycle Left  (--) by EP
-void decConfig()
-{
-	if (numCNF > 0)
-		numCNF--;
-	else
-		numCNF = maxCNF-1;
-	
-	if (numCNF == 0)
-		strcpy(CNF, "LAUNCHELF.CNF");
-	else
-		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
-	loadConfig(mainMsg, CNF);
-	updateScreenMode();
-	loadSkin(BACKGROUND_PIC);
-	itoSetBgColor(GS_border_colour);
-	
-	timeout = (setting->timeout+1)*SCANRATE;
-	if(setting->discControl)
-		loadCdModules();
-}
-//------------------------------
-//endfunc decConfig
-//--------------------------------------------------------------
-// Config Cycle Right (++) by EP
-void incConfig()
-{
-	if (numCNF < maxCNF-1)
-		numCNF++;
-	else
-		numCNF = 0;
-	
-	if (numCNF == 0)
-		strcpy(CNF, "LAUNCHELF.CNF");
-	else
-		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
-	loadConfig(mainMsg, CNF);
-	updateScreenMode();
-	loadSkin(BACKGROUND_PIC);
-	itoSetBgColor(GS_border_colour);
-	
-	timeout = (setting->timeout+1)*SCANRATE;
-	if(setting->discControl)
-		loadCdModules();
-}
-//------------------------------
-//endfunc incConfig
 //--------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 // dlanor: but changed now, as the original was badly bugged
@@ -1236,10 +1275,10 @@ int main(int argc, char *argv[])
 			loadUsbModules();
 		}
 	}
+	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
 	getIpConfig();
 	setupPad(); //Comment out this line when using early setupPad above
 	initsbv_patches();
-
 
 	if(setting->discControl)
 		loadCdModules();
@@ -1259,6 +1298,10 @@ int main(int argc, char *argv[])
 	loadSkin(BACKGROUND_PIC);
 
 	startKbd();
+
+	//Here nearly everything is ready for the main menu event loop
+	//But before we start that, we need to validate CNF_Path
+	Validate_CNF_Path();
 
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state

@@ -74,6 +74,7 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"JPG", // cnfmode SKIN_CNF
 	"IRX", // cnfmode USBKBD_IRX_CNF
 	"KBD", // cnfmode KBDMAP_FILE_CNF
+	"CNF"  // cnfmode CNF_PATH_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
@@ -83,6 +84,7 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"jpg", // cnfmode SKIN_CNF
 	"irx", // cnfmode USBKBD_IRX_CNF
 	"kbd", // cnfmode KBDMAP_FILE_CNF
+	"cnf"  // cnfmode CNF_PATH_CNF
 };
 
 int host_ready   = 0;
@@ -151,111 +153,6 @@ int mountParty(const char *party)
 	strcpy(mountedParty[0], party);
 	return 0;
 }
-//--------------------------------------------------------------
-// The following group of file handling functions are used to allow
-// the main program to access files without having to deal with the
-// difference between fio and fileXio devices directly in each call.
-// Even so, paths for fileXio are assumed to be already prepared so
-// as to be accepted by fileXio calls (so HDD file access use "pfs")
-// Generic functions for this purpose that have been added so far are:
-// genInit(void), genOpen(path, mode), genClose(fd)
-// genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
-//--------------------------------------------------------------
-int gen_fd[256]; //Allow up to 256 generic file handles
-int gen_io[256]; //For each handle, also memorize io type
-//--------------------------------------------------------------
-void genInit(void)
-{
-	int	i;
-
-	for(i=0; i<256; i++)
-		gen_fd[i] = -1;
-}
-//------------------------------
-//endfunc genInit
-//--------------------------------------------------------------
-int genOpen(char *path, int mode)
-{
-	int i, fd, io;
-
-	for(i=0; i<256; i++)
-		if(gen_fd[i] < 0)
-			break;
-	if(i > 255)
-		return -1;
-
-	if(!strncmp(path, "pfs", 3)){
-		fd = fileXioOpen(path, mode, fileMode);
-		io = 1;
-	}else{
-		fd = fioOpen(path, mode);
-		io = 0;
-	}
-	if(fd < 0)
-		return fd;
-
-	gen_fd[i] = fd;
-	gen_io[i] = io;
-	return i;
-}
-//------------------------------
-//endfunc genOpen
-//--------------------------------------------------------------
-int genLseek(int fd, int where, int how)
-{
-	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-		return -1;
-
-	if(gen_io[fd])
-		return fileXioLseek(gen_fd[fd], where, how);
-	else
-		return fioLseek(gen_fd[fd], where, how);
-}
-//------------------------------
-//endfunc genLseek
-//--------------------------------------------------------------
-int genRead(int fd, void *buf, int size)
-{
-	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-		return -1;
-
-	if(gen_io[fd])
-		return fileXioRead(gen_fd[fd], buf, size);
-	else
-		return fioRead(gen_fd[fd], buf, size);
-}
-//------------------------------
-//endfunc genRead
-//--------------------------------------------------------------
-int genWrite(int fd, void *buf, int size)
-{
-	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-		return -1;
-
-	if(gen_io[fd])
-		return fileXioWrite(gen_fd[fd], buf, size);
-	else
-		return fioWrite(gen_fd[fd], buf, size);
-}
-//------------------------------
-//endfunc genWrite
-//--------------------------------------------------------------
-int genClose(int fd)
-{
-	int ret;
-
-	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-		return -1;
-
-	if(gen_io[fd])
-		ret = fileXioClose(gen_fd[fd]);
-	else
-		ret = fioClose(gen_fd[fd]);
-	gen_fd[fd] = -1;
-	return ret;
-}
-//------------------------------
-//endfunc genClose
 //--------------------------------------------------------------
 int ynDialog(const char *message)
 {
@@ -528,6 +425,201 @@ void setPartyList(void)
 	fileXioDclose(hddFd);
 }
 //--------------------------------------------------------------
+// The following group of file handling functions are used to allow
+// the main program to access files without having to deal with the
+// difference between fio and fileXio devices directly in each call.
+// Even so, paths for fileXio are assumed to be already prepared so
+// as to be accepted by fileXio calls (so HDD file access use "pfs")
+// Generic functions for this purpose that have been added so far are:
+// genInit(void), genFixPath(uLE_path, gen_path),
+// genOpen(path, mode), genClose(fd), genDopen(path), genDclose(fd),
+// genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
+//--------------------------------------------------------------
+int gen_fd[256]; //Allow up to 256 generic file handles
+int gen_io[256]; //For each handle, also memorize io type
+//--------------------------------------------------------------
+void genInit(void)
+{
+	int	i;
+
+	for(i=0; i<256; i++)
+		gen_fd[i] = -1;
+}
+//------------------------------
+//endfunc genInit
+//--------------------------------------------------------------
+int genFixPath(char *uLE_path, char *gen_path)
+{
+	char loc_path[MAX_PATH], party[MAX_NAME], *p;
+	int part_ix;
+
+	if(!strncmp(uLE_path, "hdd0:/", 6)){ //If using an HDD path
+		strcpy(loc_path, uLE_path+6);
+		if((p=strchr(loc_path, '/'))!=NULL){
+			sprintf(gen_path,"pfs0:%s", p);
+			*p = 0;
+		} else {
+			strcpy(gen_path, "pfs0:/");
+		}
+		sprintf(party, "hdd0:%s", loc_path);
+		if(nparties==0){
+			loadHddModules();
+			setPartyList();
+		}
+		if((part_ix = mountParty(party)) >= 0)
+		  gen_path[3] = part_ix+'0';
+	//ends if clause for using an HDD path
+	} else { //not using an HDD path
+		strcpy(gen_path, uLE_path);
+		part_ix = 99;  //Flags non-HDD path
+	}
+	//printf("genFixPath(\"%s\",\"%s\")=>%d on \"%s\"\r\n",uLE_path, gen_path, part_ix, party);
+	return part_ix;  //non-HDD Path => 99, Good HDD Path => 0/1, Bad HDD Path => negative
+}
+//------------------------------
+//endfunc genFixPath
+//--------------------------------------------------------------
+int genOpen(char *path, int mode)
+{
+	int i, fd, io;
+
+	for(i=0; i<256; i++)
+		if(gen_fd[i] < 0)
+			break;
+	if(i > 255)
+		return -1;
+
+	if(!strncmp(path, "pfs", 3)){
+		fd = fileXioOpen(path, mode, fileMode);
+		io = 1;
+	}else{
+		fd = fioOpen(path, mode);
+		io = 0;
+	}
+	if(fd < 0)
+		return fd;
+
+	gen_fd[i] = fd;
+	gen_io[i] = io;
+	return i;
+}
+//------------------------------
+//endfunc genOpen
+//--------------------------------------------------------------
+int genDopen(char *path)
+{
+	int i, fd, io;
+
+	for(i=0; i<256; i++)
+		if(gen_fd[i] < 0)
+			break;
+	if(i > 255){
+		//printf("genDopen(\"%s\") => no free descriptors\r\n", path);
+		return -1;
+	}
+
+	if(!strncmp(path, "pfs", 3)){
+		char tmp[MAX_PATH];
+
+		strcpy(tmp, path);
+		if(tmp[strlen(tmp)-1] == '/')
+			tmp[strlen(tmp)-1] = '\0';
+		fd = fileXioDopen(tmp);
+		io = 3;
+	}else{
+		fd = fioDopen(path);
+		io = 2;
+	}
+	if(fd < 0){
+		//printf("genDopen(\"%s\") => low error %d\r\n", path, fd);
+		return fd;
+	}
+
+	gen_fd[i] = fd;
+	gen_io[i] = io;
+	//printf("genDopen(\"%s\") =>dd = %d\r\n", path, i);
+	return i;
+}
+//------------------------------
+//endfunc genDopen
+//--------------------------------------------------------------
+int genLseek(int fd, int where, int how)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioLseek(gen_fd[fd], where, how);
+	else
+		return fioLseek(gen_fd[fd], where, how);
+}
+//------------------------------
+//endfunc genLseek
+//--------------------------------------------------------------
+int genRead(int fd, void *buf, int size)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioRead(gen_fd[fd], buf, size);
+	else
+		return fioRead(gen_fd[fd], buf, size);
+}
+//------------------------------
+//endfunc genRead
+//--------------------------------------------------------------
+int genWrite(int fd, void *buf, int size)
+{
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd])
+		return fileXioWrite(gen_fd[fd], buf, size);
+	else
+		return fioWrite(gen_fd[fd], buf, size);
+}
+//------------------------------
+//endfunc genWrite
+//--------------------------------------------------------------
+int genClose(int fd)
+{
+	int ret;
+
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd]==1)
+		ret = fileXioClose(gen_fd[fd]);
+	else if(gen_io[fd]==0)
+		ret = fioClose(gen_fd[fd]);
+	else
+		return -1;
+	gen_fd[fd] = -1;
+	return ret;
+}
+//------------------------------
+//endfunc genClose
+//--------------------------------------------------------------
+int genDclose(int fd)
+{
+	int ret;
+
+	if((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
+		return -1;
+
+	if(gen_io[fd]==3)
+		ret = fileXioDclose(gen_fd[fd]);
+	else if(gen_io[fd]==2)
+		ret = fioDclose(gen_fd[fd]);
+	else
+		return -1;
+	gen_fd[fd] = -1;
+	return ret;
+}
+//------------------------------
+//endfunc genDclose
+//--------------------------------------------------------------
 int readHDD(const char *path, FILEINFO *info, int max)
 {
 	iox_dirent_t dirbuf;
@@ -766,7 +858,8 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
 
 	if(!strncmp(path, "hdd", 3)){
 		ret = getHddParty(path, file, party, dir);
-		if(mountParty(party)<0) return -1;
+		if((ret = mountParty(party)<0))
+			return -1;
 		dir[3]=ret+'0';
 		hddin=TRUE;
 	}else{
@@ -1358,8 +1451,9 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		ret = newdir(outPath, file.name);
 		if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
 			ret=-1;
-			if(title_show) ret=getGameTitle(outPath, &file, tmp);
-			if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
+			//if(title_show) ret=getGameTitle(outPath, &file, tmp);
+			//if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
+			sprintf(tmp, "%s%s/", outPath, file.name);
 			strcat(tmp, "\nOverwrite?");
 			if(ynDialog(tmp)<0) return -1;
 			drawMsg("Pasting...");
@@ -2055,6 +2149,12 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 		strcpy(files[nfiles].name, "PS2PowerOff");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "HddManager");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Set CNF_Path");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+		strcpy(files[nfiles].name, "Load CNF");
+		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
 //Next 2 lines add an optional font test routine
 		strcpy(files[nfiles].name, "ShowFont");
 		files[nfiles++].stats.attrFile = MC_ATTR_FILE;
@@ -2142,11 +2242,12 @@ void getFilePath(char *out, int cnfmode)
 
 	strcpy(ext, cnfmode_extL[cnfmode]);
 
-	if( (cnfmode!=USBD_IRX_CNF)
-		&&(cnfmode!=USBKBD_IRX_CNF))
-		strcpy(path, LastDir);			//If not choosing a driver, start in recent folder
+	if(	(cnfmode==USBD_IRX_CNF) || (cnfmode==USBKBD_IRX_CNF)
+	||	(	(!strncmp(LastDir, "MISC/", 5)) && (cnfmode > LK_ELF_CNF)))
+		path[0] = '\0';			    //start in main root if recent folder unreasonable
 	else
-		path[0] = '\0';							//In choosing a driver, start in main root
+		strcpy(path, LastDir);	//If reasonable, start in recent folder
+
 	mountedParty[0][0]=0;
 	mountedParty[1][0]=0;
 	clipPath[0] = 0;
@@ -2198,6 +2299,7 @@ void getFilePath(char *out, int cnfmode)
 						&&(cnfmode!=USBKBD_IRX_CNF)
 						&&(cnfmode!=KBDMAP_FILE_CNF)
 						&&(cnfmode!=SKIN_CNF)
+						&&(cnfmode!=CNF_PATH_CNF)
 						&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
 						sprintf(msg0, "This file isn't ELF.");
@@ -2213,6 +2315,7 @@ void getFilePath(char *out, int cnfmode)
 				if(temp != NULL){
 					strcpy(path, temp);
 					browser_cd=TRUE;
+					vfreeSpace=FALSE;
 				}
 			}
 			if(cnfmode){

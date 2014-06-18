@@ -8,10 +8,14 @@ enum
 {
 	DEF_TIMEOUT = 10,
 	DEF_HIDE_PATHS = TRUE,
-	DEF_COLOR1 = ITO_RGBA(128,128,128,0),
-	DEF_COLOR2 = ITO_RGBA(64,64,64,0),
-	DEF_COLOR3 = ITO_RGBA(96,0,0,0),
-	DEF_COLOR4 = ITO_RGBA(0,0,0,0),
+	DEF_COLOR1 = ITO_RGBA(128,128,128,0), //Backgr
+	DEF_COLOR2 = ITO_RGBA(64,64,64,0),    //Frame
+	DEF_COLOR3 = ITO_RGBA(96,0,0,0),      //Select
+	DEF_COLOR4 = ITO_RGBA(0,0,0,0),       //Text
+	DEF_COLOR5 = ITO_RGBA(255,0,255,0),   //Graph1
+	DEF_COLOR6 = ITO_RGBA(0,0,255,0),     //Graph2
+	DEF_COLOR7 = ITO_RGBA(0,0,0,0),       //Graph3
+	DEF_COLOR8 = ITO_RGBA(0,0,0,0),       //Graph4
 	DEF_DISCCONTROL = FALSE,
 	DEF_INTERLACE = FALSE,
 	DEF_MENU_FRAME = TRUE,
@@ -127,6 +131,7 @@ void saveConfig(char *mainMsg, char *CNF)
 {
 	int i, ret, fd;
 	char c[MAX_PATH], tmp[26*MAX_PATH + 30*MAX_PATH];
+	char cnf_path[MAX_PATH];
 	size_t CNF_size, CNF_step;
 
 	sprintf(tmp, "CNF_version = 2.0\r\n%n", &CNF_size); //Start CNF with version header
@@ -148,6 +153,10 @@ void saveConfig(char *mainMsg, char *CNF)
 		"GUI_Col_2_ABGR = %08lX\r\n"
 		"GUI_Col_3_ABGR = %08lX\r\n"
 		"GUI_Col_4_ABGR = %08lX\r\n"
+		"GUI_Col_5_ABGR = %08lX\r\n"
+		"GUI_Col_6_ABGR = %08lX\r\n"
+		"GUI_Col_7_ABGR = %08lX\r\n"
+		"GUI_Col_8_ABGR = %08lX\r\n"
 		"Screen_X = %d\r\n"
 		"Screen_Y = %d\r\n"
 		"Init_CDVD_Check = %d\r\n"
@@ -168,13 +177,18 @@ void saveConfig(char *mainMsg, char *CNF)
 		"USBKBD_FILE = %s\r\n"
 		"KBDMAP_FILE = %s\r\n"
 		"Menu_Show_Titles = %d\r\n"
+		"CNF_Path = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->timeout,    //auto_Timer
 		setting->Hide_Paths,   //Menu_Hide_Paths
-		setting->color[0],   //Col_0
-		setting->color[1],   //Col_1
-		setting->color[2],   //Col_2
-		setting->color[3],   //Col_3
+		setting->color[0],   //Col_1
+		setting->color[1],   //Col_2
+		setting->color[2],   //Col_3
+		setting->color[3],   //Col_4
+		setting->color[4],   //Col_5
+		setting->color[5],   //Col_6
+		setting->color[6],   //Col_7
+		setting->color[7],   //Col_8
 		setting->screen_x,   //Screen_X
 		setting->screen_y,   //Screen_Y
 		setting->discControl,  //Init_CDVD_Check
@@ -195,6 +209,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->usbkbd_file,  //USBKBD_FILE
 		setting->kbdmap_file,  //KBDMAP_FILE
 		setting->Show_Titles,  //Menu_Show_Titles
+		setting->CNF_Path,     //CNF_Path
 		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
@@ -225,14 +240,30 @@ void saveConfig(char *mainMsg, char *CNF)
 
 	strcpy(c, LaunchElfDir);
 	strcat(c, CNF);
-	if((fd=fioOpen(c, O_RDONLY)) >= 0)
-		fioClose(fd);
-	else{
-		if(!strncmp(LaunchElfDir, "mc", 2))
-			sprintf(c, "mc%d:/SYS-CONF", LaunchElfDir[2]-'0');
-		else
-			sprintf(c, "mc%d:/SYS-CONF", CheckMC());
+	ret = genFixPath(c, cnf_path);
+	if((ret >= 0) && ((fd=genOpen(cnf_path, O_RDONLY)) >= 0))
+		genClose(fd);
+	else {  //Start of clause for failure to use LaunchElfDir
+		if(setting->CNF_Path[0]==0) { //if NO CNF Path override defined
+			if(!strncmp(LaunchElfDir, "mc", 2))
+				sprintf(c, "mc%d:/SYS-CONF", LaunchElfDir[2]-'0');
+			else
+				sprintf(c, "mc%d:/SYS-CONF", CheckMC());
+	
+			if((fd=fioDopen(c)) >= 0){
+				fioDclose(fd);
+				char strtmp[MAX_PATH] = "/";
+				strcat(c, strcat(strtmp, CNF));
+			}else{
+				strcpy(c, LaunchElfDir);
+				strcat(c, CNF);
+			}
+		}
+	}  //End of clause for failure to use LaunchElfDir
 
+	ret = genFixPath(c, cnf_path);
+	if((ret < 0) || ((fd=genOpen(cnf_path,O_CREAT|O_WRONLY|O_TRUNC)) < 0)){
+		sprintf(c, "mc%d:/SYS-CONF", CheckMC());
 		if((fd=fioDopen(c)) >= 0){
 			fioDclose(fd);
 			char strtmp[MAX_PATH] = "/";
@@ -241,18 +272,18 @@ void saveConfig(char *mainMsg, char *CNF)
 			strcpy(c, LaunchElfDir);
 			strcat(c, CNF);
 		}
+		ret = genFixPath(c, cnf_path);
+		if((fd=genOpen(cnf_path,O_CREAT|O_WRONLY|O_TRUNC)) < 0){
+			sprintf(mainMsg, "Failed To Save %s", CNF);
+			return;
+		}
 	}
-
-	if((fd=fioOpen(c,O_CREAT|O_WRONLY|O_TRUNC)) < 0){
-		sprintf(mainMsg, "Failed To Save %s", CNF);
-		return;
-	}
-	ret = fioWrite(fd,&tmp,CNF_size);
+	ret = genWrite(fd,&tmp,CNF_size);
 	if(ret==CNF_size)
 		sprintf(mainMsg, "Saved Config (%s)", c);
 	else
 		sprintf(mainMsg, "Failed writing %s", CNF);
-	fioClose(fd);
+	genClose(fd);
 }
 //---------------------------------------------------------------------------
 unsigned long hextoul(char *string)
@@ -272,9 +303,10 @@ unsigned long hextoul(char *string)
 //---------------------------------------------------------------------------
 void loadConfig(char *mainMsg, char *CNF)
 {
-	int i, fd, mcport, var_cnt, CNF_version;
+	int i, fd, tst, mcport, var_cnt, CNF_version;
 	size_t CNF_size;
 	char path[MAX_PATH];
+	char cnf_path[MAX_PATH];
 	unsigned char *RAM_p, *CNF_p, *name, *value;
 	
 	if(setting!=NULL)
@@ -291,12 +323,17 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->kbdmap_file[0] = '\0';
 	setting->skin[0] = '\0';
 	setting->Menu_Title[0] = '\0';
+	setting->CNF_Path[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
 	setting->Hide_Paths = DEF_HIDE_PATHS;
 	setting->color[0] = DEF_COLOR1;
 	setting->color[1] = DEF_COLOR2;
 	setting->color[2] = DEF_COLOR3;
 	setting->color[3] = DEF_COLOR4;
+	setting->color[4] = DEF_COLOR5;
+	setting->color[5] = DEF_COLOR6;
+	setting->color[6] = DEF_COLOR7;
+	setting->color[7] = DEF_COLOR8;
 	setting->screen_x = SCREEN_X;
 	setting->screen_y = SCREEN_Y;
 	setting->discControl = DEF_DISCCONTROL;
@@ -312,11 +349,14 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->Init_Delay = DEF_INIT_DELAY;
 	setting->usbkbd_used = DEF_USBKBD_USED;
 	setting->Show_Titles = DEF_SHOW_TITLES;
+
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
-	fd = fioOpen(path, O_RDONLY);
 
+	fd=-1;
+	if((tst = genFixPath(path, cnf_path)) >= 0)
+		fd = genOpen(cnf_path, O_RDONLY);
 	if(fd<0) {
 		if(!strncmp(LaunchElfDir, "mc", 2))
 			mcport = LaunchElfDir[2]-'0';
@@ -327,12 +367,11 @@ void loadConfig(char *mainMsg, char *CNF)
 			sprintf(strtmp, "mc%d:/SYS-CONF/", mcport);
 			strcpy(path, strtmp);
 			strcat(path, CNF);
-			fd = fioOpen(path, O_RDONLY);
+			fd = genOpen(path, O_RDONLY);
 			if(fd>=0)
 				strcpy(LaunchElfDir, strtmp);
 		}
 	}
-
 	if(fd<0) {
 failed_load:
 		sprintf(mainMsg, "Failed To Load %s", CNF);
@@ -340,15 +379,15 @@ failed_load:
 	}
 	// This point is only reached after succefully opening CNF
 
-	CNF_size = fioLseek(fd, 0, SEEK_END);
+	CNF_size = genLseek(fd, 0, SEEK_END);
 	printf("CNF_size=%d\n", CNF_size);
-	fioLseek(fd, 0, SEEK_SET);
+	genLseek(fd, 0, SEEK_SET);
 	RAM_p = (char*)malloc(CNF_size);
 	CNF_p = RAM_p;
-	if	(CNF_p==NULL)	{ fioClose(fd); goto failed_load; }
+	if	(CNF_p==NULL)	{ genClose(fd); goto failed_load; }
 		
-	fioRead(fd, CNF_p, CNF_size);  //Read CNF as one long string
-	fioClose(fd);
+	genRead(fd, CNF_p, CNF_size);  //Read CNF as one long string
+	genClose(fd);
 	CNF_p[CNF_size] = '\0';        //Terminate the CNF string
 
 //RA NB: in the code below, the 'LK_' variables havee been implemented such that
@@ -378,6 +417,10 @@ failed_load:
 		else if(!strcmp(name,"GUI_Col_2_ABGR")) setting->color[1] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_3_ABGR")) setting->color[2] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_4_ABGR")) setting->color[3] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_5_ABGR")) setting->color[4] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_6_ABGR")) setting->color[5] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_7_ABGR")) setting->color[6] = hextoul(value);
+		else if(!strcmp(name,"GUI_Col_8_ABGR")) setting->color[7] = hextoul(value);
 		else if(!strcmp(name,"Screen_X")) setting->screen_x = atoi(value);
 		else if(!strcmp(name,"Screen_Y")) setting->screen_y = atoi(value);
 		else if(!strcmp(name,"Init_CDVD_Check")) setting->discControl = atoi(value);
@@ -401,6 +444,7 @@ failed_load:
 		else if(!strcmp(name,"USBKBD_FILE")) strcpy(setting->usbkbd_file,value);
 		else if(!strcmp(name,"KBDMAP_FILE")) strcpy(setting->kbdmap_file,value);
 		else if(!strcmp(name,"Menu_Show_Titles")) setting->Show_Titles = atoi(value);
+		else if(!strcmp(name,"CNF_Path")) strcpy(setting->CNF_Path,value);
 		else if(!strcmp(name,"LK_auto_Title"))     strncpy(setting->LK_Title[0], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Circle_Title"))   strncpy(setting->LK_Title[1], value, MAX_ELF_TITLE-1);
 		else if(!strcmp(name,"LK_Cross_Title"))    strncpy(setting->LK_Title[2], value, MAX_ELF_TITLE-1);
@@ -606,15 +650,15 @@ void Config_Skin(void)
 void Config_Screen(void)
 {
 	int i;
-	int s, max_s=20;		//define cursor index and its max value
+	int s, max_s=32;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
-	uint64 rgb[4][3];
+	uint64 rgb[8][3];
 	char c[MAX_PATH];
 	
 	event = 1;	//event = initial entry
 
-	for(i=0; i<4; i++) {
+	for(i=0; i<8; i++) {
 		rgb[i][0] = setting->color[i] & 0xFF;
 		rgb[i][1] = setting->color[i] >> 8 & 0xFF;
 		rgb[i][2] = setting->color[i] >> 16 & 0xFF;
@@ -632,7 +676,7 @@ void Config_Screen(void)
 				event |= 2;  //event |= valid pad command
 				if(s==0)
 					s=max_s;
-				else if(s==12)
+				else if(s==24)
 					s=2;
 				else
 					s--;
@@ -640,8 +684,8 @@ void Config_Screen(void)
 			else if(new_pad & PAD_DOWN)
 			{
 				event |= 2;  //event |= valid pad command
-				if((s<12)&&(s%3==2))
-					s=12;
+				if((s<24)&&(s%3==2))
+					s=24;
 				else if(s==max_s)
 					s=0;
 				else
@@ -650,70 +694,66 @@ void Config_Screen(void)
 			else if(new_pad & PAD_LEFT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=17) s=16;
-				else if(s>=16) s=15;
-				else if(s>=15) s=14;
-				else if(s>=14) s=12;
-				else if(s>=12) s=9;
-				else if(s>=9) s-=3;  //if s in Color4, move it to Color3
-				else if(s>=6) s-=3;  //if s in Color3, move it to Color2
-				else if(s>=3) s-=3;  //if s in Color2, move it to Color1
+				if(s>=29) s=28;
+				else if(s>=28) s=27;
+				else if(s>=27) s=26;
+				else if(s>=26) s=24;
+				else if(s>=24) s=21; //if s beyond color settings
+				else if(s>=3) s-=3;  //if s in a color beyond Color1 step to preceding color
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
 				event |= 2;  //event |= valid pad command
-				if(s>=16) s=17;
-				else if(s>=15) s=16;
-				else if(s>=14) s=15;
-				else if(s>=12) s=14;
-				else if(s>=9) s=12;  //if s in Color4, move it to ScreenX
-				else if(s>=6) s+=3;  //if s in Color3, move it to Color4
-				else if(s>=3) s+=3;  //if s in Color2, move it to Color3
-				else s+=3;           //if s in Color1, move it to Color2
+				if(s>=28) s=29;
+				else if(s>=27) s=28;
+				else if(s>=26) s=27;
+				else if(s>=24) s=26;
+				else if(s>=21) s=24; //if s in Color8, move it to ScreenX
+				else s+=3;           //if s in a color before Color8, step to next color
 			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{ //User pressed CANCEL=>Subtract/Clear
 				event |= 2;  //event |= valid pad command
-				if(s<12) {
+				if(s<24) {
 					if(rgb[s/3][s%3] > 0) {
 						rgb[s/3][s%3]--;
 						setting->color[s/3] = 
 							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
-				} else if(s==12) {
+				} else if(s==24) {
 					if(setting->screen_x > 0) {
 						setting->screen_x--;
 						screen_env.screen.x = setting->screen_x;
 						itoSetScreenPos(setting->screen_x, setting->screen_y);
 					}
-				} else if(s==13) {
+				} else if(s==25) {
 					if(setting->screen_y > 0) {
 						setting->screen_y--;
 						screen_env.screen.y = setting->screen_y;
 						itoSetScreenPos(setting->screen_x, setting->screen_y);
 					}
-				} else if(s==16) {  //cursor is at Menu_Title
+				} else if(s==28) {  //cursor is at Menu_Title
 						setting->Menu_Title[0] = '\0';
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{ //User pressed OK=>Add/Ok/Edit
 				event |= 2;  //event |= valid pad command
-				if(s<12) {
+				if(s<24) {
 					if(rgb[s/3][s%3] < 255) {
 						rgb[s/3][s%3]++;
 						setting->color[s/3] = 
 							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
-				} else if(s==12) {
+				} else if(s==24) {
 					setting->screen_x++;
 					screen_env.screen.x = setting->screen_x;
 					itoSetScreenPos(setting->screen_x, setting->screen_y);
-				} else if(s==13) {
+				} else if(s==25) {
 					setting->screen_y++;
 					screen_env.screen.y = setting->screen_y;
 					itoSetScreenPos(setting->screen_x, setting->screen_y);
-				} else if(s==14) {
+				} else if(s==26) {
 					setting->interlace = !setting->interlace;
 					screen_env.interlace = setting->interlace;
 					itoGsReset();
@@ -723,16 +763,16 @@ void Config_Screen(void)
 					else
 						setting->screen_y = setting->screen_y/2+1;
 					itoSetScreenPos(setting->screen_x, setting->screen_y);
-				} else if(s==15) {
+				} else if(s==27) {
 					Config_Skin();
-				} else if(s==16) {  //cursor is at Menu_Title
+				} else if(s==28) {  //cursor is at Menu_Title
 					char tmp[MAX_MENU_TITLE+1];
 					strcpy(tmp, setting->Menu_Title);
 					if(keyboard(tmp, 36)>=0)
 						strcpy(setting->Menu_Title, tmp);
-				} else if(s==17) {
+				} else if(s==29) {
 					setting->Menu_Frame = !setting->Menu_Frame;
-				} else if(s==18) {
+				} else if(s==30) {
 					setting->Popup_Opaque = !setting->Popup_Opaque;
 				} else if(s==max_s-1) { //Always put 'RETURN' next to last
 					return;
@@ -743,6 +783,10 @@ void Config_Screen(void)
 					setting->color[1] = DEF_COLOR2;
 					setting->color[2] = DEF_COLOR3;
 					setting->color[3] = DEF_COLOR4;
+					setting->color[4] = DEF_COLOR5;
+					setting->color[5] = DEF_COLOR6;
+					setting->color[6] = DEF_COLOR7;
+					setting->color[7] = DEF_COLOR8;
 					setting->screen_x = SCREEN_X;
 					setting->screen_y = SCREEN_Y;
 					setting->interlace = DEF_INTERLACE;
@@ -752,7 +796,7 @@ void Config_Screen(void)
 					updateScreenMode();
 					itoSetBgColor(GS_border_colour);
 					
-					for(i=0; i<4; i++) {
+					for(i=0; i<8; i++) {
 						rgb[i][0] = setting->color[i] & 0xFF;
 						rgb[i][1] = setting->color[i] >> 8 & 0xFF;
 						rgb[i][2] = setting->color[i] >> 16 & 0xFF;
@@ -772,26 +816,32 @@ void Config_Screen(void)
 			x = Menu_start_x;
 			y = Menu_start_y;
 
-			sprintf(c, "    Color1  Color2  Color3  Color4");
+			sprintf(c, "    Color1  Color2  Color3  Color4  Color5  Color6  Color7  Color8");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "    Backgr  Frames  Select  Normal");
+			sprintf(c, "    Backgr  Frames  Select  Normal  Graph1  Graph2  Graph3  Graph4");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "R:    %02lX      %02lX      %02lX      %02lX",
-				rgb[0][0], rgb[1][0], rgb[2][0], rgb[3][0]);
+			sprintf(c, "R:    %02lX      %02lX      %02lX      %02lX"
+			           "      %02lX      %02lX      %02lX      %02lX",
+				rgb[0][0], rgb[1][0], rgb[2][0], rgb[3][0],
+				rgb[4][0], rgb[5][0], rgb[6][0], rgb[7][0]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "G:    %02lX      %02lX      %02lX      %02lX",
-				rgb[0][1], rgb[1][1], rgb[2][1], rgb[3][1]);
+			sprintf(c, "G:    %02lX      %02lX      %02lX      %02lX"
+			           "      %02lX      %02lX      %02lX      %02lX",
+				rgb[0][1], rgb[1][1], rgb[2][1], rgb[3][1],
+				rgb[4][1], rgb[5][1], rgb[6][1], rgb[7][1]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
-			sprintf(c, "B:    %02lX      %02lX      %02lX      %02lX",
-				rgb[0][2], rgb[1][2], rgb[2][2], rgb[3][2]);
+			sprintf(c, "B:    %02lX      %02lX      %02lX      %02lX"
+			           "      %02lX      %02lX      %02lX      %02lX",
+				rgb[0][2], rgb[1][2], rgb[2][2], rgb[3][2],
+				rgb[4][2], rgb[5][2], rgb[6][2], rgb[7][2]);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 			sprintf(c, "ÿ4");
-			for(i=0; i<4; i++)
+			for(i=0; i<8; i++)
 				printXY(c, x+FONT_WIDTH*(6+i*8), y/2, setting->color[i], TRUE);
 			y += FONT_HEIGHT;
 
@@ -849,21 +899,21 @@ void Config_Screen(void)
 			x = Menu_start_x;
 			y = Menu_start_y;
 
-			if(s<12){  //if cursor indicates a colour component
+			if(s<24){  //if cursor indicates a colour component
 				int colnum = s/3;
 				int comnum = s-colnum*3;
 				x += (4+colnum*8)*FONT_WIDTH;
 				y += (2+comnum)*FONT_HEIGHT;
 			} else {  //if cursor indicates anything after colour components
-				y += (s-12+6)*FONT_HEIGHT+FONT_HEIGHT/2;  //adjust y for cursor beyond colours
+				y += (s-24+6)*FONT_HEIGHT+FONT_HEIGHT/2;  //adjust y for cursor beyond colours
 				//Here y is almost correct, except for additional group spacing
-				if(s>=14)            //if cursor at or beyond interlace choice
+				if(s>=26)            //if cursor at or beyond interlace choice
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below screen offsets
-				if(s>=15)            //if cursor at or beyond 'SKIN SETTINGS'
+				if(s>=27)            //if cursor at or beyond 'SKIN SETTINGS'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below interlace choice
-				if(s>=16)            //if cursor at or beyond 'Menu Title'
+				if(s>=28)            //if cursor at or beyond 'Menu Title'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'SKIN SETTINGS'
-				if(s>=17)            //if cursor at or beyond 'Menu Frame'
+				if(s>=29)            //if cursor at or beyond 'Menu Frame'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Menu Title'
 				if(s>=max_s-1)            //if cursor at or beyond 'RETURN'
 					y+=FONT_HEIGHT/2;  //adjust for half-row space below 'Popups Opaque'
@@ -871,23 +921,23 @@ void Config_Screen(void)
 			drawChar(127, x, y/2, setting->color[3]);  //draw cursor
 
 			//Tooltip section
-			if (s <= 13) {  //if cursor at a colour component or a screen offset
+			if (s <= 25) {  //if cursor at a colour component or a screen offset
 				if (swapKeys)
 					strcpy(c, "ÿ1:Add ÿ0:Subtract");
 				else
 					strcpy(c, "ÿ0:Add ÿ1:Subtract");
-			} else if(s==14||s==17||s==18) {
+			} else if(s==26||s==29||s==30) {
 				//if cursor at 'INTERLACE' or 'Menu Frame' or 'Popups Opaque'
 				if (swapKeys)
 					strcpy(c, "ÿ1:Change");
 				else
 					strcpy(c, "ÿ0:Change");
-			} else if(s==15){  //if cursor at 'SKIN SETTINGS'
+			} else if(s==27){  //if cursor at 'SKIN SETTINGS'
 				if (swapKeys)
 					sprintf(c, "ÿ1:OK");
 				else
 					sprintf(c, "ÿ0:OK");
-			} else if(s==16){  //if cursor at Menu_Title
+			} else if(s==28){  //if cursor at Menu_Title
 				if (swapKeys)
 					sprintf(c, "ÿ1:Edit ÿ0:Clear");
 				else
@@ -915,7 +965,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=11;		//define cursor index and its max value
+	int s, max_s=12;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -961,6 +1011,7 @@ void Config_Startup(void)
 				else if(s==7 && setting->timeout>0) setting->timeout--;
 				else if(s==9) setting->usbkbd_file[0] = '\0';
 				else if(s==10) setting->kbdmap_file[0] = '\0';
+				else if(s==11) setting->CNF_Path[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -985,6 +1036,13 @@ void Config_Startup(void)
 					getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
 				else if(s==10)
 					getFilePath(setting->kbdmap_file, KBDMAP_FILE_CNF);
+				else if(s==11)
+				{	char *tmp;
+
+					getFilePath(setting->CNF_Path, CNF_PATH_CNF);
+					if((tmp = strrchr(setting->CNF_Path, '/')))
+						tmp[1] = '\0';
+				}
 				else
 					return;
 			}
@@ -1068,6 +1126,13 @@ void Config_Startup(void)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
+			if(strlen(setting->CNF_Path)==0)
+				sprintf(c, "  CNF Path override: NONE");
+			else
+				sprintf(c, "  CNF Path override: %s",setting->CNF_Path);
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
 			y += FONT_HEIGHT / 2;
 			printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
@@ -1094,7 +1159,8 @@ void Config_Startup(void)
 					sprintf(c, "ÿ1:Change");
 				else
 					sprintf(c, "ÿ0:Change");
-			} else if((s==4)||(s==9)||(s==10)) { //usbd_file||usbkbd_file||kbdmap_file
+			} else if((s==4)||(s==9)||(s==10)||(s==11)) {
+			//usbd_file||usbkbd_file||kbdmap_file||CNF_Path
 				if (swapKeys)
 					sprintf(c, "ÿ1:Browse ÿ0:Clear");
 				else

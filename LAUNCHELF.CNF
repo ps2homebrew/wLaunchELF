@@ -70,10 +70,17 @@ Menu_Hide_Paths = 1
 # and I think this succeeded fairly well, though the final results do
 # depend greatly on your monitor settings as well.
 # ----------------------------------------------------------------------
+# With the addition of the HddManager, four more colours were added to
+# this array, for use in graphical rpresentations, like pie charts.
+# ----------------------------------------------------------------------
 GUI_Col_1_ABGR = 00808080
 GUI_Col_2_ABGR = 00404040
 GUI_Col_3_ABGR = 00000060
 GUI_Col_4_ABGR = 00000000
+GUI_Col_5_ABGR = 00FF00FF
+GUI_Col_6_ABGR = 00FF0000
+GUI_Col_7_ABGR = 00000000
+GUI_Col_8_ABGR = 00000000
 # ----------------------------------------------------------------------
 Screen_X  = 128
 Screen_Y  = 30
@@ -187,6 +194,15 @@ KBDMAP_FILE =
 # some title string defined.
 # ----------------------------------------------------------------------
 Menu_Show_Titles = 1
+# ----------------------------------------------------------------------
+# CNF_Path can be used to override the path choice for CNF handling, by
+# setting it to the value needed after IOP reset is performed. This is
+# mainly intended to allow HDD installed setups to find a CNF in the
+# launch folder, but can also be used for CD installs, to switch to use
+# of a folder in MC after loading CNF values from a CNF on CD. You can
+# edit this path in the "Startup Settings" submenu.
+# ----------------------------------------------------------------------
+CNF_Path =
 # ----------------------------------------------------------------------
 # LK_xx_Title is not one variable but many. You can replace the 'xx' by
 # one of 15 button designations (eg: Square, Select, etc), and use them

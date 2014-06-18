@@ -32,6 +32,7 @@
 #include "iopmod_name.h"
 #include <libjpg.h>
 #include <libkbd.h>
+#include <floatlib.h>
 
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
@@ -41,7 +42,8 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
 	USBD_IRX_CNF,    // USBD.IRX choice for startup
 	SKIN_CNF,        // Skin JPG choice
 	USBKBD_IRX_CNF,  // USB keyboard IRX choice (only PS2SDK)
-  KBDMAP_FILE_CNF, // USB keyboard mapping table choice 
+  KBDMAP_FILE_CNF, // USB keyboard mapping table choice
+  CNF_PATH_CNF,    // CNF Path override choice
   CNFMODE_CNT      // Total number of cnfmode values defined
 };
 
@@ -58,7 +60,7 @@ enum
 	MAX_NAME = 256,
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
-	MAX_PARTITIONS=100,
+	MAX_PARTITIONS=400,
 	MAX_MENU_TITLE = 40,
 	MAX_ELF_TITLE = 72,
 	MAX_TEXT_LINE = 80
@@ -66,6 +68,7 @@ enum
 
 typedef struct
 {
+	char CNF_Path[MAX_PATH];
 	char LK_Path[15][MAX_PATH];
 	char LK_Title[15][MAX_ELF_TITLE];
 	char usbd_file[MAX_PATH];
@@ -76,7 +79,7 @@ typedef struct
 	int  Menu_Frame;
 	int timeout;
 	int Hide_Paths;
-	uint64 color[4];
+	uint64 color[8];
 	int screen_x;
 	int screen_y;
 	int discControl;
@@ -167,19 +170,29 @@ void loadConfig(char *, char *);
 void config(char *, char *);
 
 /* filer.c */
+int nparties; //Clearing this causes FileBrowser to refresh party list
 unsigned char *elisaFnt;
 void getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
+int ynDialog(const char *message);
+void nonDialog(const char *message);
 int keyboard(char *out, int max);
 void genInit(void);
+int genFixPath(char *uLE_path, char *gen_path);
 int genOpen(char *path, int mode);
 int genLseek(int fd, int where, int how);
 int genRead(int fd, void *buf, int size);
 int genWrite(int fd, void *buf, int size);
 int genClose(int fd);
+int genDopen(char *path);
+int genDclose(int fd);
+int mountParty(const char *party);
 
 /* main.c */
 int swapKeys;
+
+/* hdd.c */
+void hddManager(void);
 
 #endif
