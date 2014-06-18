@@ -405,8 +405,19 @@
   // Perform the request.
   if (result != -1) { ps2link_dd[result] = opendir(request->pathname); }
 
-  strcpy(old_pathname, request->pathname);  //dlanor: needed for Ioctl Rename
-  old_fd_dd = result;  //dlanor: Allows Ioctl Rename to check folder validity
+//dlanor: At this point a test need to be made, to see if the dir could be opened
+//dlanor: The original code neglects this, so opendir always returns without any
+//dlanor: error flag, as long as there are free entries in the ps2link_dd array.
+//dlanor: So a directory descriptor is returned even if a directory doesn't exist.
+//dlanor: I am changing that now, so the function will return -1 in such cases
+
+  if ((result != -1) && (ps2link_dd[result]==NULL))
+    result = -1;
+
+  if (result >= 0){
+    strcpy(old_pathname, request->pathname);  //dlanor: needed for Ioctl Rename
+    old_fd_dd = result;  //dlanor: Allows Ioctl Rename to check folder validity
+  }
 
   // Send the response.
   return ps2link_response_generic(result, PS2LINK_RESPONSE_OPENDIR);

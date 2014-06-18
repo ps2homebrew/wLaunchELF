@@ -70,6 +70,10 @@ int host_ready   = 0;
 int host_error   = 0;
 int host_elflist = 0;
 int host_use_Bsl = 1;	//By default assume that host paths use backslash
+
+unsigned long written_size; //Used for pasting progress report
+
+//char debugs[4096]; //For debug display strings. Comment it out when unused
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
@@ -119,16 +123,16 @@ int ynDialog(const char *message)
 	
 	strcpy(msg, message);
 	
-	for(i=0,n=1; msg[i]!=0; i++){
-		if(msg[i]=='\n'){
-			msg[i]=0;
-			n++;
+	for(i=0,n=1; msg[i]!=0; i++){ //start with one string at pos zero
+		if(msg[i]=='\n'){           //line separator at current pos ?
+			msg[i]=0;                 //split old line to separate string
+			n++;                      //increment string count
 		}
-	}
-	for(i=len=tw=0; i<n; i++){
-		ret = printXY(&msg[len], 0, 0, 0, FALSE);
-		if(ret>tw) tw=ret;
-		len=strlen(&msg[len])+1;
+	}                             //loop back for next character pos
+	for(i=len=tw=0; i<n; i++){    //start with string 0, assume 0 length & width
+		ret = printXY(&msg[len], 0, 0, 0, FALSE);  //get width of current string
+		if(ret>tw) tw=ret;     //tw = largest text width of strings so far
+		len+=strlen(&msg[len])+1;    //len = pos of next string start
 	}
 	if(tw<96) tw=96;
 	
@@ -163,7 +167,7 @@ int ynDialog(const char *message)
 		drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 		for(i=len=0; i<n; i++){
 			printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
-			len=strlen(&msg[len])+1;
+			len+=strlen(&msg[len])+1;
 		}
 		x=(tw-96)/2;
 		printXY(" OK   CANCEL", dx+a+x, (dy+a+b+2+n*16)/2, setting->color[3],TRUE);
@@ -177,6 +181,45 @@ int ynDialog(const char *message)
 	drawChar(' ', dx+a+x,(dy+a+b+2+n*16)/2, setting->color[3]);
 	drawChar(' ',dx+a+x+40,(dy+a+b+2+n*16)/2,setting->color[3]);
 	return ret;
+}
+//--------------------------------------------------------------
+void nonDialog(const char *message)
+{
+	char msg[512];
+	int dh, dw, dx, dy;
+	int a=6, b=4, c=2, n, tw;
+	int i, len, ret;
+
+	strcpy(msg, message);
+
+	for(i=0,n=1; msg[i]!=0; i++){ //start with one string at pos zero
+		if(msg[i]=='\n'){           //line separator at current pos ?
+			msg[i]=0;                 //split old line to separate string
+			n++;                      //increment string count
+		}
+	}                             //loop back for next character pos
+	for(i=len=tw=0; i<n; i++){    //start with string 0, assume 0 length & width
+		ret = printXY(&msg[len], 0, 0, 0, FALSE);  //get width of current string
+		if(ret>tw) tw=ret;     //tw = largest text width of strings so far
+		len+=strlen(&msg[len])+1;    //len = pos of next string start
+	}
+	if(tw<96) tw=96;
+
+	dh = 16*n+2*2+a+b+c;
+	dw = 2*2+a*2+tw;
+	dx = (512-dw)/2;
+	dy = (432-dh)/2;
+	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
+
+	itoSprite(setting->color[0], 0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+	SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2, 0);
+	itoSprite(setting->color[0], dx-2, (dy-2)/2, dx+dw+2, (dy+dh+4)/2, 0);
+	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
+	for(i=len=0; i<n; i++){
+		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
+		len+=strlen(&msg[len])+1;
+	}
+	drawScr();
 }
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
@@ -863,7 +906,7 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		int temp_fd;
 
 		strcpy(oldPath, path);
-		if	(!strncmp(oldPath, "host:/", 6))
+		if(!strncmp(oldPath, "host:/", 6))
 			makeHostPath(oldPath+5, oldPath+6);
 		strcpy(newPath, oldPath+5);
 		strcat(oldPath, file->name);
@@ -908,7 +951,7 @@ int newdir(const char *path, const char *name)
 		mcMkDir(path[2]-'0', 0, dir);
 		mcSync(0, NULL, &ret);
 		if(ret == -4)
-			ret = -17;
+			ret = -17;					//return fileXio error code for pre-existing folder
 	}else if(!strncmp(path, "mass", 4)){
 		strcpy(dir, path);
 		strcat(dir, name);
@@ -916,9 +959,16 @@ int newdir(const char *path, const char *name)
 	}else if(!strncmp(path, "host", 4)){
 		strcpy(dir, path);
 		strcat(dir, name);
-		if	(!strncmp(dir, "host:/", 6))
+		if(!strncmp(dir, "host:/", 6))
 			makeHostPath(dir+5, dir+6);
-		ret = fioMkdir(dir);
+		if((ret = fioDopen(dir)) >= 0){
+			fioDclose(ret);
+			ret = -17;					//return fileXio error code for pre-existing folder
+		} else {
+			ret = fioMkdir(dir);//Create the new folder
+		}
+	} else {                //Device not recognized
+		ret = -1;
 	}
 	return ret;
 }
@@ -932,6 +982,7 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
 	FILEINFO files[MAX_ENTRY];
 	char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH],
+		progress[MAX_PATH*4],
 		*buff=NULL, inParty[MAX_NAME], outParty[MAX_NAME];
 	int hddout=FALSE, hddin=FALSE, nfiles, i;
 	size_t size, outsize;
@@ -998,7 +1049,7 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 	if(file.stats.attrFile & MC_ATTR_SUBDIR){
 //Here we have a folder to copy, starting with an attempt to create it
 		ret = newdir(outPath, file.name);
-		if(ret == -17){
+		if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
 			ret=-1;
 			if(title_show) ret=getGameTitle(outPath, &file, tmp);
 			if(ret<0) sprintf(tmp, "%s%s/", outPath, file.name);
@@ -1160,13 +1211,34 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 		}
 //Here the output file has been opened, indicated by 'out_fd'
 
-	buff = (char*)malloc(size);
-	if(buff==NULL){
-		buff = (char*)malloc(32768);
-		buffSize = 32768;
-	}else
+	buffSize = 0x100000;       //First assume buffer size = 1MB (good for HDD)
+	if(!strncmp(out, "mass", 4))
+		buffSize =  50000;       //Use  50000 if writing to USB (flash memory writes SLOW)
+	else if(!strncmp(out, "mc", 2))
+		buffSize = 125000;       //Use 125000 if writing to MC (pretty slow too)
+	else if(!strncmp(in, "mc",2))
+		buffSize = 200000;       //Use 200000 if reading from MC (still pretty slow)
+	else if(!strncmp(out, "host", 4))
+		buffSize = 350000;       //Use 350000 if writing to HOST (acceptable)
+	else if((!strncmp(in, "mass", 4)) || (!strncmp(in, "host", 4)))
+		buffSize = 500000;       //Use 500000 reading from USB or HOST (acceptable)
+	
+	if(size < buffSize)
 		buffSize = size;
+
+	buff = (char*)malloc(buffSize);   //Attempt buffer allocation
+	if(buff==NULL){                   //if allocation fails
+		buffSize = 32768;               //Set buffsize to 32KB
+		buff = (char*)malloc(buffSize); //Allocate 32KB buffer
+	}
+
 	while(size>0){
+		sprintf(progress,
+			"Pasted file bytes:\n"
+			"    %10lu",
+			written_size
+		);
+		nonDialog(progress);
 		if(hddin) buffSize = fileXioRead(in_fd, buff, buffSize);
 		else	  buffSize = fioRead(in_fd, buff, buffSize);
 		if(hddout){
@@ -1186,6 +1258,7 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 			}
 		}
 		size -= buffSize;
+		written_size += buffSize;
 	}
 	ret=0;
 //Here the file has been copied. without error, as indicated by 'ret' above
@@ -1935,6 +2008,7 @@ void subfunc_Paste(char *mess, char *path)
 	char tmp[MAX_PATH];
 	int i, ret=-1;
 	
+	written_size = 0;
 	drawMsg("Pasting...");
 	if(!strcmp(path,clipPath)) goto finished;
 	

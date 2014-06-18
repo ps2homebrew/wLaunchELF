@@ -347,13 +347,16 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 						pInfo->m_eType = FIO_SO_ISLNK(ent.stat.mode) ? FT_LINK : FT_FILE;
 					}
 
-					pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
-					pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
-					pInfo->m_TS.m_iDay = ent.stat.mtime[4];
+					if( ent.stat.mtime[6] != 0 )
+					{
+						pInfo->m_TS.m_iYear = ent.stat.mtime[6]+1792;
+						pInfo->m_TS.m_iMonth = ent.stat.mtime[5];
+						pInfo->m_TS.m_iDay = ent.stat.mtime[4];
 
-					pInfo->m_TS.m_iHour = ent.stat.mtime[3];
-					pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
-					pInfo->m_TS.m_iSecond = ent.stat.mtime[1];
+						pInfo->m_TS.m_iHour = ent.stat.mtime[3];
+						pInfo->m_TS.m_iMinute = ent.stat.mtime[2];
+						pInfo->m_TS.m_iSecond = ent.stat.mtime[1];
+					}
 
 					pInfo->m_iDaysBetween = getDaysBetween(pInfo->m_TS.m_iMonth, pInfo->m_TS.m_iDay, pInfo->m_TS.m_iYear, tm.month, tm.day, tm.year);
 
@@ -479,13 +482,9 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 						itoa(pInfo->m_Name,unit);
 						pInfo->m_iSize = 0;
 						pInfo->m_eType = FT_DIRECTORY;
-						pContext->m_kFile.unit = 16; // stops the looping
+						pContext->m_kFile.unit = 16; // stop evaluating units below device
 						return 0;
 					}
-
-					// fix for multiple mc directories, when both slots contain PS2 memory cards
-					if( !strcmp(pContext->m_kFile.device->name, "mc") && (pContext->m_kFile.unit > 1) )
-						break;
 
 					// get status from root directory of device
 					ret = pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), "/", (io_stat_t*)&stat );
@@ -493,6 +492,15 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					// dummy devices does not set mode properly, so we can filter them out easily
 					if( (ret >= 0) && !stat.mode  )
 						ret = -1;
+
+					// determine status from stat and mode for both PS2 and PS1 memory cards
+					if( !strcmp(pContext->m_kFile.device->name, "mc") && ((stat.mode == 0x0027) || (stat.mode == 0x0000 && ret == -4)) )
+					{
+						ret = 0;
+						// fix for multiple mc directories, when both slots contain memory cards
+						if(pContext->m_kFile.unit >= 1)
+							pContext->m_kFile.unit = 15; // stop evaluating units below device
+					}
 
 					// increase to next unit
 					pContext->m_kFile.unit++;

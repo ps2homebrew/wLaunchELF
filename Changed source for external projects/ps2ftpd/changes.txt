@@ -41,6 +41,7 @@ FileSystem.c
 -Rewrote some of the auto-mount partitions code to also work with the IOP 3.2.2 compiler.
 -Altered the partition filter to prevent sub partitions from also appearing in the listing.
 -Changed the size value to zero for all folders including partitions in the hdd listing.
+-Fixed a few issues that prevented PS1 memory cards from appearing in the listing. (Note: Files on PS1 memory cards lack timestamps so the timestamps come from the current PS2 system time).
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.
