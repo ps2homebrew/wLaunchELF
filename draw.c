@@ -6,6 +6,7 @@
 
 itoGsEnv screen_env;
 int        testskin;
+int        testsetskin;
 
 // ELISA100.FNT‚É‘¶Ý‚µ‚È‚¢•¶Žš
 const uint16 font404[] = {
@@ -382,7 +383,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
 	printXY(setting->Menu_Title, x, y/2, setting->color[3], TRUE);
-	printXY(" ¡ LaunchELF v3.54 ¡",
+	printXY(" ¡ LaunchELF v3.55 ¡",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	
@@ -459,14 +460,13 @@ void setupito(void)
 	itoGsEnvSubmit(&screen_env);
 	initScr();
 	itoSetBgColor(setting->color[0]);
-
-	loadSkin();
 }
 
 //--------------------------------------------------------------
-void loadSkin(void)
+void loadSkin(int skinNum)
 {
-	testskin = 0;
+	if( skinNum == 0 )testskin = 0;
+		else testsetskin = 0;
 	char skinpath[MAX_PATH];
 	strcpy(skinpath, "\0");
 	if(!strncmp(setting->skin, "mass", 4)){
@@ -511,13 +511,19 @@ void loadSkin(void)
 				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
 					if( ( ImgData = malloc (  Jpg -> width * Jpg -> height * ( Jpg -> bpp / 8 ) ) ) > 0 ){
 						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
-							if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, 240 ) ) != 0 ){
-						 		itoLoadTexture ( ResData, 0, SCREEN_WIDTH, ITO_RGB24, 0, 0, SCREEN_WIDTH, 240 );
-								free(ResData);
-								if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
-								testskin = 1;
-							} /* end if */
+						 	if( skinNum == 0 ){
+						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, SCREEN_WIDTH, 240 ) ) != 0 ){
+						 			itoLoadTexture ( ResData, 0, SCREEN_WIDTH, ITO_RGB24, 0, 0, SCREEN_WIDTH, 240 );
+									testskin = 1;
+								} /* end if */
+						 	} else {
+						 		if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, 256, 120 ) ) != 0 ){
+						 			itoLoadTexture ( ResData, SCREEN_WIDTH*256*4, 256, ITO_RGB24, 0, 0, 256, 120 );
+									testsetskin = 1;
+								} /* end if */
+						 	} /* end else */
 							jpgClose( Jpg );
+							free(ResData);
 						} /* end if */
 					} /* end if */
 					free(ImgData);
@@ -526,6 +532,7 @@ void loadSkin(void)
 			free(Buf);
 		} /* end if */
 	} /* end if */
+	if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
 	if(!strncmp(setting->skin, "hdd0:/", 6)) fileXioUmount("pfs0:");
 }
 

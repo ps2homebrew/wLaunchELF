@@ -96,12 +96,14 @@ void RunLoaderElf(char *filename, char *);
 /* draw.c */
 extern itoGsEnv screen_env;
 extern int      testskin;
+extern int      testsetskin;
 void setScrTmp(const char *msg0, const char *msg1);
 void drawSprite( uint64 color, int x1, int y1, int x2, int y2 );
 void drawMsg(const char *msg);
 void setupito(void);
 void clrScr(uint64 color);
-void loadSkin(void);
+int log(int Value);
+void loadSkin(int skinNum);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
 void drawChar(unsigned char c, int x, int y, uint64 colour);

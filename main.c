@@ -784,6 +784,7 @@ void decConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
+	loadSkin(0);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -805,6 +806,7 @@ void incConfig()
 	else
 		sprintf(CNF, "LAUNCHELF%i.CNF", numCNF);
 	loadConfig(mainMsg, CNF);
+	loadSkin(0);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	if(setting->discControl)
@@ -931,6 +933,7 @@ int main(int argc, char *argv[])
 	}
 */
 	setupito();
+	loadSkin(0);
 	
 	timeout = (setting->timeout+1)*SCANRATE;
 	while(1){

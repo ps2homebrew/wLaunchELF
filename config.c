@@ -337,10 +337,127 @@ failed_load:
 }
 
 //---------------------------------------------------------------------------
-void setColor(void)
+// Polo: ADD Skin Menu with Skin preview
+//---------------------------------------------------------------------------
+void setSkin(void)
+{
+	int  s, max_s=3;
+	int  x, y;
+	char c[MAX_PATH];
+	char skinSave[MAX_PATH];
+
+	strcpy(skinSave, "\0");
+	strcpy(skinSave, setting->skin);
+
+	loadSkin(1);
+
+	s=1;
+	while(1)
+	{
+		waitPadReady(0, 0);
+		if(readpad())
+		{
+			if(new_pad & PAD_UP)
+			{
+				if(s!=1) s--;
+				else s=max_s;
+			}
+			else if(new_pad & PAD_DOWN)
+			{
+				if(s!=max_s) s++;
+				else s=1;
+			}
+			else if(new_pad & PAD_LEFT)
+			{
+				if(s!=max_s) s=max_s;
+				else s=1;
+			}
+			else if(new_pad & PAD_RIGHT)
+			{
+				if(s!=max_s) s=max_s;
+				else s=1;
+			}
+			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
+			{
+				if(s==1) setting->skin[0] = '\0';
+				loadSkin(1);
+			}
+			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
+			{
+				if(s==1) {
+					getFilePath(setting->skin, SKIN_CNF);
+					loadSkin(1);
+				} else if(s==2) {
+					loadSkin(0);
+					return;
+				} else if(s==3) {
+					setting->skin[0] = '\0';
+					strcpy(setting->skin, skinSave);
+					return;
+				}
+			}
+		}
+		
+		clrScr(setting->color[0]);
+
+		drawFrame(126, 69, 385, 190, setting->color[1]);
+		itoSetTexture(SCREEN_WIDTH*256*4, 256, ITO_RGB24, log(256), log(120));
+		if ( testsetskin == 1 ) {
+			itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 128, 70, 0, 0, 384, 190, 256, 120, 0);
+		}else{
+			itoSprite(setting->color[0], 128, 70, 384, 190, 0);
+		}
+
+		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+		
+		printXY("SKIN SETTING", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		y += FONT_HEIGHT / 2;
+		
+		if(strlen(setting->skin)==0)
+			sprintf(c, "  SKIN PATH: NULL");
+		else
+			sprintf(c, "  SKIN PATH: %s",setting->skin);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT / 2;
+		printXY("  APPLY NEW SKIN", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT / 2;
+		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
+		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
+		
+		if(s>=2) y+=FONT_HEIGHT/2;
+		if(s>=3) y+=FONT_HEIGHT/2;
+		drawChar(127, x, y/2, setting->color[3]);
+		
+		if (s == 1) {
+			if (swapKeys)
+				sprintf(c, "Å~:Edit Åõ:Clear");
+			else
+				sprintf(c, "Åõ:Edit Å~:Clear");
+		} else {
+			if (swapKeys)
+				strcpy(c, "Å~:OK");
+			else
+				strcpy(c, "Åõ:OK");
+		}
+		
+		setScrTmp("", c);
+		drawScr();
+	}
+}
+
+//---------------------------------------------------------------------------
+void Config_Screen(void)
 {
 	int i;
-	int s;
+	int s, max_s=18;		//define cursor index and its max value
 	int x, y;
 	uint64 rgb[4][3];
 	char c[MAX_PATH];
@@ -354,7 +471,7 @@ void setColor(void)
 	s=0;
 	while(1)
 	{
-		// ëÄçÏ
+		//Pad response section
 		waitPadReady(0, 0);
 		if(readpad())
 		{
@@ -363,35 +480,39 @@ void setColor(void)
 				if(s!=0)
 					s--;
 				else
-					s=16;
+					s=max_s;
 			}
 			else if(new_pad & PAD_DOWN)
 			{
-				if(s!=16)
+				if(s!=max_s)
 					s++;
 				else
 					s=0;
 			}
 			else if(new_pad & PAD_LEFT)
 			{
-				if(s>=15) s=14;
+				if(s>=17) s=16;
+				else if(s>=16) s=15;
+				else if(s>=15) s=14;
 				else if(s>=14) s=12;
 				else if(s>=12) s=9;
-				else if(s>=9) s=6;
-				else if(s>=6) s=3;
-				else if(s>=3) s=0;
+				else if(s>=9) s-=3;  //if s in Color4, move it to Color3
+				else if(s>=6) s-=3;  //if s in Color3, move it to Color2
+				else if(s>=3) s-=3;  //if s in Color2, move it to Color1
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
-				if(s>=14) s=15;
+				if(s>=16) s=17;
+				else if(s>=15) s=16;
+				else if(s>=14) s=15;
 				else if(s>=12) s=14;
-				else if(s>=9) s=12;
-				else if(s>=6) s=9;
-				else if(s>=3) s=6;
-				else s=3;
+				else if(s>=9) s=12;  //if s in Color4, move it to ScreenX
+				else if(s>=6) s+=3;  //if s in Color3, move it to Color4
+				else if(s>=3) s+=3;  //if s in Color2, move it to Color3
+				else s+=3;           //if s in Color1, move it to Color2
 			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
-			{
+			{ //User pressed CANCEL=>Subtract/Clear
 				if(s<12) {
 					if(rgb[s/3][s%3] > 0) {
 						rgb[s/3][s%3]--;
@@ -410,10 +531,12 @@ void setColor(void)
 						screen_env.screen.y = setting->screen_y;
 						itoSetScreenPos(setting->screen_x, setting->screen_y);
 					}
+				} else if(s==16) {  //cursor is at Menu_Title
+						setting->Menu_Title[0] = '\0';
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
-			{
+			{ //User pressed OK=>Add/Ok/Edit
 				if(s<12) {
 					if(rgb[s/3][s%3] < 255) {
 						rgb[s/3][s%3]++;
@@ -434,8 +557,15 @@ void setColor(void)
 					itoGsReset();
 					itoGsEnvSubmit(&screen_env);
 				} else if(s==15) {
+					setSkin();
+				} else if(s==16) {  //cursor is at Menu_Title
+					char tmp[MAX_TITLE+1];
+					strcpy(tmp, setting->Menu_Title);
+					if(keyboard(tmp, 36)>=0)
+						strcpy(setting->Menu_Title, tmp);
+				} else if(s==17) {
 					return;
-				} else if(s==16) {
+				} else if(s==18) {
 					setting->color[0] = DEF_COLOR1;
 					setting->color[1] = DEF_COLOR2;
 					setting->color[2] = DEF_COLOR3;
@@ -458,26 +588,36 @@ void setColor(void)
 			}
 		}
 		
-		// âÊñ ï`âÊäJén
+		//Display section
 		clrScr(setting->color[0]);
-		
-		// ògÇÃíÜ
 		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+
+		sprintf(c, "    Color1  Color2  Color3  Color4");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		sprintf(c, "    Backgr  Frames  Select  Normal");
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		sprintf(c, "R:    %02lX      %02lX      %02lX      %02lX",
+			rgb[0][0], rgb[1][0], rgb[2][0], rgb[3][0]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		sprintf(c, "G:    %02lX      %02lX      %02lX      %02lX",
+			rgb[0][1], rgb[1][1], rgb[2][1], rgb[3][1]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		sprintf(c, "B:    %02lX      %02lX      %02lX      %02lX",
+			rgb[0][2], rgb[1][2], rgb[2][2], rgb[3][2]);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		sprintf(c, "Å°");
 		for(i=0; i<4; i++)
-		{
-			sprintf(c, "  COLOR%d R: %lu", i+1, rgb[i][0]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			sprintf(c, "  COLOR%d G: %lu", i+1, rgb[i][1]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			sprintf(c, "  COLOR%d B: %lu", i+1, rgb[i][2]);
-			printXY(c, x, y/2, setting->color[3], TRUE);
-			y += FONT_HEIGHT;
-			y += FONT_HEIGHT / 2;
-		}
-		
+			printXY(c, x+FONT_WIDTH*(6+i*8), y/2, setting->color[i], TRUE);
+		y += FONT_HEIGHT;
+
+		y += FONT_HEIGHT/2;
+
 		sprintf(c, "  SCREEN X: %d", setting->screen_x);
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
@@ -494,33 +634,70 @@ void setColor(void)
 		y += FONT_HEIGHT;
 		y += FONT_HEIGHT / 2;
 		
+		printXY("  SKIN SETTING", x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		y += FONT_HEIGHT / 2;
+		
+		if(setting->Menu_Title[0]=='\0')
+			sprintf(c, "  Menu Title: NULL");
+		else
+			sprintf(c, "  Menu Title: %s",setting->Menu_Title);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+		y += FONT_HEIGHT / 2;
+
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		printXY("  DEFAULT SCREEN SETTINGS", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
-		
-		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS;
-		if(s>=3) y+=FONT_HEIGHT/2;
-		if(s>=6) y+=FONT_HEIGHT/2;
-		if(s>=9) y+=FONT_HEIGHT/2;
-		if(s>=12) y+=FONT_HEIGHT/2;
-		if(s>=14) y+=FONT_HEIGHT/2;
-		if(s>=15) y+=FONT_HEIGHT/2;
-		drawChar(127, x, y/2, setting->color[3]);
-		
+
+		//Cursor positioning section
+		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
+		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
+
+		if(s<12){  //if cursor indicates a colour component
+			int colnum = s/3;
+			int comnum = s-colnum*3;
+			x += (4+colnum*8)*FONT_WIDTH;
+			y += (2+comnum)*FONT_HEIGHT;
+		} else {  //if cursor indicates anything after colour components
+			y += (s-12+6)*FONT_HEIGHT+FONT_HEIGHT/2;  //adjust y for cursor beyond colours
+			//Here y is almost correct, except for additional group spacing
+			if(s>=14)            //if cursor at or beyond interlace choice
+				y+=FONT_HEIGHT/2;  //adjust for half-row space below screen offsets
+			if(s>=15)            //if cursor at or beyond 'SKIN SETTING'
+				y+=FONT_HEIGHT/2;  //adjust for half-row space below interlace choice
+			if(s>=16)            //if cursor at or beyond Menu_Title
+				y+=FONT_HEIGHT/2;  //adjust for half-row space below 'SKIN SETTING'
+			if(s>=17)            //if cursor at or beyond 'RETURN'
+				y+=FONT_HEIGHT/2;  //adjust for half-row space below Menu_Title
+		}
+		drawChar(127, x, y/2, setting->color[3]);  //draw cursor
+
+		//Tooltip section
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		if (s <= 13) {
+		if (s <= 13) {  //if cursor at a colour component or a screen offset
 			if (swapKeys)
 				strcpy(c, "Å~:Add Åõ:Subtract");
 			else
 				strcpy(c, "Åõ:Add Å~:Subtract");
-		} else if(s==14) {
+		} else if(s==14) {  //if cursor at interlace choice
 			if (swapKeys)
 				strcpy(c, "Å~:Change");
 			else
 				strcpy(c, "Åõ:Change");
-		} else {
+		} else if(s==15){  //if cursor at 'SKIN SETTING'
+			if (swapKeys)
+				sprintf(c, "Å~:OK");
+			else
+				sprintf(c, "Åõ:OK");
+		} else if(s==16){  //if cursor at Menu_Title
+			if (swapKeys)
+				sprintf(c, "Å~:Edit Åõ:Clear");
+			else
+				sprintf(c, "Åõ:Edit Å~:Clear");
+		} else {  //if cursor at 'RETURN' or 'DEFAULT' options
 			if (swapKeys)
 				strcpy(c, "Å~:OK");
 			else
@@ -528,19 +705,18 @@ void setColor(void)
 		}
 		
 		setScrTmp("", c);
-		drawScr();
+		drawScr();  //Display the new screen
 	}
 }
 
 //---------------------------------------------------------------------------
 // Other settings by EP
 // sincro: ADD USBD SELECTOR MENU
-// Polo: ADD Skin SELECTOR MENU
 // dlanor: Add Menu_Title config
 //---------------------------------------------------------------------------
-void setSettings(void)
+void Config_Startup(void)
 {
-	int s, max_s=7;
+	int s, max_s=5;		//define cursor index and its max value
 	int x, y;
 	char c[MAX_PATH];
 
@@ -578,8 +754,6 @@ void setSettings(void)
 						setting->numCNF--;
 				}
 				else if(s==4) setting->usbd[0] = '\0';
-				else if(s==5) setting->skin[0] = '\0';
-				else if(s==6) setting->Menu_Title[0] = '\0';
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -591,14 +765,6 @@ void setSettings(void)
 					setting->swapKeys = !setting->swapKeys;
 				else if(s==4)
 					getFilePath(setting->usbd, USBD_IRX_CNF);
-				else if(s==5)
-					getFilePath(setting->skin, SKIN_CNF);
-				else if(s==6){
-					char tmp[MAX_TITLE+1];
-					strcpy(tmp, setting->Menu_Title);
-					if(keyboard(tmp, 36)>=0)
-						strcpy(setting->Menu_Title, tmp);
-				}
 				else
 					return;
 			}
@@ -638,20 +804,6 @@ void setSettings(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 
-		if(strlen(setting->skin)==0)
-			sprintf(c, "  SKIN PATH: NULL");
-		else
-			sprintf(c, "  SKIN PATH: %s",setting->skin);
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-
-		if(setting->Menu_Title[0]=='\0')
-			sprintf(c, "  Menu Title: NULL");
-		else
-			sprintf(c, "  Menu Title: %s",setting->Menu_Title);
-		printXY(c, x, y/2, setting->color[3], TRUE);
-		y += FONT_HEIGHT;
-
 		y += FONT_HEIGHT / 2;
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
@@ -671,21 +823,16 @@ void setSettings(void)
 				strcpy(c, "Å~:Add Åõ:Subtract");
 			else
 				strcpy(c, "Åõ:Add Å~:Subtract");
-		} else if( s== 3) {
+		} else if(s == 3) {
 			if (swapKeys)
 				sprintf(c, "Å~:Change");
 			else
 				sprintf(c, "Åõ:Change");
-		} else if((s== 4) || (s==5)) {
+		} else if(s == 4) {
 			if (swapKeys)
 				sprintf(c, "Å~:Select Åõ:Clear");
 			else
 				sprintf(c, "Åõ:Select Å~:Clear");
-		} else if((s==6)) {
-			if (swapKeys)
-				sprintf(c, "Å~:Edit Åõ:Clear");
-			else
-				sprintf(c, "Åõ:Edit Å~:Clear");
 		} else {
 			if (swapKeys)
 				strcpy(c, "Å~:OK");
@@ -819,7 +966,7 @@ data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
 }
 
 
-void setNetwork(void)
+void Config_Network(void)
 {
 
 	// Menu System for Network Settings Page.
@@ -1086,16 +1233,15 @@ void config(char *mainMsg, char *CNF)
 				else if(s==DISCCONTROL)
 					setting->discControl = !setting->discControl;
 				else if(s==SCREEN)
-					setColor();
+					Config_Screen();
 				else if(s==SETTINGS)
-					setSettings();
+					Config_Startup();
 				else if(s==NETWORK)
-					setNetwork();
+					Config_Network();
 				else if(s==OK)
 				{
 					free(tmpsetting);
 					saveConfig(mainMsg, CNF);
-					loadSkin();
 					break;
 				}
 				else if(s==CANCEL)
