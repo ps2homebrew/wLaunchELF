@@ -850,7 +850,7 @@ void	ShowFont(void)
 		//Display section
 		if(event||post_event) { //NB: We need to update two frame buffers per event
 			drawOpSprite(col_0, mat_x, mat_y, mat_x+mat_w-1, mat_y+mat_h-1);
-			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w, mat_y+LINE_THICKNESS-1);
+			drawOpSprite(col_1, mat_x, mat_y, mat_x+mat_w-1, mat_y+LINE_THICKNESS-1);
 			drawOpSprite(col_1, mat_x, mat_y, mat_x+LINE_THICKNESS-1, mat_y+mat_h-1);
 			px=mat_x+3*FONT_WIDTH;
 			drawOpSprite(col_1, px, mat_y, px+LINE_THICKNESS-1, mat_y+mat_h-1);

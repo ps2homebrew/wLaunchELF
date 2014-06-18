@@ -247,7 +247,7 @@ void Virt_KeyBoard_Entry(void)
 		Rows_Num += 6;
 		KeyBoard_Active = 0;
 	}else if((!swapKeys && new_pad & PAD_CROSS)
-	      || (swapKeys && new_pad & PAD_CIRCLE) ){ // Virtual KeyBoard Suppr.
+	      || (swapKeys && new_pad & PAD_CIRCLE) ){ // Virtual KeyBoard Backspace
 		if(Editor_Cur>0){
 			if(Mark[MARK_ON]){
 				Mark[MARK_OUT]=Editor_Cur;
@@ -271,7 +271,7 @@ void Virt_KeyBoard_Entry(void)
 			}
 			Operation=-1;
 		}
-		//ends Virtual KeyBoard Suppr.
+		//ends Virtual KeyBoard Backspace
 	}else if((swapKeys && new_pad & PAD_CROSS)
 	      || (!swapKeys && new_pad & PAD_CIRCLE) ){ // Virtual KeyBoard Select.
 		if(!KeyBoard_Cur){ // Virtual KeyBoard MARK.
@@ -842,12 +842,8 @@ int Windows_Selector(void)
 	int Window_ch_h = 10;   //Total number of Window Menu lines.
 	int wSprite_Y1 = 200;           //Top edge of sprite.
 	int wSprite_X2 = SCREEN_WIDTH-35;   //Right edge of sprite.
-	int wFrame_Y1 = wSprite_Y1;  //Top edge of frame.
-	int wFrame_X2 = wSprite_X2-3;  //Right edge of frame (-3 correct ???).
-	int wFrame_X1 = wFrame_X2-(Window_ch_w+3)*FONT_WIDTH;    //Left edge of frame.
-	int wFrame_Y2 = wFrame_Y1+(Window_ch_h+1)*FONT_HEIGHT; //Bottom edge of frame.
-	int wSprite_X1 = wFrame_X1-1;  //Left edge of sprite.
-	int wSprite_Y2 = wFrame_Y2;  //Bottom edge of sprite.
+	int wSprite_X1 = wSprite_X2-(Window_ch_w+3)*FONT_WIDTH-3;  //Left edge of sprite.
+	int wSprite_Y2 = wSprite_Y1+(Window_ch_h+1)*FONT_HEIGHT+3; //Bottom edge of sprite.
 
 	event = 1;  //event = initial entry.
 	while(1){
@@ -879,26 +875,26 @@ int Windows_Selector(void)
 			drawPopSprite(setting->color[0],
 				wSprite_X1, wSprite_Y1,
 				wSprite_X2, wSprite_Y2);
-			drawFrame(wFrame_X1, wFrame_Y1, wFrame_X2, wFrame_Y2, setting->color[1]);
+			drawFrame(wSprite_X1, wSprite_Y1, wSprite_X2, wSprite_Y2, setting->color[1]);
 
-			for(i=0,y=wFrame_Y1+FONT_HEIGHT/2; i<10; i++){
+			for(i=0,y=wSprite_Y1+FONT_HEIGHT/2; i<10; i++){
 				if(Window_Sel==i)
 					color = setting->color[2];
 				else
 					color = setting->color[3];
 
 				if(!Window[i][OPENED])
-					printXY("Free Window", wFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY("Free Window", wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 				else if(Window[i][CREATED])
-					printXY("Window Not Yet Saved", wFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY("Window Not Yet Saved", wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 				else if(Window[i][OPENED])				
-					printXY(Path[i], wFrame_X1+2*FONT_WIDTH, y, color, TRUE);
+					printXY(Path[i], wSprite_X1+2*FONT_WIDTH, y, color, TRUE);
 
 				y+=FONT_HEIGHT;
 			}
 
 			if(Window_Sel<=10)
-				drawChar(127, wFrame_X1+FONT_WIDTH, wFrame_Y1+(FONT_HEIGHT/2+Window_Sel*FONT_HEIGHT), setting->color[3]);
+				drawChar(127, wSprite_X1+FONT_WIDTH, wSprite_Y1+(FONT_HEIGHT/2+Window_Sel*FONT_HEIGHT), setting->color[3]);
 
 			//Tooltip section.
 			x = SCREEN_MARGIN;
@@ -932,7 +928,7 @@ void Init(void)
 
 	Top_Width=0, Top_Height=0;
 
-	Rows_Width  = (SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-28-Menu_start_x)/FONT_WIDTH;
+	Rows_Width  = (SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-26-Menu_start_x)/FONT_WIDTH;
 	Rows_Num = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
 
 	KeyBoard_Cur=2, KeyBoard_Active=0,
@@ -983,7 +979,7 @@ int Open(int Win)
 	int fd, i, ret=0;
 	char filePath[MAX_PATH];
 
-	getFilePath(Path[Win], TEXT_CNF); // No Filtering Be Carreful.
+	getFilePath(Path[Win], TEXT_CNF); // No Filtering, Be Careful.
 
 	if(Path[Win][0]=='\0')
 		goto abort;
@@ -1001,13 +997,16 @@ int Open(int Win)
 				genRead( fd, TextBuffer[Win], TextSize[Win] );
 
 				for(i=0; i<TextSize[Win]; i++){ // Scan For Text Mode.
-					if(TextBuffer[Win][i-1]!='\r' && TextBuffer[Win][i]=='\n'){ // Mode MAC Only LF At Line End.
+					if(TextBuffer[Win][i-1]!='\r' && TextBuffer[Win][i]=='\n'){
+						// Mode MAC Only LF At Line End.
 						TextMode[Win]=MAC;
 						break;
-					}else if(TextBuffer[Win][i]=='\r' && TextBuffer[Win][i+1]=='\n'){ // Mode OTHER CR/LF At Line End.
+					}else if(TextBuffer[Win][i]=='\r' && TextBuffer[Win][i+1]=='\n'){
+						// Mode OTHER CR/LF At Line End.
 						TextMode[Win]=OTHER;
 						break;
-					}else if(TextBuffer[Win][i]=='\r' && TextBuffer[Win][i+1]!='\n'){ // Mode UNIX Only CR At Line End.
+					}else if(TextBuffer[Win][i]=='\r' && TextBuffer[Win][i+1]!='\n'){
+						// Mode UNIX Only CR At Line End.
 						TextMode[Win]=UNIX;
 						break;
 					}
@@ -1192,7 +1191,7 @@ void TextEditor(void)
 
 	event = 1;  //event = initial entry.
 
-	Rows_Width  = (SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-28-Menu_start_x)/FONT_WIDTH;
+	Rows_Width  = (SCREEN_WIDTH-SCREEN_MARGIN-LINE_THICKNESS-26-Menu_start_x)/FONT_WIDTH;
 	Rows_Num = (Menu_end_y-Menu_start_y)/FONT_HEIGHT;
 
 	x = Menu_start_x;

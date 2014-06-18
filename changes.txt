@@ -1,5 +1,15 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v3.87 (2006.08.10)
+-Fixed a bug preventing proper display of 'Tooltips' for the PathPad dialog
+-Modified JpgViewer Prev command to go from the first file to the last file.
+-Modified drawChar and drawChar2 to use one gsKit_prim_sprite call instead of two gsKit_prim_point calls. (Polo's idea, slightly extended.)
+-Fixed a gsKit buffer overflow that could crash program on text-rich screens, by allocating 50% greater buffer. This fix should cure all crashing reported both for TextEditor and for FileBrowser.
+-Increased line thickness to 3 (for frames etc), to minimize interlace flicker.
+-Tweaked various dialogs to work better with the new line thickness
+-Modified virtual keyboard of FileBrowser to use highlight colour for cursors
+-Modified JPG Brightness scale to widen the range from 32..224 to 16..240
+
 LaunchELF v3.86 (2006.08.08)
 -Fixed a bug that caused some horizontal frame lines to be lost in non-interlaced modes
 -Fixed a bug making text 'fuzzy' when aligned to odd pixel rows in non-interlaced modes

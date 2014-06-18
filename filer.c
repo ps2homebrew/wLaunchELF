@@ -1073,7 +1073,7 @@ int menu(const char *path, const char *file)
 			y = Menu_tooltip_y;
 			drawSprite(setting->color[0],
 				0, y,
-				SCREEN_WIDTH, y+16);
+				SCREEN_WIDTH, y+FONT_HEIGHT);
 			if (swapKeys)
 				printXY("ÿ1:OK ÿ0:Cancel ÿ3:Back", x, y, setting->color[2], TRUE);
 			else
@@ -1174,7 +1174,7 @@ char *PathPad_menu(const char *path)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, (y), SCREEN_WIDTH, y+10);
+			drawSprite(setting->color[0], 0, (y), SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if(swapKeys) {
 				strcpy(textrow, "ÿ1:Use ");
@@ -1828,12 +1828,14 @@ error:
 int keyboard(char *out, int max)
 {
 	int event, post_event=0;
-	const int	KEY_W=276,
-				KEY_H=168,
-				KEY_X=(SCREEN_WIDTH - KEY_W)/2,
-				KEY_Y=((SCREEN_HEIGHT - KEY_H)/2),
-				WFONTS=13,
-				HFONTS=7;
+	const int
+		WFONTS= 13,
+		HFONTS= 7,
+		KEY_W = LINE_THICKNESS+12+(13*FONT_WIDTH+12*12)+12+LINE_THICKNESS,
+		KEY_H = LINE_THICKNESS + 1 + FONT_HEIGHT + 1
+		      + LINE_THICKNESS + 8 + (8*FONT_HEIGHT) + 8 + LINE_THICKNESS,
+		KEY_X = ((SCREEN_WIDTH - KEY_W)/2) & -2,
+		KEY_Y = ((SCREEN_HEIGHT - KEY_H)/2)& -2;
 	char *KEY="ABCDEFGHIJKLM"
 	          "NOPQRSTUVWXYZ"
 	          "abcdefghijklm"
@@ -1974,38 +1976,44 @@ int keyboard(char *out, int max)
 			//Display section
 			drawPopSprite(setting->color[0],
 				KEY_X, KEY_Y,
-				KEY_X+KEY_W, KEY_Y+KEY_H);
+				KEY_X+KEY_W-1, KEY_Y+KEY_H-1);
 			drawFrame(
 				KEY_X, KEY_Y,
-				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
+				KEY_X+KEY_W-1, KEY_Y+KEY_H-1, setting->color[1]);
 			drawOpSprite(setting->color[1],
-				KEY_X, KEY_Y+20,
-				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
-			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE);
+				KEY_X, KEY_Y+LINE_THICKNESS+1+FONT_HEIGHT+1,
+				KEY_X+KEY_W-1, KEY_Y+LINE_THICKNESS+1+FONT_HEIGHT+1+LINE_THICKNESS-1);
+			printXY(out, KEY_X+LINE_THICKNESS+3, KEY_Y+LINE_THICKNESS+1, setting->color[3], TRUE);
 			if(((event|post_event)&4) && (t & 0x10)){
-				printXY("|",
-					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE);
+				drawOpSprite(setting->color[2],
+					KEY_X + LINE_THICKNESS + 1 + cur*8,
+					KEY_Y + LINE_THICKNESS + 2,
+					KEY_X + LINE_THICKNESS + 1 + cur*8 + LINE_THICKNESS - 1,
+					KEY_Y + LINE_THICKNESS + 2 + (FONT_HEIGHT-2) - 1);
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
-					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
-					KEY_Y+28 + (i/WFONTS)*16,
-					setting->color[3]);
+					KEY_X + LINE_THICKNESS + 12 + (i%WFONTS)*(FONT_WIDTH+12),
+					KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
+					      + LINE_THICKNESS + 8 + (i/WFONTS)*FONT_HEIGHT, setting->color[3]);
 			printXY("OK                       CANCEL",
-				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE);
+				KEY_X + LINE_THICKNESS + 12,
+				KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
+				      + LINE_THICKNESS + 8 + HFONTS*FONT_HEIGHT, setting->color[3], TRUE);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
-				x = KEY_X+2+4 + (sel%WFONTS+1)*20 - 20;
+				x = KEY_X + LINE_THICKNESS + 12 + (sel%WFONTS)*(FONT_WIDTH+12) - 8;
 			else
-				x = KEY_X+2+4 + 25*8;
-			y = KEY_Y+28 + (sel/WFONTS)*16;
-			drawChar(127, x, y, setting->color[3]);
+				x = KEY_X + LINE_THICKNESS + 12 + 10*(FONT_WIDTH+12) - 8;
+			y = KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1
+			          + LINE_THICKNESS + 8 + (sel/WFONTS)*FONT_HEIGHT;
+			drawChar(127, x, y, setting->color[2]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+16);
+			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
@@ -2173,7 +2181,7 @@ int keyboard2(char *out, int max)
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+16);
+			drawSprite(setting->color[0], 0, y, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",

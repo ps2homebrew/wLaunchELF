@@ -551,7 +551,9 @@ repeat:
 						if(SlideShowSkip==1)
 							SlideShowSkip=0;
 						else if(SlideShowSkip==-1){
-							i-=2;
+							i-=2;                      //Loop index back to JPG before previous
+							if(i<=0)
+								i += jpg_browser_nfiles-1; //Loop index back to JPG before final
 							SlideShowSkip=0;
 						}
 						if(SlideShowStop)
@@ -568,6 +570,8 @@ single:
 						goto restart;
 					}else if(SlideShowSkip==-1){
 						jpg_browser_sel-=1;
+							if(jpg_browser_sel<=0)
+								jpg_browser_sel += jpg_browser_nfiles-1; //Go back to final JPG
 						SlideShowSkip=0;
 						goto restart;
 					}

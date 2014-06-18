@@ -819,8 +819,8 @@ void hddManager(void)
 				y += FONT_HEIGHT+11;
 
 			drawOpSprite(setting->color[1],
-				SCREEN_MARGIN, y-4,
-				SCREEN_WIDTH/2-20, y-3);
+				SCREEN_MARGIN, y-6,
+				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
 
 			if(hddConnected==0)
 				strcpy(c, "CONNECTED:  NO / FORMATED:  NO");
@@ -833,7 +833,7 @@ void hddManager(void)
 			printXY(c, x, y, setting->color[3], TRUE);
 
 			drawOpSprite(setting->color[1],
-				SCREEN_WIDTH/2-21, Frame_start_y,
+				SCREEN_WIDTH/2-20-LINE_THICKNESS+1, Frame_start_y,
 				SCREEN_WIDTH/2-20, Frame_end_y);
 
 			if(TV_mode == TV_mode_NTSC) 
@@ -842,8 +842,8 @@ void hddManager(void)
 				y += FONT_HEIGHT+12;
 
 			drawOpSprite(setting->color[1],
-				SCREEN_MARGIN, y-5,
-				SCREEN_WIDTH/2-20, y-4);
+				SCREEN_MARGIN, y-6,
+				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
 
 			if(hddFormated==1){
 
@@ -896,9 +896,9 @@ void hddManager(void)
 				else
 					y += ray+20;
 
-				drawOpSprite(setting->color[1],
-					SCREEN_MARGIN, y-5,
-					SCREEN_WIDTH/2-20, y-4);
+			drawOpSprite(setting->color[1],
+				SCREEN_MARGIN, y-6,
+				SCREEN_WIDTH/2-20, y-6+LINE_THICKNESS-1);
 
 				Treat = PartyInfo[browser_sel].Treatment;
 				if(Treat == TREAT_SYSTEM){

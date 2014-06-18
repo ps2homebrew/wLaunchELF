@@ -25,7 +25,7 @@ int Menu_start_x   = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 int Menu_title_y   = SCREEN_MARGIN;
 int Menu_message_y = SCREEN_MARGIN + FONT_HEIGHT;
 int Frame_start_y  = SCREEN_MARGIN + 2*FONT_HEIGHT + 2;  //First line of menu frame
-int Menu_start_y   = SCREEN_MARGIN + 2*FONT_HEIGHT + LINE_THICKNESS + 6;
+int Menu_start_y   = SCREEN_MARGIN + 2*FONT_HEIGHT + LINE_THICKNESS + 5;
 //dlanor: Menu_start_y is the 1st pixel line that may be used for main content of a menu
 //dlanor: values below are only calculated when a rez is activated
 int Menu_end_y;     //Normal menu display should not use pixels at this line or beyond
@@ -445,7 +445,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE);
-	printXY(" ÿ4 LaunchELF v3.86 ÿ4",
+	printXY(" ÿ4 LaunchELF v3.87 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -460,10 +460,10 @@ void setScrTmp(const char *msg0, const char *msg1)
 }
 //--------------------------------------------------------------
 void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
-	if(!setting->interlace){
-		y1 = y1 & -2;
-		y2 = ((y2-1) & -2) + 1;
-	}
+	int	y_off = (setting->interlace) ? 0 : (y1 & 1);
+	y1 -= y_off;
+	y2 -= y_off;
+
 	if ( testskin == 1 ) {
 		setBrightness(setting->Brightness);
 		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -474,10 +474,10 @@ void drawSprite( u64 color, int x1, int y1, int x2, int y2 ){
 }
 //--------------------------------------------------------------
 void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
-	if(!setting->interlace){
-		y1 = y1 & -2;
-		y2 = ((y2-1) & -2) + 1;
-	}
+	int	y_off = (setting->interlace) ? 0 : (y1 & 1);
+	y1 -= y_off;
+	y2 -= y_off;
+
 	if ( testskin == 1 && !setting->Popup_Opaque) {
 		setBrightness(setting->Brightness);
 		gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -494,10 +494,10 @@ void drawPopSprite( u64 color, int x1, int y1, int x2, int y2 ){
 //the functions drawSprite and drawPopSprite, to keep all of them compatible.
 //
 void drawOpSprite( u64 color, int x1, int y1, int x2, int y2 ){
-	if(!setting->interlace){
-		y1 = y1 & -2;
-		y2 = ((y2-1) & -2) + 1;
-	}
+	int	y_off = (setting->interlace) ? 0 : (y1 & 1);
+	y1 -= y_off;
+	y2 -= y_off;
+
 	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
 }
 //--------------------------------------------------------------
@@ -522,7 +522,9 @@ void drawLastMsg(void)
 void setupGS(int gs_vmode)
 {
 	// GS Init
-	gsGlobal = gsKit_init_global(gs_vmode);
+	gsGlobal = gsKit_init_global_custom(gs_vmode,
+		GS_RENDER_QUEUE_OS_POOLSIZE+GS_RENDER_QUEUE_OS_POOLSIZE/2, //eliminates overflow
+		GS_RENDER_QUEUE_PER_POOLSIZE);
 
 	// Clear Screen
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
@@ -602,7 +604,7 @@ void updateScreenMode(int adapt_XY)
 			}
 			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
 		} /* end else */
-		Frame_end_y      = Menu_end_y + 4;
+		Frame_end_y      = Menu_end_y + 3;
 		Menu_tooltip_y   = Frame_end_y + LINE_THICKNESS + 2;
   
 		// Init screen size
@@ -867,10 +869,10 @@ void setBrightness(int Brightness)
 	float adjustBright = 128.0F;
  
 	if ( Brightness == 50 ) adjustBright = 128.0F;
-		else	adjustBright = (((256.0F/100.0F)*Brightness) + (32.0F*((50.0F-Brightness)/50)));
+	else	adjustBright = (((256.0F/100.0F)*Brightness) + (32.0F*((50.0F-Brightness)/50)));
 
-	if ( adjustBright <=  32.0F ) adjustBright =  32.0F;
-	if ( adjustBright >= 224.0F ) adjustBright = 224.0F;
+	if ( adjustBright <=  16.0F ) adjustBright =  16.0F;
+	if ( adjustBright >= 240.0F ) adjustBright = 240.0F;
 
 	BrightColor = GS_SETREG_RGBAQ( adjustBright, adjustBright, adjustBright, 0x80, 0x00 );
 }
@@ -906,12 +908,11 @@ void drawScr(void)
 //--------------------------------------------------------------
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
-	updateScr_1 = 1;
+	int	y_off = (setting->interlace) ? 0 : (y1 & 1);
+	y1 -= y_off;
+	y2 -= y_off;
 
-	if(!setting->interlace){
-		y1 = y1 & -2;
-		y2 = ((y2-1) & -2) + 1;
-	}
+	updateScr_1 = 1;
 
 	//Top horizontal edge
 	gsKit_prim_sprite(gsGlobal, x1, y1, x2, y1+LINE_THICKNESS-1, 1, color);
@@ -948,8 +949,7 @@ void drawChar(unsigned char c, int x, int y, u64 colour)
 		for(j=0; j<8; j++)
 		{
 			if(cc & 0x80){
-				gsKit_prim_point(gsGlobal, x+j, y+i*2-1, 1, colour);
-				gsKit_prim_point(gsGlobal, x+j, y+i*2, 1, colour);
+				gsKit_prim_sprite(gsGlobal, x+j, y+i*2-2, x+j+1, y+i*2, 1, colour);
 			}
 			cc = cc << 1;
 		}
@@ -976,8 +976,7 @@ void drawChar2(int n, int x, int y, u64 colour)
 		for(j=0; j<8; j++)
 		{
 			if(b & 0x80) {
-				gsKit_prim_point(gsGlobal, x+j, y+i*2-1, 1, colour);
-				gsKit_prim_point(gsGlobal, x+j, y+i*2, 1, colour);
+				gsKit_prim_sprite(gsGlobal, x+j, y+i*2-2, x+j+1, y+i*2, 1, colour);
 			}
 			b = b << 1;
 		}
