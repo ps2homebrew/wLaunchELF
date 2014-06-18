@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.11 (2007.02.02)
+-Fixed a bad bug that smashed the storage path for content of copied folders. Instead of being stored inside the proper folder the files were stored beside that folder, with the folder name attached as a prefix to the proper filename. This was due to a single faulty string reference in "filer.c", which has now been fixed.
+
 LaunchELF v4.10 (2007.02.02)
 -Modified a file of the latest iomanx source in PS2SDK, which eliminated all problems we've had with recent versions of the iomanx.irx module
 -Modified use of LNG definitions, to avoid using translated strings as gamepad button names in tooltips (mainly for the 'Select' button). Please report if I missed any !

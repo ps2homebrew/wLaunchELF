@@ -628,8 +628,8 @@ void genLimObjName(char *uLE_path, int reserve)
 	if(!strncmp(uLE_path, "mc", 2))
 		limit = 32;    //enforce MC limit of 32 characters
 
-	if(folder_flag)                     //if path ends with path separator
-		uLE_path[strlen(uLE_path)-1] = 0; //  remove final path separator (temporarily)
+	if(folder_flag)                  //if path ends with path separator
+		uLE_path[strlen(uLE_path)-1]=0;  //  remove final path separator (temporarily)
 
 	p = uLE_path;    //initially assume a pure object name (quite insanely :))
 	if((q=strchr(p, ':')) != NULL)   //if a drive separator is present
@@ -1952,10 +1952,10 @@ PSU_error:
 		}
 		if(PM_flag[recurses+1]==PM_NORMAL){  //Normal mode folder paste preparation
 		}
-		sprintf(in, "%s%s/", inPath, file.name);       //restore phys dev spec to 'in'
-		sprintf(out, "%s%s", outPath, newfile.name);   //restore phys dev spec to 'out'
-		genLimObjName(out, 0);                         //Limit dest folder name
-		strcat(outPath, "/");                          //Separate dest folder name
+		sprintf(in, "%s%s/", inPath, file.name);     //restore phys dev spec to 'in'
+		sprintf(out, "%s%s", outPath, newfile.name); //restore phys dev spec to 'out'
+		genLimObjName(out, 0);                       //Limit dest folder name
+		strcat(out, "/");                            //Separate dest folder name
 
 		if(PasteMode == PM_PSU_RESTORE && PSU_restart_f) {
 			nfiles = PSU_content;
