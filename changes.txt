@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.00 (2006.08.30)
+-Tweaked init order to eliminate problems with JPG skins on HDD
+
 LaunchELF v3.99 (2006.08.29)
 -Tweaked some config menus that lacked spaces between some tooltips
 -Fixed bug that prevented use of LNG files stored on HDD

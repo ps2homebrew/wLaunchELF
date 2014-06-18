@@ -1373,7 +1373,6 @@ int main(int argc, char *argv[])
 	}
 */
 	setupGS(gs_vmode);
-	loadSkin(BACKGROUND_PIC, 0, 0);
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	startKbd();
@@ -1381,6 +1380,8 @@ int main(int argc, char *argv[])
 	WaitTime=0LL;
 
 	Load_External_Language();
+	loadSkin(BACKGROUND_PIC, 0, 0);
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 	strcpy(tmp, mainMsg+7); //NB: relies on ps2sdk xprintf to change NULL to "(null)"
 	if(CNF_error<0)
 		sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), tmp);
