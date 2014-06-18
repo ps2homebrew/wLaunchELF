@@ -1,5 +1,8 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.50  (2006.03.01)
+-Modified the ELF loader so it can reside at the same address used in LaunchELF versions earlier than v3.46, and still retain compatibility with current version of PS2Link. This eliminates the incompatibility that v3.46-v3.49 had with some unpacker stubs, and thus with all programs using those stubs, (notably myPS2). Full compatibility is now restored for those programs.
+
 LaunchELF v3.49  (2006.02.26)
 -Fixed an issue where garbage could be displayed at startup when LaunchELF was booted by another programs' generic launcher function. (Note: Issue only appeared to occur randomly with the packed ELF when using only one CNF).
 

@@ -585,7 +585,7 @@ void loadNetModules(void)
 //------------------------------
 //endfunc loadNetModules
 //--------------------------------------------------------------
-// SYSTEM.CNFの読み取り
+// Read SYSTEM.CNF for MISC/PS2Disc launch command
 int ReadCNF(char *direlf)
 {
 	char *systemcnf;
@@ -639,7 +639,8 @@ int ReadCNF(char *direlf)
 //------------------------------
 //endfunc ReadCNF
 //--------------------------------------------------------------
-// ELFのテストと実行
+// Run ELF. The generic ELF launcher.
+//------------------------------
 void RunElf(const char *path)
 {
 	char tmp[MAX_PATH];

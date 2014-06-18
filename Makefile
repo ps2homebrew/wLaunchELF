@@ -1,7 +1,7 @@
 EE_BIN = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o mass_rpc.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o ps2ip.o ps2smap.o ps2hdd.o\
-	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o
+	ps2fs.o ps2netfs.o usbd.o usb_mass.o cdvd.o ps2ftpd.o ps2host.o fakehost.o
 
 EE_INCS := -I$(PS2DEV)/libito/include -I$(PS2SDK)/sbv/include\
 	-I$(PS2DEV)/libcdvd/ee
@@ -54,6 +54,9 @@ ps2fs.s:
 
 ps2netfs.s:
 	bin2s $(PS2SDK)/iop/irx/ps2netfs.irx ps2netfs.s ps2netfs_irx
+
+fakehost.s:
+	bin2s $(PS2SDK)/iop/irx/fakehost.irx fakehost.s fakehost_irx
 
 ps2host.s:
 	$(MAKE) -C ps2host

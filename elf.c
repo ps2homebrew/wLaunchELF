@@ -1,12 +1,18 @@
+//--------------------------------------------------------------
+//File name:    elf.c
+//--------------------------------------------------------------
 #include "launchelf.h"
 
 extern u8 *loader_elf;
 extern int size_loader_elf;
+extern u8 *fakehost_irx;
+extern int size_fakehost_irx;
 
 // ELF-loading stuff
 #define ELF_MAGIC		0x464c457f
 #define ELF_PT_LOAD		1
 
+//------------------------------
 typedef struct
 {
 	u8	ident[16];			// struct definition for ELF object header
@@ -24,7 +30,7 @@ typedef struct
 	u16	shnum;
 	u16	shstrndx;
 } elf_header_t;
-
+//------------------------------
 typedef struct
 {
 	u32	type;				// struct definition for ELF program section header
@@ -36,16 +42,20 @@ typedef struct
 	u32	flags;
 	u32	align;
 } elf_pheader_t;
-
-////////////////////////////////////////////////////////////////////////
-// Tests for valid ELF file 
+//--------------------------------------------------------------
+//End of data declarations
+//--------------------------------------------------------------
+//Start of function code
+//--------------------------------------------------------------
+// checkELFheader Tests for valid ELF file 
 // Modified version of loader from Independence
 //	(C) 2003 Marcus R. Brown <mrbrown@0xd6.org>
-//
+//--------------------------------------------------------------
 int checkELFheader(const char *path)
 {
-	u8 *boot_elf = (u8 *)0x1800000;
-	elf_header_t *eh = (elf_header_t *)boot_elf;
+	elf_header_t elf_head;
+	u8 *boot_elf = (u8 *) &elf_head;
+	elf_header_t *eh = (elf_header_t *) boot_elf;
 	int fd, size=0, ret;
 	char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
@@ -67,7 +77,7 @@ int checkELFheader(const char *path)
 			goto error;
 		}
 		fileXioLseek(fd, 0, SEEK_SET);
-		fileXioRead(fd, boot_elf, 52);
+		fileXioRead(fd, boot_elf, sizeof(elf_header_t));
 		fileXioClose(fd);
 		fileXioUmount("pfs0:");
 	}else if(!strncmp(fullpath, "mc", 2) ||
@@ -81,7 +91,7 @@ int checkELFheader(const char *path)
 			goto error;
 		}
 		fioLseek(fd, 0, SEEK_SET);
-		fioRead(fd, boot_elf, 52);
+		fioRead(fd, boot_elf, sizeof(elf_header_t));
 		fioClose(fd);
 	} else {
 		return 0;
@@ -94,23 +104,44 @@ int checkELFheader(const char *path)
 error:
 	return -1;
 }
-
-////////////////////////////////////////////////////////////////////////
-// loads LOADER.ELF from program memory and passes args of selected ELF
-// and partition to it
+//------------------------------
+//End of func:  int checkELFheader(const char *path)
+//--------------------------------------------------------------
+// RunLoaderElf loads LOADER.ELF from program memory and passes
+// args of selected ELF and partition to it
 // Modified version of loader from Independence
 //	(C) 2003 Marcus R. Brown <mrbrown@0xd6.org>
-//
+//------------------------------
 void RunLoaderElf(char *filename, char *party)
 {
-	u8 *boot_elf = (u8 *)&loader_elf;
-	elf_header_t *eh = (elf_header_t *)boot_elf;
+	u8 *boot_elf;
+	elf_header_t *eh;
 	elf_pheader_t *eph;
 	void *pdata;
-	int i;
+	int ret, i;
 	char *argv[2];
 
-/* Load the ELF into RAM.  */
+	if((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))){
+		char fakepath[128], *p;
+		if(0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
+			return;
+		strcpy(fakepath,filename);
+		p=strrchr(fakepath,'/');
+		if(p==NULL) strcpy(fakepath,"pfs0:");
+		else
+		{
+			p++;
+			*p='\0';
+		}
+		//printf("Loading fakehost.irx %i bytes\n", size_fakehost_irx);
+		//printf("Faking for path \"%s\" on partition \"%s\"\n", fakepath, party);
+		SifExecModuleBuffer(&fakehost_irx, size_fakehost_irx, strlen(fakepath), fakepath, &ret);
+		
+	}
+
+/* NB: LOADER.ELF is embedded  */
+	boot_elf = (u8 *)&loader_elf;
+	eh = (elf_header_t *)boot_elf;
 	if (_lw((u32)&eh->ident) != ELF_MAGIC)
 		while (1);
 
@@ -143,3 +174,8 @@ void RunLoaderElf(char *filename, char *party)
 	
 	ExecPS2((void *)eh->entry, 0, 2, argv);
 }
+//------------------------------
+//End of func:  void RunLoaderElf(char *filename, char *party)
+//--------------------------------------------------------------
+//End of file:  elf.c
+//--------------------------------------------------------------
