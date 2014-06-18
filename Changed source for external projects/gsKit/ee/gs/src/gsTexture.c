@@ -90,8 +90,12 @@ u32  gsKit_texture_size(int width, int height, int psm)
 int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 {
 #ifdef HAVE_LIBPNG
-	printf("WARNING: PNG Support is currently BROKEN!\n");
-	int File = fioOpen(Path, O_RDONLY);
+	FILE* File = fopen(Path, "r");
+	if (File == NULL)
+	{
+		printf("Failed to load PNG file: %s\n", Path);
+		return -1;
+	}
 	
 	png_structp png_ptr;
 	png_infop info_ptr;
@@ -106,7 +110,7 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	if(!png_ptr)
 	{
 		printf("PNG Read Struct Init Failed\n");
-		fioClose(File);
+		fclose(File);
 		return -1;
 	}
 	
@@ -115,7 +119,7 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	if(!info_ptr)
 	{
 		printf("PNG Info Struct Init Failed\n");
-		fioClose(File);
+		fclose(File);
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 		return -1;
 	}
@@ -123,12 +127,12 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	if(setjmp(png_ptr->jmpbuf))
 	{
 		printf("Got PNG Error!\n");
-		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
-		fioClose(File);
+		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp)NULL);
+		fclose(File);
 		return -1;
 	}
 
-	png_set_read_fn(png_ptr, &File, gsKit_png_read);
+	png_set_read_fn(png_ptr, File, gsKit_png_read);
 
 	png_set_sig_bytes(png_ptr, sig_read);
 
@@ -149,59 +153,93 @@ int gsKit_texture_png(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 
 	png_set_filler(png_ptr, 0xff, PNG_FILLER_AFTER);
 
-	png_read_update_info(png_ptr, info_ptr);	
-	
+	png_read_update_info(png_ptr, info_ptr);
+    
 	Texture->Width = width;
 	Texture->Height = height;
 
         Texture->VramClut = 0;
         Texture->Clut = NULL;
 
-	if(png_ptr->pixel_depth == 32)
+	if(png_ptr->color_type == PNG_COLOR_TYPE_RGB_ALPHA)
 	{
+        int row_bytes = png_get_rowbytes(png_ptr, info_ptr);
 		Texture->PSM = GS_PSM_CT32;
-		Texture->Mem = memalign(128, gsKit_texture_size_ee(Texture->Width, Texture->Height, GS_PSM_CT32));
-		printf("Reading Image: ptr = %p, ref = %p\n", Texture->Mem, (png_bytep *)Texture->Mem);
+		Texture->Mem = memalign(128, gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM));
 
-	        row_pointers = calloc(height, sizeof(png_bytep));
-	
-	        for (row = 0; row < height; row++) {
-	        	row_pointers[row] = malloc(png_get_rowbytes(png_ptr, info_ptr));
-	        }
-	
-	        png_read_image(png_ptr, row_pointers);
-			
-	        struct pixel { unsigned char r,g,b,a; };
-	        struct pixel *Pixels;
-	
-	        assert(Pixels = (struct pixel *)malloc((size_t)width*(size_t)height*sizeof(struct pixel)));
+        row_pointers = calloc(height, sizeof(png_bytep));
 
-	        for (i=0;i<height;i++) {
-	                for (j=0;j<width;j++) {
-	                        Pixels[k].r = row_pointers[i][4*j];
-	                        Pixels[k].g = row_pointers[i][4*j+1];
-	                        Pixels[k].b = row_pointers[i][4*j+2];
-	                        Pixels[k++].a = row_pointers[i][4*j+3];
-		        }
+        for (row = 0; row < height; row++) {
+            row_pointers[row] = malloc(row_bytes);
+        }
+	
+        png_read_image(png_ptr, row_pointers);
+        
+        struct pixel { unsigned char r,g,b,a; };
+        struct pixel *Pixels = (struct pixel *) Texture->Mem;
+
+        for (i=0;i<height;i++) {
+                for (j=0;j<width;j++) {
+                        Pixels[k].r = row_pointers[i][4*j];
+                        Pixels[k].g = row_pointers[i][4*j+1];
+                        Pixels[k].b = row_pointers[i][4*j+2];
+                        Pixels[k++].a = (int) row_pointers[i][4*j+3] * 128 / 255;
+            }
 		}
-		Texture->Mem = (u32 *)Pixels;
+                
+        for (row = 0; row < height; row++) {
+            free(row_pointers[row]);
+        }
+
+        free(row_pointers);
 		Texture->Filter = GS_FILTER_NEAREST;
 		
-		printf("Finished Reading Image\n");
 		png_read_end(png_ptr, NULL);
-		printf("Finished png_read_end\n");
 
-		printf("Do png_destroy_read_struct\n");
 		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
-		printf("Finished png_destroy_read_struct\n");
+	}
+	else if(png_ptr->color_type == PNG_COLOR_TYPE_RGB)
+	{
+        int row_bytes = png_get_rowbytes(png_ptr, info_ptr);
+		Texture->PSM = GS_PSM_CT24;
+		Texture->Mem = memalign(128, gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM));
+
+        row_pointers = calloc(height, sizeof(png_bytep));
+
+        for (row = 0; row < height; row++) {
+            row_pointers[row] = malloc(row_bytes);
+        }
+
+        png_read_image(png_ptr, row_pointers);
+        
+        struct pixel3 { unsigned char r,g,b; };
+        struct pixel3 *Pixels = (struct pixel3 *) Texture->Mem;
+
+        for (i=0;i<height;i++) {
+                for (j=0;j<width;j++) {
+                        Pixels[k].r = row_pointers[i][4*j];
+                        Pixels[k].g = row_pointers[i][4*j+1];
+                        Pixels[k++].b = row_pointers[i][4*j+2];
+            }
+		}
+        
+        for (row = 0; row < height; row++) {
+            free(row_pointers[row]);
+        }
+
+        free(row_pointers);
+		Texture->Filter = GS_FILTER_NEAREST;
 		
+		png_read_end(png_ptr, NULL);
+
+		png_destroy_read_struct(&png_ptr, &info_ptr, (png_infopp) NULL);
 	}
 	else
 	{
-		printf("This texture depth is not supported yet!");
+		printf("This texture depth is not supported yet!\n");
 	}
 
-	fioClose(File);
+	fclose(File);
 
 	if(!Texture->Delayed)
 	{
@@ -237,14 +275,19 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	u8  *image;
 	u8  *p;
 
-	int File = fioOpen(Path, O_RDONLY);
-	if (fioRead(File, &Bitmap.FileHeader, sizeof(Bitmap.FileHeader)) <= 0)
+	FILE* File = fopen(Path, "r");
+	if (File == NULL)
+	{
+		printf("Failed to load bitmap: %s\n", Path);
+		return -1;
+	}
+	if (fread(&Bitmap.FileHeader, sizeof(Bitmap.FileHeader), 1, File) <= 0)
 	{
 		printf("Could not load bitmap: %s\n", Path);
 		return -1;
 	}
 		
-	if (fioRead(File, &Bitmap.InfoHeader, sizeof(Bitmap.InfoHeader)) <= 0)
+	if (fread(&Bitmap.InfoHeader, sizeof(Bitmap.InfoHeader), 1, File) <= 0)
 	{
 		printf("Could not load bitmap: %s\n", Path);
 		return -1;
@@ -262,8 +305,8 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 
 		memset(Texture->Clut, 0, gsKit_texture_size_ee(8, 2, GS_PSM_CT32));
 		Texture->VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(8, 2, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-		fioLseek(File, 54, SEEK_SET);
-		if(fioRead(File, Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32)) <= 0)
+		fseek(File, 54, SEEK_SET);
+		if (fread(Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32), 1, File) <= 0)
 		{
 			printf("Could not load bitmap: %s\n", Path);
 			return -1;
@@ -293,8 +336,8 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 
 		memset(Texture->Clut, 0, gsKit_texture_size_ee(16, 16, GS_PSM_CT32));
 		Texture->VramClut = gsKit_vram_alloc(gsGlobal, gsKit_texture_size(16, 16, GS_PSM_CT32), GSKIT_ALLOC_USERBUFFER);
-		fioLseek(File, 54, SEEK_SET);
-		if(fioRead(File, Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32)) <= 0)
+		fseek(File, 54, SEEK_SET);
+		if (fread(Texture->Clut, Bitmap.InfoHeader.ColorUsed*sizeof(u32), 1, File) <= 0)
 		{
 			printf("Could not load bitmap: %s\n", Path);
 			return -1;
@@ -339,10 +382,10 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		Texture->Clut = NULL;
 	}
 
-	FTexSize = fioLseek(File, 0, SEEK_END);
+	FTexSize = fseek(File, 0, SEEK_END);
 	FTexSize -= Bitmap.FileHeader.Offset;
 
-	fioLseek(File, Bitmap.FileHeader.Offset, SEEK_SET);
+	fseek(File, Bitmap.FileHeader.Offset, SEEK_SET);
 
 	u32 TextureSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
 	u32 VramTextureSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
@@ -353,7 +396,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	{
 		image = memalign(128, FTexSize);
 		if (image == NULL) return -1;
-		fioRead(File, image, FTexSize);
+		fread(image, FTexSize, 1, File);
 		p = (void *)((u32)Texture->Mem | 0x30000000);
 		for (y=Texture->Height-1,cy=0; y>=0; y--,cy++) {
 			for (x=0; x<Texture->Width; x++) {
@@ -372,11 +415,11 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 	{
 		char *tex = (char *)((u32)Texture->Mem | 0x30000000);
 		image = memalign(128,FTexSize);
-		if(fioRead(File, image, FTexSize) != FTexSize)
+		if (fread(image, FTexSize, 1, File) != FTexSize)
 		{
 			printf("Read failed!\n");
 			free(image);
-			fioClose(File);
+			fclose(File);
 		}
 		for (y=Texture->Height-1; y>=0; y--) 
 		{
@@ -405,7 +448,7 @@ int gsKit_texture_bmp(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		printf("Unknown BMP bit depth format %d\n", Bitmap.InfoHeader.BitCount);
 	}
 
-	fioClose(File);
+	fclose(File);
 
 	if(!Texture->Delayed)
 	{
@@ -530,11 +573,11 @@ int  gsKit_texture_tiff(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 
 /*
 	// To dump+debug the RBGA data from tiff
-	int File = fioOpen("host:texdump.raw", O_TRUNC);
+	FILE* File = fopen("host:texdump.raw", "w");
 
-	fioWrite(File, Texture->Mem, TextureSize);
+	fwrite(Texture->Mem, TextureSize, 1, File);
 
-	fioClose(File);
+	fclose(File);
 */
 	if(!Texture->Delayed)
 	{
@@ -571,7 +614,12 @@ int gsKit_texture_tga(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 
 int gsKit_texture_raw(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 {
-	int File = fioOpen(Path, O_RDONLY);
+	FILE* File = fopen(Path, "r");
+	if (File == NULL)
+	{
+		printf("Failed to load  texture: %s\n", Path);
+		return -1;
+	}
 	int FileSize = gsKit_texture_size_ee(Texture->Width, Texture->Height, Texture->PSM);
 	int VramFileSize = gsKit_texture_size(Texture->Width, Texture->Height, Texture->PSM);
 	Texture->Mem = memalign(128, FileSize);
@@ -582,12 +630,12 @@ int gsKit_texture_raw(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, char *Path)
 		Texture->Clut = NULL;
 	}
 
-	if(fioRead(File, Texture->Mem, FileSize) <= 0)
+	if(fread(Texture->Mem, FileSize, 1, File) <= 0)
 	{
 		printf("Could not load texture: %s\n", Path);
 		return -1;
 	}
-	fioClose(File);
+	fclose(File);
 
 	if(!Texture->Delayed)
 	{
@@ -666,49 +714,53 @@ int gsKit_texture_fnt_raw(GSGLOBAL *gsGlobal, GSFONT *gsFont)
 int gsKit_texture_fnt(GSGLOBAL *gsGlobal, GSFONT *gsFont)
 {
 	u32 *mem;
-	int File;
 	int size = 0;
 	int vramsize = 0;
 	int i;
 
-	File = fioOpen(gsFont->Path, O_RDONLY);
-	fioLseek(File, 4, SEEK_SET);
-	if(fioRead(File, &gsFont->Texture->Width, 4) <= 0)
+	FILE* File = fopen(gsFont->Path, "r");
+	if (File == NULL)
+	{
+		printf("Failed to load font: %s\n", gsFont->Path);
+		return -1;
+	}
+	fseek(File, 4, SEEK_SET);
+	if(fread(&gsFont->Texture->Width, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->Texture->Height, 4) <= 0)
+	if(fread(&gsFont->Texture->Height, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->Texture->PSM, 4) <= 0)
+	if(fread(&gsFont->Texture->PSM, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->HChars, 4) <= 0)
+	if(fread(&gsFont->HChars, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->VChars, 4) <= 0)
+	if(fread(&gsFont->VChars, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->CharWidth, 4) <= 0)
+	if(fread(&gsFont->CharWidth, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	if(fioRead(File, &gsFont->CharHeight, 4) <= 0)
+	if(fread(&gsFont->CharHeight, 4, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	fioLseek(File, 288, SEEK_SET);
+	fseek(File, 288, SEEK_SET);
 
 	gsFont->Texture->Filter = GS_FILTER_NEAREST;
 
@@ -722,12 +774,12 @@ int gsKit_texture_fnt(GSGLOBAL *gsGlobal, GSFONT *gsFont)
 		return -1;
 	}
 	
-	if(fioRead(File, gsFont->Texture->Mem, size) <= 0)
+	if(fread(gsFont->Texture->Mem, size, 1, File) <= 0)
 	{
 		printf("Could not load font: %s\n", gsFont->Path);
 		return -1;
 	}
-	fioClose(File);
+	fclose(File);
 
 	if (gsFont->Texture->PSM != 0) {
 		printf("Unsupported fnt PSM %d\n", gsFont->Texture->PSM);
@@ -845,7 +897,7 @@ void gsKit_texture_send(u32 *mem, int width, int height, u32 tbp, u32 psm, u32 t
 
 	// Need to wait first to make sure that if our doublebuffered drawbuffer is still
 	// chugging away we have a safe time to start our transfer.
-	dmaKit_wait(DMA_CHANNEL_GIF, 0);
+	dmaKit_wait_fast();
 	dmaKit_send_chain(DMA_CHANNEL_GIF, p_store, p_size);
 	free(p_store);
 
@@ -955,7 +1007,7 @@ void gsKit_texture_upload(GSGLOBAL *gsGlobal, GSTEXTURE *Texture)
 	}
 }
 
-void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture, 	
+void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture, 	
 				float x1, float y1, int iz1, float u1, float v1,
 				float x2, float y2, int iz2, float u2, float v2, u64 color)
 {
@@ -968,8 +1020,8 @@ void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 
 	if(gsGlobal->Field == GS_FRAME)
 	{
-		y1 /= 2;
-		y2 /= 2;
+		y1 /= 2.0f;
+		y2 /= 2.0f;
 #ifdef GSKIT_ENABLE_HBOFFSET
 		if(!gsGlobal->EvenOrOdd)
 		{
@@ -980,14 +1032,14 @@ void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	}
 
 	int ix1 = (int)(x1 * 16.0f) + gsGlobal->OffsetX;
-	int ix2 = (int)(x2 * 16.0f) + gsGlobal->OffsetX;
+	int ix2 = (int)((x2 + 0.0625f) * 16.0f) + gsGlobal->OffsetX;
 	int iy1 = (int)(y1 * 16.0f) + gsGlobal->OffsetY;
-	int iy2 = (int)(y2 * 16.0f) + gsGlobal->OffsetY;
+	int iy2 = (int)((y2 + 0.0625f) * 16.0f) + gsGlobal->OffsetY;
 
-	int iu1 = (int)(u1 * 16.0f);
-	int iu2 = (int)(u2 * 16.0f);
-	int iv1 = (int)(v1 * 16.0f);
-	int iv2 = (int)(v2 * 16.0f);
+	int iu1 = (int)((u1 + 0.5f) * 16.0f);
+	int iu2 = (int)((u2 - 0.375f) * 16.0f);
+	int iv1 = (int)((v1 + 0.5f) * 16.0f);
+	int iv2 = (int)((v2 - 0.375f) * 16.0f);
 
 	
 	int tw = 31 - (lzw(Texture->Width) + 1);
@@ -1029,7 +1081,7 @@ void gsKit_prim_sprite_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 	*p_data++ = GS_SETREG_XYZ2( ix2, iy2, iz2 );
 }
 
-void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
+void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, const GSTEXTURE *Texture,
 				float x1, float y1, int iz1, float u1, float v1,
 				float x2, float y2, int iz2, float u2, float v2, u64 color)
 {
@@ -1043,8 +1095,8 @@ void gsKit_prim_sprite_striped_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture
 
 	if(gsGlobal->Field == GS_FRAME)
 	{
-		y1 /= 2;
-		y2 /= 2;
+		y1 /= 2.0f;
+		y2 /= 2.0f;
 #ifdef GSKIT_ENABLE_HBOFFSET
 		if(!gsGlobal->EvenOrOdd)
 		{
@@ -1212,9 +1264,9 @@ void gsKit_prim_triangle_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 
 	if(gsGlobal->Field == GS_FRAME)
 	{
-		y1 /= 2;
-		y2 /= 2;
-		y3 /= 2;
+		y1 /= 2.0f;
+		y2 /= 2.0f;
+		y3 /= 2.0f;
 #ifdef GSKIT_ENABLE_HBOFFSET
 		if(!gsGlobal->EvenOrOdd)
 		{
@@ -1297,7 +1349,7 @@ void gsKit_prim_triangle_strip_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count] =  (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetX;
 		if(gsGlobal->Field == GS_FRAME)
 		{
-			*(TriStrip) /= 2;
+			*(TriStrip) /= 2.0f;
 		#ifdef GSKIT_ENABLE_HBOFFSET
 			if(!gsGlobal->EvenOrOdd)
 			{
@@ -1372,7 +1424,7 @@ void gsKit_prim_triangle_strip_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture
 		vertexdata[count] = (int)((*TriStrip++) * 16.0f) + gsGlobal->OffsetX;
 		if(gsGlobal->Field == GS_FRAME)
 		{
-			*(TriStrip) /= 2;
+			*(TriStrip) /= 2.0f;
 		#ifdef GSKIT_ENABLE_HBOFFSET
 			if(!gsGlobal->EvenOrOdd)
 			{
@@ -1447,7 +1499,7 @@ void gsKit_prim_triangle_fan_texture(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetX;
 		if(gsGlobal->Field == GS_FRAME)
 		{
-			*(TriFan) /= 2;
+			*(TriFan) /= 2.0f;
 		#ifdef GSKIT_ENABLE_HBOFFSET
 			if(!gsGlobal->EvenOrOdd)
 			{
@@ -1521,7 +1573,7 @@ void gsKit_prim_triangle_fan_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 		vertexdata[count] =  (int)((*TriFan++) * 16.0f) + gsGlobal->OffsetX;
 		if(gsGlobal->Field == GS_FRAME)
 		{
-			*(TriFan) /= 2;
+			*(TriFan) /= 2.0f;
 		#ifdef GSKIT_ENABLE_HBOFFSET
 			if(!gsGlobal->EvenOrOdd)
 			{
@@ -1596,10 +1648,10 @@ void gsKit_prim_quad_texture_3d(GSGLOBAL *gsGlobal, GSTEXTURE *Texture,
 
 	if(gsGlobal->Field == GS_FRAME)
 	{
-		y1 /= 2;
-		y2 /= 2;
-		y3 /= 2;
-		y4 /= 2;
+		y1 /= 2.0f;
+		y2 /= 2.0f;
+		y3 /= 2.0f;
+		y4 /= 2.0f;
 #ifdef GSKIT_ENABLE_HBOFFSET
 		if(!gsGlobal->EvenOrOdd)
 		{

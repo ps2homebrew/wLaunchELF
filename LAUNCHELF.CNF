@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.09.17
+# File name:    LAUNCHELF.CNF           Revision Date: 2007.05.10
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -133,8 +133,8 @@ GUI_Col_8_ABGR = 00000000
 # Screen_X and Screen_Y, whether those defaults or modified values, will
 # still be saved here whenever you save CNF in the future.
 # ----------------------------------------------------------------------
-#Screen_X  = 128
-#Screen_Y  = 30
+#Screen_X  = 632
+#Screen_Y  = 50
 # ----------------------------------------------------------------------
 # Note that I have changed the default for IOP reset, as this has been
 # long-term tested now, and proven superior to starting without it.
@@ -142,7 +142,7 @@ GUI_Col_8_ABGR = 00000000
 # could cause lockup on some PS2 models if started with empty tray.
 # ----------------------------------------------------------------------
 Init_CDVD_Check  = 0
-Screen_Interlace = 0
+Screen_Interlace = 1
 Init_Reset_IOP   = 1
 Menu_Pages       = 1
 GUI_Swap_Keys    = 0
@@ -172,6 +172,14 @@ NET_HOSTwrite = 0
 # ----------------------------------------------------------------------
 SKIN_FILE =
 # ----------------------------------------------------------------------
+#GUI_SKIN_FILE is used to select a JPG file that will be used the same
+#way as SKIN_FILE, but only in the main launch menu. This allows the
+#design of screens that use the JPG to display GUI 'buttons' etc. But if
+#no such file is specified (or loadable at runtime) then the usage falls
+#back on the regular methods.
+# ----------------------------------------------------------------------
+GUI_SKIN_FILE =
+# ----------------------------------------------------------------------
 #Menu_Title is a string that will be displayed at the top left of the
 #screen. Its main purpose is to allow users to have different titles
 #for different config pages. It is editable in "STARTUP SETTINGS".
@@ -187,6 +195,11 @@ Menu_Frame = 1
 # allowing this to be set without changing the JPG file. The default is
 # 50, for using the JPG as-is, lower values will darken it while higher
 # values will brighten it. The maximum value allowed is 100.
+# ----------------------------------------------------------------------
+Show_Menu = 1
+# ----------------------------------------------------------------------
+# Show_Menu flags whether or not the main menu is visible when a GUI
+# skin is selected. By default it will be visible.
 # ----------------------------------------------------------------------
 SKIN_Brightness = 50
 # ----------------------------------------------------------------------

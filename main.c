@@ -77,6 +77,7 @@ char CNF[MAX_NAME];
 int numCNF=0;
 int maxCNF;
 int swapKeys;
+int GUI_active;
 
 u64 WaitTime;
 
@@ -176,6 +177,10 @@ void ShowDebugInfo(void)
 		waitAnyPadReady();
 		if(readpad() && new_pad){
 			event |= 2;
+			if (setting->GUI_skin[0]) {
+				GUI_active = 1;
+				loadSkin(BACKGROUND_PIC, 0, 0);
+			}
 			break;
 		}
 
@@ -270,6 +275,18 @@ static void getIpConfig(void)
 //------------------------------
 //endfunc getIpConfig
 //--------------------------------------------------------------
+void setLaunchKeys(void)
+{
+	if(!setting->LK_Flag[12])
+		strcpy(setting->LK_Path[12], setting->Misc_Configure);
+	if((maxCNF>1) && !setting->LK_Flag[13])
+		strcpy(setting->LK_Path[13], setting->Misc_Load_CNFprev);
+	if((maxCNF>1) && !setting->LK_Flag[14])
+		strcpy(setting->LK_Path[14], setting->Misc_Load_CNFnext);
+}
+//------------------------------
+//endfunc setLaunchKeys()
+//--------------------------------------------------------------
 int drawMainScreen(void)
 {
 	int nElfs=0;
@@ -279,12 +296,7 @@ int drawMainScreen(void)
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
 
-	if(!setting->LK_Flag[12])
-		strcpy(setting->LK_Path[12], setting->Misc_Configure);
-	if((maxCNF>1) && !setting->LK_Flag[13])
-		strcpy(setting->LK_Path[13], setting->Misc_Load_CNFprev);
-	if((maxCNF>1) && !setting->LK_Flag[14])
-		strcpy(setting->LK_Path[14], setting->Misc_Load_CNFnext);
+	setLaunchKeys();
 
 	clrScr(setting->color[0]);
 
@@ -408,6 +420,142 @@ int drawMainScreen(void)
 }
 //------------------------------
 //endfunc drawMainScreen
+//--------------------------------------------------------------
+int drawMainScreen2pal(void)
+{
+	int nElfs=0;
+	int i;
+	int x, y;
+	u64 color;
+	char c[MAX_PATH+8], f[MAX_PATH];
+	char *p;
+
+	setLaunchKeys();
+
+	clrScr(setting->color[0]);
+
+	x = Menu_start_x;
+	y = Menu_start_y;
+
+	if(init_delay)    sprintf(c, "%s:       %d", LNG(Delay), init_delay/SCANRATE);
+	else if(setting->LK_Path[0][0]){
+		if(!user_acted) sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout/SCANRATE);
+		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
+	}
+
+		printXY(c, x+448, y+FONT_HEIGHT+6, setting->color[3], TRUE, 0);
+		y += FONT_HEIGHT+5;
+
+	for(i=0; i<15; i++){
+			if(setting->Show_Titles) //Show Launch Titles ?
+				strcpy(f, setting->LK_Title[i]);
+			else
+				f[0] = '\0';
+			if(!f[0]) {  //No title present, or allowed ?
+				if(setting->Hide_Paths) {  //Hide full path ?
+					if((p=strrchr(setting->LK_Path[i], '/'))) // found delimiter ?
+						strcpy(f, p+1);
+					else // No delimiter !
+						strcpy(f, setting->LK_Path[i]);
+					if((p=strrchr(f, '.')))
+						*p = 0;
+				} else {                  //Show full path !
+					strcpy(f, setting->LK_Path[i]);
+				}
+			} //ends clause for No title
+			if(setting->LK_Path[i][0] && nElfs++==selected && mode==DPAD)
+				color = setting->color[2];
+			else
+				color = setting->color[3];
+			int len = (strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)?
+				strlen(LNG(LEFT))+2:strlen(LNG(RIGHT))+2;
+			if (i==0){
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+20, y, color, TRUE, 0);
+				y += FONT_HEIGHT*2+5;
+			} else if (i==12) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-FONT_HEIGHT*2-60, color, TRUE, 0);
+			  else if (i==13) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-60, color, TRUE, 0);
+			  else if (i==14)printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+370, y-60+FONT_HEIGHT*2, color, TRUE, 0);
+			  else {
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+10, y, color, TRUE, 0);
+				y += FONT_HEIGHT*2;
+			} 
+	} //ends for
+
+	c[0] = '\0';           //dummy tooltip string (Tooltip unused for GUI menu)
+	setScrTmp(mainMsg, c);
+	
+	return nElfs;
+}
+//------------------------------
+//endfunc drawMainScreen2pal
+//--------------------------------------------------------------
+int drawMainScreen2ntsc(void)
+{
+	int nElfs=0;
+	int i;
+	int x, y;
+	u64 color;
+	char c[MAX_PATH+8], f[MAX_PATH];
+	char *p;
+
+	setLaunchKeys();
+
+	clrScr(setting->color[0]);
+
+	x = Menu_start_x;
+	y = Menu_start_y;
+
+	if(init_delay)    sprintf(c, "%s:       %d", LNG(Delay), init_delay/SCANRATE);
+	else if(setting->LK_Path[0][0]){
+		if(!user_acted) sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout/SCANRATE);
+		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
+	}
+
+		printXY(c, x+448, y+FONT_HEIGHT-5, setting->color[3], TRUE, 0);
+		y += FONT_HEIGHT-3;
+
+	for(i=0; i<15; i++){
+			if(setting->Show_Titles) //Show Launch Titles ?
+				strcpy(f, setting->LK_Title[i]);
+			else
+				f[0] = '\0';
+			if(!f[0]) {  //No title present, or allowed ?
+				if(setting->Hide_Paths) {  //Hide full path ?
+					if((p=strrchr(setting->LK_Path[i], '/'))) // found delimiter ?
+						strcpy(f, p+1);
+					else // No delimiter !
+						strcpy(f, setting->LK_Path[i]);
+					if((p=strrchr(f, '.')))
+						*p = 0;
+				} else {                  //Show full path !
+					strcpy(f, setting->LK_Path[i]);
+				}
+			} //ends clause for No title
+			if(setting->LK_Path[i][0] && nElfs++==selected && mode==DPAD)
+				color = setting->color[2];
+			else
+				color = setting->color[3];
+			int len = (strlen(LNG(LEFT))+2>strlen(LNG(RIGHT))+2)?
+				strlen(LNG(LEFT))+2:strlen(LNG(RIGHT))+2;
+			if (i==0){
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+20, y-1, color, TRUE, 0);
+				y += FONT_HEIGHT*2-1;
+			} else if (i==12) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-FONT_HEIGHT*2-48, color, TRUE, 0);
+			  else if (i==13) printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-52, color, TRUE, 0);
+			  else if (i==14)printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+360, y-54+FONT_HEIGHT*2, color, TRUE, 0);
+			  else {
+				printXY(f, x+(len>9? len*FONT_WIDTH:9*FONT_WIDTH)+10, y, color, TRUE, 0);
+				y += FONT_HEIGHT*2-4;
+			} 
+	} //ends for
+
+	c[0] = '\0';           //dummy tooltip string (Tooltip unused for GUI menu)
+	setScrTmp(mainMsg, c);
+	
+	return nElfs;
+}
+//------------------------------
+//endfunc drawMainScreen2ntsc
 //--------------------------------------------------------------
 void delay(int count)
 {
@@ -796,6 +944,10 @@ void loadNetModules(void)
 		have_NetModules = 1;
 	}
 	strcpy(mainMsg, netConfig);
+	if (setting->GUI_skin[0]) {
+	GUI_active = 1;
+	loadSkin(BACKGROUND_PIC, 0, 0);
+	}
 }
 //------------------------------
 //endfunc loadNetModules
@@ -987,6 +1139,10 @@ done_test:
 				mat_y++;
 				continue;
 			}
+			if (setting->GUI_skin[0]) {
+				GUI_active = 1;
+				loadSkin(BACKGROUND_PIC, 0, 0);
+			}
 			break;
 		}
 	} //ends while
@@ -1055,6 +1211,8 @@ int reloadConfig()
 	CNF_error = loadConfig(mainMsg, CNF);
 	Validate_CNF_Path();
 	updateScreenMode(0);
+	if (setting->GUI_skin[0]) GUI_active = 1;
+	else GUI_active= 0;
 	loadSkin(BACKGROUND_PIC, 0, 0);
 
 	if(CNF_error<0)
@@ -1172,6 +1330,10 @@ void RunElf(char *path)
 		if(!ReadCNF(fullpath)) return;
 		//strcpy(mainMsg, "Success!"); return;
 	}else if(!stricmp(path, setting->Misc_FileBrowser)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		mainMsg[0] = 0;
 		tmp[0] = 0;
 		LastDir[0] = 0;
@@ -1202,15 +1364,31 @@ void RunElf(char *path)
 		poweroff_delay = SCANRATE/4; //trigger delay for those without net adapter
 		return;
 	}else if(!stricmp(path, setting->Misc_HddManager)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		hddManager();
 		return;
 	}else if(!stricmp(path, setting->Misc_TextEditor)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		TextEditor();
 		return;
 	}else if(!stricmp(path, setting->Misc_JpgViewer)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		JpgViewer();
 		return;
 	}else if(!stricmp(path, setting->Misc_Configure)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		config(mainMsg, CNF);
 		return;
 	}else if(!stricmp(path, setting->Misc_Load_CNFprev)){
@@ -1230,6 +1408,10 @@ void RunElf(char *path)
 		ShowFont();
 		return;
 	}else if(!stricmp(path, setting->Misc_Debug_Info)){
+		if (setting->GUI_skin[0]) {
+			GUI_active = 0;
+			loadSkin(BACKGROUND_PIC, 0, 0);
+		}
 		ShowDebugInfo();
 		return;
 	}else if(!strncmp(path, "cdfs", 4)){
@@ -1482,6 +1664,7 @@ int main(int argc, char *argv[])
 	loadFont("");  //Some font must be loaded before loading some device modules
 	Load_External_Language();
 	loadFont(setting->font_file);
+	if (setting->GUI_skin[0]) {GUI_active = 1;}
 	loadSkin(BACKGROUND_PIC, 0, 0);
 
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
@@ -1536,8 +1719,20 @@ int main(int argc, char *argv[])
 		}
 
 		//Display section
-		if(event||post_event)  //NB: We need to update two frame buffers per event
-			nElfs = drawMainScreen();
+		if(event||post_event){  //NB: We need to update two frame buffers per event
+			if (!(setting->GUI_skin[0]))
+				nElfs = drawMainScreen(); //Display pure text GUI on generic background
+			else if (!setting->Show_Menu) {
+				setLaunchKeys(); //Display only GUI jpg
+				clrScr(setting->color[0]);
+			}
+			else {
+				if (TV_mode == TV_mode_NTSC)
+					nElfs = drawMainScreen2ntsc(); //NTSC Display GUI jpg plus button texts
+				else
+					nElfs = drawMainScreen2pal(); //PAL
+			}
+		}
 		drawScr();
 		post_event = event;
 		event = 0;
@@ -1566,8 +1761,11 @@ int main(int argc, char *argv[])
 				else if(maxCNF > 1 && new_pad & PAD_RIGHT) RunELF_index = 14;
 				else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
 					user_acted = 1;
-					selected=0;
-					mode=DPAD;
+					if (!setting->Show_Menu && setting->GUI_skin[0]){} //GUI Menu: disabled when there's no text on menu screen
+					else{
+						selected=0;
+						mode=DPAD;
+					}
 				}
 				if(RunELF_index >= 0 && setting->LK_Path[RunELF_index][0]){
 					user_acted = 1;
@@ -1597,6 +1795,10 @@ int main(int argc, char *argv[])
 						decConfig();
 					}else if((maxCNF > 1 && selected==nElfs-3) || (selected==nElfs-1)){
 						mode=BUTTON;
+						if (setting->GUI_skin[0]) {
+							GUI_active = 0;
+							loadSkin(BACKGROUND_PIC, 0, 0);
+						}
 						config(mainMsg, CNF);
 					}else
 						RunSelectedElf();

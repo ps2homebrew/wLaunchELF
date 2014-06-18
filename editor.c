@@ -1266,6 +1266,11 @@ force:
 				Mark[MARK_IN]=0, Mark[MARK_OUT]=0, Mark[MARK_TMP]=0,
 				Mark[MARK_SIZE]=0, Mark[MARK_PRINT]=0, Mark[MARK_COLOR]=0;
 
+				if (stricmp(setting->GUI_skin, "\0") != 0) {
+					GUI_active = 1;
+					loadSkin(BACKGROUND_PIC, 0, 0);
+				}
+
 				return;
 unsave:
 				if(ynDialog(LNG(Exit_Without_Saving))!=1)
@@ -1640,4 +1645,6 @@ end:
 	
 	return;
 }
+//--------------------------------------------------------------
+//End of file: editor.c
 //--------------------------------------------------------------

@@ -1,7 +1,14 @@
 #include <tamtypes.h>
-#include <kernel.h>
-#include <fileio.h>
-#include <stdlib.h>
+#include <sifdma.h>
+#include "sifrpc.h"
+#include <loadcore.h>
+#include <thsemap.h>
+#include <intrman.h>
+#include <thbase.h>
+#include <sifcmd.h>
+#include <ioman.h>
+#include "ps2lib_ioman.h"
+#include <sysclib.h>
 #include <stdio.h>
 #include <sysmem.h>
 
@@ -556,7 +563,7 @@ static void *filedriver_functarray[16];
 int _start( int argc, char **argv)
 {
 	int	i;
-	struct t_thread param;
+	struct _iop_thread param;
 	int th;
 
 	// Initialise the directory cache
@@ -597,11 +604,11 @@ int _start( int argc, char **argv)
 	FILEIO_del( "cdfs");
 	FILEIO_add( &file_driver);
 
-	param.type         = TH_C;
-	param.function     = (void*)CDVD_Thread;
+	param.attr         = TH_C;
+	param.thread       = (void*)CDVD_Thread;
 	param.priority 	  = 40;
-	param.stackSize    = 0x8000;
-	param.unknown      = 0;
+	param.stacksize    = 0x8000;
+	param.option       = 0;
 
 	th = CreateThread(&param);
 
@@ -1371,7 +1378,7 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 
 					// wait for any previous DMA to complete
 					// before over-writing localTocEntry
-					while(SifDmaStat(dmaID)>=0);
+					while(sceSifDmaStat(dmaID)>=0);
 
 					TocEntryCopy(&localTocEntry, tocEntryPointer);
 
@@ -1398,7 +1405,7 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 					// Do the DMA transfer
 					CpuSuspendIntr(&intStatus);
 
-					dmaID = SifSetDma(&dmaStruct, 1);
+					dmaID = sceSifSetDma(&dmaStruct, 1);
 
 					CpuResumeIntr(intStatus);
 
@@ -1495,7 +1502,7 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 				{
 					// wait for any previous DMA to complete
 					// before over-writing localTocEntry
-					while(SifDmaStat(dmaID)>=0);
+					while(sceSifDmaStat(dmaID)>=0);
 
 					TocEntryCopy(&localTocEntry, tocEntryPointer);
 
@@ -1519,7 +1526,7 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 							// Do the DMA transfer
 							CpuSuspendIntr(&intStatus);
 
-							dmaID = SifSetDma(&dmaStruct, 1);
+							dmaID = sceSifSetDma(&dmaStruct, 1);
 
 							CpuResumeIntr(intStatus);
 
@@ -1549,7 +1556,7 @@ int CDVD_GetDir_RPC(const char* pathname, const char* extensions, enum CDVD_getM
 						// Do the DMA transfer
 						CpuSuspendIntr(&intStatus);
 
-						dmaID = SifSetDma(&dmaStruct, 1);
+						dmaID = sceSifSetDma(&dmaStruct, 1);
 
 						CpuResumeIntr(intStatus);
 
@@ -1631,7 +1638,7 @@ void* CDVDRpc_TrayReq(unsigned int* sbuff)
 {
 	int ret;
 
-	CdTrayReq(sbuff[0],&ret);
+	CdTrayReq(sbuff[0],(s32*)&ret);
 
 	sbuff[0] = ret;
 	return sbuff;
@@ -1853,7 +1860,7 @@ int TocEntryCompare(char* filename, const char* extensions)
 }
 
 // Used in findfile
-int tolower(int c);
+//int tolower(int c);
 int strcasecmp(const char *s1, const char *s2)
 {
 	while (*s1 != '\0' && tolower(*s1) == tolower(*s2))

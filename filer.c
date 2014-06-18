@@ -74,6 +74,7 @@ char cnfmode_extU[CNFMODE_CNT][4] = {
 	"ELF", // cnfmode TRUE
 	"IRX", // cnfmode USBD_IRX_CNF
 	"JPG", // cnfmode SKIN_CNF
+	"JPG", // cnfmode GUI_SKIN_CNF
 	"IRX", // cnfmode USBKBD_IRX_CNF
 	"KBD", // cnfmode KBDMAP_FILE_CNF
 	"CNF", // cnfmode CNF_PATH_CNF
@@ -90,6 +91,7 @@ char cnfmode_extL[CNFMODE_CNT][4] = {
 	"elf", // cnfmode TRUE
 	"irx", // cnfmode USBD_IRX_CNF
 	"jpg", // cnfmode SKIN_CNF
+	"jpg", // cnfmode GUI_SKIN_CNF
 	"irx", // cnfmode USBKBD_IRX_CNF
 	"kbd", // cnfmode KBDMAP_FILE_CNF
 	"cnf", // cnfmode CNF_PATH_CNF
@@ -575,11 +577,15 @@ void setPartyList(void)
 		if((dirEnt.stat.attr != ATTR_MAIN_PARTITION) 
 				|| (dirEnt.stat.mode != FS_TYPE_PFS))
 			continue;
+
+		//Patch this to see if new CB versions use valid PFS format
+		//NB: All CodeBreaker versions up to v9.3 use invalid formats
 		if(!strncmp(dirEnt.name, "PP.",3)){
 			int len = strlen(dirEnt.name);
 			if(!strcmp(dirEnt.name+len-4, ".PCB"))
 				continue;
 		}
+
 		if(!strncmp(dirEnt.name, "__", 2) &&
 			strcmp(dirEnt.name, "__boot") &&
 			strcmp(dirEnt.name, "__net") &&
@@ -2297,10 +2303,13 @@ non_PSU_RESTORE_init:
 				goto error;	// go deal with it
 			}
 		}
-		buffSize = genRead(in_fd, buff, buffSize);
-		if(buffSize > 0)
+		//buffSize = genRead(in_fd, buff, buffSize);
+		genRead(in_fd, buff, buffSize);
+		if(buffSize > 0){
 			outsize = genWrite(out_fd, buff, buffSize);
-		if((buffSize <= 0) || (buffSize!=outsize)){
+		}
+//		if((buffSize <= 0) || (buffSize!=outsize)){
+		if(buffSize <= 0){
 			genClose(out_fd); out_fd=-1;
 			if(PM_flag[recurses]!=PM_PSU_BACKUP)
 				genRemove(out);
@@ -3052,6 +3061,8 @@ int BrowserModePopup(void)
 // example: getFilePath(setting->usbd_file, USBD_IRX_CNF);
 // polo: ADD SKIN_CNF mode for found jpg file for SKIN
 // example: getFilePath(setting->skin, SKIN_CNF);
+// suloku: ADD GUI_SKIN_CNF mode for found jpg file for MAIN_SKIN
+// example: getFilePath(setting->GUI_skin, GUI_SKIN_CNF);
 // dlanor: ADD USBKBD_IRX_CNF mode for found IRX file for USBKBD.IRX
 // example: getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
 // dlanor: ADD USBMASS_IRX_CNF mode for found IRX file for usb_mass
@@ -3340,6 +3351,10 @@ void getFilePath(char *out, int cnfmode)
 					}
 				} else if(new_pad & PAD_SELECT){  //Leaving the browser ?
 					unmountAll();
+					if (stricmp(setting->GUI_skin, "\0") != 0) {
+						GUI_active = 1;
+						loadSkin(BACKGROUND_PIC, 0, 0);
+					}
 					return;
 				}
 			}
@@ -3484,7 +3499,7 @@ void getFilePath(char *out, int cnfmode)
 						strcat(tmp, " ----.--.-- --:--:--");
 					else {
 						sprintf(tmp+strlen(tmp), " %04d.%02d.%02d %02d:%02d:%02d", 
-							timestamp.year,
+							((timestamp.year < 2256) ?timestamp.year :(timestamp.year-256)),
 							timestamp.month,
 							timestamp.day,
 							timestamp.hour,

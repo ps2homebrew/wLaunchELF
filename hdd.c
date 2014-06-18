@@ -755,6 +755,10 @@ void hddManager(void)
 			else if((new_pad & PAD_SELECT) || (new_pad & PAD_TRIANGLE)){
 				unmountParty(0);
 				unmountParty(1);
+				if (stricmp(setting->GUI_skin, "\0") != 0) {
+					GUI_active = 1;
+					loadSkin(BACKGROUND_PIC, 0, 0);
+				}
 				return;
 			}else if(new_pad & PAD_SQUARE){
 				if(PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW){

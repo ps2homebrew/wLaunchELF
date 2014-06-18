@@ -10,7 +10,7 @@ EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
 	-L$(PS2SDK)/sbv/lib -L$(PS2DEV)/libcdvd/lib -s
-EE_LIBS = -lpad -lgsKit -ldmaKit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
+EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lfileXio -lpatches -lpoweroff  -ldebug -lc
 
 all:	$(EE_BIN)
 
@@ -26,8 +26,7 @@ usbhdfsd.s:
 	bin2s $(PS2DEV)/usbhdfsd/bin/usbhdfsd.irx usbhdfsd.s usb_mass_irx
 
 cdvd.s:
-#	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
-	bin2s modules/cdvd.irx cdvd.s cdvd_irx
+	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
 
 poweroff.s:
 	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
@@ -51,7 +50,7 @@ smsutils.s:
 	bin2s $(PS2DEV)/SMS/drv/SMSUTILS/SMSUTILS.irx smsutils.s smsutils_irx
 
 ps2ftpd.s:
-	bin2s modules/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
+	bin2s $(PS2DEV)/ps2ftpd/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
 
 ps2atad.s:
 	bin2s $(PS2SDK)/iop/irx/ps2atad.irx ps2atad.s ps2atad_irx

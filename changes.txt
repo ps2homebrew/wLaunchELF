@@ -1,5 +1,39 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.13 (2008.05.30)
+-Fixed Linux issues with the makefile do to case sensitivity.
+-Changed draw.c and updated gskit source files to fix issues with the newer gsKit.
+-Added script setup.sh to the "Changed source for external projects" directory for setting up outside projects.
+-Moved libjpg\include\libjpg.h into libjpg parent directory to match up with myPS2's SVN sources location.
+-Reverted to an older working version of ps2sdk(revision 1420).
+-Reverted back to the older SMS network modules(revision 588) resolving a severe bug, which was first introduced in the 4.12 betas.
+-Rearranged ps2ftpd sources and LaunchELF's makefile, removing the IRX module from the source package.
+-Updated libcdvd source files so it can be correctly built without the old ps2lib library.
+-Modified uLE source package further so that precompiled binaries are neither required nor included.
+-Fixed bug in reloadConfig(), skin wasn't loaded if using various CNF files and one had GUI_SKIN enabled.
+-Added option to disable text in menu screen under skin settings when GUI_SKIN is enabled.
+-Commented out fixed PS2DEV environment variable in the gsKit Makefile.pref file.
+-Added code from betas minus vmc: related things with changes noted further below.
+outside source file additions and changes:
+ gsKit\Makefile.global
+ gsKit\Makefile.pref
+ gsKit\ee\gs\src\gsPrimitive.c
+ gsKit\ee\gs\src\gsTexture.c
+ libjpg\libjpg.h
+ ps2sdk\iop\system\iomanx\src\ioman_sbv.c
+ libcdvd\makefile
+ libcdvd\ee\makefile
+ libcdvd\iop\cdvd_iop.c
+ libcdvd\iop\makefile
+ libcdvd\iop\ps2lib_ioman.h
+
+LaunchELF v4.12 Betas (2007.05.10) through (2007.06.17)
+-Added support for GUI-like skin JPG for alternative use in main launch menu. This is largely based on a design contributed by 'suloku' in the ps2-scene forums. Note that when such a skin is in use the skin JPGs will be reloaded at each entry to and exit from the main menu, so they must then be on continuously available media. Note also that the brightness setting is shared between the two skins, as are all the text colour settings, so the GUI skin needs to have average brightness and colour tone similar to the main skin.
+-Corrected interlace setting in distributed LAUNCHELF.CNF to reflect the current default, which is to have interlace active (as opposed to original default).
+-Adjusted timestamp display for compatibility to methods in Windows XP, for use with host: browsing (affects only timestamps with raw year value larger than 2256)
+-Fixed a bug in browser changes preventing user from manually canceling transfers
+-LNG authors should note that this version has additional vocabulary in lang.h, to cope with some new features. (5 new entries were added, for a total of 319). But we do not request any new LNG contributions until the next stable release, since we may make additional changes before that. So save your efforts for that stable release.
+
 LaunchELF v4.12 (2007.02.16)
 -Fixed an issue with the makefile that messed up the network functionality in LaunchELF after exiting from another PS2 application.
 -Updated to latest SMS TCPIP driver.

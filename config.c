@@ -19,6 +19,7 @@ enum
 	DEF_DISCCONTROL = FALSE,
 	DEF_INTERLACE = TRUE,
 	DEF_MENU_FRAME = TRUE,
+	DEF_MENU = TRUE,
 	DEF_RESETIOP = TRUE,
 	DEF_NUMCNF = 1,
 	DEF_SWAPKEYS = FALSE,
@@ -134,6 +135,7 @@ int CheckMC(void)
 // Save LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD save USBD_FILE string
 // polo: ADD save SKIN_FILE string
+// suloku: ADD save MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 //---------------------------------------------------------------------------
 void saveConfig(char *mainMsg, char *CNF)
 {
@@ -216,8 +218,10 @@ void saveConfig(char *mainMsg, char *CNF)
 		"USBD_FILE = %s\r\n"
 		"NET_HOSTwrite = %d\r\n"
 		"SKIN_FILE = %s\r\n"
+		"GUI_SKIN_FILE = %s\r\n"
 		"Menu_Title = %s\r\n"
 		"Menu_Frame = %d\r\n"
+		"Show_Menu = %d\r\n"
 		"SKIN_Brightness = %d\r\n"
 		"TV_mode = %d\r\n"
 		"Popup_Opaque = %d\r\n"
@@ -258,8 +262,10 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->usbd_file,  //USBD_FILE
 		setting->HOSTwrite,  //NET_HOST_write
 		setting->skin,       //SKIN_FILE
+		setting->GUI_skin,   //GUI_SKIN_FILE
 		setting->Menu_Title, //Menu_Title
 		setting->Menu_Frame, //Menu_Frame
+		setting->Show_Menu, //GUI_Menu
 		setting->Brightness, //SKIN_Brightness
 		setting->TV_mode,    //TV_mode
 		setting->Popup_Opaque, //Popup_Opaque
@@ -413,6 +419,7 @@ void initConfig(void)
 	setting->usbkbd_file[0] = '\0';
 	setting->kbdmap_file[0] = '\0';
 	setting->skin[0] = '\0';
+	setting->GUI_skin[0] = '\0';
 	setting->Menu_Title[0] = '\0';
 	setting->CNF_Path[0] = '\0';
 	setting->lang_file[0] = '\0';
@@ -432,6 +439,7 @@ void initConfig(void)
 	setting->discControl = DEF_DISCCONTROL;
 	setting->interlace = DEF_INTERLACE;
 	setting->Menu_Frame = DEF_MENU_FRAME;
+	setting->Show_Menu = DEF_MENU;
 	setting->resetIOP = DEF_RESETIOP;
 	setting->numCNF = DEF_NUMCNF;
 	setting->swapKeys = DEF_SWAPKEYS;
@@ -456,6 +464,7 @@ void initConfig(void)
 // Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD load USBD_FILE string
 // polo: ADD load SKIN_FILE string
+// suloku: ADD load MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 // dlanor: added error flag return value 0==OK, -1==failure
 //---------------------------------------------------------------------------
 int loadConfig(char *mainMsg, char *CNF)
@@ -611,11 +620,13 @@ failed_load:
 		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd_file,value);
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
 		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
+		else if(!strcmp(name,"GUI_SKIN_FILE")) strcpy(setting->GUI_skin,value);
 		else if(!strcmp(name,"Menu_Title")){
 			strncpy(setting->Menu_Title, value, MAX_MENU_TITLE);
 			setting->Menu_Title[MAX_MENU_TITLE] = '\0';
 		}
 		else if(!strcmp(name,"Menu_Frame")) setting->Menu_Frame = atoi(value);
+		else if(!strcmp(name,"Show_Menu")) setting->Show_Menu = atoi(value);
 		else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
 		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
 		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
@@ -674,19 +685,23 @@ failed_load:
 //endfunc loadConfig
 //---------------------------------------------------------------------------
 // Polo: ADD Skin Menu with Skin preview
+// suloku: ADD Main skin selection
 //---------------------------------------------------------------------------
 void Config_Skin(void)
 {
-	int  s, max_s=4;
+	int  s, max_s=7;
 	int  x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
-	char skinSave[MAX_PATH];
+	char skinSave[MAX_PATH], GUI_Save[MAX_PATH];
 	int  Brightness = setting->Brightness;
+	int current_preview = 0;
 
 	strcpy(skinSave, setting->skin);
+	strcpy(GUI_Save, setting->GUI_skin);
 
 	loadSkin(PREVIEW_PIC, 0, 0);
+	current_preview = PREVIEW_PIC;
 
 	s=1;
 	event = 1;  //event = initial entry
@@ -723,38 +738,61 @@ void Config_Skin(void)
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				event |= 2;  //event |= valid pad command
-				if(s==1) {
+				if(s==1) {                      //Command == Cancel Skin Path
 					setting->skin[0] = '\0';
 					loadSkin(PREVIEW_PIC, 0, 0);
-				} else if(s==3) {
+					current_preview = PREVIEW_PIC;
+				} else if(s==3) {               //Command == Decrease Brightness
 					if((Brightness > 0)&&(testsetskin == 1)) {
 						Brightness--;
 					}
+				} else if(s==4) {               //Command == Cancel GUI Skin Path
+					setting->GUI_skin[0] = '\0';
+					loadSkin(PREVIEW_GUI, 0, 0);
+					current_preview = PREVIEW_GUI;
 				}
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
 				event |= 2;  //event |= valid pad command
-				if(s==1) {
+				if(s==1) {                      //Command == Set Skin Path
 					getFilePath(setting->skin, SKIN_CNF);
 					loadSkin(PREVIEW_PIC, 0, 0);
-				} else if(s==2) {
+					current_preview = PREVIEW_PIC;
+				} else if(s==2) {               //Command == Apply New Skin
+					GUI_active = 0;
 					loadSkin(BACKGROUND_PIC, 0, 0);
 					setting->Brightness = Brightness;
-					return;
-				} else if(s==3) {
+					strcpy(skinSave, setting->skin);
+					loadSkin(PREVIEW_PIC, 0, 0);
+					current_preview = PREVIEW_PIC;
+			} else if(s==3) {               //Command == Increase Brightness
 					if((Brightness < 100)&&(testsetskin == 1)) {
 						Brightness++;
 					}
-				} else if(s==4) {
+				} else if(s==4) {               //Command == Set GUI Skin Path
+					getFilePath(setting->GUI_skin, GUI_SKIN_CNF);
+					loadSkin(PREVIEW_GUI, 0, 0);
+					current_preview = PREVIEW_GUI;
+				} else if(s==5) {               //Command == Apply GUI Skin
+					strcpy(GUI_Save, setting->GUI_skin);
+					loadSkin(PREVIEW_GUI, 0, 0);
+					current_preview = PREVIEW_GUI;
+				} else if(s==6) {               //Command == Show GUI Menu
+					setting->Show_Menu = !setting->Show_Menu;
+				} else if(s==7) {               //Command == RETURN
 					setting->skin[0] = '\0';
 					strcpy(setting->skin, skinSave);
+					setting->GUI_skin[0] = '\0';
+					strcpy(setting->GUI_skin, GUI_Save);
 					return;
 				}
 			}
 			else if(new_pad & PAD_TRIANGLE) {
 				setting->skin[0] = '\0';
 				strcpy(setting->skin, skinSave);
+				setting->GUI_skin[0] = '\0';
+				strcpy(setting->GUI_skin, GUI_Save);
 				return;
 			}
 		} //end if(readpad())
@@ -767,17 +805,17 @@ void Config_Skin(void)
 			if ( testsetskin == 1 ) {
 				setBrightness(Brightness);
 				gsKit_prim_sprite_texture(gsGlobal, &TexPreview,
-				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+30, 0, 0,
-				 ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+30, SCREEN_WIDTH, SCREEN_HEIGHT,
+				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+60, 0, 0,
+				 ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+60, SCREEN_WIDTH, SCREEN_HEIGHT,
 				 0, BrightColor);
 				setBrightness(50);
 			} else {
 				gsKit_prim_sprite(gsGlobal,
-				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+30, ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+30,
+				 SCREEN_WIDTH/4, ( SCREEN_HEIGHT/4 )+60, ( SCREEN_WIDTH/4 )*3, ( ( SCREEN_HEIGHT/4 )*3 )+60,
 				 0, setting->color[0]);
 			}
-			drawFrame( ( SCREEN_WIDTH/4 )-2, ( ( SCREEN_HEIGHT/4 )+30 )-1,
-			 ( ( SCREEN_WIDTH/4 )*3 )+1, ( ( SCREEN_HEIGHT/4 )*3 )+30,
+			drawFrame( ( SCREEN_WIDTH/4 )-2, ( ( SCREEN_HEIGHT/4 )+60 )-1,
+			 ( ( SCREEN_WIDTH/4 )*3 )+1, ( ( SCREEN_HEIGHT/4 )*3 )+60,
 			  setting->color[1]);
 
 			x = Menu_start_x;
@@ -785,7 +823,6 @@ void Config_Skin(void)
 		
 			printXY(LNG(SKIN_SETTINGS), x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
-			y += FONT_HEIGHT/2;
 
 			if(strlen(setting->skin)==0)
 				sprintf(c, "  %s: %s", LNG(Skin_Path), LNG(NULL));
@@ -793,32 +830,50 @@ void Config_Skin(void)
 				sprintf(c, "  %s: %s", LNG(Skin_Path), setting->skin);
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
-			y += FONT_HEIGHT/2;
 
 			sprintf(c, "  %s", LNG(Apply_New_Skin));
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
-			y += FONT_HEIGHT/2;
 
 			sprintf(c, "  %s: %d", LNG(Brightness), Brightness);
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
-			y += FONT_HEIGHT / 2;
+
+			if(strlen(setting->GUI_skin)==0)
+				sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), LNG(NULL));
+			else
+				sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), setting->GUI_skin);
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+
+			sprintf(c, "  %s", LNG(Apply_GUI_Skin));
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
+
+			if(setting->Show_Menu)
+				sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(ON));
+			else
+				sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(OFF));
+			printXY(c, x, y, setting->color[3], TRUE, 0);
+			y += FONT_HEIGHT;
 
 			sprintf(c, "  %s", LNG(RETURN));
 			printXY(c, x, y, setting->color[3], TRUE, 0);
 			y += FONT_HEIGHT;
 
-			//Cursor positioning section
-			y = Menu_start_y + s*FONT_HEIGHT + FONT_HEIGHT/2;
+			if(current_preview == PREVIEW_PIC)
+				sprintf(c, "%s ", LNG(Normal));
+			else
+				sprintf(c, "%s ", LNG(GUI));
+			strcat(c, LNG(Skin_Preview));
+			printXY(c, SCREEN_WIDTH/4, (SCREEN_HEIGHT/4)+78-FONT_HEIGHT, setting->color[3], TRUE, 0);
 
-			if(s>=2) y+=FONT_HEIGHT/2;
-			if(s>=3) y+=FONT_HEIGHT/2;
-			if(s>=4) y+=FONT_HEIGHT/2;
+			//Cursor positioning section
+			y = Menu_start_y + s*(FONT_HEIGHT);
 			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section
-			if (s == 1) {
+			if ((s == 1)||(s == 4)) {
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Edit), LNG(Clear));
 				else
@@ -828,6 +883,11 @@ void Config_Skin(void)
 					sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
 				else
 					sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
+			} else if (s == 6) {
+				if (swapKeys)
+					sprintf(c, "ÿ1:%s", LNG(Change));
+				else
+					sprintf(c, "ÿ0:%s", LNG(Change));
 			} else {
 				if (swapKeys)
 					sprintf(c, "ÿ1:%s", LNG(OK));
@@ -973,6 +1033,7 @@ void Config_Screen(void)
 					return;
 				} else if(s==max_s) { //Always put 'DEFAULT SCREEN SETTINGS' last
 					setting->skin[0] = '\0';
+					setting->GUI_skin[0] = '\0';
 					loadSkin(BACKGROUND_PIC, 0, 0);
 					setting->color[0] = DEF_COLOR1;
 					setting->color[1] = DEF_COLOR2;
@@ -987,6 +1048,7 @@ void Config_Screen(void)
 					setting->screen_y = SCREEN_Y;
 					setting->interlace = DEF_INTERLACE;
 					setting->Menu_Frame = DEF_MENU_FRAME;
+					setting->Show_Menu = DEF_MENU;
 					setting->Brightness = DEF_BRIGHT;
 					setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 					updateScreenMode(0);
@@ -1750,7 +1812,6 @@ void Config_Network(void)
 void config(char *mainMsg, char *CNF)
 {
 	char c[MAX_PATH];
-	char skinSave[MAX_PATH];
 	char title_tmp[MAX_ELF_TITLE];
 	char *localMsg;
 	int i;
@@ -1758,7 +1819,6 @@ void config(char *mainMsg, char *CNF)
 	int x, y;
 	int event, post_event=0;
 	
-	strcpy(skinSave, setting->skin);
 	tmpsetting = setting;
 	setting = (SETTING*)malloc(sizeof(SETTING));
 	*setting = *tmpsetting;
@@ -1845,6 +1905,10 @@ void config(char *mainMsg, char *CNF)
 				{
 					free(tmpsetting);
 					saveConfig(mainMsg, CNF);
+					if (stricmp(setting->GUI_skin, "\0") != 0) {
+						GUI_active = 1;
+						loadSkin(BACKGROUND_PIC, 0, 0);
+					}
 					break;
 				}
 				else if(s==CANCEL)
@@ -1855,7 +1919,7 @@ cancel_exit:
 				free(setting);
 				setting = tmpsetting;
 				updateScreenMode(0);
-				strcpy(setting->skin, skinSave);
+				if (stricmp(setting->GUI_skin, "\0") != 0) {GUI_active = 1;}
 				loadSkin(BACKGROUND_PIC, 0, 0);
 				Load_External_Language();
 				loadFont(setting->font_file);

@@ -178,6 +178,79 @@ int ioman_format(const char *dev)
 {
     return(format(dev, NULL, NULL, 0));
 }
+
+iop_file_t *get_file(int fd);
+
+int mode2modex(int mode);
+int modex2mode(int mode);
+
+static void statx2stat(iox_stat_t *iox_stat, io_stat_t* stat)
+{
+    stat->mode = modex2mode(iox_stat->mode);
+    stat->attr = iox_stat->attr;
+    stat->size = iox_stat->size;
+    memcpy(stat->ctime, iox_stat->ctime, sizeof(iox_stat->ctime));
+    memcpy(stat->atime, iox_stat->atime, sizeof(iox_stat->atime));
+    memcpy(stat->mtime, iox_stat->mtime, sizeof(iox_stat->mtime));
+    stat->hisize = iox_stat->hisize;
+}
+
+static void stat2statx(io_stat_t* stat, iox_stat_t *iox_stat)
+{
+    iox_stat->mode = mode2modex(stat->mode);
+    iox_stat->attr = stat->attr;
+    iox_stat->size = stat->size;
+    memcpy(iox_stat->ctime, stat->ctime, sizeof(stat->ctime));
+    memcpy(iox_stat->atime, stat->atime, sizeof(stat->atime));
+    memcpy(iox_stat->mtime, stat->mtime, sizeof(stat->mtime));
+    iox_stat->hisize = stat->hisize;
+}
+
+int ioman_dread(int fd, io_dirent_t *io_dirent)
+{
+    iop_file_t *f = get_file(fd);
+    int res;
+
+    if (f == NULL ||  !(f->mode & 8))
+            return -EBADF;
+
+    /* If this is a new device (such as pfs:) then we need to convert the mode
+       variable of the stat structure to ioman's format.  */
+    if ((f->device->type & 0xf0000000) == IOP_DT_FSEXT)
+    {
+        iox_dirent_t iox_dirent;
+        res = f->device->ops->dread(f, &iox_dirent);
+
+        statx2stat(&iox_dirent.stat, &io_dirent->stat);
+
+        strncpy(io_dirent->name, iox_dirent.name, sizeof(iox_dirent.name));
+    }
+    else
+    {
+        typedef int	io_dread_t(iop_file_t *, io_dirent_t *);
+        io_dread_t *io_dread = (io_dread_t*) f->device->ops->dread;
+        res = io_dread(f, io_dirent);
+    }
+
+    return res;
+}
+
+int ioman_getstat(const char *name, io_stat_t *stat)
+{
+    iox_stat_t iox_stat;
+    int res = getstat(name, &iox_stat);
+    if (res == 0)
+        statx2stat(&iox_stat, stat);
+    return res;
+}
+
+int ioman_chstat(const char *name, io_stat_t *stat, unsigned int mask)
+{
+    iox_stat_t iox_stat;
+    stat2statx(stat, &iox_stat);
+    return chstat(name, &iox_stat, mask);
+}
+
 #endif
 
 int hook_ioman(void)
@@ -231,9 +304,9 @@ int hook_ioman(void)
 		ioman_exports[12] = (u32) rmdir;
 		ioman_exports[13] = (u32) dopen;
 		ioman_exports[14] = (u32) close;
-		ioman_exports[15] = (u32) dread;
-		ioman_exports[16] = (u32) getstat;
-		ioman_exports[17] = (u32) chstat;
+		ioman_exports[15] = (u32) ioman_dread;
+		ioman_exports[16] = (u32) ioman_getstat;
+		ioman_exports[17] = (u32) ioman_chstat;
 		ioman_exports[18] = (u32) ioman_format;
 		ioman_exports[20] = (u32) AddDrv;
 		ioman_exports[21] = (u32) DelDrv;

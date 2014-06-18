@@ -46,6 +46,7 @@ enum {  // cnfmode values for getFilePath in browsing for configurable file path
 	LK_ELF_CNF,      // Normal ELF choice for launch keys
 	USBD_IRX_CNF,    // USBD.IRX choice for startup
 	SKIN_CNF,        // Skin JPG choice
+	GUI_SKIN_CNF,    // GUI Skin JPG choice
 	USBKBD_IRX_CNF,  // USB keyboard IRX choice (only PS2SDK)
   KBDMAP_FILE_CNF, // USB keyboard mapping table choice
   CNF_PATH_CNF,    // CNF Path override choice
@@ -101,10 +102,12 @@ typedef struct
 	char usbmass_file[MAX_PATH];
 	char kbdmap_file[MAX_PATH];
 	char skin[MAX_PATH];
+	char GUI_skin[MAX_PATH];
 	char Menu_Title[MAX_MENU_TITLE+1];
 	char lang_file[MAX_PATH];
 	char font_file[MAX_PATH];
 	int  Menu_Frame;
+	int Show_Menu;
 	int timeout;
 	int Hide_Paths;
 	u64 color[8];
@@ -143,6 +146,7 @@ extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
 /* main.c */
 extern int TV_mode;
 extern int swapKeys;
+extern int GUI_active;// Skin and Main Skin switch
 
 void	load_ps2host(void);
 void loadCdModules(void);
@@ -159,6 +163,7 @@ void RunLoaderElf(char *filename, char *);
 #define PREVIEW_PIC			1
 #define JPG_PIC					2
 #define THUMB_PIC				3
+#define PREVIEW_GUI			4
 
 #define FOLDER          0
 #define WARNING         1

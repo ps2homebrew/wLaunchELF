@@ -1,6 +1,6 @@
-//--------------------------------------------------------------
-//File name:    lang.h
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------
+//File name:    lang.h                  Revision Date: 2007.05.10
+//---------------------------------------------------------------------------
 //This file is used both for compiling the uLaunchELF program,
 //with default language definitions, and when loading alternate
 //language definitions at runtime. For the latter case it is the
@@ -349,5 +349,13 @@ lang(312, IconText, "IconText")
 //--------------------------------------------------------------
 lang(313, KB_RETURN, "RETURN")
 //--------------------------------------------------------------
+// New GUI Skin option added
+lang(314, GUI, "GUI")
+lang(315, Apply_GUI_Skin, "Apply GUI Skin")
+lang(316, Skin_Preview, "Skin Preview")
+lang(317, Halt, "Halt") // Alternative Halted text, added for main screen skinning purposes, only appears when main screen skin is active
+lang(318, Delay, "Delay")// Same reason as above
+lang(319, Show_Menu, "Show Menu")
+//---------------------------------------------------------------------------
 //End of file:  lang.h
-//--------------------------------------------------------------
+//---------------------------------------------------------------------------

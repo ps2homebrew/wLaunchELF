@@ -434,7 +434,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
-	printXY(" ÿ4 LaunchELF v4.12 ÿ4",
+	printXY(" ÿ4 LaunchELF v4.13 ÿ4",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y, setting->color[1], TRUE, 0);
 	
 	strncpy(LastMessage, msg0, MAX_TEXT_LINE);
@@ -538,7 +538,7 @@ void setupGS(int gs_vmode)
 	Old_Interlace = setting->interlace;
 
 	// DMAC Init
-	dmaKit_init(D_CTRL_RELE_OFF,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC, D_CTRL_STD_OFF, D_CTRL_RCYC_8);
+	dmaKit_init(D_CTRL_RELE_OFF,D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC, D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
 	dmaKit_chan_init(DMA_CHANNEL_GIF);
 	dmaKit_chan_init(DMA_CHANNEL_FROMSPR);
 	dmaKit_chan_init(DMA_CHANNEL_TOSPR);
@@ -656,7 +656,12 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 
 	strcpy(tmpPath, "\0");
 	if( Picture == BACKGROUND_PIC ){
+		if (GUI_active == 1){
+		strcpy(tmpPath, setting->GUI_skin);
+		}
+		else{
 		strcpy(tmpPath, setting->skin);
+		}
 		testskin = 0;
 	}else if( Picture == PREVIEW_PIC ){
 		strcpy(tmpPath, setting->skin);
@@ -667,6 +672,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 	}else if( Picture == THUMB_PIC ){
 		strcpy(tmpPath, Path);
 		testthumb = 0;
+	}else if( Picture == PREVIEW_GUI ){
+		strcpy(tmpPath, setting->GUI_skin);
+		testsetskin = 0;
 	}
 
 	genFixPath(tmpPath, skinpath);
@@ -699,7 +707,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 							free(TexSkin.Mem);
 							testskin = 1;
 						} /* end if */
-				 	} else if( Picture == PREVIEW_PIC ){
+				 	} else if((Picture==PREVIEW_PIC)||(Picture==PREVIEW_GUI)){
 				 		if( ( ScaleBitmap ( ImgData, Jpg->width, Jpg->height, (void*)&TexPreview.Mem, SCREEN_WIDTH, SCREEN_HEIGHT ) ) != 0 ){
 				 			TexPreview.PSM = GS_PSM_CT24;
 							TexPreview.VramClut = 0;
