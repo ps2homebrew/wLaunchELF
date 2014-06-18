@@ -387,7 +387,7 @@ void fat_getPartitionTable ( fat_part* part ) {
        part -> record[ i ].sid == 4    ||
        part -> record[ i ].sid == 1    ||  // fat 16, fat 12
        part -> record[ i ].sid == 0x0B ||
-       part -> record[ i ].sid == 0x0C     // fat 32 
+       part -> record[ i ].sid == 0x0C ||  // fat 32 
        part -> record[ i ].sid == 0x0E     // fat 16 LBA //dlanor: from SVN 20060801
   ) workPartition = i;
 
@@ -1102,10 +1102,10 @@ int fat_getFirstDirentry(char * dirName, fat_dir* fatDir) {
 	if (ret < 0) {
 		return ret;
 	}
-   if ((dirName == NULL) || (dirName[0] == 0) ||
+	if ((dirName == NULL) || (dirName[0] == 0) ||
       (dirName[0] == '.') ||
       ((dirName[0] == '/' || dirName[0]=='\\') && ((dirName[1] == 0) || (dirName[1] == '.')))) // the root directory
-		dirName[0] == 0 || dirName == NULL) {
+	{
 			direntryCluster = 0;
 	} else {
 		ret = fat_getFileStartCluster(&partBpb, dirName, &startCluster, fatDir);

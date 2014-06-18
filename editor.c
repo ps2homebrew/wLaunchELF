@@ -361,10 +361,10 @@ abort:
 				Editor_PushRows--;
 		}else if(KeyBoard_Cur == 2*WFONTS+1){ // Virtual KeyBoard PAGE UP.
 			if(Editor_Cur>0)
-				Editor_PushRows += 2*(Rows_Num-1);
+				Editor_PushRows += 1*(Rows_Num-1);
 		}else if(KeyBoard_Cur == 3*WFONTS+1){ // Virtual KeyBoard PAGE DOWN.
 			if(Editor_Cur<Editor_nChar && TextBuffer[Active_Window][Editor_Cur]!='\0')
-				Editor_PushRows -= 2*(Rows_Num-1);
+				Editor_PushRows -= 1*(Rows_Num-1);
 		}else if(KeyBoard_Cur == 4*WFONTS+1){ // Virtual KeyBoard END.
 			Editor_End=1;
 		}else if(KeyBoard_Cur == WFONTS-1){ // Virtual KeyBoard INSERT.
@@ -503,10 +503,10 @@ int KeyBoard_Entry(void)
 				Editor_End=1;
 			else if(KeyPress == 0x25){ // Key PgUp.
 				if(Editor_Cur>0)
-					Editor_PushRows += 2*(Rows_Num-1);
+					Editor_PushRows += 1*(Rows_Num-1);
 			}else if(KeyPress == 0x28){ // Key PgDn.
 				if(Editor_Cur<Editor_nChar && TextBuffer[Active_Window][Editor_Cur]!='\0')
-					Editor_PushRows -= 2*(Rows_Num-1);
+					Editor_PushRows -= 1*(Rows_Num-1);
 			}else if(KeyPress == 0x23) // Key Insert.
 				Editor_Insert = !Editor_Insert;
 			else if(KeyPress == 0x26){ // Key Delete.
@@ -1233,10 +1233,10 @@ void TextEditor(void)
 						Editor_Cur++;
 				}else if(new_pad & PAD_L2){ // Text move page up.
 					if(Editor_Cur>0)
-						Editor_PushRows += 2*(Rows_Num-1);
+						Editor_PushRows += 1*(Rows_Num-1);
 				}else if(new_pad & PAD_R2){ // Text move page down.
 					if(Editor_Cur<Editor_nChar && TextBuffer[Active_Window][Editor_Cur]!='\0')
-						Editor_PushRows -= 2*(Rows_Num-1);
+						Editor_PushRows -= 1*(Rows_Num-1);
 				}else if(new_pad & PAD_SELECT && Window[Active_Window][OPENED]){ // Virtual KeyBoard Active Rows_Num -= 7.
 						KeyBoard_Cur=2;
 						Rows_Num -= 6;

@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.01 (2006.09.01)
+-Fixed bug that caused the 'Back' tooltip to be duplicated in FileBrowser menu
+-Fixed bug in editor that caused it to scroll past every second 'page' without stopping
+-Made some minor source alterations suggested by EP, to reduce compiler warnings
+-Upgraded usb_mass to latest version from ps2dev.org SVN (plus our usual changes). This version fixes a bug in the last version, dealing with start/stop of USB storage devices, so anyone who had trouble with the last version should try this one. (If you installed an external driver to fix that, try configuring to use the default again instead.)
+
 LaunchELF v4.00 (2006.08.30)
 -Tweaked init order to eliminate problems with JPG skins on HDD
 

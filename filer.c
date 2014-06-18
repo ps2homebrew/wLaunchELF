@@ -1111,7 +1111,7 @@ finish:
 int menu(const char *path, const char *file)
 {
 	u64 color;
-	char enable[NUM_MENU], tmp[64], tmp1[64];
+	char enable[NUM_MENU], tmp[80];
 	int x, y, i, sel, test;
 	int event, post_event=0;
 	
@@ -1276,10 +1276,8 @@ int menu(const char *path, const char *file)
 			else
 				sprintf(tmp, "ÿ0:%s ÿ1:%s", LNG(OK), LNG(Cancel));
 			if(sel==PASTE)
-				sprintf(tmp1, " ÿ2:%s", LNG(PasteRename));
-			strcat(tmp, tmp1);
-			sprintf(tmp1, " ÿ3:%s", LNG(Back));
-			strcat(tmp, tmp1);
+				sprintf(tmp+strlen(tmp), " ÿ2:%s", LNG(PasteRename));
+			sprintf(tmp+strlen(tmp), " ÿ3:%s", LNG(Back));
 			printXY(tmp, x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();

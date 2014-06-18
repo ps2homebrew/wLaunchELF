@@ -22,7 +22,8 @@ typedef struct ps2_partition_run_type
  u_long size_in_mb;
 } ps2_partition_run_t;
 
-static int apa_check(const apa_partition_table_t *table);
+//Remove this line, and uncomment the next line, to reactivate 'apa_check'
+//static int apa_check(const apa_partition_table_t *table);
 
 //--------------------------------------------------------------
 u_long apa_partition_checksum(const ps2_partition_header_t *part)
@@ -88,6 +89,7 @@ static int apa_part_add (apa_partition_table_t *table, const ps2_partition_heade
 //------------------------------
 //endfunc apa_part_add
 //--------------------------------------------------------------
+/* //Remove this line and a similar one below to reactivate 'apa_setup_statistics'
 static int apa_setup_statistics(apa_partition_table_t *table)
 {
  u_long i;
@@ -100,7 +102,7 @@ static int apa_setup_statistics(apa_partition_table_t *table)
   for(i=0; i<table->total_chunks; ++i)
    map [i] = MAP_AVAIL;
 
-  /* build occupided/available space map */
+  // build occupided/available space map
   table->allocated_chunks = 0;
   table->free_chunks = table->total_chunks;
   for(i=0; i<table->part_count; ++i)
@@ -109,13 +111,13 @@ static int apa_setup_statistics(apa_partition_table_t *table)
    u_long part_no = get_u32(&part->start) / ((128 _MB) / 512);
    u_long num_parts = get_u32(&part->length) / ((128 _MB) / 512);
 
-   /* "alloc" num_parts starting at part_no */
+   // "alloc" num_parts starting at part_no
    while (num_parts)
    {
     if(map[part_no] == MAP_AVAIL)
      map[part_no] = get_u32(&part->main) == 0 ? MAP_MAIN : MAP_SUB;
     else
-     map[part_no] = MAP_COLL; /* collision */
+     map[part_no] = MAP_COLL; // collision
     ++part_no;
     --num_parts;
     ++table->allocated_chunks;
@@ -131,6 +133,7 @@ static int apa_setup_statistics(apa_partition_table_t *table)
  }
  else return -2;
 }
+*/ //Remove this line and a similar one below to reactivate 'apa_setup_statistics'
 //------------------------------
 //endfunc apa_setup_statistics
 //--------------------------------------------------------------
@@ -180,6 +183,7 @@ int apa_ptable_read_ex ( hio_t *hio, apa_partition_table_t **table)
 
 			if (result == 0){
 				(*table)->device_size_in_mb = size_in_kb / 1024;
+				//NB: uncommenting the next lines requires changes elsewhere too
 				//result = apa_setup_statistics (*table);
 				//if (result == 0)
 					//result = apa_check (*table);
@@ -197,6 +201,7 @@ int apa_ptable_read_ex ( hio_t *hio, apa_partition_table_t **table)
 //------------------------------
 //endfunc apa_ptable_read_ex
 //--------------------------------------------------------------
+/* //Remove this line and a similar one below to reactivate 'apa_check'
 static int apa_check (const apa_partition_table_t *table) {
 
   u_long i, j, k;
@@ -207,32 +212,32 @@ static int apa_check (const apa_partition_table_t *table) {
     {
       const ps2_partition_header_t *part = &table->parts [i].header;
       if (get_u32 (&part->checksum) != apa_partition_checksum (part))
- return 7; /* bad checksum */
+ return 7; // bad checksum
 
       if (get_u32 (&part->start) < total_sectors &&
    get_u32 (&part->start) + get_u32 (&part->length) <= total_sectors)
  ;
       else
  {
-     return 7; /* data behind end-of-HDD */
+     return 7; // data behind end-of-HDD
  }
 
       if ((get_u32 (&part->length) % ((128 _MB) / 512)) != 0)
- return 7; /* partition size not multiple to 128MB */
+ return 7; // partition size not multiple to 128MB
 
       if ((get_u32 (&part->start) % get_u32 (&part->length)) != 0)
- return 7; /* partition start not multiple on partition size */
+ return 7; // partition start not multiple on partition size
 
       if (get_u32 (&part->main) == 0 &&
    get_u16 (&part->flags) == 0 &&
    get_u32 (&part->start) != 0)
- { /* check sub-partitions */
+ { // check sub-partitions
    u_long count = 0;
    for (j=0; j<table->part_count; ++j)
      {
        const ps2_partition_header_t *part2 = &table->parts [j].header;
        if (get_u32 (&part2->main) == get_u32 (&part->start))
-  { /* sub-partition of current main partition */
+  { // sub-partition of current main partition
     int found;
     if (get_u16 (&part2->flags) != PS2_PART_FLAG_SUB)
       return 7;
@@ -240,24 +245,24 @@ static int apa_check (const apa_partition_table_t *table) {
     found = 0;
     for (k=0; k<get_u32 (&part->nsub); ++k)
       if (get_u32 (&part->subs [k].start) == get_u32 (&part2->start))
-        { /* in list */
+        { // in list
    if (get_u32 (&part->subs [k].length) != get_u32 (&part2->length))
      return 7;
    found = 1;
    break;
         }
     if (!found)
-      return 7; /* not found in the list */
+      return 7; // not found in the list
 
     ++count;
   }
      }
    if (count != get_u32 (&part->nsub))
-     return 7; /* wrong number of sub-partitions */
+     return 7; // wrong number of sub-partitions
  }
     }
 
-  /* verify double-linked list */
+  // verify double-linked list
   for (i=0; i<table->part_count; ++i)
     {
       apa_partition_t *prev = table->parts + (i > 0 ? i - 1 : table->part_count - 1);
@@ -265,11 +270,12 @@ static int apa_check (const apa_partition_table_t *table) {
       apa_partition_t *next = table->parts + (i + 1 < table->part_count ? i + 1 : 0);
       if (get_u32 (&curr->header.prev) != get_u32 (&prev->header.start) ||
    get_u32 (&curr->header.next) != get_u32 (&next->header.start))
- return 7; /* bad links */
+ return 7; // bad links
     }
 
   return 0;
 }
+*/ //Remove this line and a similar one above to reactivate 'apa_check'
 //------------------------------
 //endfunc apa_check
 //--------------------------------------------------------------

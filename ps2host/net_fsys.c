@@ -65,6 +65,8 @@ int	renamed_fd;    //descriptor of renamed file/folder awaiting closure
 int remove_flag=0; //Set in fsysRemove, cleared by all other fsysXXXXX
 int remove_result; //Set in fsysRemove, so fsysMkdir can use it for bug
 
+typedef void (*th_func_p)(void *); //dlanor: added to suppress warnings
+
 ////////////////////////////////////////////////////////////////////////
 static void fsysInit(iop_device_t *driver)
 {
@@ -80,7 +82,7 @@ static void fsysInit(iop_device_t *driver)
 
     mythread.attr = 0x02000000; // attr
     mythread.option = 0; // option
-    mythread.thread = pko_file_serv; // entry
+    mythread.thread = (th_func_p) pko_file_serv; // entry
     mythread.stacksize = 0x800;
     mythread.priority = 0x45; // We really should choose prio w more effort
 

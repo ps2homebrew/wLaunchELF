@@ -58,8 +58,6 @@ void rpcMainThread(void* param)
 
 void *rpcCommandHandler(int command, void *Data, int Size)
 {
-	int ret;
-
 	switch (command) {
 		case 4: //HDL Get Game Info
 			((int *)Data)[0] = HdlGetGameInfo((char *)Data, (GameInfo *)(Data+4));
