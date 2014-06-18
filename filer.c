@@ -599,7 +599,8 @@ void setPartyList(void)
 // Even so, paths for fileXio are assumed to be already prepared so
 // as to be accepted by fileXio calls (so HDD file access use "pfs")
 // Generic functions for this purpose that have been added so far are:
-// genInit(void), genFixPath(uLE_path, gen_path),
+// genInit(void), genLimObjName(uLE_path, reserve),
+// genFixPath(uLE_path, gen_path),
 // genOpen(path, mode), genClose(fd), genDopen(path), genDclose(fd),
 // genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
 // genRemove(path), genRmdir(path)
@@ -616,6 +617,45 @@ void genInit(void)
 }
 //------------------------------
 //endfunc genInit
+//--------------------------------------------------------------
+void genLimObjName(char *uLE_path, int reserve)
+{
+	char	*p, *q, *r;
+	int	limit = 256; //enforce a generic limit of 256 characters
+	int	folder_flag = (uLE_path[strlen(uLE_path)-1] == '/'); //flag folder object
+	int overflow;
+
+	if(!strncmp(uLE_path, "mc", 2))
+		limit = 32;    //enforce MC limit of 32 characters
+
+	if(folder_flag)                     //if path ends with path separator
+		uLE_path[strlen(uLE_path)-1] = 0; //  remove final path separator (temporarily)
+
+	p = uLE_path;    //initially assume a pure object name (quite insanely :))
+	if((q=strchr(p, ':')) != NULL)   //if a drive separator is present
+		p = q+1;                       //  object name may start after drive separator
+	if((q=strrchr(p, '/')) != NULL)  //If there's any path separator in the string
+		p = q+1;                       //  object name starts after last path separator
+	limit -= reserve;                //lower limit by reserved character space
+	overflow = strlen(p)-limit;      //Calculate length of string to remove (if positive)
+	if((limit<=0)||(overflow<=0))    //if limit invalid, or not exceeded
+		goto limited;                  //  no further limitation is needed
+	if((q=strrchr(p, '.')) == NULL)  //if there's no extension separator
+		goto limit_end;                //limitation must be done at end of full name
+	r = q-overflow;                  //r is the place to recopy file extension
+	if(r > p){                       //if this place is above string start
+		strcpy(r, q);                  //remove overflow from end of prefix part
+		goto limited;                  //which concludes the limitation
+	}//if we fall through here, the prefix part was too short for the limitation needed
+limit_end:
+	p[limit] = 0;                  //  remove overflow from end of full name
+limited:
+
+	if(folder_flag)                  //if original path ended with path separator
+		strcat(uLE_path, "/");         //  reappend final path separator after name
+}
+//------------------------------
+//endfunc genLimObjName
 //--------------------------------------------------------------
 int genFixPath(char *uLE_path, char *gen_path)
 {
@@ -651,6 +691,7 @@ int genFixPath(char *uLE_path, char *gen_path)
 		  gen_path[3] = part_ix+'0';
 	//end of clause for using an HDD path
 	}
+	genLimObjName(gen_path, 0);
 	return part_ix;  //non-HDD Path => 99, Good HDD Path => 0/1, Bad HDD Path => negative
 }
 //------------------------------
@@ -660,6 +701,7 @@ int genRmdir(char *path)
 {
 	int ret;
 
+	genLimObjName(path, 0);
 	if(!strncmp(path, "pfs", 3)){
 		ret = fileXioRmdir(path);
 	}else{
@@ -674,12 +716,14 @@ int genRemove(char *path)
 {
 	int ret;
 
+	genLimObjName(path, 0);
 	if(!strncmp(path, "pfs", 3)){
 		ret = fileXioRemove(path);
 	}else{
 		ret = fioRemove(path);
-		if(!strncmp("mc", path, 2))
-			ret = fioRmdir(path);	}
+		if(!strncmp("mc", path, 2)) //exception for MCMAN, which has its own fix
+			ret = fioRmdir(path);     //  Remove accidental dir (ancient ioman bug)
+	} //ends if clauses
 	return ret;
 }
 //------------------------------
@@ -689,6 +733,7 @@ int genOpen(char *path, int mode)
 {
 	int i, fd, io;
 
+	genLimObjName(path, 0);
 	for(i=0; i<256; i++)
 		if(gen_fd[i] < 0)
 			break;
@@ -1530,6 +1575,7 @@ int delete(const char *path, const FILEINFO *file)
 		hdddir[3] = ret+'0';
 	}
 	sprintf(dir, "%s%s", path, file->name);
+	genLimObjName(dir, 0);
 	if	(!strncmp(dir, "host:/", 6))
 		makeHostPath(dir+5, dir+6);
 	
@@ -1652,9 +1698,11 @@ int newdir(const char *path, const char *name)
 		dir[3] = ret+'0';
 		//fileXioChdir(dir);
 		strcat(dir, name);
+		genLimObjName(dir, 0);
 		ret = fileXioMkdir(dir, fileMode);
 	}else if(!strncmp(path, "mc", 2)){
 		sprintf(dir, "%s%s", path+4, name);
+		genLimObjName(dir, 0);
 		mcSync(0,NULL,NULL);
 		mcMkDir(path[2]-'0', 0, dir);
 		mcSync(0, NULL, &ret);
@@ -1663,10 +1711,12 @@ int newdir(const char *path, const char *name)
 	}else if(!strncmp(path, "mass", 4)){
 		strcpy(dir, path);
 		strcat(dir, name);
+		genLimObjName(dir, 0);
 		ret = fioMkdir(dir);
 	}else if(!strncmp(path, "host", 4)){
 		strcpy(dir, path);
 		strcat(dir, name);
+		genLimObjName(dir, 0);
 		if(!strncmp(dir, "host:/", 6))
 			makeHostPath(dir+5, dir+6);
 		if((ret = fioDopen(dir)) >= 0){
@@ -1686,7 +1736,7 @@ int newdir(const char *path, const char *name)
 //be either a single file or a folder. In the latter case the
 //folder contents should also be copied, recursively.
 //--------------------------------------------------------------
-int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
+int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
 	FILEINFO newfile, files[MAX_ENTRY];
 	fio_stat_t fio_stat;
@@ -1791,6 +1841,7 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 			}
 			//Here a timestamp has been added to the name if requested by PSU_DateNames
 
+			genLimObjName(tmp, 4); //Limit name to leave room for 4 characters more
 			strcat(tmp, ".psu");	//add the PSU file extension
 
 			if(!strncmp(tmp, "host:/", 6))
@@ -1803,7 +1854,7 @@ restart_copy: //restart point for PM_PSU_RESTORE to reprocess modified arguments
 					return 0;
 				}
 			}
-
+			//here tmp is the name of an existing file, to be removed before making new one
 			genRemove(tmp);
 			if(0 > (out_fd = genOpen(tmp, O_WRONLY | O_TRUNC | O_CREAT)))
 				return -1;	//return error on failure to create PSU file
@@ -1835,7 +1886,7 @@ PSU_error:
 			PSU_head.name[1] = '.';  //Change name entry to ".."
 			size = genWrite(out_fd, (void *) &PSU_head, sizeof(PSU_head));
 			if(size != sizeof(PSU_head)) goto PSU_error;
-		} else { //any other PasteMode than PM_PSU_BACKUP
+		} else {                              //any other PasteMode than PM_PSU_BACKUP
 			ret = newdir(outPath, newfile.name);
 			if(ret == -17){	//NB: 'newdir' must return -17 for ALL pre-existing folder cases
 				ret = getGameTitle(outPath, &newfile, newfile.title);
@@ -1845,7 +1896,8 @@ PSU_error:
 					"%s%s/\n"
 					"\n"
 					"%s:\n",
-					LNG(Name_conflict_for_this_folder), outPath, file.name, LNG(With_gamesave_title));
+					LNG(Name_conflict_for_this_folder), outPath,
+					file.name, LNG(With_gamesave_title));
 				if(tmp[0])
 					strcat(progress, tmp);
 				else
@@ -1900,8 +1952,10 @@ PSU_error:
 		}
 		if(PM_flag[recurses+1]==PM_NORMAL){  //Normal mode folder paste preparation
 		}
-		sprintf(out, "%s%s/", outPath, newfile.name);  //restore phys dev spec to 'out'
 		sprintf(in, "%s%s/", inPath, file.name);       //restore phys dev spec to 'in'
+		sprintf(out, "%s%s", outPath, newfile.name);   //restore phys dev spec to 'out'
+		genLimObjName(out, 0);                         //Limit dest folder name
+		strcat(outPath, "/");                          //Separate dest folder name
 
 		if(PasteMode == PM_PSU_RESTORE && PSU_restart_f) {
 			nfiles = PSU_content;
@@ -2126,8 +2180,9 @@ non_PSU_RESTORE_init:
 	} else { //Any other PasteMode than PM_PSU_BACKUP needs a new output file
 		if	(!strncmp(out, "host:/", 6))
 			makeHostPath(out+5, out+6);
-		genRemove(out);
-		out_fd=genOpen(out, O_WRONLY | O_TRUNC | O_CREAT);
+		genLimObjName(out, 0);                              //Limit dest file name
+		genRemove(out);                                     //Remove old file if present
+		out_fd=genOpen(out, O_WRONLY | O_TRUNC | O_CREAT);  //Create new file
 		if(out_fd<0) goto error;
 	}
 
@@ -3493,13 +3548,13 @@ void getFilePath(char *out, int cnfmode)
 				strcat(msg1, tmp);
 			}else{ // cnfmode == FALSE
 				if (swapKeys) 
-					sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1:%s R1:%s R2:%s %s:%s",
+					sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1:%s R1:%s R2:%s Sel:%s",
 						LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
+						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Exit));
 				else
-					sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1:%s R1:%s R2:%s %s:%s",
+					sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1:%s R1:%s R2:%s Sel:%s",
 						LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
-						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Sel), LNG(Exit));
+						LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Exit));
 			}
 			setScrTmp(msg0, msg1);
 			if(vfreeSpace){
@@ -3644,7 +3699,7 @@ void subfunc_Paste(char *mess, char *path)
 		drawMsg(tmp);
 		PM_flag[0] = PM_NORMAL; //Always use normal mode at top level
 		PM_file[0] = -1;        //Thus no attribute file is used here
-		ret=copy(path, clipPath, clipFiles[i], 0);
+		ret = copy(path, clipPath, clipFiles[i], 0);
 		if(ret < 0) break;
 		if(browser_cut){
 			ret=delete(clipPath, &clipFiles[i]);

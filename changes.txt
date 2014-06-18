@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.10 (2007.02.02)
+-Modified a file of the latest iomanx source in PS2SDK, which eliminated all problems we've had with recent versions of the iomanx.irx module
+-Modified use of LNG definitions, to avoid using translated strings as gamepad button names in tooltips (mainly for the 'Select' button). Please report if I missed any !
+-Fixed a bug in copying files with names longer than 32 characters to MC, which caused creation of both a folder and a file with truncated name. The new code will truncate the names to be used on MC before being applied to any MC functions. If a filename to be truncated contains any period ('.') characters, then all truncation will be done in front of the last of these, so as to preserve the final file extension. But if the extension itself is too long (meaning it's not really an extension), then truncation will be made from the end of the full name. Note that if you attempt to copy many files with long names to MC, this truncation may make all those names identical, if they differ only in some final characters, and the end result will be that only the last file copied remains on MC. To avoid such problems, try to make sure that files for MC have valid name length. A generic object name length limit is now applied to other devices too (all file systems have some limitation), but that limit is currently set to 256 characters.
+
+
 LaunchELF v4.09 (2007.01.27)
 -Updated to use the current ps2sdk changes added by jbit.
 -Cleaned up the external source package and updated some of the ps2sdk source files.

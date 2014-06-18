@@ -1588,11 +1588,11 @@ end:
 			tmp[0]='\0', tmp1[0]='\0', tmp2[0]='\0';
 			if(KeyBoard_Active){ //Display Virtual KeyBoard Tooltip.
 				if(swapKeys) 
-					sprintf(tmp1, "R1:%s ÿ3:%s ÿ1:%s ÿ0:%s L2:%s R2:%s SEL:%s",
+					sprintf(tmp1, "R1:%s ÿ3:%s ÿ1:%s ÿ0:%s L2:%s R2:%s Sel:%s",
 						LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
 						LNG(Left), LNG(Right), LNG(Close_KB));
 				else
-					sprintf(tmp1, "R1:%s ÿ3:%s ÿ0:%s ÿ1:%s L2:%s R2:%s SEL:%s",
+					sprintf(tmp1, "R1:%s ÿ3:%s ÿ0:%s ÿ1:%s L2:%s R2:%s Sel:%s",
 						LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
 						LNG(Left), LNG(Right), LNG(Close_KB));
 			}else if(setting->usbkbd_used){ //Display KeyBoard Tooltip.
@@ -1621,7 +1621,7 @@ end:
 					sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s", LNG(Menu), LNG(Exit));
 			}else{ //Display Basic Tooltip.
 				if(Window[Active_Window][OPENED]) 
-					sprintf(tmp1, "R1:%s ÿ3:%s %s:%s", LNG(Menu), LNG(Exit), LNG(Select), LNG(Open_KeyBoard));
+					sprintf(tmp1, "R1:%s ÿ3:%s Select:%s", LNG(Menu), LNG(Exit), LNG(Open_KeyBoard));
 				else
 					sprintf(tmp1, "R1:%s ÿ3:%s", LNG(Menu), LNG(Exit));
 			}
