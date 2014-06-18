@@ -58,8 +58,9 @@ void Reset();
 int trayopen=FALSE;
 int selected=0;
 int timeout=0;
+int init_delay=0;
 int mode=BUTTON;
-int user_acted = 0;  /* Set when gamepad used, to break timeout */
+int user_acted = 0;  /* Set when commands given, to break timeout */
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
 char CNF[MAX_PATH];
 int numCNF=0;
@@ -229,26 +230,28 @@ int drawMainScreen(void)
 	char c[MAX_PATH+8], f[MAX_PATH];
 	char *p;
 	
-	strcpy(setting->dirElf[12], "CONFIG");
-	strcpy(setting->dirElf[13], "LOAD CONFIG--");
-	strcpy(setting->dirElf[14], "LOAD CONFIG++");
+	strcpy(setting->LK_Path[12], "CONFIG");
+	strcpy(setting->LK_Path[13], "LOAD CONFIG--");
+	strcpy(setting->LK_Path[14], "LOAD CONFIG++");
 	
 	clrScr(setting->color[0]);
 	
 	x = Menu_start_x;
 	y = Menu_start_y;
-	if(setting->dirElf[0][0]){
-		if(!user_acted)
-			sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
-		else
-			sprintf(c, "TIMEOUT: Halted");
+	c[0] = 0;
+	if(init_delay)    sprintf(c, "Init Delay: %d", init_delay/SCANRATE);
+	else if(setting->LK_Path[0][0]){
+		if(!user_acted) sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
+		else            sprintf(c, "TIMEOUT: Halted");
+	}
+	if(c[0]){
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
 	if(maxCNF>1)
 		nItems=15;
 	for(i=0; i<nItems; i++){
-		if(setting->dirElf[i][0]){
+		if(setting->LK_Path[i][0]){
 			switch(i){
 			case 0:
 				strcpy(c,"DEFAULT: ");
@@ -296,15 +299,19 @@ int drawMainScreen(void)
 				strcpy(c,"  RIGHT: ");
 				break;
 			}
-			if(setting->filename){
-				if((p=strrchr(setting->dirElf[i], '/')))
-					strcpy(f, p+1);
-				else
-					strcpy(f, setting->dirElf[i]);
-				if((p=strrchr(f, '.')))
-					*p = 0;
-			}else{
-				strcpy(f, setting->dirElf[i]);
+			if(setting->Hide_Paths){       //Hide full path ?
+				if(setting->LK_Title[i][0]) //User-defined title ?
+					strcpy(f, setting->LK_Title[i]);
+				else{                       //Filename only !
+					if((p=strrchr(setting->LK_Path[i], '/')))
+						strcpy(f, p+1);
+					else
+						strcpy(f, setting->LK_Path[i]);
+					if((p=strrchr(f, '.')))
+						*p = 0;
+				}
+			}else{                         //Show full path !
+				strcpy(f, setting->LK_Path[i]);
 			}
 			strcat(c, f);
 			if(nElfs++==selected && mode==DPAD)
@@ -586,7 +593,7 @@ void loadNetModules(void)
 //endfunc loadNetModules
 //--------------------------------------------------------------
 // Read SYSTEM.CNF for MISC/PS2Disc launch command
-int ReadCNF(char *direlf)
+int ReadCNF(char *LK_Path)
 {
 	char *systemcnf;
 	int fd;
@@ -623,10 +630,10 @@ int ReadCNF(char *direlf)
 		}
 		
 		for(i=0; systemcnf[n+i]!=0; i++) {
-			direlf[i] = systemcnf[n+i];
+			LK_Path[i] = systemcnf[n+i];
 			if(i>2)
-				if(!strncmp(&direlf[i-1], ";1", 2)) {
-					direlf[i+1]=0;
+				if(!strncmp(&LK_Path[i-1], ";1", 2)) {
+					LK_Path[i+1]=0;
 					break;
 				}
 		}
@@ -767,8 +774,8 @@ void RunSelectedElf(void)
 	int i;
 	
 	for(i=0; i<12; i++){
-		if(setting->dirElf[i][0] && n++==selected){
-			RunElf(setting->dirElf[i]);
+		if(setting->LK_Path[i][0] && n++==selected){
+			RunElf(setting->LK_Path[i]);
 			break;
 		}
 	}
@@ -854,8 +861,8 @@ void Reset()
 	loadBasicModules();
 	mcInit(MC_TYPE_RESET);
 	mcInit(MC_TYPE_MC);
-	padReset();
-	setupPad();
+//	padReset();
+//	setupPad();
 }
 //------------------------------
 //endfunc Reset
@@ -864,7 +871,7 @@ int main(int argc, char *argv[])
 {
 	char *p;
 	int event, post_event=0, emergency;
-	int nElfs=0;
+	int RunELF_index, nElfs=0;
 	CdvdDiscType_t cdmode, old_cdmode;  //used for disc change detection
 	int hdd_booted = 0;
 	int host_or_hdd_booted = 0;
@@ -917,19 +924,19 @@ int main(int argc, char *argv[])
 
 	LastDir[0] = 0;
 
-	setupPad();
-	waitAnyPadReady();
+//	setupPad();
+//	waitAnyPadReady();
 
-	emergency = 0;
-	if(readpad()){
-		if(new_pad & PAD_SELECT)
-			emergency = 2*SCANRATE;
-	}
+//	if(readpad() && (new_pad & PAD_SELECT))	emergency = 1;
+//	else emergency = 0;
+	emergency = 0; //Comment out this line when using early setupPad above
 
-	if(emergency)
-		loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
-	else
-		loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	if(emergency) loadConfig(mainMsg, strcpy(CNF, "EMERGENCY.CNF"));
+	else          loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+
+	init_delay = setting->Init_Delay*SCANRATE;
+	if(emergency && (init_delay < 2*SCANRATE))
+		init_delay = 2*SCANRATE;
 
 	TV_mode = setting->TV_mode;
 	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
@@ -946,7 +953,7 @@ int main(int argc, char *argv[])
 		SCREEN_X			= 163;
 		SCREEN_Y			= 37;
 		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
-	}else{                      //else use NTSC mode (forced or auto/default)
+	}else{                      //else use NTSC mode (forced or auto)
 		ito_vmode = ITO_VMODE_NTSC;
 		SCREEN_WIDTH	= 640;
 		SCREEN_HEIGHT = 448;
@@ -967,6 +974,7 @@ int main(int argc, char *argv[])
 		}
 	}
 	getIpConfig();
+	setupPad(); //Comment out this line when using early setupPad above
 	initsbv_patches();
 
 
@@ -990,6 +998,7 @@ int main(int argc, char *argv[])
 	timeout = (setting->timeout+1)*SCANRATE;
 	cdmode = -1; //flag unchecked cdmode state
 	event = 1;   //event = initial entry
+	//----- Start of main menu event loop -----
 	while(1){
 		//Background event section
 		if(setting->discControl){
@@ -1009,7 +1018,12 @@ int main(int argc, char *argv[])
 			}
 		}
 
-		if(!user_acted){
+		if(init_delay){
+			init_delay--;
+			if(init_delay%SCANRATE==SCANRATE-1)
+				event |= 8;  //event |= visible delay change
+		}
+		else if(timeout && !user_acted){
 			timeout--;
 			if(timeout%SCANRATE==SCANRATE-1)
 				event |= 8;  //event |= visible timeout change
@@ -1023,49 +1037,43 @@ int main(int argc, char *argv[])
 		event = 0;
 
 		//Pad response section
-		if(emergency)
-			emergency--;
-		waitAnyPadReady();
-		if(readpad()&&(emergency==0)){
+		if(!init_delay && (waitAnyPadReady(), readpad())){
 			if(new_pad){
-				user_acted = 1;
 				event |= 2;  //event |= pad command
 			}
+			RunELF_index = -1;
 			switch(mode){
 			case BUTTON:
-				if(new_pad & PAD_CIRCLE){
-					RunElf(setting->dirElf[1]);
-				}else if(new_pad & PAD_CROSS) 
-					RunElf(setting->dirElf[2]);
-				else if(new_pad & PAD_SQUARE) 
-					RunElf(setting->dirElf[3]);
-				else if(new_pad & PAD_TRIANGLE) 
-					RunElf(setting->dirElf[4]);
-				else if(new_pad & PAD_L1) 
-					RunElf(setting->dirElf[5]);
-				else if(new_pad & PAD_R1) 
-					RunElf(setting->dirElf[6]);
-				else if(new_pad & PAD_L2) 
-					RunElf(setting->dirElf[7]);
-				else if(new_pad & PAD_R2) 
-					RunElf(setting->dirElf[8]);
-				else if(new_pad & PAD_L3)
-					RunElf(setting->dirElf[9]);
-				else if(new_pad & PAD_R3)
-					RunElf(setting->dirElf[10]);
-				else if(new_pad & PAD_START)
-					RunElf(setting->dirElf[11]);
+				if(new_pad & PAD_CIRCLE)        RunELF_index = 1;
+				else if(new_pad & PAD_CROSS)    RunELF_index = 2;
+				else if(new_pad & PAD_SQUARE)   RunELF_index = 3;
+				else if(new_pad & PAD_TRIANGLE) RunELF_index = 4;
+				else if(new_pad & PAD_L1)       RunELF_index = 5;
+				else if(new_pad & PAD_R1)       RunELF_index = 6;
+				else if(new_pad & PAD_L2)       RunELF_index = 7;
+				else if(new_pad & PAD_R2)       RunELF_index = 8;
+				else if(new_pad & PAD_L3)       RunELF_index = 9;
+				else if(new_pad & PAD_R3)       RunELF_index = 10;
+				else if(new_pad & PAD_START)    RunELF_index = 11;
 				else if(new_pad & PAD_SELECT){
+					user_acted = 1;
 					config(mainMsg, CNF);
 					if(setting->discControl)
 						loadCdModules();
 				}else if(maxCNF > 1 && new_pad & PAD_LEFT){
+					user_acted = 1;
 					decConfig();
 				}else if(maxCNF > 1 && new_pad & PAD_RIGHT){
+					user_acted = 1;
 					incConfig();
 				}else if(new_pad & PAD_UP || new_pad & PAD_DOWN){
+					user_acted = 1;
 					selected=0;
 					mode=DPAD;
+				}
+				if(RunELF_index >= 0 && setting->LK_Path[RunELF_index][0]){
+					user_acted = 1;
+					RunElf(setting->LK_Path[RunELF_index]);
 				}
 				break;
 			
@@ -1101,12 +1109,13 @@ int main(int argc, char *argv[])
 			}
 		}//ends Pad response section
 
-		if(timeout/SCANRATE==0 && setting->dirElf[0][0] && mode==BUTTON && !user_acted){
-			RunElf(setting->dirElf[0]);
+		if(timeout/SCANRATE==0 && setting->LK_Path[0][0] && mode==BUTTON && !user_acted){
+			RunElf(setting->LK_Path[0]);
 			user_acted = 1; //Halt timeout after default action, just as for user action
 			event |= 8;  //event |= visible timeout change
 		}
 	}
+	//----- End of main menu event loop -----
 }
 //------------------------------
 //endfunc main

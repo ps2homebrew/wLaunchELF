@@ -53,18 +53,20 @@ enum
 	MAX_PATH = 1025,
 	MAX_ENTRY = 2048,
 	MAX_PARTITIONS=100,
-	MAX_TITLE = 40
+	MAX_MENU_TITLE = 40,
+	MAX_ELF_TITLE = 72
 };
 
 typedef struct
 {
-	char dirElf[15][MAX_PATH];
+	char LK_Path[15][MAX_PATH];
+	char LK_Title[15][MAX_ELF_TITLE];
 	char usbd[MAX_PATH];
 	char skin[MAX_PATH];
-	char Menu_Title[MAX_TITLE+1];
+	char Menu_Title[MAX_MENU_TITLE+1];
 	int  Menu_Frame;
 	int timeout;
-	int filename;
+	int Hide_Paths;
 	uint64 color[4];
 	int screen_x;
 	int screen_y;
@@ -77,6 +79,7 @@ typedef struct
 	int Brightness;
 	int TV_mode;
 	int Popup_Opaque;
+	int Init_Delay;
 } SETTING;
 
 typedef struct

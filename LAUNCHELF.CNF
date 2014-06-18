@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.03.28
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.05.07
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -7,7 +7,10 @@
 # ----------------------------------------------------------------------
 # Note that LaunchELF v3.41t (or later) will accept this file as-is when
 # loading CNF, but if you modify any settings so that LaunchELF saves
-# the file again, then all comments will be removed.
+# the file again, then all comments will be removed. Also note that each
+# LaunchELF version can only recognize those variables that were defined
+# for that version. Using newer variables with older versions is futile.
+# It should not crash the program, but will not have meaningful effects.
 # ----------------------------------------------------------------------
 CNF_version = 2.0
 # ----------------------------------------------------------------------
@@ -116,6 +119,71 @@ SKIN_FILE =
 #for different config pages. It is editable in "STARTUP SETTINGS".
 # ----------------------------------------------------------------------
 Menu_Title =
+# ----------------------------------------------------------------------
+# Menu_Frame flags whether or not the big frame that encloses the menu
+# should be visible or not. By default it will be visible.
+# ----------------------------------------------------------------------
+Menu_Frame = 1
+# ----------------------------------------------------------------------
+# SKIN_Brightness is used to modify the brightness of a JPG skin, thus
+# allowing this to be set without changing the JPG file. The default is
+# 50, for using the JPG as-is, lower values will darken it while higher
+# values will brighten it. The maximum value allowed is 100.
+# ----------------------------------------------------------------------
+SKIN_Brightness = 50
+# ----------------------------------------------------------------------
+# TV_mode is used to seup the video mode to suit your TV. You may use
+# the following values in the current implementation:
+# 0 => Automatic adaption of video mode to suit your console (default)
+# 1 => Enforce NTSC video mode regardless of console
+# 2 => Enforce PAL video mode regardless of console
+# ----------------------------------------------------------------------
+TV_mode = 0
+# ----------------------------------------------------------------------
+# Popup_Opaque may be set to force popup menus to use simple background
+# colour (GUI_Col_1_ABGR) inside such menu box, instead of transparently
+# using the skin (if any) as background. If no skin is used then this
+# setting has no visible effect. Its default value is for transparency,
+# so change it to 1 to make such menus opaque.
+# ----------------------------------------------------------------------
+Popup_Opaque = 0
+# ----------------------------------------------------------------------
+# Init_Delay is used to delay the start of all uLaunchELF interactions,
+# which also includes the possible timeout and startup of a default ELF.
+# The purpose of this delay is to allow the user to release any buttons
+# that may have been used in commanding a mod chip, or some program to
+# start uLaunchELF, to avoid having those buttons misinterpreted as new
+# commands intended for uLaunchELF. Its value specifies how many seconds
+# of extra delay to use, with the default value being zero.
+# ----------------------------------------------------------------------
+Init_delay = 0
+# ----------------------------------------------------------------------
+# LK_xx_Title is not one variable but many. You can replace the 'xx' by
+# one of 15 button designations (eg: Square, Select, etc), and use them
+# to define your own titles that will be used instead of ELF names in
+# the main menu. If no such titles are defined then the ELF names are
+# used instead, and titles will not be saved to the CNF for such cases.
+# To have these titles displayed the variable Menu_Hide_Paths must be
+# set to a non-zero value. You can set it in the CONFIG menu which is
+# also where you can conveniently edit the titles for all launch keys.
+# By editing the CNF directly you can also edit titles for three more
+# commands, as shown by the examples below (NB: They are not defaults)
+# ----------------------------------------------------------------------
+LK_Select_Title = Configure uLaunchELF
+LK_Left_Title = Load 'lower' CNF file
+LK_Right_Title = Load 'higher' CNF file
+# ----------------------------------------------------------------------
+# PathPad[xx] is not one variable but many. You can replace the 'xx' by
+# any number from 00 through 29 (inclusive), and assign each variable of
+# this kind a path string. Lists of those paths can then be accessed in
+# the file browser for easy navigation, by calling up the PathPad menu
+# with the R2 button. By default these strings are empty, and are not
+# then saved to the CNF. Only non-empty strings will be saved, so the
+# example below is not a default value, but simply an example. Since the
+# PathPad entries are not normal configuration variables, they're always
+# included at the end of the CNF file.
+# ----------------------------------------------------------------------
+PathPad[14] = hdd0:/__common/-PS1 MC Backups/
 # ----------------------------------------------------------------------
 # End of file: LAUNCHELF.CNF
 # ----------------------------------------------------------------------

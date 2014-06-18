@@ -7,7 +7,7 @@
 enum
 {
 	DEF_TIMEOUT = 10,
-	DEF_FILENAME = TRUE,
+	DEF_HIDE_PATHS = TRUE,
 	DEF_COLOR1 = ITO_RGBA(128,128,128,0),
 	DEF_COLOR2 = ITO_RGBA(64,64,64,0),
 	DEF_COLOR3 = ITO_RGBA(96,0,0,0),
@@ -21,6 +21,7 @@ enum
 	DEF_HOSTWRITE = FALSE,
 	DEF_BRIGHT = 50,
 	DEF_POPUP_OPAQUE = FALSE,
+	DEF_INIT_DELAY = 0,
 	
 	DEFAULT=0,
 	TIMEOUT=12,
@@ -33,6 +34,23 @@ enum
 	CANCEL
 };
 
+char LK_ID[15][10]={
+	"auto",
+	"Circle",
+	"Cross",
+	"Square",
+	"Triangle",
+	"L1",
+	"R1",
+	"L2",
+	"R2",
+	"L3",
+	"R3",
+	"Start",
+	"Select",  //Predefined for "CONFIG"
+	"Left",    //Predefined for "LOAD CONFIG--"
+	"Right"    //Predefined for "LOAD CONFIG++"
+};
 char PathPad[30][MAX_PATH];
 SETTING *setting = NULL;
 SETTING *tmpsetting;
@@ -109,21 +127,19 @@ void saveConfig(char *mainMsg, char *CNF)
 	char c[MAX_PATH], tmp[26*MAX_PATH + 30*MAX_PATH];
 	size_t CNF_size, CNF_step;
 
-	CNF_size = 0;
-	sprintf(tmp,
-		"CNF_version = 2.0\r\n"
-		"LK_auto_E1 = %s\r\n"
-		"LK_Circle_E1 = %s\r\n"
-		"LK_Cross_E1 = %s\r\n"
-		"LK_Square_E1 = %s\r\n"
-		"LK_Triangle_E1 = %s\r\n"
-		"LK_L1_E1 = %s\r\n"
-		"LK_R1_E1 = %s\r\n"
-		"LK_L2_E1 = %s\r\n"
-		"LK_R2_E1 = %s\r\n"
-		"LK_L3_E1 = %s\r\n"
-		"LK_R3_E1 = %s\r\n"
-		"LK_Start_E1 = %s\r\n"
+	sprintf(tmp, "CNF_version = 2.0\r\n%n", &CNF_size); //Start CNF with version header
+
+	for(i=0; i<12; i++){	//Loop to save the ELF paths for each launch key
+		sprintf(tmp+CNF_size,
+			"LK_%s_E1 = %s\r\n"
+			"%n",           // %n causes NO output, but only a measurement
+			LK_ID[i], setting->LK_Path[i],
+			&CNF_step       // This variable measures the size of sprintf data
+	  );
+		CNF_size += CNF_step;
+	}//ends for
+
+	sprintf(tmp+CNF_size,
 		"LK_auto_Timer = %d\r\n"
 		"Menu_Hide_Paths = %d\r\n"
 		"GUI_Col_1_ABGR = %08lX\r\n"
@@ -144,21 +160,11 @@ void saveConfig(char *mainMsg, char *CNF)
 		"Menu_Frame = %d\r\n"
 		"SKIN_Brightness = %d\r\n"
 		"TV_mode = %d\r\n"
+		"Popup_Opaque = %d\r\n"
+		"Init_Delay = %d\r\n"
 		"%n",           // %n causes NO output, but only a measurement
-		setting->dirElf[0],  //auto
-		setting->dirElf[1],  //Circle
-		setting->dirElf[2],  //Cross
-		setting->dirElf[3],  //Square
-		setting->dirElf[4],  //Triangle
-		setting->dirElf[5],  //L1
-		setting->dirElf[6],  //R1
-		setting->dirElf[7],  //L2
-		setting->dirElf[8],  //R2
-		setting->dirElf[9],  //L3
-		setting->dirElf[10], //R3
-		setting->dirElf[11], //Start
 		setting->timeout,    //auto_Timer
-		setting->filename,   //Menu_Hide_Paths
+		setting->Hide_Paths,   //Menu_Hide_Paths
 		setting->color[0],   //Col_0
 		setting->color[1],   //Col_1
 		setting->color[2],   //Col_2
@@ -177,25 +183,31 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->Menu_Frame, //Menu_Frame
 		setting->Brightness, //SKIN_Brightness
 		setting->TV_mode,    //TV_mode
-		&CNF_step       // This variable measure the size of sprintf data
-  );
-	CNF_size += CNF_step;
-
-	sprintf(tmp+CNF_size,
-		"Popup_Opaque = %d\r\n"
-		"%n",           // %n causes NO output, but only a measurement
 		setting->Popup_Opaque, //Popup_Opaque
-		&CNF_step       // This variable measure the size of sprintf data
+		setting->Init_Delay,   //Init_Delay
+		&CNF_step       // This variable measures the size of sprintf data
   );
 	CNF_size += CNF_step;
 
-	for(i=0; i<30; i++){
-		if(PathPad[i][0]!=0){
+	for(i=0; i<15; i++){  //Loop to save user defined launch key titles
+		if(setting->LK_Title[i][0]){  //Only save non-empty strings
+			sprintf(tmp+CNF_size,
+				"LK_%s_Title = %s\r\n"
+				"%n",           // %n causes NO output, but only a measurement
+				LK_ID[i], setting->LK_Title[i],
+				&CNF_step       // This variable measures the size of sprintf data
+		  );
+			CNF_size += CNF_step;
+		}//ends if
+	}//ends for
+
+	for(i=0; i<30; i++){  //Loop to save non-empty PathPad entries
+		if(PathPad[i][0]){  //Only save non-empty strings
 			sprintf(tmp+CNF_size,
 				"PathPad[%02d] = %s\r\n"
 				"%n",           // %n causes NO output, but only a measurement
 				i, PathPad[i],
-				&CNF_step       // This variable measure the size of sprintf data
+				&CNF_step       // This variable measures the size of sprintf data
 		  );
 			CNF_size += CNF_step;
 		}//ends if
@@ -260,15 +272,15 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting = (SETTING*)malloc(sizeof(SETTING));
 
 	for(i=0; i<12; i++)
-		setting->dirElf[i][0] = '\0';
+		setting->LK_Path[i][0] = '\0';
 	for(i=0; i<30; i++)
 		PathPad[i][0] = '\0';
-	strcpy(setting->dirElf[1], "MISC/FileBrowser");
+	strcpy(setting->LK_Path[1], "MISC/FileBrowser");
 	setting->usbd[0] = '\0';
 	setting->skin[0] = '\0';
 	setting->Menu_Title[0] = '\0';
 	setting->timeout = DEF_TIMEOUT;
-	setting->filename = DEF_FILENAME;
+	setting->Hide_Paths = DEF_HIDE_PATHS;
 	setting->color[0] = DEF_COLOR1;
 	setting->color[1] = DEF_COLOR2;
 	setting->color[2] = DEF_COLOR3;
@@ -285,6 +297,7 @@ void loadConfig(char *mainMsg, char *CNF)
 	setting->Brightness = DEF_BRIGHT;
 	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
+	setting->Init_Delay = DEF_INIT_DELAY;
 	strcpy(path, LaunchElfDir);
 	strcat(path, CNF);
 	if(!strncmp(path, "cdrom", 5)) strcat(path, ";1");
@@ -333,20 +346,20 @@ failed_load:
 	{	// A variable was found, now we dispose of its value.
 		if(!strcmp(name,"CNF_version")) CNF_version = atoi(value);
 		else if(CNF_version == 0) goto failed_load;  // Refuse unidentified CNF
-		else if(!strncmp(name,"LK_auto_E",9))      strcpy(setting->dirElf[0], value);
-		else if(!strncmp(name,"LK_Circle_E",11))   strcpy(setting->dirElf[1], value);
-		else if(!strncmp(name,"LK_Cross_E",10))    strcpy(setting->dirElf[2], value);
-		else if(!strncmp(name,"LK_Square_E",11))   strcpy(setting->dirElf[3], value);
-		else if(!strncmp(name,"LK_Triangle_E",13)) strcpy(setting->dirElf[4], value);
-		else if(!strncmp(name,"LK_L1_E",7))        strcpy(setting->dirElf[5], value);
-		else if(!strncmp(name,"LK_R1_E",7))        strcpy(setting->dirElf[6], value);
-		else if(!strncmp(name,"LK_L2_E",7))        strcpy(setting->dirElf[7], value);
-		else if(!strncmp(name,"LK_R2_E",7))        strcpy(setting->dirElf[8], value);
-		else if(!strncmp(name,"LK_L3_E",7))        strcpy(setting->dirElf[9], value);
-		else if(!strncmp(name,"LK_R3_E",7))        strcpy(setting->dirElf[10],value);
-		else if(!strncmp(name,"LK_Start_E",10))    strcpy(setting->dirElf[11],value);
+		else if(!strncmp(name,"LK_auto_E",9))      strcpy(setting->LK_Path[0], value);
+		else if(!strncmp(name,"LK_Circle_E",11))   strcpy(setting->LK_Path[1], value);
+		else if(!strncmp(name,"LK_Cross_E",10))    strcpy(setting->LK_Path[2], value);
+		else if(!strncmp(name,"LK_Square_E",11))   strcpy(setting->LK_Path[3], value);
+		else if(!strncmp(name,"LK_Triangle_E",13)) strcpy(setting->LK_Path[4], value);
+		else if(!strncmp(name,"LK_L1_E",7))        strcpy(setting->LK_Path[5], value);
+		else if(!strncmp(name,"LK_R1_E",7))        strcpy(setting->LK_Path[6], value);
+		else if(!strncmp(name,"LK_L2_E",7))        strcpy(setting->LK_Path[7], value);
+		else if(!strncmp(name,"LK_R2_E",7))        strcpy(setting->LK_Path[8], value);
+		else if(!strncmp(name,"LK_L3_E",7))        strcpy(setting->LK_Path[9], value);
+		else if(!strncmp(name,"LK_R3_E",7))        strcpy(setting->LK_Path[10],value);
+		else if(!strncmp(name,"LK_Start_E",10))    strcpy(setting->LK_Path[11],value);
 		else if(!strcmp(name,"LK_auto_Timer")) setting->timeout = atoi(value);
-		else if(!strcmp(name,"Menu_Hide_Paths")) setting->filename = atoi(value);
+		else if(!strcmp(name,"Menu_Hide_Paths")) setting->Hide_Paths = atoi(value);
 		else if(!strcmp(name,"GUI_Col_1_ABGR")) setting->color[0] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_2_ABGR")) setting->color[1] = hextoul(value);
 		else if(!strcmp(name,"GUI_Col_3_ABGR")) setting->color[2] = hextoul(value);
@@ -362,13 +375,29 @@ failed_load:
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
 		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
 		else if(!strcmp(name,"Menu_Title")){
-			strncpy(setting->Menu_Title, value, MAX_TITLE);
-			setting->Menu_Title[MAX_TITLE] = '\0';
+			strncpy(setting->Menu_Title, value, MAX_MENU_TITLE);
+			setting->Menu_Title[MAX_MENU_TITLE] = '\0';
 		}
 		else if(!strcmp(name,"Menu_Frame")) setting->Menu_Frame = atoi(value);
 		else if(!strcmp(name,"SKIN_Brightness")) setting->Brightness = atoi(value);
 		else if(!strcmp(name,"TV_mode")) setting->TV_mode = atoi(value);
 		else if(!strcmp(name,"Popup_Opaque")) setting->Popup_Opaque = atoi(value);
+		else if(!strcmp(name,"Init_Delay")) setting->Init_Delay = atoi(value);
+		else if(!strcmp(name,"LK_auto_Title"))     strncpy(setting->LK_Title[0], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Circle_Title"))   strncpy(setting->LK_Title[1], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Cross_Title"))    strncpy(setting->LK_Title[2], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Square_Title"))   strncpy(setting->LK_Title[3], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Triangle_Title")) strncpy(setting->LK_Title[4], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_L1_Title"))       strncpy(setting->LK_Title[5], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_R1_Title"))       strncpy(setting->LK_Title[6], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_L2_Title"))       strncpy(setting->LK_Title[7], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_R2_Title"))       strncpy(setting->LK_Title[8], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_L3_Title"))       strncpy(setting->LK_Title[9], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_R3_Title"))       strncpy(setting->LK_Title[10], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Start_Title"))    strncpy(setting->LK_Title[11], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Select_Title"))   strncpy(setting->LK_Title[12], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Left_Title"))     strncpy(setting->LK_Title[13], value, MAX_ELF_TITLE-1);
+		else if(!strcmp(name,"LK_Right_Title"))    strncpy(setting->LK_Title[14], value, MAX_ELF_TITLE-1);
 		else if(!strncmp(name,"PathPad[",8)){
 			i = atoi(name+8);
 			if(i < 30){
@@ -377,6 +406,7 @@ failed_load:
 			}
 		}
 	}
+	for(i=0; i<15; i++) setting->LK_Title[i][MAX_ELF_TITLE-1] = 0;
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);
 	return;
@@ -673,7 +703,7 @@ void Config_Screen(void)
 				} else if(s==15) {
 					Config_Skin();
 				} else if(s==16) {  //cursor is at Menu_Title
-					char tmp[MAX_TITLE+1];
+					char tmp[MAX_MENU_TITLE+1];
 					strcpy(tmp, setting->Menu_Title);
 					if(keyboard(tmp, 36)>=0)
 						strcpy(setting->Menu_Title, tmp);
@@ -859,7 +889,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-	int s, max_s=6;		//define cursor index and its max value
+	int s, max_s=7;		//define cursor index and its max value
 	int x, y;
 	int event, post_event=0;
 	char c[MAX_PATH];
@@ -899,12 +929,9 @@ void Config_Startup(void)
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				event |= 2;  //event |= valid pad command
-				if(s==2)
-				{
-					if(setting->numCNF > 1)
-						setting->numCNF--;
-				}
+				if(s==2 && setting->numCNF>1) setting->numCNF--;
 				else if(s==4) setting->usbd[0] = '\0';
+				else if(s==6 && setting->Init_Delay>0) setting->Init_Delay--;
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -919,6 +946,8 @@ void Config_Startup(void)
 					getFilePath(setting->usbd, USBD_IRX_CNF);
 				else if(s==5)
 					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
+				else if(s==6)
+					setting->Init_Delay++;
 				else
 					return;
 			}
@@ -968,6 +997,10 @@ void Config_Startup(void)
 				strcat(c, "PAL");
 			else
 				strcat(c, "AUTO");
+			printXY(c, x, y/2, setting->color[3], TRUE);
+			y += FONT_HEIGHT;
+
+			sprintf(c, "  Initial Delay: %d", setting->Init_Delay);
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1340,6 +1373,8 @@ void config(char *mainMsg, char *CNF)
 {
 	char c[MAX_PATH];
 	char skinSave[MAX_PATH];
+	char title_tmp[MAX_ELF_TITLE];
+	char *localMsg;
 	int i;
 	int s;
 	int x, y;
@@ -1390,11 +1425,17 @@ void config(char *mainMsg, char *CNF)
 				else if(s<OK)
 					s=OK;
 			}
+			else if((new_pad & PAD_SQUARE) && (s<TIMEOUT)){
+				event |= 2;  //event |= valid pad command
+				strcpy(title_tmp, setting->LK_Title[s]);
+				if(keyboard(title_tmp, MAX_ELF_TITLE)>=0)
+					strcpy(setting->LK_Title[s], title_tmp);
+			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
 			{
 				event |= 2;  //event |= valid pad command
 				if(s<TIMEOUT)
-					setting->dirElf[s][0]=0;
+					setting->LK_Path[s][0]=0;
 				else if(s==TIMEOUT)
 				{
 					if(setting->timeout > 0)
@@ -1406,17 +1447,17 @@ void config(char *mainMsg, char *CNF)
 				event |= 2;  //event |= valid pad command
 				if(s<TIMEOUT)
 				{
-					getFilePath(setting->dirElf[s], TRUE);
-					if(!strncmp(setting->dirElf[s], "mc0", 3) ||
-						!strncmp(setting->dirElf[s], "mc1", 3)){
-						sprintf(c, "mc%s", &setting->dirElf[s][3]);
-						strcpy(setting->dirElf[s], c);
+					getFilePath(setting->LK_Path[s], TRUE);
+					if(!strncmp(setting->LK_Path[s], "mc0", 3) ||
+						!strncmp(setting->LK_Path[s], "mc1", 3)){
+						sprintf(c, "mc%s", &setting->LK_Path[s][3]);
+						strcpy(setting->LK_Path[s], c);
 					}
 				}
 				else if(s==TIMEOUT)
 					setting->timeout++;
 				else if(s==FILENAME)
-					setting->filename = !setting->filename;
+					setting->Hide_Paths = !setting->Hide_Paths;
 				else if(s==DISCCONTROL)
 					setting->discControl = !setting->discControl;
 				else if(s==SCREEN)
@@ -1448,6 +1489,9 @@ void config(char *mainMsg, char *CNF)
 
 			//Display section
 			clrScr(setting->color[0]);
+
+			if(s < TIMEOUT) localMsg = setting->LK_Title[s];
+			else            localMsg = "";
 
 			x = Menu_start_x;
 			y = Menu_start_y;
@@ -1494,7 +1538,7 @@ void config(char *mainMsg, char *CNF)
 					strcpy(c,"  START  : ");
 					break;
 				}
-				strcat(c, setting->dirElf[i]);
+				strcat(c, setting->LK_Path[i]);
 				printXY(c, x, y/2, setting->color[3], TRUE);
 				y += FONT_HEIGHT;
 			}
@@ -1512,10 +1556,10 @@ void config(char *mainMsg, char *CNF)
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
-			if(setting->filename)
-				sprintf(c, "  PRINT ONLY FILENAME: ON");
+			if(setting->Hide_Paths)
+				sprintf(c, "  HIDE FULL ELF PATHS: ON");
 			else
-				sprintf(c, "  PRINT ONLY FILENAME: OFF");
+				sprintf(c, "  HIDE FULL ELF PATHS: OFF");
 			printXY(c, x, y/2, setting->color[3], TRUE);
 			y += FONT_HEIGHT;
 
@@ -1539,9 +1583,9 @@ void config(char *mainMsg, char *CNF)
 			//Tooltip section
 			if (s < TIMEOUT) {
 				if (swapKeys)
-					sprintf(c, "~:Edit ›:Clear");
+					sprintf(c, "~:Browse ›:Clear  :Edit Title");
 				else
-					sprintf(c, "›:Edit ~:Clear");
+					sprintf(c, "›:Browse ~:Clear  :Edit Title");
 			} else if(s==TIMEOUT) {
 				if (swapKeys)
 					sprintf(c, "~:Add ›:Subtract");
@@ -1564,7 +1608,7 @@ void config(char *mainMsg, char *CNF)
 					sprintf(c, "›:OK");
 			}
 
-			setScrTmp("", c);
+			setScrTmp(localMsg, c);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
