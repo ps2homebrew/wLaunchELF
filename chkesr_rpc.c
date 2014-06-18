@@ -81,3 +81,26 @@ int Check_ESR_Disc(void)
  	return Packet->ret;
 }
 //--------------------------------------------------------------
+//this for removing esr irx and old libcdvd
+/* int Check_ESR_Disc(void){
+         CdvdReadMode_t ReadMode;
+         int result;
+         unsigned char SectorBuffer[2112];
+
+         ReadMode.retries=5;
+         ReadMode.readSpeed=CDVD_SPIN_STREAM;
+         ReadMode.sectorType=CDVD_SECTOR_2048;
+         ReadMode.pad=0;
+
+         result=cdDvdRead(14, 1, SectorBuffer, &ReadMode); // read LBA 14
+         cdSync(0);
+         if(result!=0){
+                 if(cdGetError()==CDVD_ERR_NO){
+                         result=(!strncmp(SectorBuffer + 37, "+NSR", 4))?1:0;
+                 }
+                 else result=-1;
+         }
+         else result=-1;
+
+         return result;
+ } */

@@ -61,7 +61,7 @@ int vmc_PartyIndex[2] = {-1, -1};         //PFS index for each VMC, unless -1
 int Party_vmcIndex[MOUNT_LIMIT] = {-1,-1,-1,-1}; //VMC for each PFS, unless -1
 unsigned char *elisaFnt=NULL;
 int elisa_failed = FALSE; //Set at failure to load font, cleared at browser entry
-s64 freeSpace;
+u64 freeSpace;
 int mcfreeSpace;
 int mctype_PSx;  //dlanor: Needed for proper scaling of mcfreespace
 int vfreeSpace;  //flags validity of freespace value
@@ -613,6 +613,7 @@ int readCD(const char *path, FILEINFO *info, int max)
 		else{
 			info[j].stats.attrFile = MC_ATTR_norm_file;
 			info[j].stats.fileSizeByte = TocEntryList[i].fileSize;
+			info[j].stats.unknown4[0] = 0; //Assuming a CD can't have a single 4GB file
 		}
 		j++;
 	}
@@ -643,14 +644,14 @@ void setPartyList(void)
 
 		//Patch this to see if new CB versions use valid PFS format
 		//NB: All CodeBreaker versions up to v9.3 use invalid formats
-		if(!strncmp(dirEnt.name, "PP.",3)){
+	/*	if(!strncmp(dirEnt.name, "PP.",3)){
 			int len = strlen(dirEnt.name);
 			if(!strcmp(dirEnt.name+len-4, ".PCB"))
 				continue;
-		}
+		}*/
 
 		if(!strncmp(dirEnt.name, "__", 2) &&
-			strcmp(dirEnt.name, "__boot") &&
+		//	strcmp(dirEnt.name, "__boot") &&
 			strcmp(dirEnt.name, "__net") &&
 			strcmp(dirEnt.name, "__system") &&
 			strcmp(dirEnt.name, "__sysconf") &&
@@ -979,10 +980,12 @@ int readVMC(const char *path, FILEINFO *info, int max)
 //		else if(dirbuf.stat.mode & FIO_S_IFREG){  //NB: normal usage (non-vmcfs)
 //			info[i].stats.attrFile = MC_ATTR_norm_file;
 //			info[i].stats.fileSizeByte = dirbuf.stat.size;
+//			info[i].stats.unknown4[0] = dirbuf.stat.hisize;
 //		}
 		else if(dirbuf.stat.mode & MC_ATTR_FILE){  //NB: vmcfs usage
 			info[i].stats.attrFile = dirbuf.stat.mode;
 			info[i].stats.fileSizeByte = dirbuf.stat.size;
+			info[i].stats.unknown4[0] = dirbuf.stat.hisize;
 		}
 		else
 			continue; //Skip entry which is neither a file nor a folder
@@ -1042,6 +1045,7 @@ int readHDD(const char *path, FILEINFO *info, int max)
 		else if(dirbuf.stat.mode & FIO_S_IFREG){
 			info[i].stats.attrFile = MC_ATTR_norm_file;
 			info[i].stats.fileSizeByte = dirbuf.stat.size;
+			info[i].stats.unknown4[0] = dirbuf.stat.hisize;
 		}
 		else
 			continue; //Skip entry which is neither a file nor a folder
@@ -1110,6 +1114,7 @@ int readMASS(const char *path, FILEINFO *info, int max)
 		else if(FIO_SO_ISREG(record.stat.mode)){
 			info[n].stats.attrFile = MC_ATTR_norm_file;
 			info[n].stats.fileSizeByte = record.stat.size;
+			info[n].stats.unknown4[0] = record.stat.hisize;
 		}
 		else
 			continue; //Skip entry which is neither a file nor a folder
@@ -1257,6 +1262,7 @@ int	readHOST(const char *path, FILEINFO *info, int max)
 				info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
 
 			info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
+			info[hostcount].stats.unknown4[0] = hostcontent.stat.hisize; //taking an unused(?) unknown for the high bits
 			memcpy((void *) &info[hostcount].stats._create, hostcontent.stat.ctime, 8);
 			info[hostcount].stats._create.year += 1900;
 			memcpy((void *) &info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
@@ -1700,9 +1706,9 @@ char *PathPad_menu(const char *path)
 //------------------------------
 //endfunc PathPad_menu
 //--------------------------------------------------------------
-s64 getFileSize(const char *path, const FILEINFO *file)
+u64 getFileSize(const char *path, const FILEINFO *file)
 {
-	s64 size, filesize;
+	u64 size, filesize;
 	FILEINFO files[MAX_ENTRY];
 	char dir[MAX_PATH], party[MAX_NAME];
 	int nfiles, i, ret, fd;
@@ -3712,7 +3718,7 @@ int getFilePath(char *out, int cnfmode)
 					freeSpace = fileXioDevctl(tmp, DEVCTL_VMCFS_CKFREE, NULL, 0, NULL, 0);
 					vfreeSpace=TRUE;
 				}else if(!strncmp(path,"hdd",3)&&strcmp(path,"hdd0:/")){
-					s64 ZoneFree, ZoneSize;
+					u64 ZoneFree, ZoneSize;
 					char pfs_str[6];
 
 					strcpy(pfs_str, "pfs0:");
@@ -3804,9 +3810,10 @@ int getFilePath(char *out, int cnfmode)
 				else
 					printXY(tmp, x+4, y, color, TRUE, name_limit);
 				if(file_show > 0){
-					unsigned int size = files[top+i].stats.fileSizeByte;
+//					unsigned int size = files[top+i].stats.fileSizeByte;
+					unsigned long long size = ((unsigned long long)files[top+i].stats.unknown4[0]<<32) | files[top+i].stats.fileSizeByte;
 					int scale = 0; //0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-					char scale_s[5] = " KMGT";
+					char scale_s[6] = " KMGTP";
 					PS2TIME timestamp = *(PS2TIME *) &files[top+i].stats._modify;
 
 					if(!size_valid) size = 0;
@@ -3819,7 +3826,9 @@ int getFilePath(char *out, int cnfmode)
 							scale++;
 							size /= 1024;
 						}
-						sprintf(tmp, "%5u%cB", size, scale_s[scale]);
+//						sprintf(tmp, "%5u%cB", size, scale_s[scale]);
+						//size shouldn't be over 99999, and seems sprintf doesn't support unsigned long long (%llu crashes)
+						sprintf(tmp, "%5u%cB", (unsigned)size, scale_s[scale]);
 					}
 
 					if(!time_valid || !(top+i))
@@ -3941,7 +3950,7 @@ int getFilePath(char *out, int cnfmode)
 //--------------------------------------------------------------
 void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 {
-	s64 size;
+	u64 size;
 	int	ret, i, text_pos, text_inc, sel=-1;
 	char filepath[MAX_PATH];
 
@@ -4027,7 +4036,11 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 			sprintf(mess+text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
 			text_pos += text_inc;
 		}
-		sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
+		//sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
+		unsigned long long size = ((unsigned long long)files[sel].stats.unknown4[0]<<32) | files[sel].stats.fileSizeByte;
+		//Max length is 20 characters+NULL
+		char sizeC[21]={0};char *sizeP=&sizeC[21];do{*(--sizeP)='0'+(size%10);}while(size/=10);
+		sprintf(mess+text_pos, " mcTsz=%s%n", sizeP, &text_inc);
 		text_pos += text_inc;
 	}
 //----- End of sections that show attributes -----

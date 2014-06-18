@@ -431,7 +431,7 @@ static void getIpConfig(void)
 	if(uLE_related(path, "uLE:/IPCONFIG.DAT")==1)
 		fd = genOpen(path, O_RDONLY);
 	else
-		fd=-1;
+		fd = -1;
 
 	if (fd >= 0) 
 	{	bzero(buf, IPCONF_MAX_LEN);
@@ -881,7 +881,7 @@ void	load_ps2netfs(void)
 //---------------------------------------------------------------------------
 void loadBasicModules(void)
 {
-	int ret, id;
+	int ret;
 
 	if	(!have_sio2man) {
 		SifLoadModule("rom0:SIO2MAN", 0, NULL);
@@ -891,6 +891,7 @@ void loadBasicModules(void)
 	initsbv_patches();  //NB: Must be used before loading uLE_embedded modules
 
 #ifdef SIO_DEBUG
+	int id;
         // I call this just after SIO2MAN have been loaded
 	sio_init(38400, 0, 0, 0, 0);
 	DPRINTF("Hello from EE SIO!\n"); 
@@ -1046,7 +1047,6 @@ int	loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 		//Loading some module from HDD
 		char party[MAX_PATH];
 		char *p;
-
 		loadHddModules();
 		sprintf(party, "hdd0:%s", argPath+6);
 		p = strchr(party, '/');
@@ -2094,21 +2094,26 @@ int main(int argc, char *argv[])
 		*(p+1)=0;
 	//The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
 
-	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
-		//Patch DMS4 Dev2 booting here, when we learn more about how it works
-		//Trying to mount that partition for loading CNF simply crashes.
-		//We may need a new IOP reset method for this.
-	}
-
 	LastDir[0] = 0;
 
-	if(uLE_detect_TV_mode() == TV_mode_PAL) {  //Test console TV mode
+	TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
+	if(TV_mode == TV_mode_PAL) {  //Test console TV mode
+		gs_vmode = GS_MODE_PAL;
+		SCREEN_WIDTH		= 640;
+		SCREEN_HEIGHT		= 512;
 		SCREEN_X			= 652;
 		SCREEN_Y			= 72;
-	} else {
+		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
+	}else{                      //else use NTSC mode (forced or auto)
+		gs_vmode = GS_MODE_NTSC;
+		SCREEN_WIDTH		= 640;
+		SCREEN_HEIGHT		= 448;
 		SCREEN_X			= 632;
 		SCREEN_Y			= 50;
-	}
+		Menu_end_y			= Menu_start_y + 22*FONT_HEIGHT;
+	} /* end else */
+	Frame_end_y				= Menu_end_y + 4;
+	Menu_tooltip_y			= Frame_end_y + LINE_THICKNESS + 2;
 
 	if(ROMVER_data[4] == 'J') rough_region = 'I';
 	else if(ROMVER_data[4] == 'E') rough_region = 'E';
@@ -2117,36 +2122,7 @@ int main(int argc, char *argv[])
 
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-	if(CNF_error<0)
-		strcpy(CNF_pathname, mainMsg+strlen(LNG(Failed_To_Load)));
-	else
-		strcpy(CNF_pathname, mainMsg+strlen(LNG(Loaded_Config)));
 
-	TV_mode = setting->TV_mode;
-	if((TV_mode!=TV_mode_NTSC)&&(TV_mode!=TV_mode_PAL)){ //If no forced request
-		TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
-	}
-
-	if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
-		gs_vmode = GS_MODE_PAL;
-		SCREEN_WIDTH	= 640;
-		SCREEN_HEIGHT = 512;
-		SCREEN_X			= 652;
-		SCREEN_Y			= 72;
-		Menu_end_y			= Menu_start_y + 26*FONT_HEIGHT;
-	}else{                      //else use NTSC mode (forced or auto)
-		gs_vmode = GS_MODE_NTSC;
-		SCREEN_WIDTH	= 640;
-		SCREEN_HEIGHT = 448;
-		SCREEN_X			= 632;
-		SCREEN_Y			= 50;
-		Menu_end_y		 = Menu_start_y + 22*FONT_HEIGHT;
-	} /* end else */
-	Frame_end_y			= Menu_end_y + 4;
-	Menu_tooltip_y	= Frame_end_y + LINE_THICKNESS + 2;
-
-	maxCNF = setting->numCNF;
-	swapKeys = setting->swapKeys;
 	if(setting->resetIOP)
 	{	Reset();
 		if(!strncmp(LaunchElfDir, "mass", 4))
@@ -2156,6 +2132,53 @@ int main(int argc, char *argv[])
 			initHOST();
 		}
 	}
+//Last chance to look at bootup screen, so allow braking here
+/*
+	if(readpad() && (new_pad && PAD_UP))
+	{ scr_printf("________ Boot paused. Press 'Circle' to continue.\n");
+		while(1)
+		{	if(new_pad & PAD_CIRCLE)
+				break;
+			while(!readpad());
+		}
+	}
+*/
+	setupGS(gs_vmode);
+	updateScreenMode(0); //resolves screen position issue with newer gsKit
+	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
+
+	loadFont("");  //Some font must be loaded before loading some device modules
+	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
+		//Patch DMS4 Dev2 booting here, when we learn more about how it works
+		//Trying to mount that partition for loading CNF simply crashes.
+		//We may need a new IOP reset method for this.
+		char temp[MAX_PATH];
+		char *t;
+		int fd;
+		sprintf(temp, "%s", boot_path+5);
+		t=strchr(temp, ':');
+		if	(t!=NULL)
+			*(t)=0;
+		sprintf(boot_path, "hdd0:%s", temp);
+		sprintf(LaunchElfDir, "pfs0:%s", LaunchElfDir+strlen(boot_path)+5);
+		if (LaunchElfDir[5]!='/')
+			strcpy(LaunchElfDir, "pfs0:/");
+		//hdd0:HDDPATH:pfs:PFSPATH
+		//we have to load HDD modules after setupGS() to avoid crashing
+		loadHddModules();
+		fileXioUmount("pfs0");
+		fd = fileXioMount("pfs0:", boot_path, FIO_MT_RDWR);
+		if (fd < 0){
+			strcpy(boot_path, "hdd0:__sysconf");
+			strcpy(LaunchElfDir, "pfs0:/FMCB/");
+			fileXioMount("pfs0:", boot_path, FIO_MT_RDWR);
+			}
+		strcpy(CNF_pathname, LaunchElfDir);
+		CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+		}
+	maxCNF = setting->numCNF;
+	swapKeys = setting->swapKeys;
+		
 	//Here IOP reset (if done) has been completed, so it's time to load and init drivers
 	getIpConfig();
 
@@ -2174,33 +2197,16 @@ int main(int argc, char *argv[])
 	timeout = (setting->timeout+1)*1000;
 	timeout_start = Timer();
 
-//Last chance to look at bootup screen, so allow braking here
-/*
-	if(readpad() && (new_pad && PAD_UP))
-	{ scr_printf("________ Boot paused. Press 'Circle' to continue.\n");
-		while(1)
-		{	if(new_pad & PAD_CIRCLE)
-				break;
-			while(!readpad());
-		}
-	}
-*/
-	setupGS(gs_vmode);
-	updateScreenMode(0); //resolves screen position issue with newer gsKit
-	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
-
-	loadFont("");  //Some font must be loaded before loading some device modules
 	Load_External_Language();
 	loadFont(setting->font_file);
 	if (setting->GUI_skin[0]) {GUI_active = 1;}
 	loadSkin(BACKGROUND_PIC, 0, 0);
 
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
-
 	if(CNF_error<0)
-		sprintf(mainMsg, "%s%s", LNG(Failed_To_Load), CNF_pathname);
+		sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), CNF_pathname);
 	else
-		sprintf(mainMsg, "%s%s", LNG(Loaded_Config), CNF_pathname);
+		sprintf(mainMsg, "%s %s", LNG(Loaded_Config), CNF_pathname);
 
 	//Here nearly everything is ready for the main menu event loop
 	//But before we start that, we need to validate CNF_Path

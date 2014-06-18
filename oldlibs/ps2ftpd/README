@@ -1,0 +1,124 @@
+-----------------------------------------------------------------------------
+ PS2FTPD - FTP Server for PS2
+ Copyright (c) 2004 Jesper Svennevid
+-----------------------------------------------------------------------------
+
+Piracy ruins the industry. Don't be a moron, buy your games.
+
+License:
+--------
+
+Licensed under the AFL v2.0. See the file LICENSE included with this
+distribution for licensing terms.
+
+Building:
+---------
+
+Building this project requires the following:
+
+- A working IOP C compiler
+- PS2SDK installed with $PS2SDK set properly.
+
+Just run make and if all went OK there should be a ps2ftpd.irx in the bin/
+directory.
+
+Operation:
+----------
+
+ps2ftpd.irx requires that ps2ip.irx is already present. It accesses ioman.irx
+and iomanx.irx, but does not absolutely require that they are present when
+started. It hampers functionality greatly if they are not present or at least
+loaded at a later time.
+
+When starting the module, it will start listening for incoming connections
+on port 21. The server currently allows for up to 4 concurrent clients. This
+is configurable at compile-time if you need more.
+
+The module accepts to following commandline-arguments:
+
+  -port <num>    Set which port-number that the server should listen to.
+                 (default: 21)
+  -anonymous     Allow anonymous logins. (default: disabled)
+  -user <user>   Set username to accept. (default: ps2dev)
+  -pass <pass>   Set password to accept. (default: ps2dev)
+
+If you're having trouble with "Unable to build data connection", it might be
+that your version of ps2ip.irx is too old (the older versions did only allow
+for 5 sockets at one time), please upgrade to a newer version in that case.
+ps2ftpd will only in the worst case use a maximum of 4 sockets for
+operation with one client connected.
+
+Operation:
+----------
+
+The server understands the following commands:
+
+USER <name>
+	Login using <name> (or 'anonymous' if anonymous logins are allowed)
+PASS <password>
+	Send <pass> as password for account.
+PASV
+	Enter passive transfer-mode.
+PORT <ipA>,<ipB>,<ipC>,<ipD>,<pH>,<pL>
+	Enter active transfer-mode. (ipA.ipB.ipC.ipD:pH*256+pL)
+QUIT
+	Quit session.
+SYST
+	Request system information.
+LIST <path>
+	Request directory listing.
+NLST <path>
+	Request name list.
+RETR <file>
+	Retrieve data in <file>. Affected by REST.
+TYPE <type>
+	Set transfer-type, only A & I allowed currently.
+MODE <mode>
+	Set transfer-mode. Only S(Stream) allowed.
+STRU <structure>
+	Set transfer-structure. Only F(File) allowed.
+STOR <file>
+	Save data to <file>. Affected by REST.
+APPE <file>
+	Append data to <file>. Not affected by REST.
+PWD
+XPWD
+	Query current path.
+XCWD <dir>
+CWD <dir>
+	Change current directory.
+CDUP
+	Go to parent directory.
+DELE <file>
+	Unlink <file> from filesystem.
+XMKD <dir>
+MKD <dir>
+	Create directory.
+XRMD <dir>
+RMD <dir>
+	Delete directory.
+SITE <action>
+	Perform site-specific action. See list below.
+NOOP
+	No operation.
+REST <marker>
+	Set restart-marker (for resuming transfers)
+SIZE <file>
+	Get size of file.
+
+The supported site-commands are:
+
+SITE MNT <device> <file>
+	Mount <file> at <device>. Example: SITE MNT /pfs/0 hdd:+PS2MENU
+SITE UMNT <device>
+	Unmount mounted device. Example: SITE UMNT /pfs/0
+SITE SYNC <device>
+	Synchronize device. Example: SITE SYNC /pfs/0
+
+The filesystem is unified, so you will find the first memory-card at
+'/mc/0/', and a mounted hdd partition at for example '/pfs/0/'. The device
+list show all devices present, but you may not access them all depending
+on if they have implemented all required functionality. The unit list will
+stop listing devices if the device is not present, so if you have a MC in
+slot 1 but not in slot 0, the card in slot 1 will not show (but can be
+accessed by going directly to '/mc/1/').

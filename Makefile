@@ -1,16 +1,16 @@
 EE_BIN = BOOT.ELF
-EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o  filer.o cd.o\
+EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o cd.o\
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o\
 	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
 	cdvd.o ps2ftpd.o ps2host.o smbman.o vmc_fs.o fakehost.o ps2kbd.o\
 	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o sior.o
 
-EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2DEV)/libjpg/include\
-	-I$(PS2SDK)/sbv/include -I$(PS2DEV)/libcdvd/ee
+EE_INCS := -I$(PS2DEV)/gsKit/include -Ioldlibs/libjpg/include\
+	-I$(PS2SDK)/sbv/include -Ioldlibs/libcdvd/ee
 
-EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2DEV)/libjpg\
-	-L$(PS2SDK)/sbv/lib -L$(PS2DEV)/libcdvd/lib -s
+EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -Loldlibs/libjpg\
+	-L$(PS2SDK)/sbv/lib -Loldlibs/libcdvd/lib -s
 EE_LIBS = -lpad -lgskit -ldmakit -ljpg -lmc -lhdd -lcdvdfs -lkbd -lmf -lc  -lfileXio -lpatches -lpoweroff  -ldebug -lc -lsior
 
 all:	$(EE_BIN)
@@ -30,10 +30,10 @@ usbd.s:
 	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx
 
 usbhdfsd.s:
-	bin2s $(PS2DEV)/usbhdfsd/bin/usbhdfsd.irx usbhdfsd.s usb_mass_irx
+	bin2s $(PS2SDK)/iop/irx/usbhdfsd.irx usbhdfsd.s usb_mass_irx
 
 cdvd.s:
-	bin2s $(PS2DEV)/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
+	bin2s oldlibs/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
 
 poweroff.s:
 	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
@@ -48,16 +48,16 @@ ps2dev9.s:
 	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
 
 ps2ip.s:
-	bin2s $(PS2DEV)/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
+	bin2s oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
 
 ps2smap.s:
-	bin2s $(PS2DEV)/SMS/drv/SMSMAP/SMSMAP.irx ps2smap.s ps2smap_irx
+	bin2s oldlibs/SMS/drv/SMSMAP/SMSMAP.irx ps2smap.s ps2smap_irx
 
 smsutils.s:
-	bin2s $(PS2DEV)/SMS/drv/SMSUTILS/SMSUTILS.irx smsutils.s smsutils_irx
+	bin2s oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx smsutils.s smsutils_irx
 
 ps2ftpd.s:
-	bin2s $(PS2DEV)/ps2ftpd/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
+	bin2s oldlibs/ps2ftpd/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
 
 ps2atad.s:
 	bin2s $(PS2SDK)/iop/irx/ps2atad.irx ps2atad.s ps2atad_irx

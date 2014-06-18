@@ -5,7 +5,7 @@ dev9_IMPORTS_end
 
 atad_IMPORTS_start
 I_ata_get_devinfo
-I_ata_device_dma_transfer
+I_ata_device_sector_io
 I_ata_device_flush_cache
 atad_IMPORTS_end
 

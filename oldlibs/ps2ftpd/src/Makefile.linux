@@ -1,0 +1,30 @@
+# makefile for testing the server under linux
+
+TARGET=ps2ftpd
+
+CFLAGS:=$(CFLAGS) -Wall -DLINUX
+
+SOURCES=$(wildcard *.c)
+HEADERS=$(wildcard *.h)
+OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
+
+.PHONY: all clean distclean
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CC) -o $(TARGET) $(OBJECTS)
+
+# clean intermediate files
+clean:
+	-rm -f $(TARGET) $(OBJECTS)
+
+# clean all unneeded files to simplify re-distribution
+distclean: clean
+	-rm -f *~ DEADJOE $(DEPENDFILE)
+
+DEPENDFILE=.depend
+# automatic dependency updates
+$(DEPENDFILE): $(SOURCES) $(HEADERS)
+	$(CC) $(CFLAGS) -MM $(SOURCES) > $(DEPENDFILE)
+-include $(DEPENDFILE)

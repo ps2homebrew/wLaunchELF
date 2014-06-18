@@ -29,7 +29,7 @@ static int iop_stat(hio_t *hio, u_long *size_in_kb)
 static int iop_read(hio_t *hio, u_long start_sector, u_long num_sectors, void *output, u_long *bytes)
 {
  hio_iop_t *iop = (hio_iop_t*) hio;
- int result = ata_device_dma_transfer(iop->unit, output, start_sector, num_sectors, ATA_DIR_READ);
+ int result = ata_device_sector_io(iop->unit, output, start_sector, num_sectors, ATA_DIR_READ);
  if (result == 0)
  {
   *bytes = num_sectors * HDD_SECTOR_SIZE;
@@ -43,7 +43,7 @@ static int iop_read(hio_t *hio, u_long start_sector, u_long num_sectors, void *o
 static int iop_write(hio_t *hio, u_long start_sector, u_long num_sectors, const void *input, u_long *bytes)
 {
  hio_iop_t *iop = (hio_iop_t*) hio;
- int result = ata_device_dma_transfer(iop->unit, (char*) input, start_sector, num_sectors, ATA_DIR_WRITE);
+ int result = ata_device_sector_io(iop->unit, (char*) input, start_sector, num_sectors, ATA_DIR_WRITE);
  if (result == 0)
  {
   *bytes = num_sectors * HDD_SECTOR_SIZE;

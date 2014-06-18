@@ -1,5 +1,35 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF wip2 (2013.09.13)
+ * now it supports homebrew hdd paths:
+ e.g. hdd0:/__sysconf/FMCB/
+ * now you can load and save configuration files (including ipconfig.dat) from everywhere
+ * if you inject it in partition header via PATINFO it now tries to read LAUNCHELF.CNF from the root of partition if it is in PFS format. If it is not pfs partition it tries to load it from hdd0:/__sysconf/FMCB/ (specially for @l_oliveira)
+ * fixed problem with "X" and "O" button swap
+ * fully rewrote code for HDD manager. Tested with my 40Gb disk with 200 partitions.
+ 10 minutes and 30s if ule_evilo is using
+ 7 min if my code is using
+ Speed increase in 50%.
+ It is still not so fast dunno know why. I tested and the longest operations is fileXioOpen and fileXioMount (about 1second per each when we are at the end of list).
+
+LaunchELF wip1 (2013.09.06)
+ *uses latest PS2SDK, gsKit and usbhdfsd
+ *(crazycat) 64-bit support (files larger than 4Gb)
+ *(SP193) added support for disks larger than 1Tb
+ * added full support for all partitions in HDD manager (except of __mbr partition):
+ - you can rename any partition;
+ - you can delete any partition except of partition started with "__" (it is PS2SDK feature);
+ - returned support for codebreaker partition (don't forget that it can be broken);
+ - now all partition recognized by partition flag (0x0001 - mbr, 0x1337 - HDL partition, 0x0100 - PFS partition)
+ - if you press Square on HDL partition - you can load HDL info, if you press Square again - you can unload HDL info (it is needed for renaming HDL partition without reloading HDD manager);
+ - you can expand only PFS partitions;
+ * now uLe support official hdd loading path, after loading he mounts partitions from where it is loading into pfs0:/, so now you can simply load LAUNCHELF.CNF which is placed in the same place as uLe.
+ You can also load language files and skins from the same mounted partition. You need to specify path to it in pfs format. (For example pfs0:/FMCB/skin.jpg)
+Known bugs and limitations:
+ - you cannot use hdd0: paths in the LAUNCHELF.CNF (I have to rewrite too much)
+ - it still uses fakehost for launching from hdd (sorry no way for passing normal arguments)
+ - it cannot return into ps2 browser after network modules are loaded
+
 LaunchELF v4.42d (2013.03.24)
 -Fixed incomplete ps2sdk update in the prior version.
 -Updated ps2sdk and existing source files to github rev 912.
