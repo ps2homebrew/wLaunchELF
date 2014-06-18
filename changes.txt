@@ -1,5 +1,10 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF wip4 (2013.10.22)
+ * now all partitions which names are started from "__" are browsable;
+ * hide DELETE menu entry in HDD manager for partitions which are started from "__" (because PS2SDK has a bug - so these partitions cannot be removed)
+ * now it is possible to launch uLe from mbr (thanks kHn for tests and providing mbrs)
+
 LaunchELF wip3 (2013.09.17)
  * gsKit and ps2sdk updates
  * added default directory for searching related files (hdd0:__sysconf:pfs:/FMCB/)

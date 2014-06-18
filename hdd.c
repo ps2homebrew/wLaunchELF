@@ -344,6 +344,9 @@ int MenuParty(PARTYINFO Info)
 
 	memset(enable, TRUE, NUM_MENU);
 
+	if((Info.Name[0] == '_') && (Info.Name[1] == '_')){
+		enable[REMOVE] = FALSE;
+	}
 	if(Info.Treatment == TREAT_SYSTEM){
 		enable[REMOVE] = FALSE;
 		enable[RENAME] = FALSE;

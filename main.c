@@ -1583,6 +1583,7 @@ int uLE_related(char *pathout, char *pathin)
 		sprintf(pathout, "%s%s", LaunchElfDir, pathin+5);
 		if( exists(pathout) )
 			return 1;
+		loadHddModules();
 		ret = fileXioMount("pfs0:", "hdd0:__sysconf", FIO_MT_RDWR);
 		if (ret > 0)
 		{
@@ -1716,17 +1717,16 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 
 		fd =genOpen(path, O_RDONLY);
 		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		if(strncmp(path, "mc:", 3) == 0){
-			strcpy(fullpath, path);
-			path[2] = '0';
-			strcpy(path+3, fullpath+2);
-			fd =genOpen(path, O_RDONLY);
-			if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-			path[2] = '1';
-			fd =genOpen(path, O_RDONLY);
-			if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-			}
-		strcpy(path,"pfs0:/osd/osdmain.elf");
+		if(strncmp(path, "mc:", 3) != 0) goto ELFnotFound;
+		strcpy(fullpath, path);
+		path[2] = '0';
+		strcpy(path+3, fullpath+2);
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		path[2] = '1';
+		fd =genOpen(path, O_RDONLY);
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+/*		strcpy(path,"pfs0:/osd/osdmain.elf");
 		fd =genOpen(path, O_RDONLY);
 		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
 		strcpy(path,"pfs0:/osd100/hosdsys.elf");
@@ -1737,7 +1737,7 @@ Recurse_for_ESR:          //Recurse here for PS2Disc command with ESR disc
 		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
 		strcpy(path,"pfs0:/osd/hosdsys.elf");
 		fd =genOpen(path, O_RDONLY);
-		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
+		if(fd >= 0) goto close_fd_and_launch_OSDSYS;*/
 		if(fd < 0) goto ELFnotFound;
 close_fd_and_launch_OSDSYS:
 		genClose(fd);
@@ -2090,6 +2090,10 @@ int main(int argc, char *argv[])
 			cdvd_booted = 1;
 		else if	((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
 			hdd_booted = 1;  //Modify this section later to cover Dev2 needs !!!
+		else if (!strncmp(argv[0], "rom", 3)) {//argv[0] = "rom0:HDD" (boot from mbr)
+			hdd_booted = 1;
+			strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
+		}
 	}
 	strcpy(boot_path, LaunchElfDir);
 
@@ -2172,7 +2176,7 @@ int main(int argc, char *argv[])
 	gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00,0x00,0x00,0x00,0x00));
 
 	loadFont("");  //Some font must be loaded before loading some device modules
-	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)){;
+	if(hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)) {
 		//Patch DMS4 Dev2 booting here, when we learn more about how it works
 		//Trying to mount that partition for loading CNF simply crashes.
 		//We may need a new IOP reset method for this.

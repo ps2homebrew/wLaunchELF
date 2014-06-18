@@ -648,16 +648,16 @@ void setPartyList(void)
 			int len = strlen(dirEnt.name);
 			if(!strcmp(dirEnt.name+len-4, ".PCB"))
 				continue;
-		}*/
+		}
 
 		if(!strncmp(dirEnt.name, "__", 2) &&
-		//	strcmp(dirEnt.name, "__boot") &&
+			strcmp(dirEnt.name, "__boot") &&
 			strcmp(dirEnt.name, "__net") &&
 			strcmp(dirEnt.name, "__system") &&
 			strcmp(dirEnt.name, "__sysconf") &&
 			strcmp(dirEnt.name, "__common"))
 			continue;
-		
+	*/	
 		strcpy(parties[nparties++], dirEnt.name);
 	}
 	fileXioDclose(hddFd);

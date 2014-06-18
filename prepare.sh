@@ -19,6 +19,8 @@ cp -rf ../patches/ps2sdk/* ./ || exit 1
 make clean && make -j 2 && make release && make clean || { exit 1; }
 cd ..
 
+source ~/.profile
+
 if test ! -d "gsKit"; then
  git clone git://github.com/ps2dev/gsKit.git && cd gsKit || exit 1
 else
@@ -34,6 +36,6 @@ cd oldlibs
 make -C libjpg clean && make -C libjpg || { exit 1; }
 make -C libcdvd clean && make -C libcdvd || { exit 1; }
 make -C SMS/drv/SMSMAP clean && make -C SMS/drv/SMSMAP || { exit 1; }
-make -C SMS/drv/SMSTCPIP clean && make -C SMS/drv/SMSTCPIP || { exit 1; }
+make -C SMS/drv/SMSTCPIP clean && make -C SMS/drv/SMSTCPIP || { exit 1; } //we need $PS2SDKSRC defined
 make -C SMS/drv/SMSUTILS clean && make -C SMS/drv/SMSUTILS || { exit 1; }
 make -C ps2ftpd clean && make -C ps2ftpd || { exit 1; }
