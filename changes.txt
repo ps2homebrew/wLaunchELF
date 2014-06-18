@@ -1,5 +1,9 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.21 (2008.07.20)
+-Changed FileBrowser icon colour assignment to use Color5, Colour6, and Color7 for folders, ELF files, and generic files, respectively
+-Changed default colour values for FileBrowser icons to be yellow, green, white, used for folders, ELF files, and generic files, respectively. This change also affects HddManager pie charts as they use two of the same colour definitions
+
 LaunchELF v4.20 (2008.07.17)
 -Implemented an icon mode for the FileBrowser, where each file/folder name will now be prefixed with a small coloured icon. The icon shape for folders is different from that for files, and three different colours are used. One for folders, another for ELFs, and a third for all other files.
 -Implemented a new CNF variable 'FB_NoIcons', which may be set to disable the new FileBrowser mode. By default it is zero, enabling the new mode. There is no entry in the configuration menus for this variable, so you must add or change it by text editor (as yet).

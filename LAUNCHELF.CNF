@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2007.05.10
+# File name:    LAUNCHELF.CNF           Revision Date: 2008.07.19
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -113,15 +113,18 @@ Menu_Hide_Paths = 1
 # depend greatly on your monitor settings as well.
 # ----------------------------------------------------------------------
 # With the addition of the HddManager, four more colours were added to
-# this array, for use in graphical rpresentations, like pie charts.
+# this array, for use in graphical presentations, like pie charts.
+# ----------------------------------------------------------------------
+# With the addition of icon display mode for FileBrowser, the graphical
+# colours are used for these icons as well
 # ----------------------------------------------------------------------
 GUI_Col_1_ABGR = 00808080
 GUI_Col_2_ABGR = 00404040
 GUI_Col_3_ABGR = 00000060
 GUI_Col_4_ABGR = 00000000
-GUI_Col_5_ABGR = 00FF00FF
-GUI_Col_6_ABGR = 00FF0000
-GUI_Col_7_ABGR = 00000000
+GUI_Col_5_ABGR = 00006060
+GUI_Col_6_ABGR = 00006000
+GUI_Col_7_ABGR = 00E0E0E0
 GUI_Col_8_ABGR = 00000000
 # ----------------------------------------------------------------------
 # Screen_X and Screen_Y are offsets used to center the LaunchELF screen
@@ -331,9 +334,10 @@ PSU_NoOverwrite = 0
 # In icon mode the FileBrowser will display a small icon in front of
 # every file or folder name, with different shapes for folder vs file.
 # The icons will reuse colours already defined as follows:
-# Folders use Color5=='Graph2', ELFs use Color4=='Graph1', and other
-# files will all use Color3=='Normal', just like normal text display.
-# In this mode objects marked for operations are displayed differently
+# Folders use Color5=='Graph1', ELFs use Color6=='Graph2', and other
+# files will all use Color7=='Graph3'. By default these colours will
+# be setup as yellow, green, and white, but can be changed for 'skins'.
+# In icon mode objects marked for operations are displayed differently
 # by switching to a slightly different icon definition (with a 'hole').
 # But if FB_NoIcons is set non-zero then the FileBrowser will revert
 # to the traditional form, using no icons at all, and marking selected

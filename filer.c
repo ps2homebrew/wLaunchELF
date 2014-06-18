@@ -3548,14 +3548,14 @@ void getFilePath(char *out, int cnfmode)
 				} else { //if Icons must be used in front of file/folder names
 					if(files[top+i].stats.attrFile & MC_ATTR_SUBDIR){
 						iconbase = ICON_FOLDER;
-						iconcolr = 5;
+						iconcolr = 4;
 					} else {
 						iconbase = ICON_FILE;
 						p = strrchr(files[top+i].name, '.');
 						if(p!=NULL && !stricmp(p+1, "ELF"))
-							iconcolr = 4;
+							iconcolr = 5;
 						else
-							iconcolr = 3;
+							iconcolr = 6;
 					}
 					if(marks[top+i])
 						iconbase += 2;
