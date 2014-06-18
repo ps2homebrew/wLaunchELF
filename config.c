@@ -99,6 +99,7 @@ int CheckMC(void)
 //---------------------------------------------------------------------------
 // Save LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD save USBD_FILE string
+// polo: ADD save SKIN_FILE string
 //---------------------------------------------------------------------------
 void saveConfig(char *mainMsg, char *CNF)
 {
@@ -135,6 +136,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		"GUI_Swap_Keys = %d\r\n"
 		"USBD_FILE = %s\r\n"
 		"NET_HOSTwrite = %d\r\n"
+		"SKIN_FILE = %s\r\n"
 		"%n",           // %n causes NO output, but only a measurement
 		setting->dirElf[0],  //auto
 		setting->dirElf[1],  //Circle
@@ -163,6 +165,7 @@ void saveConfig(char *mainMsg, char *CNF)
 		setting->swapKeys,   //GUI_Swap_Keys
 		setting->usbd,       //USBD_FILE
 		setting->HOSTwrite,  //NET_HOST_write
+		setting->skin,       //SKIN_FILE
 		&CNF_size       // This variable measure the size of sprintf data
   );
 
@@ -211,6 +214,7 @@ unsigned long hextoul(char *string)
 //---------------------------------------------------------------------------
 // Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD load USBD_FILE string
+// polo: ADD load SKIN_FILE string
 //---------------------------------------------------------------------------
 void loadConfig(char *mainMsg, char *CNF)
 {
@@ -227,6 +231,7 @@ void loadConfig(char *mainMsg, char *CNF)
 		setting->dirElf[i][0] = 0;
 	strcpy(setting->dirElf[1], "MISC/FileBrowser");
 	strcpy(setting->usbd, "\0");
+	strcpy(setting->skin, "\0");
 	setting->timeout = DEF_TIMEOUT;
 	setting->filename = DEF_FILENAME;
 	setting->color[0] = DEF_COLOR1;
@@ -317,6 +322,7 @@ failed_load:
 		else if(!strcmp(name,"GUI_Swap_Keys")) setting->swapKeys = atoi(value);
 		else if(!strcmp(name,"USBD_FILE")) strcpy(setting->usbd,value);
 		else if(!strcmp(name,"NET_HOSTwrite")) setting->HOSTwrite = atoi(value);
+		else if(!strcmp(name,"SKIN_FILE")) strcpy(setting->skin,value);
 	}
 	free(RAM_p);
 	sprintf(mainMsg, "Loaded Config (%s)", path);
@@ -384,7 +390,6 @@ void setColor(void)
 						rgb[s/3][s%3]--;
 						setting->color[s/3] = 
 							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
-						if(s/3 == 0) itoSetBgColor(setting->color[0]);
 					}
 				} else if(s==12) {
 					if(setting->screen_x > 0) {
@@ -407,7 +412,6 @@ void setColor(void)
 						rgb[s/3][s%3]++;
 						setting->color[s/3] = 
 							ITO_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
-						if(s/3 == 0) itoSetBgColor(setting->color[0]);
 					}
 				} else if(s==12) {
 					setting->screen_x++;
@@ -437,8 +441,6 @@ void setColor(void)
 					screen_env.interlace = setting->interlace;
 					itoGsReset();
 					itoGsEnvSubmit(&screen_env);
-					itoSetBgColor(setting->color[0]);
-					//itoSetScreenPos(setting->screen_x, setting->screen_y);
 					
 					for(i=0; i<4; i++) {
 						rgb[i][0] = setting->color[i] & 0xFF;
@@ -526,6 +528,7 @@ void setColor(void)
 //---------------------------------------------------------------------------
 // Other settings by EP
 // sincro: ADD USBD SELECTOR MENU
+// Polo: ADD Skin SELECTOR MENU
 //---------------------------------------------------------------------------
 void setSettings(void)
 {
@@ -542,21 +545,21 @@ void setSettings(void)
 			if(new_pad & PAD_UP)
 			{
 				if(s!=1) s--;
-				else s=5;
+				else s=6;
 			}
 			else if(new_pad & PAD_DOWN)
 			{
-				if(s!=5) s++;
+				if(s!=6) s++;
 				else s=1;
 			}
 			else if(new_pad & PAD_LEFT)
 			{
-				if(s!=5) s=5;
+				if(s!=6) s=6;
 				else s=1;
 			}
 			else if(new_pad & PAD_RIGHT)
 			{
-				if(s!=5) s=5;
+				if(s!=6) s=6;
 				else s=1;
 			}
 			else if((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE) )
@@ -567,6 +570,7 @@ void setSettings(void)
 						setting->numCNF--;
 				}
 				else if(s==4) strcpy(setting->usbd,"\0");
+				else if(s==5) strcpy(setting->skin,"\0");
 			}
 			else if((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE))
 			{
@@ -578,12 +582,15 @@ void setSettings(void)
 					setting->swapKeys = !setting->swapKeys;
 				else if(s==4)
 					getFilePath(setting->usbd, USBD_IRX_CNF);
+				else if(s==5)
+					getFilePath(setting->skin, SKIN_CNF);
 				else
 					return;
 			}
 		}
 		
 		clrScr(setting->color[0]);
+
 		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
 		
@@ -616,14 +623,20 @@ void setSettings(void)
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 
-		
+		if(strlen(setting->skin)==0)
+			sprintf(c, "  SKIN PATH: NULL");
+		else
+			sprintf(c, "  SKIN PATH: %s",setting->skin);
+		printXY(c, x, y/2, setting->color[3], TRUE);
+		y += FONT_HEIGHT;
+
 		y += FONT_HEIGHT / 2;
 		printXY("  RETURN", x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT;
 		
 		y = s * FONT_HEIGHT + SCREEN_MARGIN+FONT_HEIGHT*2+12+LINE_THICKNESS + FONT_HEIGHT /2;
 		
-		if(s>=5) y+=FONT_HEIGHT/2;
+		if(s>=6) y+=FONT_HEIGHT/2;
 		drawChar(127, x, y/2, setting->color[3]);
 		
 		if (s == 1) {
@@ -642,6 +655,11 @@ void setSettings(void)
 			else
 				sprintf(c, "›:Change");
 		} else if( s== 4) {
+			if (swapKeys)
+				sprintf(c, "~:Select ›:Clear");
+			else
+				sprintf(c, "›:Select ~:Clear");
+		} else if( s== 5) {
 			if (swapKeys)
 				sprintf(c, "~:Select ›:Clear");
 			else
@@ -901,6 +919,7 @@ void setNetwork(void)
 
 
 		clrScr(setting->color[0]);
+
 		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
 
@@ -1054,6 +1073,7 @@ void config(char *mainMsg, char *CNF)
 				{
 					free(tmpsetting);
 					saveConfig(mainMsg, CNF);
+					loadSkin();
 					break;
 				}
 				else if(s==CANCEL)
@@ -1065,7 +1085,6 @@ void config(char *mainMsg, char *CNF)
 					screen_env.interlace = setting->interlace;
 					itoGsReset();
 					itoGsEnvSubmit(&screen_env);
-					itoSetBgColor(setting->color[0]);
 					mainMsg[0] = 0;
 					break;
 				}

@@ -59,6 +59,7 @@ int trayopen=FALSE;
 int selected=0;
 int timeout=0;
 int mode=BUTTON;
+int user_acted = 0;  /* Set when gamepad used, to break timeout */
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
 char CNF[MAX_PATH];
 int numCNF=0;
@@ -238,8 +239,10 @@ int drawMainScreen(void)
 	x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 	y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
 	if(setting->dirElf[0][0]){
-		if(mode==BUTTON)	sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
-		else				sprintf(c, "TIMEOUT: ");
+		if(!user_acted)
+			sprintf(c, "TIMEOUT: %d", timeout/SCANRATE);
+		else
+			sprintf(c, "TIMEOUT: Halted");
 		printXY(c, x, y/2, setting->color[3], TRUE);
 		y += FONT_HEIGHT*2;
 	}
@@ -944,14 +947,17 @@ int main(int argc, char *argv[])
 				strcpy(mainMsg, "Stop Disc");
 			}
 		}
-		
-		timeout--;
+
+		if(!user_acted)
+			timeout--;
 		nElfs = drawMainScreen();
 		
 		waitPadReady(0,0);
 		if(readpad()){
 			switch(mode){
 			case BUTTON:
+				if(new_pad)
+					user_acted = 1;
 				if(new_pad & PAD_CIRCLE){
 					RunElf(setting->dirElf[1]);
 				}else if(new_pad & PAD_CROSS) 
@@ -1022,8 +1028,9 @@ int main(int argc, char *argv[])
 				break;
 			}
 		}
-		if(timeout/SCANRATE==0 && setting->dirElf[0][0] && mode==BUTTON){
+		if(timeout/SCANRATE==0 && setting->dirElf[0][0] && mode==BUTTON && !user_acted){
 			RunElf(setting->dirElf[0]);
+			user_acted = 1; //Halt timeout after default action, just as for user action
 			timeout = (setting->timeout+1)*SCANRATE;
 		}
 	}

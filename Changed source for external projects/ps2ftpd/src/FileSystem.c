@@ -400,7 +400,9 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					// hdd partition filter: skip over certain ps2 hdd partitions
 					while( !strcmp(pContext->m_kFile.device->name, "hdd") && 
 						( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
-							(!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot")) ) )
+							(!strncmp(ent.name, "__", 2) &&
+								strcmp(ent.name, "__boot") &&
+								strcmp(ent.name, "__common")) ) )
 					{
 						// move to next entry and check if it's the last
 						if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) == 0 )
@@ -408,7 +410,9 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 							// check last entry
 							if( !strcmp(pContext->m_kFile.device->name, "hdd") && 
 								( (ent.stat.attr != 0 || ent.stat.mode == 0x1337) || 
-									(!strncmp(ent.name, "__", 2) && strcmp(ent.name, "__boot")) ) )
+									(!strncmp(ent.name, "__", 2) &&
+										strcmp(ent.name, "__boot") &&
+										strcmp(ent.name, "__common")) ) )
 								return -1;
 
 							break;

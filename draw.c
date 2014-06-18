@@ -1,7 +1,11 @@
+//--------------------------------------------------------------
+//File name:   draw.c
+//--------------------------------------------------------------
 #include "launchelf.h"
 #include "font5200.c"
 
 itoGsEnv screen_env;
+int        testskin;
 
 // ELISA100.FNTに存在しない文字
 const uint16 font404[] = {
@@ -64,9 +68,302 @@ const unsigned char sjis_lookup_82[256] = {
   0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,  // 0xF0
 };
 
+//--------------------------------------------------------------
+int *CreateCoeffInt( int nLen, int nNewLen, int bShrink ) {
 
-////////////////////////////////////////////////////////////////////////
-// 画面表示のテンプレート
+ int nSum    = 0;
+ int nSum2   = 0;
+ int *pRes   = (int*) malloc( 2 * nLen * sizeof(int) );
+ int *pCoeff = pRes;
+ int nNorm   = (bShrink) ? (nNewLen << 12) / nLen : 0x1000;
+ int nDenom  = (bShrink) ? nLen : nNewLen;
+ int i;
+
+ memset( pRes, 0, 2 * nLen * sizeof(int) );
+
+ for( i = 0; i < nLen; i++, pCoeff += 2 ) {
+
+  nSum2 = nSum + nNewLen;
+
+  if(nSum2 > nLen) {
+
+   *pCoeff = ((nLen - nSum) << 12) / nDenom;
+   pCoeff[1] = ((nSum2 - nLen) << 12) / nDenom;
+   nSum2 -= nLen;
+
+  } else {
+
+   *pCoeff = nNorm;
+
+   if(nSum2 == nLen) {
+    pCoeff[1] = -1;
+    nSum2 = 0;
+
+   } /* end if */
+
+  } /* end else */
+
+  nSum = nSum2;
+
+ } /* end for */
+
+ return pRes;
+
+} /* CreateCoeffInt */
+
+//--------------------------------------------------------------
+int ShrinkData( u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight ) {
+
+ u8 *pLine    = pInBuff, *pPix;
+ u8 *pOutLine = pOutBuff;
+ u32 dwInLn   = ( 3 * wWidth + 3 ) & ~3;
+ u32 dwOutLn  = ( 3 * wNewWidth + 3 ) & ~3;
+
+ int  x, y, i, ii;
+ int  bCrossRow, bCrossCol;
+ int *pRowCoeff = CreateCoeffInt( wWidth, wNewWidth, 1 );
+ int *pColCoeff = CreateCoeffInt( wHeight, wNewHeight, 1 );
+
+ int *pXCoeff, *pYCoeff = pColCoeff;
+ u32  dwBuffLn = 3 * wNewWidth * sizeof( u32 );
+ u32 *pdwBuff = ( u32* ) malloc( 6 * wNewWidth * sizeof( u32 ) );
+ u32 *pdwCurrLn = pdwBuff;  
+ u32 *pdwNextLn = pdwBuff + 3 * wNewWidth;
+ u32 *pdwCurrPix;
+ u32  dwTmp, *pdwNextPix;
+
+ memset( pdwBuff, 0, 2 * dwBuffLn );
+
+ y = 0;
+ 
+ while( y < wNewHeight ) {
+
+  pPix = pLine;
+  pLine += dwInLn;
+
+  pdwCurrPix = pdwCurrLn;
+  pdwNextPix = pdwNextLn;
+
+  x = 0;
+  pXCoeff = pRowCoeff;
+  bCrossRow = pYCoeff[ 1 ] > 0;
+  
+  while( x < wNewWidth ) {
+  
+   dwTmp = *pXCoeff * *pYCoeff;
+   for ( i = 0; i < 3; i++ )
+    pdwCurrPix[ i ] += dwTmp * pPix[i];
+   
+   bCrossCol = pXCoeff[ 1 ] > 0;
+   
+   if ( bCrossCol ) {
+
+    dwTmp = pXCoeff[ 1 ] * *pYCoeff;
+    for ( i = 0, ii = 3; i < 3; i++, ii++ )
+     pdwCurrPix[ ii ] += dwTmp * pPix[ i ];
+
+   } /* end if */
+
+   if ( bCrossRow ) {
+
+    dwTmp = *pXCoeff * pYCoeff[ 1 ];
+    for( i = 0; i < 3; i++ )
+     pdwNextPix[ i ] += dwTmp * pPix[ i ];
+    
+    if ( bCrossCol ) {
+
+     dwTmp = pXCoeff[ 1 ] * pYCoeff[ 1 ];
+     for ( i = 0, ii = 3; i < 3; i++, ii++ )
+      pdwNextPix[ ii ] += dwTmp * pPix[ i ];
+
+    } /* end if */
+
+   } /* end if */
+
+   if ( pXCoeff[ 1 ] ) {
+
+    x++;
+    pdwCurrPix += 3;
+    pdwNextPix += 3;
+
+   } /* end if */
+   
+   pXCoeff += 2;
+   pPix += 3;
+
+  } /* end while */
+  
+  if ( pYCoeff[ 1 ] ) {
+
+   // set result line
+   pdwCurrPix = pdwCurrLn;
+   pPix = pOutLine;
+   
+   for ( i = 3 * wNewWidth; i > 0; i--, pdwCurrPix++, pPix++ )
+    *pPix = ((u8*)pdwCurrPix)[3];
+
+   // prepare line buffers
+   pdwCurrPix = pdwNextLn;
+   pdwNextLn = pdwCurrLn;
+   pdwCurrLn = pdwCurrPix;
+   
+   memset( pdwNextLn, 0, dwBuffLn );
+   
+   y++;
+   pOutLine += dwOutLn;
+
+  } /* end if */
+  
+  pYCoeff += 2;
+
+ } /* end while */
+
+ free( pRowCoeff );
+ free( pColCoeff );
+ free( pdwBuff );
+
+ return 1;
+
+} /* end ShrinkData */
+
+//--------------------------------------------------------------
+int EnlargeData( u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight ) {
+
+ u8 *pLine = pInBuff,
+    *pPix  = pLine,
+    *pPixOld,
+    *pUpPix,
+    *pUpPixOld;
+ u8 *pOutLine = pOutBuff, *pOutPix;
+ u32 dwInLn   = ( 3 * wWidth + 3 ) & ~3;
+ u32 dwOutLn  = ( 3 * wNewWidth + 3 ) & ~3;
+
+ int x, y, i;
+ int bCrossRow, bCrossCol;
+ 
+ int *pRowCoeff = CreateCoeffInt( wNewWidth, wWidth, 0 );
+ int *pColCoeff = CreateCoeffInt( wNewHeight, wHeight, 0 );
+ int *pXCoeff, *pYCoeff = pColCoeff;
+ 
+ u32 dwTmp, dwPtTmp[ 3 ];
+ 
+ y = 0;
+ 
+ while( y < wHeight ) {
+ 
+  bCrossRow = pYCoeff[ 1 ] > 0;
+  x         = 0;
+  pXCoeff   = pRowCoeff;
+  pOutPix   = pOutLine;
+  pOutLine += dwOutLn;
+  pUpPix    = pLine;
+  
+  if ( pYCoeff[ 1 ] ) {
+
+   y++;
+   pLine += dwInLn;
+   pPix = pLine;
+
+  } /* end if */
+  
+  while( x < wWidth ) {
+
+   bCrossCol = pXCoeff[ 1 ] > 0;
+   pUpPixOld = pUpPix;
+   pPixOld  = pPix;
+   
+   if( pXCoeff[ 1 ] ) {
+
+    x++;
+    pUpPix += 3;
+    pPix += 3;
+
+   } /* end if */
+   
+   dwTmp = *pXCoeff * *pYCoeff;
+   
+   for ( i = 0; i < 3; i++ )
+    dwPtTmp[ i ] = dwTmp * pUpPixOld[ i ];
+
+   if ( bCrossCol ) {
+
+    dwTmp = pXCoeff[ 1 ] * *pYCoeff;
+    for ( i = 0; i < 3; i++ )
+     dwPtTmp[ i ] += dwTmp * pUpPix[ i ];
+
+   } /* end if */
+
+   if ( bCrossRow ) {
+
+    dwTmp = *pXCoeff * pYCoeff[ 1 ];
+    for ( i = 0; i < 3; i++ )
+     dwPtTmp[ i ] += dwTmp * pPixOld[ i ];
+    
+    if ( bCrossCol ) {
+
+     dwTmp = pXCoeff[ 1 ] * pYCoeff[ 1 ];
+     for(i = 0; i < 3; i++)
+      dwPtTmp[ i ] += dwTmp * pPix[ i ];
+
+    } /* end if */
+
+   } /* end if */
+   
+   for ( i = 0; i < 3; i++, pOutPix++ )
+    *pOutPix = (  ( u8* )( dwPtTmp + i )  )[ 3 ];
+   
+   pXCoeff += 2;
+
+  } /* end while */
+  
+  pYCoeff += 2;
+
+ } /* end while */
+ 
+ free( pRowCoeff );
+ free( pColCoeff );
+
+ return 1;
+
+} /* end EnlargeData */
+
+//--------------------------------------------------------------
+int ScaleBitmap( u8* pInBuff, u16 wWidth, u16 wHeight, u8** pOutBuff, u16 wNewWidth, u16 wNewHeight ) {
+
+ int lRet;
+
+ // check for valid size
+ if( wWidth > wNewWidth && wHeight < wNewHeight ) return 0;
+
+ if( wHeight > wNewHeight && wWidth < wNewWidth ) return 0;
+
+ // allocate memory
+ *pOutBuff = ( u8* ) memalign(   128, (  ( 3 * wNewWidth + 3 ) & ~3  ) * wNewHeight   );
+
+ if( !*pOutBuff )return 0;
+
+ if( wWidth >= wNewWidth && wHeight >= wNewHeight )
+  lRet = ShrinkData( pInBuff, wWidth, wHeight, *pOutBuff, wNewWidth, wNewHeight );
+ else
+  lRet = EnlargeData( pInBuff, wWidth, wHeight, *pOutBuff, wNewWidth, wNewHeight );
+
+ return lRet;
+ 
+} /* end ScaleBitmap */
+
+//--------------------------------------------------------------
+// Init Screen
+void initScr(void)
+{
+	itoSprite( ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
+	itoGsFinish();
+	itoSwitchFrameBuffers();
+	itoSprite( ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0 );
+	itoGsFinish();
+	itoSwitchFrameBuffers();
+}
+
+//--------------------------------------------------------------
 void setScrTmp(const char *msg0, const char *msg1)
 {
 	int x, y;
@@ -74,7 +371,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	// バージョン表記
 	x = SCREEN_MARGIN;
 	y = SCREEN_MARGIN;
-	printXY(" ■ LaunchELF v3.51 ■",
+	printXY(" ■ LaunchELF v3.52 ■",
 		SCREEN_WIDTH-SCREEN_MARGIN-FONT_WIDTH*22, y/2, setting->color[1], TRUE);
 	y += FONT_HEIGHT+4;
 	
@@ -94,19 +391,21 @@ void setScrTmp(const char *msg0, const char *msg1)
 	printXY(msg1, x, y/2, setting->color[2], TRUE);
 }
 
-////////////////////////////////////////////////////////////////////////
-// メッセージ描画
+//--------------------------------------------------------------
 void drawMsg(const char *msg)
 {
-	itoSprite(setting->color[0], 0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2, 0);
+	itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+	0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+	0, ((SCREEN_MARGIN+FONT_HEIGHT+4)/2)*0.533333F,
+	SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+	SCREEN_WIDTH, ((SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2)*0.533333F,
+	0);
 	printXY(msg, SCREEN_MARGIN, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
 		setting->color[2], TRUE);
 	drawScr();
 }
 
-////////////////////////////////////////////////////////////////////////
-// setup ito
+//--------------------------------------------------------------
 void setupito(void)
 {
 	itoInit();
@@ -144,19 +443,87 @@ void setupito(void)
 	screen_env.vmode			= ITO_VMODE_AUTO;
 	
 	itoGsEnvSubmit(&screen_env);
-	
+	initScr();
 	itoSetBgColor(setting->color[0]);
+
+	loadSkin();
 }
 
-////////////////////////////////////////////////////////////////////////
-// 画面のクリア
+//--------------------------------------------------------------
+void loadSkin(void)
+{
+	testskin = 0;
+	char skinpath[MAX_PATH];
+	strcpy(skinpath, "\0");
+	if(!strncmp(setting->skin, "mass", 4)){
+		loadUsbModules();
+		strcpy(skinpath, "mass:");
+		strcat(skinpath, setting->skin+6);
+	}else if(!strncmp(setting->skin, "hdd0:/", 6)){
+		loadHddModules();
+		char party[40];
+		char *p;
+		sprintf(party, "hdd0:%s", setting->skin+6);
+		p = strchr(party, '/');
+		sprintf(skinpath, "pfs0:%s", p);
+		*p = 0;
+		fileXioMount("pfs0:", party, FIO_MT_RDONLY);
+	}else if(!strncmp(setting->skin, "cdfs", 4)){
+		loadCdModules();
+		strcpy(skinpath, setting->skin);
+		CDVD_FlushCache();
+		CDVD_DiskReady(0);
+	}else{
+		strcpy(skinpath,setting->skin);
+	}
+	FILE*	File = fopen( skinpath, "r" );
+ 
+	if( File != NULL ) {
+
+		jpgData* Jpg;
+		u8*      Buf     = NULL;
+		u8*      ImgData = NULL;
+		u8*      ResData = NULL;
+		long     Size;
+
+		fseek ( File, 0, SEEK_END ); 
+		Size = ftell ( File ); 
+		fseek ( File, 0, SEEK_SET ); 
+
+		if( Size ){
+			if( ( Buf = malloc( Size ) ) > 0 ){
+				fread( Buf, 1, Size, File );
+				fclose( File );
+				if( ( Jpg = jpgOpenRAW ( Buf, Size, JPG_WIDTH_FIX ) ) > 0 ){
+					if( ( ImgData = malloc (  Jpg -> width * Jpg -> height * ( Jpg -> bpp / 8 ) ) ) > 0 ){
+						if( ( jpgReadImage( Jpg, ImgData ) ) != -1 ){
+							if( ( ScaleBitmap ( ImgData, Jpg -> width, Jpg -> height, &ResData, 512, 128 ) ) != 0 ){
+						 		itoLoadTexture ( ResData, 0, 512, ITO_RGB24, 0, 0, 512, 128 );
+								jpgClose( Jpg );
+								if(!strncmp(setting->skin, "cdfs", 4)) CDVD_Stop();
+								testskin = 1;
+							} /* end if */
+						} /* end if */
+					} /* end if */
+				} /* end if */
+			} /* end if */
+		} /* end if */
+	} /* end if */
+}
+
+//--------------------------------------------------------------
 void clrScr(uint64 color)
 {
-	itoSprite(color, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+	if ( testskin == 1 ) {
+		itoSprite(ITO_RGBA( 0x00, 0x00, 0x00, 0 ), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+		itoSetTexture(0, 512, ITO_RGB24, ITO_TEXTURE_512, ITO_TEXTURE_128);
+		itoTextureSprite(ITO_RGBAQ(0x80, 0x80, 0x80, 0xFF, 0), 0, 0, 0, 0, 512, 240, 512, 128, 0);
+	} else {
+		itoSprite(color, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+	} /* end else */
 }
 
-////////////////////////////////////////////////////////////////////////
-// 画面の描画
+//--------------------------------------------------------------
 void drawScr(void)
 {
 	itoGsFinish();
@@ -164,8 +531,7 @@ void drawScr(void)
 	itoSwitchFrameBuffers();
 }
 
-////////////////////////////////////////////////////////////////////////
-// 枠の描画
+//--------------------------------------------------------------
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color)
 {
 	itoLine(color, x1, y1, 0, color, x2, y1, 0);
@@ -179,7 +545,7 @@ void drawFrame(int x1, int y1, int x2, int y2, uint64 color)
 	itoLine(color, x1+1, y2, 0, color, x1+1, y1, 0);
 }
 
-////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------
 // draw a char using the system font (8x8)
 void drawChar(unsigned char c, int x, int y, uint64 colour)
 {
@@ -197,7 +563,7 @@ void drawChar(unsigned char c, int x, int y, uint64 colour)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------
 // draw a char using the ELISA font (8x8)
 void drawChar2(int32 n, int x, int y, uint64 colour)
 {
@@ -217,7 +583,7 @@ void drawChar2(int32 n, int x, int y, uint64 colour)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////
+//--------------------------------------------------------------
 // draw a string of characters
 int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 {
@@ -338,3 +704,6 @@ int printXY(const unsigned char *s, int x, int y, uint64 colour, int draw)
 	
 	return x;
 }
+//--------------------------------------------------------------
+//End of file: draw.c
+//--------------------------------------------------------------

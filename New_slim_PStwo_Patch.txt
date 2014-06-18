@@ -1,0 +1,43 @@
+This text describes a modification of the PS2SDK sources so as to produce a version of ps2hdd.irx for use with the 'slim PStwo' models, equipped with the 'HDCombo' kit. Those models can't work with the old driver, because it tests a hardware register they don't have. In the new code that test has simply been removed, and since that test served no useful purpose, this fix is valid for all PS2 and PStwo models.
+
+IF you are not a developer, planning to recompile LaunchELF in your own PS2Dev environment, then there is no real need for you to read the rest of this file.
+
+If you are a developer, then this information is intended for you, but please note that the PS2SDK source patches in the subfolder "Source\Changed source for external projects\ps2sdk" already include this patch, in the file "iop\hdd\apa\src\misc.c", so there is no need for you to edit this patch yourself. It is presented here merely to show how simple this change is, that will make HDD software compatible to the new PStwo models.
+
+The following text is quoted from a post by 'lonwern' at PS2-Scene:
+----- Start of post quote -----
+(ps2sdksrc\iop\hdd\apa\src\misc.c)
+
+original:
+
+int getIlinkID(u8 *idbuf)
+{
+	int err=0;
+
+	memset(idbuf, 0, 32);
+	if(CdReadIlinkID(idbuf, &err))
+		if(err==0)
+			return 0;
+	dprintf1("ps2hdd: Error: cannot get ilink id\n");
+	return -EIO;
+}
+
+changed:
+
+int getIlinkID(u8 *idbuf)
+{
+	int err=0;
+
+	memset(idbuf, 0, 32);
+	CdReadIlinkID(idbuf, &err)
+	return 0;
+}
+----- End of post quote -----
+
+The above shows that the patch only affects a single function of ps2hdd.irx, as defined in the source file "ps2sdksrc/iop/hdd/apa/src/misc.c". By patching that file as described, and then recompiling PS2SDK, all programs compiled thereafter will use the new ps2hdd.irx driver, thus gaining compatibility with the 'slim' PStwo models that didn't work with the old driver.
+
+NB: For v3.51 of uLaunchELF a different method was used, since we were not sure at that time if the new driver had any drawbacks for the old PS2 models. For that reason two different driver modules were used, so as to preserve all old capabilities. That is not really necessary, and if you did patch your PS2SDK setup that way, you now need to redo that patching, simply by using our prepatched "misc.c" file.
+
+With the new methods only one ps2hdd irx driver is needed, and likewise only one set of uLaunchELF ELF files, for use on any PS2 or PStwo model.
+
+Best regards: Ronald Andersson (AKA: dlanor)

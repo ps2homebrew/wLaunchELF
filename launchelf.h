@@ -30,12 +30,14 @@
 #include "cd.h"
 #include "mass_rpc.h"
 #include "iopmod_name.h"
+#include <libjpg.h>
 
-// 垂直スキャンレート
 #define SCANRATE (ITO_VMODE_AUTO==ITO_VMODE_NTSC ? 60:50)
 
 // sincro needed for modified getfilepath
 #define USBD_IRX_CNF 3
+// polo needed for modified getfilepath
+#define SKIN_CNF 4
 
 enum
 {
@@ -57,6 +59,7 @@ typedef struct
 {
 	char dirElf[15][MAX_PATH];
 	char usbd[MAX_PATH];
+	char skin[MAX_PATH];
 	int timeout;
 	int filename;
 	uint64 color[4];
@@ -94,6 +97,7 @@ void setScrTmp(const char *msg0, const char *msg1);
 void drawMsg(const char *msg);
 void setupito(void);
 void clrScr(uint64 color);
+void loadSkin(void);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, uint64 color);
 void drawChar(unsigned char c, int x, int y, uint64 colour);

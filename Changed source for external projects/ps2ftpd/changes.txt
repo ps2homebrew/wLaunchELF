@@ -1,4 +1,4 @@
-Unofficial ps2ftpd.irx module by EP
+Unofficial ps2ftpd.irx module by EP & dlanor
 
 FtpClient.c
 -Changed string format to "MMM DD YYYY" format, which is based on "FTP LIST Specification". (NOTE: fixes the Unknown list format errors with most ftp clients).
@@ -42,6 +42,7 @@ FileSystem.c
 -Altered the partition filter to prevent sub partitions from also appearing in the listing.
 -Changed the size value to zero for all folders including partitions in the hdd listing.
 -Fixed a few issues that prevented PS1 memory cards from appearing in the listing. (Note: Files on PS1 memory cards lack timestamps so the timestamps come from the current PS2 system time).
+-Modified the partition-hiding patches, so as to allow access to "__common", the partition used for memory card backups by Sony's HDD browser.
 
 FtpClient.h, FileSystem.h, and FtpCommands.c 
 -Made the necessary changes for rename to be implemented.

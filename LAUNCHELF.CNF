@@ -1,5 +1,5 @@
 # ----------------------------------------------------------------------
-# File name:    LAUNCHELF.CNF           Revision Date: 2006.02.18
+# File name:    LAUNCHELF.CNF           Revision Date: 2006.03.27
 # Created by:   Ronald Andersson        Creation Date: 2006.02.02
 # Purpose:      Define new format and defaults for LaunchELF CNF files,
 #               to serve as a guide in developing the code implementing
@@ -95,7 +95,7 @@ GUI_Swap_Keys    = 0
 # ----------------------------------------------------------------------
 USBD_FILE =
 # ----------------------------------------------------------------------
-# NET_HOSTwrite is valid in v3.44 and later versions. It's can enable
+# NET_HOSTwrite is valid in v3.44 and later versions. It can enable
 # the ability of the networked HOST interface to write on your PC HDDs!
 # Users who want to avoid risks for their PC should leave it as default,
 # which disables these new abilities. For safety reasons it can only be
@@ -103,6 +103,13 @@ USBD_FILE =
 # the new abilities. (You'll need a very new ps2client.exe as well.)
 # ----------------------------------------------------------------------
 NET_HOSTwrite = 0
+# ----------------------------------------------------------------------
+#SKIN_FILE is used to select a JPG file that will be used as background
+#for the LaunchELF screen. Its value should be the full JPG pathname.
+#The default value is an empty string, meaning that the colour set by
+#GUI_Col_1_ABGR above will be used for screen background instead.
+# ----------------------------------------------------------------------
+SKIN_FILE=
 # ----------------------------------------------------------------------
 # End of file: LAUNCHELF.CNF
 # ----------------------------------------------------------------------

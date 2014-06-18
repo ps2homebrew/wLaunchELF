@@ -1,5 +1,12 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.52  (2006.03.26)
+-Merged in JPG background implementation, contributed by 'Polo35' at PS2-Scene.
+-Combined hdd patches to a single IRX for both PS2 and PStwo, eliminating the need for model-dependent ELFs. Now all models of PS2 and PStwo can use the same ELFs.
+-Modified the partition 'hiding' of both the main program and the FTP server, so as to allow normal file/folder access to the partition "__common", used by the Sony HDD browser for memory card backups.
+-Modified the timeout method so that pressing any gamepad keys will permanently halt the timeout. The timeout will also be halted once the DEFAULT action has been performed. This is useful for those who set up "MISC/PS2Net" as DEFAULT action, to start FTP server.
+-Modified menu handling, to prevent all file/folder write access to the pseudo-folder of "host:/" which is equivalent to the "elflist.txt" file on the host system (normally your PC). Such access is meaningless, but the commands were not blocked previously.
+
 LaunchELF v3.51  (2006.03.03)
 -Added experimental support for HDD on 'slim PStwo' models, released as separate ELFs in the same release ZIP. Developers should be aware that this patch adds a new module to PS2SDK, named "ps2hdd_slim_PStwo.irx" and serving the same purpose for those models that "ps2hdd.irx" does for traditional PS2 models. Thanks go to 'lonwern' at PS2-Scene for pointing out the precise function in the source code that needed patching.
 

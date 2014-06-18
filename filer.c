@@ -161,9 +161,18 @@ int ynDialog(const char *message)
 			}
 		}
 		
-		itoSprite(setting->color[0], 0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2, 0);
-		itoSprite(setting->color[0], dx-2, (dy-2)/2, dx+dw+2, (dy+dh+4)/2, 0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+		0, ((SCREEN_MARGIN+FONT_HEIGHT+4)/2)*0.533333F,
+		SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+		SCREEN_WIDTH, ((SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2)*0.533333F,
+		0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		dx-2, (dy-2)/2,
+		dx-2, ((dy-2)/2)*0.533333F,
+		dx+dw+2, (dy+dh+4)/2,
+		dx+dw+2, ((dy+dh+4)/2)*0.533333F,
+		0);
 		drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 		for(i=len=0; i<n; i++){
 			printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -211,9 +220,18 @@ void nonDialog(const char *message)
 	dy = (432-dh)/2;
 	printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
-	itoSprite(setting->color[0], 0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-	SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2, 0);
-	itoSprite(setting->color[0], dx-2, (dy-2)/2, dx+dw+2, (dy+dh+4)/2, 0);
+	itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+	0, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+	0, ((SCREEN_MARGIN+FONT_HEIGHT+4)/2)*0.533333F,
+	SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2,
+	SCREEN_WIDTH, ((SCREEN_MARGIN+FONT_HEIGHT+4+FONT_HEIGHT)/2)*0.533333F,
+	0);
+	itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+	dx-2, (dy-2)/2,
+	dx-2, ((dy-2)/2)*0.533333F,
+	dx+dw+2, (dy+dh+4)/2,
+	dx+dw+2, ((dy+dh+4)/2)*0.533333F,
+	0);
 	drawFrame(dx, dy/2, dx+dw, (dy+dh)/2, setting->color[1]);
 	for(i=len=0; i<n; i++){
 		printXY(&msg[len], dx+2+a,(dy+a+2+i*16)/2, setting->color[3],TRUE);
@@ -358,7 +376,9 @@ void setPartyList(void)
 //		if(!strncmp(dirEnt.name, "PP.HDL.", 7))  //Old test of partition type by 'name'
 		if(dirEnt.stat.mode == 0x1337)  //New test of partition type by 'mode'
 			continue;
-		if(!strncmp(dirEnt.name, "__", 2) && strcmp(dirEnt.name, "__boot"))
+		if(!strncmp(dirEnt.name, "__", 2) &&
+			strcmp(dirEnt.name, "__boot") &&
+			strcmp(dirEnt.name, "__common"))
 			continue;
 		
 		strcpy(parties[nparties++], dirEnt.name);
@@ -662,7 +682,7 @@ int menu(const char *path, const char *file)
 
 	memset(enable, TRUE, NUM_MENU);
 	if(!strncmp(path,"host",4)){
-		if(!setting->HOSTwrite){
+		if(!setting->HOSTwrite || ((host_elflist) && !strcmp(path, "host:/"))){
 			enable[PASTE] = FALSE;
 			enable[MCPASTE] = FALSE;
 			enable[NEWDIR] = FALSE;
@@ -745,7 +765,12 @@ int menu(const char *path, const char *file)
 			}
 		}
 
-		itoSprite(setting->color[0], mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, 0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		mSprite_X1, mSprite_Y1,
+		mSprite_X1, mSprite_Y1*0.533333F,
+		mSprite_X2, mSprite_Y2,
+		mSprite_X2, mSprite_Y2*0.533333F,
+		0);
 		drawFrame(mFrame_X1, mFrame_Y1, mFrame_X2, mFrame_Y2, setting->color[1]);
 		
 		for(i=0,y=mFrame_Y1*2+FONT_HEIGHT/2; i<NUM_MENU; i++){
@@ -769,11 +794,12 @@ int menu(const char *path, const char *file)
 		
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		itoSprite(setting->color[0],
-			0,
-			y/2,
-			SCREEN_WIDTH,
-			y/2+8, 0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		0, y/2,
+		0, (y/2)*0.533333F,
+		SCREEN_WIDTH, y/2+8,
+		SCREEN_WIDTH, (y/2+8)*0.533333F,
+		0);
 		if (swapKeys)
 			printXY("~:OK ›:Cancel", x, y/2, setting->color[2], TRUE);
 		else
@@ -1380,12 +1406,12 @@ int keyboard(char *out, int max)
 					return -1;
 			}
 		}
-		// •`‰æŠJŽn
-		itoSprite(setting->color[0],
-			KEY_X-2,
-			KEY_Y-1,
-			KEY_X+KEY_W+3,
-			KEY_Y+KEY_H+2, 0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		KEY_X-2, KEY_Y-1,
+		KEY_X-2, (KEY_Y-1)*0.533333F,
+		KEY_X+KEY_W+3, KEY_Y+KEY_H+2,
+		KEY_X+KEY_W+3, (KEY_Y+KEY_H+2)*0.533333F,
+		0);
 		drawFrame(
 			KEY_X,
 			KEY_Y,
@@ -1422,14 +1448,14 @@ int keyboard(char *out, int max)
 		y = KEY_Y+16 + (sel/WFONTS)*8;
 		drawChar(127, x, y, setting->color[3]);
 		
-		// ‘€ìà–¾
 		x = SCREEN_MARGIN;
 		y = SCREEN_HEIGHT-SCREEN_MARGIN-FONT_HEIGHT;
-		itoSprite(setting->color[0],
-			0,
-			y/2,
-			SCREEN_WIDTH,
-			y/2+8, 0);
+		itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+		0, y/2,
+		0, (y/2)*0.533333F,
+		SCREEN_WIDTH, y/2+8,
+		SCREEN_WIDTH, (y/2+8)*0.533333F,
+		0);
 		if (swapKeys) 
 			printXY("~:OK ›:Back L1:Left R1:Right START:Enter",x, y/2,
 			        setting->color[2], TRUE);
@@ -1532,6 +1558,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 //--------------------------------------------------------------
 // sincro: ADD USBD_IRX_CNF mode for found IRX file for USBD.IRX
 // example: getFilePath(setting->usbd, USBD_IRX_CNF);
+// polo: ADD SKIN_CNF mode for found jpg file for SKIN
+// example: getFilePath(setting->skin, SKIN_CNF);
 static int browser_cd, browser_up, browser_pushed;
 static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
@@ -1557,6 +1585,7 @@ void getFilePath(char *out, int cnfmode)
 
 	if(cnfmode==TRUE) strcpy(ext, "elf");
 	else if(cnfmode==USBD_IRX_CNF) strcpy(ext, "irx");
+	else if(cnfmode==SKIN_CNF) strcpy(ext, "jpg");
 	else		strcpy(ext, "*");
 
 	if(cnfmode!=USBD_IRX_CNF) strcpy(path, LastDir);
@@ -1593,7 +1622,7 @@ void getFilePath(char *out, int cnfmode)
 				}else{
 					sprintf(out, "%s%s", path, files[browser_sel].name);
 					// Must to include a function for check IRX Header 
-					if((cnfmode!=USBD_IRX_CNF) && (checkELFheader(out)<0)){
+					if((cnfmode!=USBD_IRX_CNF)&&(cnfmode!=SKIN_CNF)&&(checkELFheader(out)<0)){
 						browser_pushed=FALSE;
 						sprintf(msg0, "This file isn't ELF.");
 						out[0] = 0;
@@ -1605,11 +1634,14 @@ void getFilePath(char *out, int cnfmode)
 			}
 			if(cnfmode){
 				if(new_pad & PAD_SQUARE) {
-					if(cnfmode!=USBD_IRX_CNF){
+					if(cnfmode==TRUE){
 						if(!strcmp(ext,"*")) strcpy(ext, "elf");
 						else				 strcpy(ext, "*");
-					}else{
+					}else if(cnfmode==USBD_IRX_CNF){
 						if(!strcmp(ext,"*")) strcpy(ext, "irx");
+						else				 strcpy(ext, "*");
+					}else if(cnfmode==SKIN_CNF){
+						if(!strcmp(ext,"*")) strcpy(ext, "jpg");
 						else				 strcpy(ext, "*");
 					}
 					browser_cd=TRUE;
@@ -1769,9 +1801,10 @@ void getFilePath(char *out, int cnfmode)
 			}
 			browser_cd=TRUE;
 		}
+		//----- Process newly entered directory here (incl initial entry)
 		if(browser_cd){
 			browser_nfiles = setFileList(path, ext, files, cnfmode);
-			if(!cnfmode){
+			if(!cnfmode){  //Calculate free space (unless configuring)
 				if(!strncmp(path, "mc", 2)){
 					mcGetInfo(path[2]-'0', 0, NULL, &mcfreeSpace, NULL);
 					mcSync(0, NULL, &ret);
@@ -1807,6 +1840,7 @@ void getFilePath(char *out, int cnfmode)
 		if(browser_sel < top)			top=browser_sel;
 		
 		clrScr(setting->color[0]);
+
 		x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 		y = SCREEN_MARGIN + FONT_HEIGHT*2 + LINE_THICKNESS + 12;
 		if(title_show && elisaFnt!=NULL) y-=2;
@@ -1874,6 +1908,18 @@ void getFilePath(char *out, int cnfmode)
 				else
 					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :IRX->*");
 			}
+		}else if(cnfmode==SKIN_CNF){
+			if(!strcmp(ext, "*")) {
+				if (swapKeys)
+					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :*->JPG");
+				else
+					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :*->JPG");
+			} else {
+				if (swapKeys)
+					sprintf(msg1, "~:OK ›:Cancel ¢:Up  :JPG->*");
+				else
+					sprintf(msg1, "›:OK ~:Cancel ¢:Up  :JPG->*");
+			}
  		}else{
 			if(title_show) {
 				if (swapKeys) 
@@ -1902,11 +1948,12 @@ void getFilePath(char *out, int cnfmode)
 			else
 				sprintf(tmp, "[%dB free]", freeSpace);
 			ret=strlen(tmp);
-			itoSprite(setting->color[0],
-				SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8,
-				(SCREEN_MARGIN+FONT_HEIGHT+4)/2,
-				SCREEN_WIDTH,
-				(SCREEN_MARGIN+FONT_HEIGHT+20)/2, 0);
+			itoTextureSprite(ITO_RGBAQ( 0x80, 0x80, 0x80, 0xFF, 0 ),
+			SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, (SCREEN_MARGIN+FONT_HEIGHT+4)/2,
+			SCREEN_WIDTH-SCREEN_MARGIN-(ret+1)*8, ((SCREEN_MARGIN+FONT_HEIGHT+4)/2)*0.533333F,
+			SCREEN_WIDTH, (SCREEN_MARGIN+FONT_HEIGHT+20)/2,
+			SCREEN_WIDTH, ((SCREEN_MARGIN+FONT_HEIGHT+20)/2)*0.533333F,
+			0);
 			printXY(tmp,
 				SCREEN_WIDTH-SCREEN_MARGIN-ret*8,
 				(SCREEN_MARGIN+FONT_HEIGHT+4)/2,

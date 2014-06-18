@@ -1,0 +1,11 @@
+Known runtime problems in v3.52:
+--------------------------------
+If you have used a background image and want to return to using a simple
+background colour instead, then you may need to restart the program, to
+get rid of 'remnant' textures. These will normally be visible as remnants
+of the old background picture, when popup menus and temporary strings are
+displayed. This phenomenon is harmless, except that it may make it hard to
+read the text. To recover from such problems simply restart (or reboot)
+uLaunchELF after disabling the background image in the "STARTUP SETTINGS"
+submenu, and exiting by "RETURN" and "OK", so that the change is saved.
+When restarted this way, there will be no more texture remnants.

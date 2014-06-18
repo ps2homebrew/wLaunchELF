@@ -9,7 +9,7 @@
 # $Id: Makefile 577 2004-09-14 14:41:46Z pixel $
 
 
-SUBDIRS = kernel dev9 fs hdd hdd_slim_PStwo sound tcpip usb system debug
+SUBDIRS = kernel dev9 fs hdd sound tcpip usb system debug
 
 include $(PS2SDKSRC)/Defs.make
 include $(PS2SDKSRC)/Rules.make

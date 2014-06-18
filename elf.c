@@ -1,7 +1,18 @@
 //--------------------------------------------------------------
 //File name:    elf.c
 //--------------------------------------------------------------
-#include "launchelf.h"
+#include <stdio.h>
+#include <tamtypes.h>
+#include <loadfile.h>
+#include <kernel.h>
+#include <sifrpc.h>
+#include <string.h>
+#include <fileio.h>
+#include <sys/stat.h>
+#include <fileXio_rpc.h>
+#include <sys/fcntl.h>
+
+#define MAX_PATH 1025
 
 extern u8 *loader_elf;
 extern int size_loader_elf;

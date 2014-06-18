@@ -11,6 +11,7 @@
 #include <kernel.h>
 #include <sifrpc.h>
 #include "mass_rpc.h"
+#include <string.h>
 
 #define	MASS_USB_ID	0x500C0F1
 
