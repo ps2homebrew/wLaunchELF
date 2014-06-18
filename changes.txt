@@ -1,10 +1,13 @@
 Unofficial LaunchELF releases by EP + dlanor
 
+LaunchELF v3.51  (2006.03.03)
+-Added experimental support for HDD on 'slim PStwo' models, released as separate ELFs in the same release ZIP. Developers should be aware that this patch adds a new module to PS2SDK, named "ps2hdd_slim_PStwo.irx" and serving the same purpose for those models that "ps2hdd.irx" does for traditional PS2 models. Thanks go to 'lonwern' at PS2-Scene for pointing out the precise function in the source code that needed patching.
+
 LaunchELF v3.50  (2006.03.01)
 -Modified the ELF loader so it can reside at the same address used in LaunchELF versions earlier than v3.46, and still retain compatibility with current version of PS2Link. This eliminates the incompatibility that v3.46-v3.49 had with some unpacker stubs, and thus with all programs using those stubs, (notably myPS2). Full compatibility is now restored for those programs.
 
 LaunchELF v3.49  (2006.02.26)
--Fixed an issue where garbage could be displayed at startup when LaunchELF was booted by another programs' generic launcher function. (Note: Issue only appeared to occur randomly with the packed ELF when using only one CNF).
+-EP Fixed an issue where garbage could be displayed at startup when LaunchELF was booted by another program's generic launcher function. (Note: Issue only appeared to occur randomly with the packed ELF when using only one CNF).
 
 LaunchELF v3.48  (2006.02.25)
 -EP corrected a bug in the reading of free size on MC. This bug could cause menu commands to fail with extremely slow MC. (Noted with 64MB MCs from Datel.) Thanks go to 'cmal1492' for bringing this bug to our attention. (It is older than the uLaunchELF project.)

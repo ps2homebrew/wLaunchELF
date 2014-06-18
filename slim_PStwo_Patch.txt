@@ -1,0 +1,57 @@
+This text describes how to modify the PS2SDK sources so as to produce an extra version of ps2hdd.irx, for use with the 'slim PStwo' models, equipped with the 'HDCombo' kit. Apparently these models can't handle one of the error tests in that driver, so that it needs to be disabled to let them work on an HDD at all. Doing this is merely a temporary fix, of course, until the code can be adjusted to let the error testing work correctly on those models too.
+
+IF you are not a developer, planning to recompile LaunchELF in your own PS2Dev environment, then there is no real need for you to read the rest of this file.
+
+The patch needed to disable the aforementioned test is described below.
+
+The following text is quoted from a post by 'lonwern' at PS2-Scene:
+----- Start of post quote -----
+(ps2sdksrc\iop\hdd\apa\src\misc.c)
+
+original:
+
+int getIlinkID(u8 *idbuf)
+{
+	int err=0;
+
+	memset(idbuf, 0, 32);
+	if(CdReadIlinkID(idbuf, &err))
+		if(err==0)
+			return 0;
+	dprintf1("ps2hdd: Error: cannot get ilink id\n");
+	return -EIO;
+}
+
+changed:
+
+int getIlinkID(u8 *idbuf)
+{
+	int err=0;
+
+	memset(idbuf, 0, 32);
+	CdReadIlinkID(idbuf, &err)
+	return 0;
+}
+----- End of post quote -----
+
+The above makes it clear that the patch only affects a single function of ps2hdd.irx, as defined in the source file "ps2sdksrc/iop/hdd/apa/src/misc.c". However, we can't patch that file directly, in recompiling PS2SDK, as that would mean that ALL programs compiled with that SDK version would lack the ability to test such error cases correctly, even when running on a normal PS2 where such tests would work.
+
+Instead we must make a brand new subfolder, matching "ps2sdksrc/iop/hdd/" but renamed to "ps2sdksrc/iop/ps2hdd_slim_PStwo/". This copy will have most content identical, except for the source file "apa/src/misc.c" which will be patched as mentioned above, plus the "Makefile" which must be patched to use the new module name "ps2hdd_slim_PStwo".
+
+Also, the Makefile one folder level up ("ps2sdksrc/iop/Makefile") must be modified, to include the new module "ps2hdd_slim_PStwo" in its SUBDIRS list. But I have done this by adding this modified Makefile as "Source/Changed source for external projects/ps2sdk/iop/Makefile", so this should be taken care of with the other patches made to PS2SDK sources. If you are working with a set already patched for an older LaunchELF version, just repatch it again. It causes no harm, and is the simplest way.
+
+Recompiling PS2SDK after these changes will produce the usual result, plus an additional IRX named "ps2hdd_slim_PStwo.irx" in the same release location as the others ("ps2sdk/iop/irx/").
+
+That new IRX will be used by a special Makefile in the LaunchELF release, named "Makefile_slim_PStwo" and used only to produce the "BOOT_slim_PStwo.ELF" for such models.
+
+Note that both copying/renaming "ps2sdksrc/iop/hdd/" and patching the file "ps2sdksrc\iop\ps2hdd_slim_PStwo\apa\src\misc.c" as described above, must be done AFTER first copying the contents of LaunchELF's "Source/Changed source for external projects/ps2sdk/" folder into the main PS2SDK source folder. That is because it contains additional changes needed by both ps2hdd.irx and ps2hdd_slim_PStwo.irx .
+
+I repeat:
+In patching original PS2SDK sources, always start by copying the contents of "Source/Changed source for external projects/ps2sdk/" into the main PS2SDK source release folder.
+After that, copy+rename "ps2sdksrc/iop/hdd/" to "ps2sdksrc/iop/ps2hdd_slim_PStwo/".
+Next patch the "getIlinkID" function of "ps2sdksrc\iop\ps2hdd_slim_PStwo\apa\src\misc.c" to avoid the dysfunctional error test, and likewise patch "ps2sdksrc\iop\ps2hdd_slim_PStwo\apa\Makefile" to use the module name "ps2hdd_slim_PStwo.irx" instead of "ps2hdd.irx"
+Finally recompile PS2SDK as usual.
+
+When compiling LaunchELF, start with a 'Make all' command using the main "Makefile", and when that has completed, follow it up with a 'Make all' command for "Makefile_slim_PStwo".
+
+Best regards: Ronald Andersson (AKA: dlanor)
