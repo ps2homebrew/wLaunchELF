@@ -42,21 +42,22 @@
 #define SCANRATE (gsKit_detect_signal()==GS_MODE_NTSC ? 60:50)
 
 enum {  // cnfmode values for getFilePath in browsing for configurable file paths
-	NON_CNF = 0,     // Normal browser mode, not configuration mode
-	LK_ELF_CNF,      // Normal ELF choice for launch keys
-	USBD_IRX_CNF,    // USBD.IRX choice for startup
-	SKIN_CNF,        // Skin JPG choice
-	GUI_SKIN_CNF,    // GUI Skin JPG choice
-	USBKBD_IRX_CNF,  // USB keyboard IRX choice (only PS2SDK)
-  KBDMAP_FILE_CNF, // USB keyboard mapping table choice
-  CNF_PATH_CNF,    // CNF Path override choice
-  TEXT_CNF,        // No restriction choice 
-  DIR_CNF,         // Directory choice 
-  JPG_CNF,				 // Jpg viewer choice
-	USBMASS_IRX_CNF, // USB_MASS.IRX choice for startup
-	LANG_CNF,				 // Language file choise
-	FONT_CNF,				 // Font file choice ( .fnt )
-  CNFMODE_CNT      // Total number of cnfmode values defined
+	NON_CNF = 0,    	// Normal browser mode, not configuration mode
+	LK_ELF_CNF,     	// Normal ELF choice for launch keys
+	USBD_IRX_CNF,   	// USBD.IRX choice for startup
+	SKIN_CNF,       	// Skin JPG choice
+	GUI_SKIN_CNF,   	// GUI Skin JPG choice
+	USBKBD_IRX_CNF, 	// USB keyboard IRX choice (only PS2SDK)
+  KBDMAP_FILE_CNF,	// USB keyboard mapping table choice
+  CNF_PATH_CNF,   	// CNF Path override choice
+  TEXT_CNF,       	// No restriction choice 
+  DIR_CNF,        	// Directory choice 
+  JPG_CNF,					// Jpg viewer choice
+	USBMASS_IRX_CNF,	// USB_MASS.IRX choice for startup
+	LANG_CNF,					// Language file choice
+	FONT_CNF,					// Font file choice ( .fnt )
+	SAVE_CNF,					// Generic Save choice (with or without selected file)
+  CNFMODE_CNT     	// Total number of cnfmode values defined
 };
 
 enum
@@ -262,7 +263,7 @@ extern int Party_vmcIndex[MOUNT_LIMIT]; //VMC index for each PFS, unless -1
 extern int nparties; //Clearing this causes FileBrowser to refresh party list
 extern unsigned char *elisaFnt;
 char *PathPad_menu(const char *path);
-void getFilePath(char *out, const int cnfmode);
+int getFilePath(char *out, const int cnfmode);
 void	initHOST(void);
 char *makeHostPath(char *dp, char*sp);
 int ynDialog(const char *message);

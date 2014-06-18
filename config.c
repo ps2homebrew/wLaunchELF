@@ -227,8 +227,9 @@ void saveSkinBrowser(void)
 	int  tst;
 	char path[MAX_PATH];
 	char mess[MAX_PATH];
+	char *p;
 
-	getFilePath(path, DIR_CNF);
+	tst = getFilePath(path, SAVE_CNF);
 	if(path[0] == '\0')
 		goto abort;
 	if(!strncmp(path, "cdfs", 4))
@@ -237,7 +238,15 @@ void saveSkinBrowser(void)
 	drawMsg(LNG(Enter_File_Name));
 
 	tmp[0]=0;
-	if(keyboard(tmp, 36)>0)
+	if(tst > 0){ //if an existing file was selected, use its name
+		p = strrchr(path, '/'); //find separator between path and name
+		if(p != NULL){
+			strcpy(tmp, p+1);
+			p[1] = '\0';
+		}else //if we got a pathname without separator, something is wrong
+			goto abort;
+	}
+	if((tst >= 0) && (keyboard(tmp, 36)>0))
 		strcat(path, tmp);
 	else{
 abort:
@@ -1951,7 +1960,7 @@ void Config_Network(void)
 			if(s>=4) y+=FONT_HEIGHT/2;
 			if(s>=5) y+=FONT_HEIGHT/2;
 			if (l > 1)
-				x += l*48 + 15;
+				x += (len-1)*FONT_WIDTH-1+(l-2)*6*FONT_WIDTH;
 			drawChar(LEFT_CUR, x, y, setting->color[3]);
 
 			//Tooltip section

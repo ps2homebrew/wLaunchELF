@@ -255,7 +255,7 @@ static void getIpConfig(void)
 		fd = genOpen(path, O_RDONLY);
 	else
 		fd=-1;
-	fd = genOpen(path, O_RDONLY);
+
 	if (fd >= 0) 
 	{	bzero(buf, IPCONF_MAX_LEN);
 		len = genRead(fd, buf, IPCONF_MAX_LEN - 1); //Save a byte for termination

@@ -75,37 +75,39 @@ FILEINFO clipFiles[MAX_ENTRY];
 int fileMode =  FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH;
 
 char cnfmode_extU[CNFMODE_CNT][4] = {
-	"*",   // cnfmode FALSE
-	"ELF", // cnfmode TRUE
-	"IRX", // cnfmode USBD_IRX_CNF
-	"JPG", // cnfmode SKIN_CNF
-	"JPG", // cnfmode GUI_SKIN_CNF
-	"IRX", // cnfmode USBKBD_IRX_CNF
-	"KBD", // cnfmode KBDMAP_FILE_CNF
-	"CNF", // cnfmode CNF_PATH_CNF
-	"*",   // cnfmode TEXT_CNF
-	"",    // cnfmode DIR_CNF
-	"JPG", // cnfmode JPG_CNF
-	"IRX", // cnfmode USBMASS_IRX_CNF
-	"LNG", // cnfmode LANG_CNF
-	"FNT"  // cnfmode FONT_CNF
+	"*",		// cnfmode FALSE
+	"ELF",	// cnfmode TRUE
+	"IRX",	// cnfmode USBD_IRX_CNF
+	"JPG",	// cnfmode SKIN_CNF
+	"JPG",	// cnfmode GUI_SKIN_CNF
+	"IRX",	// cnfmode USBKBD_IRX_CNF
+	"KBD",	// cnfmode KBDMAP_FILE_CNF
+	"CNF",	// cnfmode CNF_PATH_CNF
+	"*",		// cnfmode TEXT_CNF
+	"",			// cnfmode DIR_CNF
+	"JPG",	// cnfmode JPG_CNF
+	"IRX",	// cnfmode USBMASS_IRX_CNF
+	"LNG",	// cnfmode LANG_CNF
+	"FNT",	// cnfmode FONT_CNF
+	"*"			// cnfmode SAVE_CNF
 };
 
 char cnfmode_extL[CNFMODE_CNT][4] = {
-	"*",   // cnfmode FALSE
-	"elf", // cnfmode TRUE
-	"irx", // cnfmode USBD_IRX_CNF
-	"jpg", // cnfmode SKIN_CNF
-	"jpg", // cnfmode GUI_SKIN_CNF
-	"irx", // cnfmode USBKBD_IRX_CNF
-	"kbd", // cnfmode KBDMAP_FILE_CNF
-	"cnf", // cnfmode CNF_PATH_CNF
-	"*",   // cnfmode TEXT_CNF
-	"",    // cnfmode DIR_CNF
-	"jpg", // cnfmode JPG_CNF
-	"irx", // cnfmode USBMASS_IRX_CNF
-	"lng", // cnfmode LANG_CNF
-	"fnt"  // cnfmode FONT_CNF
+	"*",		// cnfmode FALSE
+	"elf",	// cnfmode TRUE
+	"irx",	// cnfmode USBD_IRX_CNF
+	"jpg",	// cnfmode SKIN_CNF
+	"jpg",	// cnfmode GUI_SKIN_CNF
+	"irx",	// cnfmode USBKBD_IRX_CNF
+	"kbd",	// cnfmode KBDMAP_FILE_CNF
+	"cnf",	// cnfmode CNF_PATH_CNF
+	"*",		// cnfmode TEXT_CNF
+	"",			// cnfmode DIR_CNF
+	"jpg",	// cnfmode JPG_CNF
+	"irx",	// cnfmode USBMASS_IRX_CNF
+	"lng",	// cnfmode LANG_CNF
+	"fnt",	// cnfmode FONT_CNF
+	"*"			// cnfmode SAVE_CNF
 };
 
 int host_ready   = 0;
@@ -3207,13 +3209,15 @@ int BrowserModePopup(void)
 // example: getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
 // dlanor: ADD USBMASS_IRX_CNF mode for found IRX file for usb_mass
 // example: getFilePath(setting->usbmass_file, USBMASS_IRX_CNF);
+// dlanor: ADD SAVE_CNF mode returning either pure path or pathname
+// dlanor: ADD return value 0=pure path, 1=pathname, negative=error/no_selection
 static int browser_cd, browser_up, browser_repos, browser_pushed;
 static int browser_sel, browser_nfiles;
 static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
 static void submenu_func_Paste(char *mess, char *path);
 static void submenu_func_mcPaste(char *mess, char *path);
 static void submenu_func_psuPaste(char *mess, char *path);
-void getFilePath(char *out, int cnfmode)
+int getFilePath(char *out, int cnfmode)
 {
 	char path[MAX_PATH], cursorEntry[MAX_PATH],
 		msg0[MAX_PATH], msg1[MAX_PATH],
@@ -3222,7 +3226,7 @@ void getFilePath(char *out, int cnfmode)
 	FILEINFO files[MAX_ENTRY];
 	int top=0, rows;
 	int x, y, y0, y1;
-	int i, j, ret;
+	int i, j, ret, rv=-1; //NB: rv is for return value of this function
 	int event, post_event=0;
 	int font_height;
 	int iconbase, iconcolr;
@@ -3281,8 +3285,8 @@ void getFilePath(char *out, int cnfmode)
 				browser_sel+=rows/2;
 			else if(new_pad & PAD_TRIANGLE)
 				browser_up=TRUE;
-			else if((swapKeys && new_pad & PAD_CROSS)
-			     || (!swapKeys && new_pad & PAD_CIRCLE) ){ //Pushed OK
+			else if((swapKeys && (new_pad & PAD_CROSS))
+			     || (!swapKeys && (new_pad & PAD_CIRCLE)) ){ //Pushed OK
 				if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
 					//pushed OK for a folder
 					if(!strcmp(files[browser_sel].name,".."))
@@ -3303,6 +3307,7 @@ void getFilePath(char *out, int cnfmode)
 						out[0] = 0;
 					}else{
 						strcpy(LastDir, path);
+						rv = 1; //flag pathname selected
 						break;
 					}
 				}
@@ -3329,6 +3334,7 @@ void getFilePath(char *out, int cnfmode)
 					}else{
 						strcpy(LastDir, path);
 						sprintf(out, "%s%s", "uLE:/", files[browser_sel].name);
+						rv = 1; //flag pathname selected
 						break;
 					}
 				}
@@ -3348,17 +3354,34 @@ void getFilePath(char *out, int cnfmode)
 			if(cnfmode==DIR_CNF){
 				if(new_pad & PAD_START) {
 					strcpy(out, path);
+					strcpy(LastDir, path);
+					rv = 0; //flag pathname selected
 					break;
 				}
-			}else if(cnfmode){ //Some file is to be selected, not in normal browser mode
+			}else if(cnfmode==SAVE_CNF){ //Generic Save commands
+				if(new_pad & PAD_START) {
+					if(files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR){
+						//no file was highlighted, so prep to save with empty filename
+						strcpy(out, path);
+						rv = 0; //flag pure path selected
+					}else{
+						//a file was highlighted, so prep to save with that filename
+						sprintf(out, "%s%s", path, files[browser_sel].name);
+						rv = 1; //flag pathname selected
+					}
+					strcpy(LastDir, path);
+					break;
+				}
+			}
+			if(cnfmode){ //A file is to be selected, not in normal browser mode
 				if(new_pad & PAD_SQUARE) {
 					if(!strcmp(ext,"*")) strcpy(ext, cnfmode_extL[cnfmode]);
 					else				 strcpy(ext, "*");
 					browser_cd=TRUE;
-				}else if((!swapKeys && new_pad & PAD_CROSS)
-				      || (swapKeys && new_pad & PAD_CIRCLE) ){ //Cancel command given ?
+				}else if((!swapKeys && (new_pad & PAD_CROSS))
+				      || (swapKeys && (new_pad & PAD_CIRCLE)) ){ //Cancel command ?
 					unmountAll();
-					return;
+					return rv;
 				}
 			}else{ //cnfmode == FALSE
 				if(new_pad & PAD_R1) {
@@ -3564,7 +3587,7 @@ void getFilePath(char *out, int cnfmode)
 						GUI_active = 1;
 						loadSkin(BACKGROUND_PIC, 0, 0);
 					}
-					return;
+					return rv;
 				}
 			}
 		}//ends pad response section
@@ -3770,19 +3793,7 @@ void getFilePath(char *out, int cnfmode)
 				sprintf(msg0, "%s: %s", LNG(Path), path);
 
 			//Tooltip section
-			if(cnfmode==DIR_CNF) {//cnfmode Directory Add Start to select dir
-				if (swapKeys)
-					sprintf(msg1, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
-				else
-					sprintf(msg1, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
-				if(ext[0] == '*')
-					strcat(msg1, "*->");
-				strcat(msg1, cnfmode_extU[cnfmode]);
-				if(ext[0] != '*')
-					strcat(msg1, "->*");
-				sprintf(tmp, " R2:%s Start:%s", LNG(PathPad), LNG(Choose));
-				strcat(msg1, tmp);
-			}else if(cnfmode) {//cnfmode indicates configurable file selection
+			if(cnfmode) {//cnfmode indicates configurable file selection
 				if (swapKeys)
 					sprintf(msg1, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
 				else
@@ -3794,6 +3805,10 @@ void getFilePath(char *out, int cnfmode)
 					strcat(msg1, "->*");
 				sprintf(tmp, " R2:%s", LNG(PathPad));
 				strcat(msg1, tmp);
+				if((cnfmode==DIR_CNF)||(cnfmode==SAVE_CNF)) { //modes using Start
+					sprintf(tmp, " Start:%s", LNG(Choose));
+					strcat(msg1, tmp);
+				}
 			}else{ // cnfmode == FALSE
 				if (swapKeys) 
 					sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1:%s R1:%s R2:%s Sel:%s",
@@ -3829,7 +3844,7 @@ void getFilePath(char *out, int cnfmode)
 	
 	//Leaving the browser
 	unmountAll();
-	return;
+	return rv;
 }
 //------------------------------
 //endfunc getFilePath

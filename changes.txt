@@ -1,5 +1,11 @@
 Unofficial LaunchELF releases by EP + dlanor + various contributors
 
+LaunchELF v4.25 (2008.08.19)
+-Fixed a bug preventing proper updates of IPCONFIG.DAT (open file)
+-Fixed a bug preventing Cancel command from working in some file selections
+-Modified Skin CNF saving to allow selection of existing filenames
+-Corrected cursor positioning for LNG translated network settings
+
 LaunchELF v4.24 (2008.08.15)
 -Fixed a bug preventing unmounting of VMC devices for some cases
 
