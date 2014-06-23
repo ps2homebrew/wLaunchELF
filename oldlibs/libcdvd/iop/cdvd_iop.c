@@ -1,10 +1,9 @@
 #include <tamtypes.h>
-#include <sifdma.h>
-#include "sifrpc.h"
 #include <loadcore.h>
 #include <thsemap.h>
 #include <intrman.h>
 #include <thbase.h>
+#include <sifman.h>
 #include <sifcmd.h>
 #include <ioman.h>
 #include "ps2lib_ioman.h"
@@ -16,8 +15,6 @@
 
 #define TRUE	1
 #define FALSE	0
-
-#define TH_C		0x02000000
 
 enum PathMatch
 {
@@ -298,7 +295,7 @@ void CDVD_init( struct fileio_driver *driver)
 	printf("by A.Lee (aka Hiryu) & Nicholas Van Veen (aka Sjeep)\n");
 	printf("CDVD: Initializing '%s' file driver.\n", driver->device);
 
-	CdInit(0);
+	CdInit(1);
 
 	memset(fd_table,0,sizeof(fd_table));
 	memset(fd_used,0,16*4);

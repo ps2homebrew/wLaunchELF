@@ -681,8 +681,10 @@ end:
 			jpg_browser_cd=FALSE;
 			jpg_browser_up=FALSE;
 		} //ends if(jpg_browser_cd)
-		if(setting->discControl && !strncmp(path,"cdfs",4))
+		if(setting->discControl && !strncmp(path,"cdfs",4)){
 			CDVD_Stop();
+			sceCdSync(0);
+		}
 		if(top > jpg_browser_nfiles-rows)	top=jpg_browser_nfiles-rows;
 		if(top < 0)				top=0;
 		if(jpg_browser_sel >= jpg_browser_nfiles)		jpg_browser_sel=jpg_browser_nfiles-1;

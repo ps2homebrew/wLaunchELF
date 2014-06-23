@@ -580,15 +580,15 @@ int readCD(const char *path, FILEINFO *info, int max)
 	u64 wait_start;
 
 	loadCdModules();
-	if(cdGetDiscType() <= CDVD_TYPE_UNKNOWN){
+	if(sceCdGetDiskType() <= SCECdUNKNOWN){
 		wait_start = Timer();
 		while((Timer() < wait_start+500) && !uLE_cdDiscValid()){
-			if(cdmode == CDVD_TYPE_NODISK)
+			if(cdmode == SCECdNODISC)
 				return 0;
 		}
-		if(cdmode == CDVD_TYPE_NODISK)
+		if(cdmode == SCECdNODISC)
 			return 0;
-		if((cdmode < CDVD_TYPE_PS1CD) || (cdmode > CDVD_TYPE_PS2DVD)){
+		if((cdmode < SCECdPSCD) || (cdmode > SCECdPS2DVD)){
 			if(setting->discControl)
 				uLE_cdStop();
 			return 0;

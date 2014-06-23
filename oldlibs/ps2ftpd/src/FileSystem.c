@@ -333,7 +333,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 
 				io_dirent_t ent;
 
-				if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), &ent ) > 0 )
+				if( pContext->m_kFile.device->ops->dread( &(pContext->m_kFile), (iox_dirent_t*)&ent ) > 0 )
 				{
 					strcpy(pInfo->m_Name,ent.name);
 
@@ -489,7 +489,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 					}
 
 					// get status from root directory of device
-					ret = pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), "/", (io_stat_t*)&stat );
+					ret = pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), "/", &stat );
 
 					// fix for mass, forces subdirecory "0" (note: only needed with older USB drivers)
 					if( (unit == 0) && (ret != -19) && !strcmp(pContext->m_kFile.device->name, "mass") )
@@ -536,7 +536,7 @@ int FileSystem_ReadDir( FSContext* pContext, FSFileInfo* pInfo )
 			{
 				// evaluating devices
 
-				smod_mod_info_t* pkModule;
+				ModuleInfo_t* pkModule;
 				iop_device_t** ppkDevices;
 				int num_devices;
 				int dev_offset;
@@ -867,7 +867,7 @@ int FileSystem_GetFileSize( FSContext* pContext, const char* pFile )
 				break;
 
 			// get status from root directory of device
-			if( pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), pFile, (io_stat_t*)&stat ) < 0 )
+			if( pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), pFile, &stat ) < 0 )
 				break;
 
 			// dummy devices does not set mode properly, so we can filter them out easily
@@ -976,13 +976,13 @@ const char* FileSystem_ClassifyPath( FSContext* pContext, const char* pPath )
 	return buffer;
 }
 
-smod_mod_info_t* FileSystem_GetModule( const char* pDevice )
+ModuleInfo_t* FileSystem_GetModule( const char* pDevice )
 {
-	smod_mod_info_t* pkModule = NULL;
+	ModuleInfo_t* pkModule = NULL;
 
 	// scan module list
 
-	pkModule = (smod_mod_info_t *)0x800;
+	pkModule = (ModuleInfo_t *)0x800;
 	while( NULL != pkModule )
 	{
 		if (!strcmp(pkModule->name, pDevice))
@@ -996,7 +996,7 @@ smod_mod_info_t* FileSystem_GetModule( const char* pDevice )
 
 iop_device_t* FileSystem_ScanDevice( const char* pDevice, int iNumDevices, const char* pPath )
 {
-	smod_mod_info_t* pkModule;
+	ModuleInfo_t* pkModule;
   iop_device_t **ppkDevices;
 	int i;
 	int offset;
@@ -1140,12 +1140,12 @@ int FileSystem_SyncDevice( FSContext* pContext, const char* devname )
 
 int getPs2Time( ps2time *tm )
 {
-	cd_clock_t cdtime;
+	sceCdCLOCK cdtime;
 	s32 tmp;
 	// used if can not get time...
 	ps2time timeBuf={0, 0, 0, 0, 1, 1, 1970};
 
-	if( CdReadClock(&cdtime) !=0 && cdtime.stat==0 )
+	if( sceCdReadClock(&cdtime) !=0 && cdtime.stat==0 )
 	{
 		tmp=cdtime.second>>4;
 		timeBuf.sec=(int)(((tmp<<2)+tmp)<<1)+(cdtime.second&0x0F);
@@ -1155,7 +1155,7 @@ int getPs2Time( ps2time *tm )
 		timeBuf.hour=(((tmp<<2)+tmp)<<1)+(cdtime.hour&0x0F);
 		tmp=cdtime.day>>4;
 		timeBuf.day=(((tmp<<2)+tmp)<<1)+(cdtime.day&0x0F);
-		tmp=cdtime.month>>4;
+		tmp=(cdtime.month>>4)&0x7F;
 		timeBuf.month=(((tmp<<2)+tmp)<<1)+(cdtime.month&0x0F);
 		tmp=cdtime.year>>4;
 		timeBuf.year=(((tmp<<2)+tmp)<<1)+(cdtime.year&0xF)+2000;

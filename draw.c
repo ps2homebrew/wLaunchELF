@@ -817,7 +817,10 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 		} /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
 		fclose( File );
 	} /* end if( File != NULL ) */
-	if(!strncmp(tmpPath, "cdfs", 4)) CDVD_Stop();
+	if(!strncmp(tmpPath, "cdfs", 4)){
+		CDVD_Stop();
+		sceCdSync(0);
+	}
 	if(!strncmp(tmpPath, "hdd0:/", 6))
 		unmountParty(0);
 }

@@ -33,7 +33,7 @@
 #include <gsKit.h>
 #include <dmaKit.h>
 #include <cdvd_rpc.h>
-#include "cd.h"
+#include <libcdvd.h>
 //#include "mass_rpc.h" //disused in switch to usbhdfsd
 #include "iopmod_name.h"
 #include <libjpg.h>
@@ -168,7 +168,7 @@ extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
 extern int TV_mode;
 extern int swapKeys;
 extern int GUI_active;// Skin and Main Skin switch
-extern CdvdDiscType_t cdmode; //Last detected disc type
+extern int cdmode; //Last detected disc type
 
 void load_vmc_fs(void);
 void load_ps2host(void);
@@ -403,7 +403,6 @@ typedef enum {
 
 
 // chkesr_rpc.c
-extern int  chkesr_rpc_Init(void);
 extern int  Check_ESR_Disc(void);
 
 //USB_mass definitions for multiple drive usage

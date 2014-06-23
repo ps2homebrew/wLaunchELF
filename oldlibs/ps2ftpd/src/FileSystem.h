@@ -138,7 +138,7 @@ int FileSystem_Rename( FSContext* pContext, const char* oldName, const char* new
 const char* FileSystem_ClassifyPath( FSContext* pContext, const char* pPath );
 
 //! Get a pointer to device handler
-smod_mod_info_t* FileSystem_GetModule( const char* pDevice );
+ModuleInfo_t* FileSystem_GetModule( const char* pDevice );
 
 //! Scan devices & return ops structure if found
 iop_device_t* FileSystem_ScanDevice( const char* pDevice, int iNumDevices, const char* pPath );

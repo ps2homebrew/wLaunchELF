@@ -3,22 +3,20 @@ SMB = 0
 #set SMB to 1 to build uLe with smb support
 EE_BIN = BOOT.ELF
 EE_BIN_PKD = ULE.ELF
-EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o cd.o\
+EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o \
 	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o\
 	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
 	cdvd.o ps2ftpd.o ps2host.o vmc_fs.o fakehost.o ps2kbd.o\
 	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr_rpc.o chkesr.o sior.o
+	font_uLE.o makeicon.o chkesr.o sior.o
 ifeq ($(SMB),1)
 	EE_OBJS += smbman.o
 endif
 
-EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include\
-	-I$(PS2SDK)/sbv/include -Ioldlibs/libcdvd/ee
+EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include -Ioldlibs/libcdvd/ee
 
-EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib\
-	-L$(PS2SDK)/sbv/lib -Loldlibs/libcdvd/lib -s
-EE_LIBS = -lpad -lgskit -ldmakit -ljpeg -lmc -lhdd -lcdvdfs -lkbd -lmf -lc  -lfileXio -lpatches -lpoweroff  -ldebug -lc -lsior
+EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -Loldlibs/bin -s
+EE_LIBS = -lpad -lgskit -ldmakit -ljpeg -lmc -lhdd -lcdvdfs -lkbd -lmf -lcdvd -lc -lfileXio -lpatches -lpoweroff -ldebug -lc -lsior
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
 endif
@@ -44,7 +42,7 @@ usbhdfsd.s:
 	bin2s $(PS2SDK)/iop/irx/usbhdfsd.irx usbhdfsd.s usb_mass_irx
 
 cdvd.s:
-	bin2s oldlibs/libcdvd/lib/cdvd.irx cdvd.s cdvd_irx
+	bin2s oldlibs/bin/cdvd.irx cdvd.s cdvd_irx
 
 poweroff.s:
 	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
@@ -59,16 +57,16 @@ ps2dev9.s:
 	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
 
 ps2ip.s:
-	bin2s oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
+	bin2s oldlibs/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
 
 ps2smap.s:
-	bin2s oldlibs/SMS/drv/SMSMAP/SMSMAP.irx ps2smap.s ps2smap_irx
+	bin2s oldlibs/bin/SMSMAP.irx ps2smap.s ps2smap_irx
 
 smsutils.s:
-	bin2s oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx smsutils.s smsutils_irx
+	bin2s oldlibs/bin/SMSUTILS.irx smsutils.s smsutils_irx
 
 ps2ftpd.s:
-	bin2s oldlibs/ps2ftpd/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
+	bin2s oldlibs/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
 
 ps2atad.s:
 	bin2s $(PS2SDK)/iop/irx/ps2atad.irx ps2atad.s ps2atad_irx
@@ -109,10 +107,6 @@ loader.s:
 ps2kbd.s:
 	bin2s $(PS2SDK)/iop/irx/ps2kbd.irx ps2kbd.s ps2kbd_irx
 
-chkesr.s:
-	$(MAKE) -C chkesr
-	bin2s chkesr/chkesr.irx chkesr.s chkesr_irx
-
 sior.s:
 	bin2s $(PS2SDK)/iop/irx/sior.irx sior.s sior_irx
 
@@ -121,7 +115,6 @@ clean:
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
-	$(MAKE) -C chkesr clean
 	rm -f *.o *.a *.s *.ELF
 
 include $(PS2SDK)/samples/Makefile.pref

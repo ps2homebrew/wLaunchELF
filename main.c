@@ -55,8 +55,6 @@ extern void ps2kbd_irx;
 extern int  size_ps2kbd_irx;
 extern void hdl_info_irx;
 extern int  size_hdl_info_irx;
-extern void chkesr_irx;
-extern int size_chkesr_irx;
 extern void mcman_irx;
 extern int  size_mcman_irx;
 extern void mcserv_irx;
@@ -163,8 +161,6 @@ int have_ps2netfs = 0;
 int	have_smbman   = 0;
 int have_vmc_fs   = 0;
 
-int have_chkesr   = 0;
-
 int force_IOP = 0; //flags presence of incompatible drivers, so we must reset IOP
 
 int menu_LK[15];  //holds RunElf index for each valid main menu entry
@@ -189,9 +185,12 @@ char default_OSDSYS_path[] = "mc:/B?EXEC-SYSTEM/osdmain.elf";
 char ROMVER_data[20]; 	//16 byte file read from rom0:ROMVER at init
 char rough_region;			//E==Europe, A==US,  I==Japan
 
-CdvdDiscType_t cdmode;      //Last detected disc type
-CdvdDiscType_t old_cdmode;  //used for disc change detection
-CdvdDiscType_t uLE_cdmode;  //used for smart disc detection
+int cdmode;      //Last detected disc type
+int old_cdmode;  //used for disc change detection
+int uLE_cdmode;  //used for smart disc detection
+
+#define SCECdESRDVD_0	0x15	// ESR-patched DVD, as seen without ESR driver active
+#define SCECdESRDVD_1	0x16	// ESR-patched DVD, as seen with ESR driver active
 
 typedef struct{
 	int type;
@@ -199,23 +198,23 @@ typedef struct{
 }	DiscType;
 
 DiscType DiscTypes[] = {
-	{CDVD_TYPE_NODISK,           "!"},
-	{CDVD_TYPE_DETECT,           "??"},
-	{CDVD_TYPE_DETECT_CD,        "CD ?"},
-	{CDVD_TYPE_DETECT_DVDSINGLE, "DVD ?"},
-	{CDVD_TYPE_DETECT_DVDDUAL,   "DVD 2?"},
-	{CDVD_TYPE_UNKNOWN,          "???"},
-	{CDVD_TYPE_PS1CD,            "PS1 CD"},
-	{CDVD_TYPE_PS1CDDA,          "PS1 CDDA"},
-	{CDVD_TYPE_PS2CD,            "PS2 CD"},
-	{CDVD_TYPE_PS2CDDA,          "PS2 CDDA"},
-	{CDVD_TYPE_PS2DVD,           "PS2 DVD"},
-	{CDVD_TYPE_ESRDVD_0,         "ESR DVD (off)"},
-	{CDVD_TYPE_ESRDVD_1,         "ESR DVD (on)"},
-	{CDVD_TYPE_CDDA,             "Audio CD"},
-	{CDVD_TYPE_DVDVIDEO,         "Video DVD"},
-	{CDVD_TYPE_ILLEGAL,          "????"},
-	{0x00,                       ""}//end of list
+	{SCECdNODISC,		"!"},
+	{SCECdDETCT,		"??"},
+	{SCECdDETCTCD,		"CD ?"},
+	{SCECdDETCTDVDS,	"DVD ?"},
+	{SCECdDETCTDVDD,	"DVD 2?"},
+	{SCECdUNKNOWN,		"???"},
+	{SCECdPSCD,		"PS1 CD"},
+	{SCECdPSCDDA,		"PS1 CDDA"},
+	{SCECdPS2CD,		"PS2 CD"},
+	{SCECdPS2CDDA,		"PS2 CDDA"},
+	{SCECdPS2DVD,		"PS2 DVD"},
+	{SCECdESRDVD_0,		"ESR DVD (off)"},
+	{SCECdESRDVD_1,		"ESR DVD (on)"},
+	{SCECdCDDA,		"Audio CD"},
+	{SCECdDVDV,		"Video DVD"},
+	{SCECdIllegalMedia,	"????"},
+	{0x00,			""}//end of list
 }; //ends DiscTypes array
 //---------------------------------------------------------------------------
 //executable code
@@ -941,7 +940,7 @@ void loadCdModules(void)
 	
 	if	(!have_cdvd) {
 		SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
-		cdInit(CDVD_INIT_NOCHECK);   // CDVD_INIT_NOCHECK init without check for a disc. Reduces risk of a lockup if the drive is in a erroneous state.
+		sceCdInit(SCECdINoD);   // SCECdINoD init without check for a disc. Reduces risk of a lockup if the drive is in a erroneous state.
 		CDVD_Init();
 		have_cdvd = 1;
 	}
@@ -949,48 +948,32 @@ void loadCdModules(void)
 //------------------------------
 //endfunc loadCdModules
 //---------------------------------------------------------------------------
-void load_chkesr_module(void)
-{
-	// load chkesr and other modules (EROMDRV) needed to read DVDV
-	
-	int ret;
-
-	if(have_chkesr)
-		return;
-
-	SifExecModuleBuffer(&chkesr_irx, size_chkesr_irx, 0, NULL, &ret);
-	chkesr_rpc_Init();
-	have_chkesr = 1;
-}
-//------------------------------
-//endfunc load_chkesr_module
-//---------------------------------------------------------------------------
 int uLE_cdDiscValid(void) //returns 1 if disc valid, else returns 0
 {
 	if (!have_cdvd) {
 		loadCdModules();
 	}
 
-	cdmode = cdGetDiscType();
+	cdmode = sceCdGetDiskType();
 
 	switch(cdmode){
-	case CDVD_TYPE_PS1CD:
-	case CDVD_TYPE_PS1CDDA:
-	case CDVD_TYPE_PS2CD:
-	case CDVD_TYPE_PS2CDDA:
-	case CDVD_TYPE_PS2DVD:
-//	case CDVD_TYPE_ESRDVD_0:
-//	case CDVD_TYPE_ESRDVD_1:
-	case CDVD_TYPE_CDDA:
-	case CDVD_TYPE_DVDVIDEO:
+	case SCECdPSCD:
+	case SCECdPSCDDA:
+	case SCECdPS2CD:
+	case SCECdPS2CDDA:
+	case SCECdPS2DVD:
+//	case SCECdESRDVD_0:
+//	case SCECdESRDVD_1:
+	case SCECdCDDA:
+	case SCECdDVDV:
 		return 1;
-	case CDVD_TYPE_NODISK:
-	case CDVD_TYPE_DETECT:
-	case CDVD_TYPE_DETECT_CD:
-	case CDVD_TYPE_DETECT_DVDSINGLE:
-	case CDVD_TYPE_DETECT_DVDDUAL:
-	case CDVD_TYPE_UNKNOWN:
-	case CDVD_TYPE_ILLEGAL:
+	case SCECdNODISC:
+	case SCECdDETCT:
+	case SCECdDETCTCD:
+	case SCECdDETCTDVDS:
+	case SCECdDETCTDVDD:
+	case SCECdUNKNOWN:
+	case SCECdIllegalMedia:
 	default:
 		return 0;
 	}
@@ -1007,16 +990,16 @@ int uLE_cdStop(void)
 	uLE_cdmode = cdmode;
 	if (test){ //if stable detection of a real disc is achieved
 		if((cdmode !=old_cdmode) //if this was a new detection
-		&& ((cdmode == CDVD_TYPE_DVDVIDEO) || (cdmode == CDVD_TYPE_PS2DVD))){
-			load_chkesr_module(); //prepare to check for ESR disc
+		&& ((cdmode == SCECdDVDV) || (cdmode == SCECdPS2DVD))){
 			test = Check_ESR_Disc();
 			printf("Check_ESR_Disc => %d\n", test);
 			if(test > 0){	//ESR Disc ?
-				uLE_cdmode = (cdmode == CDVD_TYPE_PS2DVD)
-					? CDVD_TYPE_ESRDVD_1 : CDVD_TYPE_ESRDVD_0 ;
+				uLE_cdmode = (cdmode == SCECdPS2DVD)
+					? SCECdESRDVD_1 : SCECdESRDVD_0 ;
 			}
 		}
 		CDVD_Stop();
+		sceCdSync(0);
 	}
 	return uLE_cdmode;
 }
@@ -1778,8 +1761,7 @@ close_fd_and_launch_OSDSYS:
 			goto Done_PS2Disc;
 		}
 		if(uLE_cdDiscValid()){
-			if(cdmode == CDVD_TYPE_DVDVIDEO){
-				load_chkesr_module(); //prepare to check for ESR disc
+			if(cdmode == SCECdDVDV){
 				x = Check_ESR_Disc();
 				printf("Check_ESR_Disc => %d\n", x);
 				if(x > 0){	//ESR Disc, so launch ESR
@@ -1853,7 +1835,7 @@ Fail_DVD_Video:
 				sprintf(mainMsg, "DVD-Video %s", LNG(Failed));
 				goto Done_PS2Disc;
 			}
-			if(cdmode == CDVD_TYPE_CDDA){
+			if(cdmode == SCECdCDDA){
 //Fail_CDDA:
 				sprintf(mainMsg, "CDDA %s", LNG(Failed));
 				goto Done_PS2Disc;
