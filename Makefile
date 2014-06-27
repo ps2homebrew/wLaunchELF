@@ -1,6 +1,6 @@
 SMB = 0
-
 #set SMB to 1 to build uLe with smb support
+
 EE_BIN = BOOT.ELF
 EE_BIN_PKD = ULE.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o \
@@ -8,7 +8,7 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o \
 	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
 	cdvd.o ps2ftpd.o ps2host.o vmc_fs.o fakehost.o ps2kbd.o\
 	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr.o sior.o
+	font_uLE.o makeicon.o chkesr.o sior.o allowdvdv.o
 ifeq ($(SMB),1)
 	EE_OBJS += smbman.o
 endif
@@ -110,11 +110,16 @@ ps2kbd.s:
 sior.s:
 	bin2s $(PS2SDK)/iop/irx/sior.irx sior.s sior_irx
 
+allowdvdv.s:
+	$(MAKE) -C AllowDVDV
+	bin2s AllowDVDV/AllowDVDV.irx allowdvdv.s allowdvdv_irx
+
 clean:
 	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
+	$(MAKE) -C AllowDVDV clean
 	rm -f *.o *.a *.s *.ELF
 
 include $(PS2SDK)/samples/Makefile.pref

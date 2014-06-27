@@ -4,6 +4,7 @@
 #include "launchelf.h"
 #ifdef SMB
 #include "SMB_test.h"
+#include "ps2smb.h"
 #endif
 
 //dlanor: I'm correcting all these erroneous 'u8 *name' declarations
@@ -61,6 +62,8 @@ extern void mcserv_irx;
 extern int  size_mcserv_irx;
 extern void sior_irx;
 extern int  size_sior_irx;
+extern void allowdvdv_irx;
+extern int  size_allowdvdv_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -248,105 +251,6 @@ int	PrintPos(int row_f, int column, char *text_p)
 }  
 //------------------------------
 //endfunc PrintPos
-//---------------------------------------------------------------------------
-//Function to show a screen with debugging info
-//------------------------------
-void ShowDebugInfo(void)
-{	char TextRow[256];
-	int	i, event, post_event=0;
-	int row;
-
-#ifdef SMB
-	load_smbman();
-	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
-	smbCurrentServer = 0;
-#endif
-	event = 1;   //event = initial entry
-	//----- Start of event loop -----
-	while(1) {
-		//Pad response section
-		waitAnyPadReady();
-		if(readpad() && new_pad)
-		{	event |= 2;
-#ifdef SMB
-			if(new_pad & PAD_CIRCLE)
-			{ if(smbCurrentServer+1 < smbServerListCount)
-					smbCurrentServer++;
-				else
-					smbCurrentServer = 0;
-			}
-			else if(new_pad & PAD_CROSS)
-			{	if(smbCurrentServer > 0)
-					smbCurrentServer--;
-				else
-					smbCurrentServer = smbServerListCount-1;
-			}
-			else if(new_pad & PAD_SQUARE)
-			{	smbLogon_Server(smbCurrentServer);
-			}
-			else if(new_pad & PAD_TRIANGLE)
-			{	smbServerList[smbCurrentServer].Server_Logon_f = 0;
-			}
-			else
-#endif
-			{
-				if(setting->GUI_skin[0])
-				{	GUI_active = 1;
-					loadSkin(BACKGROUND_PIC, 0, 0);
-				}
-				break;
-			}
-		}
-
-		//Display section
-		if(event||post_event) { //NB: We need to update two frame buffers per event
-			clrScr(setting->color[0]);
-			PrintRow(0,"Debug Info Screen:");
-			sprintf(TextRow, "rom0:ROMVER == \"%s\"", ROMVER_data);
-			PrintRow(2,TextRow);
-			sprintf(TextRow, "argc == %d", boot_argc);
-			PrintRow(4,TextRow);
-			for(i=0; (i<boot_argc)&&(i<8); i++){
-				sprintf(TextRow, "argv[%d] == \"%s\"", i, boot_argv[i]);
-				PrintRow(-1, TextRow);
-			}
-			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
-			row = PrintRow(-1, TextRow);
-
-#ifdef SMB
-			int si = smbCurrentServer;
-			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
-			PrintRow(row+1, TextRow);
-			sprintf(TextRow, "Server_IP = %s", smbServerList[si].Server_IP);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Port = %d", smbServerList[si].Server_Port);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Username = %s", smbServerList[si].Username);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Password = %s", smbServerList[si].Password);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PasswordType = %d", smbServerList[si].PasswordType);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "PassHash_f = %d", smbServerList[si].PassHash_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_Logon_f = %d", smbServerList[si].Server_Logon_f);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
-			PrintRow(-1, TextRow);
-			sprintf(TextRow, "ÿ0 Index++  ÿ1 Index--  ÿ2 Logon  ÿ3 Forget Logon");
-			PrintRow(-1, TextRow); 
-#endif
-		}//ends if(event||post_event)
-		drawScr();
-		post_event = event;
-		event = 0;
-	} //ends while
-	//----- End of event loop -----
-}
-//------------------------------
-//endfunc ShowDebugInfo
 //---------------------------------------------------------------------------
 //Function to show a screen with program credits ("About uLE")
 //------------------------------
@@ -840,9 +744,110 @@ void	load_smbman(void)
 		have_smbman = 1;
 	}
 }
-#endif
 //------------------------------
 //endfunc load_smbman
+//---------------------------------------------------------------------------
+#include "SMB_test.c"
+#endif
+//---------------------------------------------------------------------------
+//Function to show a screen with debugging info
+//------------------------------
+void ShowDebugInfo(void)
+{	char TextRow[256];
+	int	i, event, post_event=0;
+	int row;
+
+#ifdef SMB
+	load_smbman();
+	loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
+	smbCurrentServer = 0;
+#endif
+	event = 1;   //event = initial entry
+	//----- Start of event loop -----
+	while(1) {
+		//Pad response section
+		waitAnyPadReady();
+		if(readpad() && new_pad)
+		{	event |= 2;
+#ifdef SMB
+			if(new_pad & PAD_CIRCLE)
+			{ if(smbCurrentServer+1 < smbServerListCount)
+					smbCurrentServer++;
+				else
+					smbCurrentServer = 0;
+			}
+			else if(new_pad & PAD_CROSS)
+			{	if(smbCurrentServer > 0)
+					smbCurrentServer--;
+				else
+					smbCurrentServer = smbServerListCount-1;
+			}
+			else if(new_pad & PAD_SQUARE)
+			{	smbLogon_Server(smbCurrentServer);
+			}
+			else if(new_pad & PAD_TRIANGLE)
+			{	smbServerList[smbCurrentServer].Server_Logon_f = 0;
+			}
+			else
+#endif
+			{
+				if(setting->GUI_skin[0])
+				{	GUI_active = 1;
+					loadSkin(BACKGROUND_PIC, 0, 0);
+				}
+				break;
+			}
+		}
+
+		//Display section
+		if(event||post_event) { //NB: We need to update two frame buffers per event
+			clrScr(setting->color[0]);
+			PrintRow(0,"Debug Info Screen:");
+			sprintf(TextRow, "rom0:ROMVER == \"%s\"", ROMVER_data);
+			PrintRow(2,TextRow);
+			sprintf(TextRow, "argc == %d", boot_argc);
+			PrintRow(4,TextRow);
+			for(i=0; (i<boot_argc)&&(i<8); i++){
+				sprintf(TextRow, "argv[%d] == \"%s\"", i, boot_argv[i]);
+				PrintRow(-1, TextRow);
+			}
+			sprintf(TextRow, "boot_path == \"%s\"", boot_path);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
+			row = PrintRow(-1, TextRow);
+
+#ifdef SMB
+			int si = smbCurrentServer;
+			sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
+			PrintRow(row+1, TextRow);
+			sprintf(TextRow, "Server_IP = %s", smbServerList[si].Server_IP);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_Port = %d", smbServerList[si].Server_Port);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Username = %s", smbServerList[si].Username);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Password = %s", smbServerList[si].Password);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "PasswordType = %d", smbServerList[si].PasswordType);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "PassHash_f = %d", smbServerList[si].PassHash_f);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_Logon_f = %d", smbServerList[si].Server_Logon_f);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
+			PrintRow(-1, TextRow);
+			sprintf(TextRow, "ÿ0 Index++  ÿ1 Index--  ÿ2 Logon  ÿ3 Forget Logon");
+			PrintRow(-1, TextRow); 
+#endif
+		}//ends if(event||post_event)
+		drawScr();
+		post_event = event;
+		event = 0;
+	} //ends while
+	//----- End of event loop -----
+}
+//------------------------------
+//endfunc ShowDebugInfo
 //---------------------------------------------------------------------------
 void	load_vmc_fs(void)
 {
@@ -892,6 +897,8 @@ void	load_ps2netfs(void)
 void loadBasicModules(void)
 {
 	int ret;
+	
+	SifExecModuleBuffer(&allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret); //unlocks cdvd for reading on psx dvr
 
 	if	(!have_sio2man) {
 		SifLoadModule("rom0:SIO2MAN", 0, NULL);
@@ -2026,9 +2033,9 @@ int uLE_detect_TV_mode()
 //endfunc uLE_detect_TV_mode
 //---------------------------------------------------------------------------
 
-#ifdef SMB
-#include "SMB_test.c"
-#endif
+//#ifdef SMB
+//#include "SMB_test.c"
+//#endif
 
 //---------------------------------------------------------------------------
 int main(int argc, char *argv[])

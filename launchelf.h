@@ -1,8 +1,8 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.42e_HDD"
-#define ULE_VERDATE "2014.03.30"
+#define ULE_VERSION "v4.43a"
+#define ULE_VERDATE "2014.06.27"
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 
@@ -40,7 +40,6 @@
 #include <libkbd.h>
 #include <floatlib.h>
 #include "hdl_rpc.h"
-#include "ps2smb.h"
 
 #include <sio.h>
 #include <sior_rpc.h>
