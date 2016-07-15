@@ -40,7 +40,7 @@ enum {//For menu commands
 
 PARTYINFO PartyInfo[MAX_PARTITIONS];
 int  numParty;
-int  hddSize, hddFree, hddFreeSpace, hddUsed;
+u32  hddSize, hddFree, hddFreeSpace, hddUsed;
 int  hddConnected, hddFormated;
 
 char DbgMsg[MAX_TEXT_LINE*30];
@@ -94,10 +94,9 @@ void GetHddInfo(void)
 {
 	iox_dirent_t infoDirEnt;
 	int  rv, hddFd=0, partitionFd, i, Treat = TREAT_NOACCESS;
-	u64  size=0;
+	u32  size=0, zoneFree, zoneSize;
 	char tmp[MAX_PATH];
 	char dbgtmp[MAX_PATH];
-	s64  zoneFree, zoneSize;
 //	char pfs_str[6];
 
 //	strcpy(pfs_str, "pfs0:");
@@ -119,14 +118,14 @@ void GetHddInfo(void)
 	}else
 		hddFormated=1;
 
-	size =((u64) fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0))*512;
-	hddSize = (size / MB);
+//	size =((u64) (u32)fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0))*512;
+//	hddSize = (size / MB);
+	hddSize = (u32)fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0) / SECTORS_PER_MB;
 
 	if((hddFd = fileXioDopen("hdd0:")) < 0) return;
 
 	while(fileXioDread(hddFd, &infoDirEnt) > 0){ //Starts main while loop
-		u64	found_size =
-					((((u64) infoDirEnt.stat.hisize)<<32) + infoDirEnt.stat.size) / MB;
+		u64	found_size = infoDirEnt.stat.size / SECTORS_PER_MB;
 
 		//DebugDispStat(&infoDirEnt);
 
@@ -147,11 +146,11 @@ void GetHddInfo(void)
 		PartyInfo[numParty].RawSize = found_size; //Store found segment size
 		PartyInfo[numParty].Count = numParty;
 
-		if(infoDirEnt.stat.mode == 0x0001) //New test of partition type by 'mode'
+		if(infoDirEnt.stat.mode == APA_TYPE_MBR) //New test of partition type by 'mode'
 			Treat = TREAT_SYSTEM;
 		else if(infoDirEnt.stat.mode == 0x1337)
 			Treat = TREAT_HDL_RAW;
-		else if(infoDirEnt.stat.mode == 0x0100)
+		else if(infoDirEnt.stat.mode == APA_TYPE_PFS)
 			Treat = TREAT_PFS;
 		else
 			Treat = TREAT_NOACCESS;
@@ -173,7 +172,7 @@ void GetHddInfo(void)
 		for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
 		{
 			rv = fileXioIoctl2(partitionFd, HDDIO_GETSIZE, &i, 4, NULL, 0);
-			size += rv * 512 / 1024 / 1024;
+			size += (u32)rv / SECTORS_PER_MB;
 		}
 		PartyInfo[numParty].TotalSize=size;
 //		PartyInfo[numParty].RawSize = size;
@@ -186,10 +185,10 @@ void GetHddInfo(void)
 			if (fileXioMount("pfs0:",tmp,FIO_MT_RDONLY) < 0)
 				PartyInfo[numParty].Treatment = TREAT_NOACCESS; //non-pfs partition
 			else {
-				zoneFree = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL,0,NULL,0);
-				zoneSize = fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL,0,NULL,0);
+				zoneFree = (u32)fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL,0,NULL,0);
+				zoneSize = (u32)fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL,0,NULL,0);
 
-				PartyInfo[numParty].FreeSize  = zoneFree*zoneSize / MB;
+				PartyInfo[numParty].FreeSize  = (u64)zoneFree*zoneSize / MB;
 				PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
 			}
 		} //Ends clause for TREAT_PFS
@@ -887,14 +886,14 @@ void hddManager(void)
 
 			if(hddFormated==1){
 
-				sprintf(c, "%s: %d %s", LNG(HDD_SIZE), hddSize, LNG(MB));
+				sprintf(c, "%s: %u %s", LNG(HDD_SIZE), hddSize, LNG(MB));
 				x = ((((SCREEN_WIDTH/2-25)-Menu_start_x)/2)+Menu_start_x)-(strlen(c)*FONT_WIDTH)/2;
 				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 				y += FONT_HEIGHT;
-				sprintf(c, "%s: %d %s", LNG(HDD_USED), hddUsed, LNG(MB));
+				sprintf(c, "%s: %u %s", LNG(HDD_USED), hddUsed, LNG(MB));
 				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 				y += FONT_HEIGHT;
-				sprintf(c, "%s: %d %s", LNG(HDD_FREE), hddFreeSpace, LNG(MB));
+				sprintf(c, "%s: %u %s", LNG(HDD_FREE), hddFreeSpace, LNG(MB));
 				printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH/2-20)-SCREEN_MARGIN-2*FONT_WIDTH));
 
 				if(TV_mode == TV_mode_NTSC) 

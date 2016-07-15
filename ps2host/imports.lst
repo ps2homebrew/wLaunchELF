@@ -1,6 +1,7 @@
 
 stdio_IMPORTS_start
 I_printf
+I_puts
 stdio_IMPORTS_end
 
 sysclib_IMPORTS_start
