@@ -118,9 +118,7 @@ void GetHddInfo(void)
 	}else
 		hddFormated=1;
 
-//	size =((u64) (u32)fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0))*512;
-//	hddSize = (size / MB);
-	hddSize = (u32)fileXioDevctl("hdd0:", HDDCTL_TOTAL_SECTORS, NULL, 0, NULL, 0) / SECTORS_PER_MB;
+	hddSize = (u32)fileXioDevctl("hdd0:", HDIOC_TOTALSECTOR, NULL, 0, NULL, 0) / SECTORS_PER_MB;
 
 	if((hddFd = fileXioDopen("hdd0:")) < 0) return;
 
@@ -135,26 +133,26 @@ void GetHddInfo(void)
 		for(i=0; i<numParty; i++) //Check with previous partitions
 			if(!strcmp(infoDirEnt.name,PartyInfo[i].Name))
 				break;
-	if(i<numParty) { //found another reference to an old name
-		PartyInfo[i].RawSize += found_size; //Add new segment to old size
-	} else { //Starts clause for finding brand new name for PartyInfo[numParty]
-		sprintf(dbgtmp, "%s \"%s\"", LNG(Found), infoDirEnt.name);
-		drawMsg(dbgtmp);
+		if(i<numParty) { //found another reference to an old name
+			PartyInfo[i].RawSize += found_size; //Add new segment to old size
+		} else { //Starts clause for finding brand new name for PartyInfo[numParty]
+			sprintf(dbgtmp, "%s \"%s\"", LNG(Found), infoDirEnt.name);
+			drawMsg(dbgtmp);
 
-		memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
-		strcpy(PartyInfo[numParty].Name, infoDirEnt.name);
-		PartyInfo[numParty].RawSize = found_size; //Store found segment size
-		PartyInfo[numParty].Count = numParty;
+			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
+			strcpy(PartyInfo[numParty].Name, infoDirEnt.name);
+			PartyInfo[numParty].RawSize = found_size; //Store found segment size
+			PartyInfo[numParty].Count = numParty;
 
-		if(infoDirEnt.stat.mode == APA_TYPE_MBR) //New test of partition type by 'mode'
-			Treat = TREAT_SYSTEM;
-		else if(infoDirEnt.stat.mode == 0x1337)
-			Treat = TREAT_HDL_RAW;
-		else if(infoDirEnt.stat.mode == APA_TYPE_PFS)
-			Treat = TREAT_PFS;
-		else
-			Treat = TREAT_NOACCESS;
-		PartyInfo[numParty].Treatment = Treat; 
+			if(infoDirEnt.stat.mode == APA_TYPE_MBR) //New test of partition type by 'mode'
+				Treat = TREAT_SYSTEM;
+			else if(infoDirEnt.stat.mode == 0x1337)
+				Treat = TREAT_HDL_RAW;
+			else if(infoDirEnt.stat.mode == APA_TYPE_PFS)
+				Treat = TREAT_PFS;
+			else
+				Treat = TREAT_NOACCESS;
+			PartyInfo[numParty].Treatment = Treat; 
 
 		/*	if((PartyInfo[numParty].Name[0] == '_') && (PartyInfo[numParty].Name[1] == '_'))
 				PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;
@@ -163,38 +161,42 @@ void GetHddInfo(void)
 			else
 				PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;*/
 		
-	if(Treat == TREAT_PFS){ //Starts clause for TREAT_PFS
-		sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
-		partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
-		if (partitionFd < 0)
-			goto end;			
-
-		for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
-		{
-			rv = fileXioIoctl2(partitionFd, HDDIO_GETSIZE, &i, 4, NULL, 0);
-			size += (u32)rv / SECTORS_PER_MB;
-		}
-		PartyInfo[numParty].TotalSize=size;
-//		PartyInfo[numParty].RawSize = size;
-		fileXioClose(partitionFd);
+			if(Treat == TREAT_PFS){ //Starts clause for TREAT_PFS
+				sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
+				partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+				if (partitionFd >= 0)
+				{
+					for(i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++)
+					{
+						rv = fileXioIoctl2(partitionFd, HIOCGETSIZE, &i, 4, NULL, 0);
+						size += (u32)rv / SECTORS_PER_MB;
+					}
+					PartyInfo[numParty].TotalSize=size;
+		//			PartyInfo[numParty].RawSize = size;
+					fileXioClose(partitionFd);
 	
 
-//			mountParty(tmp);
-//			pfs_str[3] = '0'+latestMount;
-			fileXioUmount("pfs0:");
-			if (fileXioMount("pfs0:",tmp,FIO_MT_RDONLY) < 0)
-				PartyInfo[numParty].Treatment = TREAT_NOACCESS; //non-pfs partition
-			else {
-				zoneFree = (u32)fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_FREE, NULL,0,NULL,0);
-				zoneSize = (u32)fileXioDevctl("pfs0:", PFSCTL_GET_ZONE_SIZE, NULL,0,NULL,0);
+		//			mountParty(tmp);
+		//			pfs_str[3] = '0'+latestMount;
+					fileXioUmount("pfs0:");
+					if (fileXioMount("pfs0:",tmp,FIO_MT_RDONLY) < 0)
+						PartyInfo[numParty].Treatment = TREAT_NOACCESS; //non-pfs partition
+					else {
+						zoneFree = (u32)fileXioDevctl("pfs0:", PDIOC_ZONEFREE, NULL,0,NULL,0);
+						zoneSize = (u32)fileXioDevctl("pfs0:", PDIOC_ZONESZ, NULL,0,NULL,0);
 
-				PartyInfo[numParty].FreeSize  = (u64)zoneFree*zoneSize / MB;
-				PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
-			}
-		} //Ends clause for TREAT_PFS
+						PartyInfo[numParty].FreeSize  = (u64)zoneFree*zoneSize / MB;
+						PartyInfo[numParty].UsedSize  = PartyInfo[numParty].TotalSize-PartyInfo[numParty].FreeSize;
+					}
+				} else {//Ends clause for partitionFd >= 0
+					PartyInfo[numParty].Treatment = TREAT_NOACCESS;
+					PartyInfo[numParty].FreeSize = 0;
+					PartyInfo[numParty].UsedSize = 0;
+				}
+			} //Ends clause for TREAT_PFS
 
-		numParty++;
-	} //Ends clause for finding brand new name for PartyInfo[numParty]
+			numParty++;
+		} //Ends clause for finding brand new name for PartyInfo[numParty]
 	} //ends main while loop
 	fileXioDclose(hddFd);
 	hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80; //free space rounded to useful area
