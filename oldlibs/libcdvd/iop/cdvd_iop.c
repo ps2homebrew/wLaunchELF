@@ -3,10 +3,11 @@
 #include <thsemap.h>
 #include <intrman.h>
 #include <thbase.h>
+#include <loadcore.h>
 #include <sifman.h>
 #include <sifcmd.h>
 #include <ioman.h>
-#include "ps2lib_ioman.h"
+#include <cdvdman.h>
 #include <sysclib.h>
 #include <stdio.h>
 #include <sysmem.h>
@@ -30,7 +31,7 @@ enum PathMatch
 
 
 //static u8 cdVolDescriptor[2048];
-static CdRMode cdReadMode;
+static sceCdRMode cdReadMode;
 
 int lastsector;
 int last_bk=0;
@@ -130,7 +131,7 @@ struct dirTocEntry
 
 struct fdtable
 {
-	int fd;
+	iop_file_t *fd;
 	int fileSize;
 	int LBA;
 	int filePos;
@@ -171,15 +172,15 @@ static struct fdtable fd_table[16];
 static int fd_used[16];
 static int files_open;
 
-static struct fileio_driver file_driver;
+static iop_device_t file_driver;
 
 /* Filing-system exported functions */
-void CDVD_init( struct fileio_driver *driver);
-int CDVD_open( int kernel_fd, char *name, int mode);
-int CDVD_lseek(int kernel_fd, int offset, int whence);
-int CDVD_read( int kernel_fd, char * buffer, int size );
-int CDVD_write( int fd, char * buffer, int size );
-int CDVD_close( int kernel_fd);
+int CDVD_init( iop_device_t *driver);
+int CDVD_open( iop_file_t *f, const char *name, int mode);
+int CDVD_lseek( iop_file_t *f, int offset, int whence);
+int CDVD_read( iop_file_t *f, void * buffer, int size);
+int CDVD_write( iop_file_t *f, void * buffer, int size);
+int CDVD_close( iop_file_t *f);
 
 /* RPC exported functions */
 int CDVD_findfile(const char* fname, struct TocEntry* tocEntry);
@@ -224,22 +225,25 @@ void CDVD_Thread(void* param);
 * Optimised CD Read *
 ********************/
 
-int ReadSect(u32 lsn, u32 sectors, void *buf, CdRMode *mode)
+int ReadSect(u32 lsn, u32 sectors, void *buf, sceCdRMode *mode)
 {
 	int retry;
 	int result=0;
 	cdReadMode.trycount=32;
 	
 	for(retry=0;retry<32;retry++) // 32 retries
-    {
+	{
 		if(retry <= 8)
 			cdReadMode.spindlctrl=1; // Try fast reads for first 8 tries
 		else
 			cdReadMode.spindlctrl=0; // Then try slow reads
-	
-		CdDiskReady(0);
 
-		if (CdRead(lsn, sectors, buf, mode) != TRUE)
+		if(!isValidDisc())
+			return FALSE;
+
+		sceCdDiskReady(0);
+
+		if (sceCdRead(lsn, sectors, buf, mode) != TRUE)
 		{
 			// Failed to read
 			if(retry==31)
@@ -253,11 +257,11 @@ int ReadSect(u32 lsn, u32 sectors, void *buf, CdRMode *mode)
 		else
 		{
 			// Read okay
-			CdSync(0);
+			sceCdSync(0);
 			break;
 		}
 	
-		result=CdGetError();
+		result=sceCdGetError();
 		if(result==0)
 			break;
 
@@ -274,6 +278,26 @@ int ReadSect(u32 lsn, u32 sectors, void *buf, CdRMode *mode)
 	return FALSE; // error
 }
 
+/***********************************************
+* Determines if there is a valid disc inserted *
+***********************************************/
+int isValidDisc(void)
+{
+	int result;
+
+	switch(sceCdGetDiskType())
+	{
+		case SCECdPS2CD:
+		case SCECdPS2CDDA:
+		case SCECdPS2DVD:
+			result = 1;
+			break;
+		default:
+			result = 0;
+	}
+
+	return result;
+}
 
 /*************************************************************
 * The functions below are the normal file-system operations, *
@@ -289,30 +313,33 @@ int dummy()
 	return -5;
 }
 
-void CDVD_init( struct fileio_driver *driver)
+int CDVD_init( iop_device_t *driver)
 {
 	printf("CDVD: CDVD Filesystem v1.15\n");
 	printf("by A.Lee (aka Hiryu) & Nicholas Van Veen (aka Sjeep)\n");
-	printf("CDVD: Initializing '%s' file driver.\n", driver->device);
+	printf("CDVD: Initializing '%s' file driver.\n", driver->name);
 
-	CdInit(1);
+	sceCdInit(SCECdINoD);
 
 	memset(fd_table,0,sizeof(fd_table));
 	memset(fd_used,0,16*4);
 
-	return;
+	return 0;
 }
 
+int CDVD_deinit( iop_device_t *driver)
+{
+	return 0;
+}
 
-
-int CDVD_open( int kernel_fd, char *name, int mode)
+int CDVD_open( iop_file_t *f, const char *name, int mode)
 {
 	int j;
 	static struct TocEntry tocEntry;
 
 	#ifdef DEBUG
 		printf("CDVD: fd_open called.\n" );
-   		printf("      kernel_fd.. %d\n", kernel_fd);
+   		printf("      kernel_fd.. %p\n", f);
    		printf("      name....... %s %x\n", name, (int)name);
    		printf("      mode....... %d\n\n", mode);
 	#endif
@@ -343,7 +370,7 @@ int CDVD_open( int kernel_fd, char *name, int mode)
 		printf("CDVD: internal fd %d\n", j);
 	#endif
 
-	fd_table[j].fd = kernel_fd;
+	fd_table[j].fd = f;
 	fd_table[j].fileSize = tocEntry.fileSize;
 	fd_table[j].LBA = tocEntry.fileLBA;
 	fd_table[j].filePos = 0;
@@ -354,25 +381,25 @@ int CDVD_open( int kernel_fd, char *name, int mode)
 		printf("Opened file: %s\n",name);
 	#endif
 
-   	return kernel_fd;
+   	return j;
 }
 
 
 
-int CDVD_lseek(int kernel_fd, int offset, int whence)
+int CDVD_lseek(iop_file_t *f, int offset, int whence)
 {
 	int i;
 
 	#ifdef DEBUG
 		printf("CDVD: fd_seek called.\n");
-		printf("      kernel_fd... %d\n", kernel_fd);
+		printf("      kernel_fd... %p\n", f);
 		printf("      offset...... %d\n", offset);
 		printf("      whence...... %d\n\n", whence);
 	#endif
 
 	for(i=0; i < 16; i++)
 	{
-		if(fd_table[i].fd == kernel_fd)
+		if(fd_table[i].fd == f)
 			break;
 	}
 
@@ -413,7 +440,7 @@ int CDVD_lseek(int kernel_fd, int offset, int whence)
 }
 
 
-int CDVD_read( int kernel_fd, char * buffer, int size )
+int CDVD_read( iop_file_t *f, void * buffer, int size )
 {
 	int i;
 
@@ -432,14 +459,14 @@ int CDVD_read( int kernel_fd, char * buffer, int size )
 
 	#ifdef DEBUG
    		printf("CDVD: read called\n");
-   		printf("      kernel_fd... %d\n",kernel_fd);
+   		printf("      kernel_fd... %p\n",f);
    		printf("      buffer...... 0x%X\n",(int)buffer);
    		printf("      size........ %d\n\n",size);
 	#endif
 
 	for(i=0; i < 16; i++)
 	{
-		if(fd_table[i].fd == kernel_fd)
+		if(fd_table[i].fd == f)
 			break;
 	}
 
@@ -512,7 +539,7 @@ int CDVD_read( int kernel_fd, char * buffer, int size )
 }
 
 
-int CDVD_write( int kernel_fd, char * buffer, int size )
+int CDVD_write( iop_file_t *f, void * buffer, int size )
 {
    if(size == 0) return 0;
    else 		 return -1;
@@ -520,18 +547,18 @@ int CDVD_write( int kernel_fd, char * buffer, int size )
 
 
 
-int CDVD_close( int kernel_fd)
+int CDVD_close( iop_file_t *f)
 {
 	int i;
 
 	#ifdef DEBUG
    		printf("CDVD: fd_close called.\n" );
-   		printf("      kernel fd.. %d\n\n", kernel_fd);
+   		printf("      kernel fd.. %p\n\n", f);
 	#endif
 
 	for(i=0; i < 16; i++)
 	{
-		if(fd_table[i].fd == kernel_fd)
+		if(fd_table[i].fd == f)
 			break;
 	}
 
@@ -555,7 +582,25 @@ int CDVD_close( int kernel_fd)
 }
 
 
-static void *filedriver_functarray[16];
+static iop_device_ops_t filedriver_ops = {
+	&CDVD_init,
+	&CDVD_deinit,
+	(void*)&dummy,
+	&CDVD_open,
+	&CDVD_close,
+	&CDVD_read,
+	&CDVD_write,
+	&CDVD_lseek,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy,
+	(void*)&dummy
+};
 
 int _start( int argc, char **argv)
 {
@@ -578,28 +623,18 @@ int _start( int argc, char **argv)
 
 	// setup the cdReadMode structure
 	cdReadMode.trycount = 0;
-	cdReadMode.spindlctrl = CdSpinStm;
-	cdReadMode.datapattern = CdSecS2048;
+	cdReadMode.spindlctrl = SCECdSpinStm;
+	cdReadMode.datapattern = SCECdSecS2048;
 
 	// setup the file_driver structure
-	file_driver.device = "cdfs";
-	file_driver.xx1 = 16;
+	file_driver.name = "cdfs";
+	file_driver.type = IOP_DT_FS;
 	file_driver.version = 1;
-	file_driver.description = "CDVD Filedriver";
-	file_driver.function_list = filedriver_functarray;
+	file_driver.desc = "CDVD Filedriver";
+	file_driver.ops = &filedriver_ops;
 
-	for (i=0;i < 16; i++)
-		filedriver_functarray[i] = dummy;
-
-	filedriver_functarray[ FIO_INITIALIZE ] = CDVD_init;
-	filedriver_functarray[ FIO_OPEN ] = CDVD_open;
-	filedriver_functarray[ FIO_CLOSE ] = CDVD_close;
-	filedriver_functarray[ FIO_READ ] = CDVD_read;
-	filedriver_functarray[ FIO_WRITE ] = CDVD_write;
-	filedriver_functarray[ FIO_SEEK ] = CDVD_lseek;
-
-	FILEIO_del( "cdfs");
-	FILEIO_add( &file_driver);
+	DelDrv( "cdfs");
+	AddDrv( &file_driver);
 
 	param.attr         = TH_C;
 	param.thread       = (void*)CDVD_Thread;
@@ -611,13 +646,12 @@ int _start( int argc, char **argv)
 
 	if (th > 0)
 	{
-		StartThread(th,0);
-		return 0;
+		StartThread(th,NULL);
+		return MODULE_RESIDENT_END;
 	}
 	else
-		return 1;
+		return MODULE_NO_RESIDENT_END;
 
-	return 0;
 }
 
 /**************************************************************
@@ -671,7 +705,7 @@ int CDVD_GetVolumeDescriptor(void)
 		break;
 	}
 #endif
-//	CdStop();
+//	sceCdStop();
 
 	return TRUE;
 }
@@ -1011,7 +1045,16 @@ int CDVD_Cache_Dir(const char* pathname, enum Cache_getMode getMode)
 		printf("The cache is not valid, or the requested directory is not a sub-dir of the cached one\n");
 	#endif
 
-	CdDiskReady(0);
+	if (!isValidDisc())
+	{
+		#ifdef DEBUG
+			printf("No supported disc inserted.\n");
+		#endif
+
+		return -1;
+	}
+
+	sceCdDiskReady(0);
 
 	// Read the main volume descriptor
 	if (CDVD_GetVolumeDescriptor() != TRUE)
@@ -1086,7 +1129,10 @@ int FindPath(char* pathname)
 		printf("FindPath: trying to find directory %s\n",pathname);
 	#endif
 
-	CdDiskReady(0);
+	if(!isValidDisc())
+		return FALSE;
+
+	sceCdDiskReady(0);
 
 	while(dirname != NULL)
 	{
@@ -1623,7 +1669,7 @@ void* CDVDRpc_FlushCache()
 void* CDVDRpc_Stop()
 {
 
-	CdStop();
+	sceCdStop();
 
 	return NULL;
 
@@ -1635,7 +1681,7 @@ void* CDVDRpc_TrayReq(unsigned int* sbuff)
 {
 	int ret;
 
-	CdTrayReq(sbuff[0],(s32*)&ret);
+	sceCdTrayReq(sbuff[0],(s32*)&ret);
 
 	sbuff[0] = ret;
 	return sbuff;
@@ -1647,7 +1693,10 @@ void* CDVDRpc_DiskReady(unsigned int* sbuff)
 {
 	int ret;
 
-	ret = CdDiskReady(sbuff[0]);
+	if(isValidDisc())
+		ret = sceCdDiskReady(sbuff[0]);
+	else
+		ret = -1;
 
 	sbuff[0] = ret;
 	return sbuff;
@@ -1709,7 +1758,7 @@ void CDVD_Thread(void* param)
 		printf("CDVD: RPC Initialize\n");
 	#endif
 
-	SifInitRpc(0);
+	sceSifInitRpc(0);
 
 	// 0x4800 bytes for TocEntry structures (can fit 128 of them)
 	// 0x400 bytes for the filename string
@@ -1723,9 +1772,9 @@ void CDVD_Thread(void* param)
 		SleepThread();
 	}
 
-	SifSetRpcQueue(&qd, GetThreadId());
-	SifRegisterRpc(&sd0, CDVD_IRX,CDVD_rpc_server,(void *)buffer,0,0,&qd);
-	SifRpcLoop(&qd);
+	sceSifSetRpcQueue(&qd, GetThreadId());
+	sceSifRegisterRpc(&sd0, CDVD_IRX,CDVD_rpc_server,(void *)buffer,0,0,&qd);
+	sceSifRpcLoop(&qd);
 }
 
 void* CDVD_rpc_server(int fno, void *data, int size)
@@ -1927,12 +1976,3 @@ enum PathMatch ComparePath(const char* path)
 	else
 		return NOT_MATCH;
 }
-
-
-
-
-
-
-
-
-
