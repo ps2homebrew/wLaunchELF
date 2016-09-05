@@ -574,13 +574,13 @@ void updateScreenMode(int adapt_XY)
 		if(TV_mode == TV_mode_VGA_640_60){ //Use VGA mode if chosen (forced)
 			gsGlobal->Mode = GS_MODE_VGA_640_60;
 			SCREEN_WIDTH	 = 640;
-			SCREEN_HEIGHT  = 480;
+			SCREEN_HEIGHT  = 448;
 			if(adapt_XY){
-				setting->screen_x-=20;
+				setting->screen_x-=358;
 				if(setting->interlace)
-					setting->screen_y-=22;
+					setting->screen_y-=4;
 				else
-					setting->screen_y-=11;
+					setting->screen_y-=2;
 			}
 			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
 		}else if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
@@ -643,6 +643,8 @@ void updateScreenMode(int adapt_XY)
 		gsGlobal->Height = SCREEN_HEIGHT/2;
 		gsGlobal->MagV = 0;
 	}
+	if (gsGlobal->Mode==GS_MODE_VGA_640_60)
+		gsGlobal->MagH = 1;
 
 	// Init screen position
 	gsGlobal->StartX = setting->screen_x;

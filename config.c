@@ -1190,7 +1190,7 @@ void Config_Screen(void)
 							GS_SETREG_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
 				}else if(s==24){
-					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
+					setting->TV_mode = (setting->TV_mode+1)%4; //Change between 0,1,2,3
 					updateScreenMode(1);
 				} else if(s==25) {
 					setting->screen_x++;

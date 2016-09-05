@@ -2167,7 +2167,16 @@ int main(int argc, char *argv[])
 	default_OSDSYS_path[5] = rough_region;
 
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
-	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	if(readpad() && (new_pad & PAD_L1 || new_pad & PAD_L2 || new_pad & PAD_L3 || new_pad & PAD_R1 || new_pad & PAD_R2 || new_pad & PAD_R3)){
+		initConfig();
+		while(1)
+		{	if(!(new_pad & PAD_L1 || new_pad & PAD_L2 || new_pad & PAD_L3 || new_pad & PAD_R1 || new_pad & PAD_R2 || new_pad & PAD_R3))
+				break;
+			while(!readpad());
+		}
+	}
+	else
+		CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
 	if(setting->resetIOP)
 	{	Reset();
