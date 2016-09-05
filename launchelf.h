@@ -261,9 +261,10 @@ void waitPadReady(int port, int slot);
 void waitAnyPadReady(void);
 
 /* config.c */
-#define TV_mode_AUTO 0
-#define TV_mode_NTSC 1
-#define TV_mode_PAL  2
+#define TV_mode_AUTO       0
+#define TV_mode_NTSC       1
+#define TV_mode_PAL        2
+#define TV_mode_VGA_640_60 3
 
 extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;
