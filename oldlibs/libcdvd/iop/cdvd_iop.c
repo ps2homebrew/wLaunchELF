@@ -1668,8 +1668,11 @@ void* CDVDRpc_FlushCache()
 
 void* CDVDRpc_Stop()
 {
-
-	sceCdStop();
+	if(isValidDisc())
+	{
+		sceCdStop();
+		sceCdSync(0);
+	}
 
 	return NULL;
 
