@@ -547,7 +547,14 @@ int drawMainScreen2(int TV_mode)
 		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
 	}
 
-	if(TV_mode == TV_mode_PAL){
+	if(TV_mode == TV_mode_VGA_640_60){
+		printXY(c, x+448, y+FONT_HEIGHT-5, setting->color[3], TRUE, 0);
+		y += FONT_HEIGHT-3;
+		yo_first = 3;
+		yo_step = FONT_HEIGHT*2-4;
+		yo_config = -80;
+		xo_config = 360;
+	}else if(TV_mode == TV_mode_PAL){
 		printXY(c, x+448, y+FONT_HEIGHT+6, setting->color[3], TRUE, 0);
 		y += FONT_HEIGHT+5;
 		yo_first = 5;

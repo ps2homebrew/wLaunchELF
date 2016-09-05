@@ -563,7 +563,7 @@ void updateScreenMode(int adapt_XY)
 	int setGS_flag = 0;
 	int New_TV_mode = setting->TV_mode;
 
-	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)){ //If no forced request
+	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)&&(New_TV_mode!=TV_mode_VGA_640_60)){ //If no forced request
 		New_TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
 	}
 
@@ -571,7 +571,19 @@ void updateScreenMode(int adapt_XY)
 		setGS_flag = 1;
 		TV_mode = New_TV_mode;
   
-		if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
+		if(TV_mode == TV_mode_VGA_640_60){ //Use VGA mode if chosen (forced)
+			gsGlobal->Mode = GS_MODE_VGA_640_60;
+			SCREEN_WIDTH	 = 640;
+			SCREEN_HEIGHT  = 480;
+			if(adapt_XY){
+				setting->screen_x-=20;
+				if(setting->interlace)
+					setting->screen_y-=22;
+				else
+					setting->screen_y-=11;
+			}
+			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
+		}else if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
 			gsGlobal->Mode = GS_MODE_PAL;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 512;
@@ -734,7 +746,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 				 	} else if( Picture == JPG_PIC ){
 				 		PicW=Jpg->width;
 				 		PicH=Jpg->height;
-				 		if(TV_mode == TV_mode_NTSC)
+				 		if(TV_mode == TV_mode_VGA_640_60)
+				 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
+				 		else if(TV_mode == TV_mode_NTSC)
 				 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
 						else if(TV_mode == TV_mode_PAL)
 				 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);
@@ -763,7 +777,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 						 			W=PicW;
 						 			PicW=PicH;
 						 			PicH=W;
-							 		if(TV_mode == TV_mode_NTSC)
+							 		if(TV_mode == TV_mode_VGA_640_60)
+							 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
+							 		else if(TV_mode == TV_mode_NTSC)
 							 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
 									else if(TV_mode == TV_mode_PAL)
 							 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);
