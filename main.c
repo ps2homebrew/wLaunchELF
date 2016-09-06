@@ -547,14 +547,7 @@ int drawMainScreen2(int TV_mode)
 		else            sprintf(c, "%s:    %s", LNG(TIMEOUT), LNG(Halt));
 	}
 
-	if(TV_mode == TV_mode_VGA_640_60){
-		printXY(c, x+448, y+FONT_HEIGHT-5, setting->color[3], TRUE, 0);
-		y += FONT_HEIGHT-3;
-		yo_first = 3;
-		yo_step = FONT_HEIGHT*2-4;
-		yo_config = -80;
-		xo_config = 360;
-	}else if(TV_mode == TV_mode_PAL){
+	if(TV_mode == TV_mode_PAL){
 		printXY(c, x+448, y+FONT_HEIGHT+6, setting->color[3], TRUE, 0);
 		y += FONT_HEIGHT+5;
 		yo_first = 5;
@@ -2167,16 +2160,7 @@ int main(int argc, char *argv[])
 	default_OSDSYS_path[5] = rough_region;
 
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
-	if(readpad() && (new_pad & PAD_L1 || new_pad & PAD_L2 || new_pad & PAD_L3 || new_pad & PAD_R1 || new_pad & PAD_R2 || new_pad & PAD_R3)){
-		initConfig();
-		while(1)
-		{	if(!(new_pad & PAD_L1 || new_pad & PAD_L2 || new_pad & PAD_L3 || new_pad & PAD_R1 || new_pad & PAD_R2 || new_pad & PAD_R3))
-				break;
-			while(!readpad());
-		}
-	}
-	else
-		CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
 	if(setting->resetIOP)
 	{	Reset();
