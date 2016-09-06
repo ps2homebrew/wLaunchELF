@@ -1,3 +1,5 @@
+.SILENT:
+
 SMB = 0
 #set SMB to 1 to build uLe with smb support
 
