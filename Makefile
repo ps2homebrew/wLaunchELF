@@ -98,7 +98,7 @@ endif
 
 vmc_fs.s:
 	$(MAKE) -C vmc_fs
-	bin2s vmc_fs/bin/vmc_fs.irx vmc_fs.s vmc_fs_irx
+	bin2s vmc_fs/vmc_fs.irx vmc_fs.s vmc_fs_irx
 
 loader.s:
 	$(MAKE) -C loader
@@ -121,6 +121,8 @@ clean:
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean
 	rm -f *.o *.a *.s *.ELF
+
+rebuild: clean all
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
