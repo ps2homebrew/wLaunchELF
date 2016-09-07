@@ -264,6 +264,7 @@ void waitAnyPadReady(void);
 #define TV_mode_AUTO 0
 #define TV_mode_NTSC 1
 #define TV_mode_PAL  2
+#define TV_mode_VGA  3
 
 extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;

@@ -563,7 +563,7 @@ void updateScreenMode(int adapt_XY)
 	int setGS_flag = 0;
 	int New_TV_mode = setting->TV_mode;
 
-	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)){ //If no forced request
+	if((New_TV_mode!=TV_mode_NTSC)&&(New_TV_mode!=TV_mode_PAL)&&(New_TV_mode!=TV_mode_VGA)){ //If no forced request
 		New_TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
 	}
 
@@ -571,7 +571,19 @@ void updateScreenMode(int adapt_XY)
 		setGS_flag = 1;
 		TV_mode = New_TV_mode;
   
-		if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
+		if(TV_mode == TV_mode_NTSC){                      //else use NTSC mode (forced or auto)
+			gsGlobal->Mode = GS_MODE_NTSC;
+			SCREEN_WIDTH	 = 640;
+			SCREEN_HEIGHT  = 448;
+			if(adapt_XY){
+				setting->screen_x+=362;
+				if(setting->interlace)
+					setting->screen_y+=0;
+				else
+					setting->screen_y-=24;
+			}
+			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
+		}else if(TV_mode == TV_mode_PAL){ //Use PAL mode if chosen (forced or auto)
 			gsGlobal->Mode = GS_MODE_PAL;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 512;
@@ -583,16 +595,16 @@ void updateScreenMode(int adapt_XY)
 					setting->screen_y+=11;
 			}
 			Menu_end_y     = Menu_start_y + 26*FONT_HEIGHT;
-		}else{                      //else use NTSC mode (forced or auto)
-			gsGlobal->Mode = GS_MODE_NTSC;
+		}else{ //Use VGA mode if chosen (forced)
+			gsGlobal->Mode = GS_MODE_VGA_640_60;
 			SCREEN_WIDTH	 = 640;
 			SCREEN_HEIGHT  = 448;
 			if(adapt_XY){
-				setting->screen_x-=20;
+				setting->screen_x-=382;
 				if(setting->interlace)
 					setting->screen_y-=22;
 				else
-					setting->screen_y-=11;
+					setting->screen_y+=13;
 			}
 			Menu_end_y     = Menu_start_y + 22*FONT_HEIGHT;
 		} /* end else */
@@ -609,13 +621,13 @@ void updateScreenMode(int adapt_XY)
 		if(setting->interlace){
 			gsGlobal->Interlace = GS_INTERLACED;
 			gsGlobal->Field     = GS_FIELD;
-			if(adapt_XY){
+			if((adapt_XY)&&(TV_mode != TV_mode_VGA)){
 				setting->screen_y = (setting->screen_y-1)*2;
 			}
 		}else{
 			gsGlobal->Interlace = GS_NONINTERLACED;
 			gsGlobal->Field     = GS_FRAME;
-			if(adapt_XY){
+			if((adapt_XY)&&(TV_mode != TV_mode_VGA)){
 				setting->screen_y = setting->screen_y/2+1;
 			}
 		}
@@ -623,12 +635,12 @@ void updateScreenMode(int adapt_XY)
 
 	// Init screen size
 	gsGlobal->Width  = SCREEN_WIDTH;
-	gsGlobal->MagH = 3;
+	gsGlobal->MagH = (TV_mode == TV_mode_VGA)?1:3;
 	if(setting->interlace){
 		gsGlobal->Height = SCREEN_HEIGHT;
 		gsGlobal->MagV = 0;
 	} else {
-		gsGlobal->Height = SCREEN_HEIGHT/2;
+		gsGlobal->Height = SCREEN_HEIGHT/((TV_mode == TV_mode_VGA)?1:2);
 		gsGlobal->MagV = 0;
 	}
 
@@ -734,7 +746,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 				 	} else if( Picture == JPG_PIC ){
 				 		PicW=Jpg->width;
 				 		PicH=Jpg->height;
-				 		if(TV_mode == TV_mode_NTSC)
+				 		if((TV_mode == TV_mode_NTSC)||(TV_mode == TV_mode_VGA))
 				 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
 						else if(TV_mode == TV_mode_PAL)
 				 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);
@@ -763,7 +775,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 						 			W=PicW;
 						 			PicW=PicH;
 						 			PicH=W;
-							 		if(TV_mode == TV_mode_NTSC)
+							 		if((TV_mode == TV_mode_NTSC)||(TV_mode == TV_mode_VGA))
 							 			PicCoeff=(PicW/PicH)+(1.0f/10.5f);
 									else if(TV_mode == TV_mode_PAL)
 							 			PicCoeff=(PicW/PicH)-(1.0f/12.0f);

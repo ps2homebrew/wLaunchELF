@@ -561,6 +561,13 @@ int drawMainScreen2(int TV_mode)
 		yo_step = FONT_HEIGHT*2-4;
 		yo_config = -80;
 		xo_config = 360;
+	}else {	// TV_mode == TV_mode_VGA
+		printXY(c, x+448, y+FONT_HEIGHT-5, setting->color[3], TRUE, 0);
+		y += FONT_HEIGHT-3;
+		yo_first = 3;
+		yo_step = FONT_HEIGHT*2-4;
+		yo_config = -80;
+		xo_config = 360;
 	}
 
 	for(i=0; i<15; i++){
@@ -2161,6 +2168,18 @@ int main(int argc, char *argv[])
 
 	//RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
 	CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
+
+	if(TV_mode == TV_mode_VGA) {  //VGA mode (forced)
+		gs_vmode = GS_MODE_VGA_640_60;
+		SCREEN_WIDTH		= 640;
+		SCREEN_HEIGHT		= 448;
+		SCREEN_X			= 270;
+		SCREEN_Y			= 50;
+		Menu_end_y			= Menu_start_y + 22*FONT_HEIGHT;
+		setting->screen_x = SCREEN_X;
+		setting->screen_y = SCREEN_Y;
+		setting->TV_mode = TV_mode_VGA;
+	}
 
 	if(setting->resetIOP)
 	{	Reset();

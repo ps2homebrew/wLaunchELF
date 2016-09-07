@@ -660,7 +660,7 @@ void initConfig(void)
 	setting->swapKeys = DEF_SWAPKEYS;
 	setting->HOSTwrite = DEF_HOSTWRITE;
 	setting->Brightness = DEF_BRIGHT;
-	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL
+	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL, 3==VGA
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 	setting->Init_Delay = DEF_INIT_DELAY;
 	setting->usbkbd_used = DEF_USBKBD_USED;
@@ -1190,7 +1190,7 @@ void Config_Screen(void)
 							GS_SETREG_RGBA(rgb[s/3][0], rgb[s/3][1], rgb[s/3][2], 0);
 					}
 				}else if(s==24){
-					setting->TV_mode = (setting->TV_mode+1)%3; //Change between 0,1,2
+					setting->TV_mode = (setting->TV_mode+1)%4; //Change between 0,1,2,3
 					updateScreenMode(1);
 				} else if(s==25) {
 					setting->screen_x++;
@@ -1297,6 +1297,8 @@ void Config_Screen(void)
 				strcat(c, "NTSC");
 			else if(setting->TV_mode==TV_mode_PAL)
 				strcat(c, "PAL");
+			else if(setting->TV_mode==TV_mode_VGA)
+				strcat(c, "VGA");
 			else
 				strcat(c, "AUTO");
 			printXY(c, x, y, setting->color[3], TRUE, 0);

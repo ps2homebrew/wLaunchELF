@@ -213,6 +213,7 @@ Show_Menu = 1
 # 0 => Automatic adaption of video mode to suit your console (default)
 # 1 => Enforce NTSC video mode regardless of console
 # 2 => Enforce PAL video mode regardless of console
+# 3 => Enforce VGA video mode regardless of console
 # ----------------------------------------------------------------------
 TV_mode = 0
 # ----------------------------------------------------------------------
