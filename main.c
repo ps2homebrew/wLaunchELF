@@ -2362,7 +2362,11 @@ done_discControl:
 			RunELF_index = -1;
 			switch(mode){
 			case BUTTON:
-				if(new_pad & PAD_CIRCLE)        RunELF_index = 1;
+				if((new_pad & PAD_SELECT)&&(new_pad & PAD_START)){
+					initConfig();
+					updateScreenMode(1);
+				}
+				else if(new_pad & PAD_CIRCLE)        RunELF_index = 1;
 				else if(new_pad & PAD_CROSS)    RunELF_index = 2;
 				else if(new_pad & PAD_SQUARE)   RunELF_index = 3;
 				else if(new_pad & PAD_TRIANGLE) RunELF_index = 4;
