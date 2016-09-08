@@ -243,7 +243,7 @@ int          Vmc_Open      ( iop_file_t *f, const char *name, int flags, int mod
 int          Vmc_Close     ( iop_file_t* f );
 int          Vmc_Read      ( iop_file_t* f, void* buffer, int size );
 int          Vmc_Write     ( iop_file_t* f, void* buffer, int size );
-int          Vmc_Lseek     ( iop_file_t* f, unsigned long offset, int whence );
+int          Vmc_Lseek     ( iop_file_t* f, int offset, int whence );
 int          Vmc_Ioctl     ( iop_file_t* f, unsigned long request, void* data );
 int          Vmc_Remove    ( iop_file_t* f, const char* path );
 int          Vmc_Mkdir     ( iop_file_t* f, const char* path1, int mode );

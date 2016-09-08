@@ -860,7 +860,7 @@ int Vmc_Write (  iop_file_t* f, void* buffer, int size )
 //----------------------------------------------------------------------------
 // Seek a file previously open with fileXioOpen("vmc...
 //----------------------------------------------------------------------------
-int Vmc_Lseek ( iop_file_t* f, unsigned long offset, int whence ) 
+int Vmc_Lseek ( iop_file_t* f, int offset, int whence ) 
 {
 
 	if ( !g_Vmc_Initialized ) 

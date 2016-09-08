@@ -660,7 +660,7 @@ void initConfig(void)
 	setting->swapKeys = DEF_SWAPKEYS;
 	setting->HOSTwrite = DEF_HOSTWRITE;
 	setting->Brightness = DEF_BRIGHT;
-	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL, 3==VGA 640x480@60Hz
+	setting->TV_mode = TV_mode_AUTO; //0==Console_auto, 1==NTSC, 2==PAL, 3==VGA
 	setting->Popup_Opaque = DEF_POPUP_OPAQUE;
 	setting->Init_Delay = DEF_INIT_DELAY;
 	setting->usbkbd_used = DEF_USBKBD_USED;
@@ -1293,12 +1293,12 @@ void Config_Screen(void)
 			} //ends loop for colour RGB values
 			y += FONT_HEIGHT*2;
 			sprintf(c, "  %s: ", LNG(TV_mode));
-			if(setting->TV_mode==TV_mode_VGA_640_60)
-				strcat(c, "VGA");
-			else if(setting->TV_mode==TV_mode_NTSC)
+			if(setting->TV_mode==TV_mode_NTSC)
 				strcat(c, "NTSC");
 			else if(setting->TV_mode==TV_mode_PAL)
 				strcat(c, "PAL");
+			else if(setting->TV_mode==TV_mode_VGA)
+				strcat(c, "VGA");
 			else
 				strcat(c, "AUTO");
 			printXY(c, x, y, setting->color[3], TRUE, 0);
