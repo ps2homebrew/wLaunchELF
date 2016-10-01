@@ -20,12 +20,11 @@ extern int fsysMount(void);
 ////////////////////////////////////////////////////////////////////////
 // main
 //   start threads & init rpc & filesys
-int
-_start( int argc, char **argv)
+int _start(int argc, char **argv)
 {
     FlushDcache();
     CpuEnableIntr(0);
-#if 0  /* EEUG: what the hell these two are doing here ? */
+#if 0 /* EEUG: what the hell these two are doing here ? */
     sceCdInit(1);
     sceCdStop();
 #endif
@@ -34,4 +33,3 @@ _start( int argc, char **argv)
     fsysMount();
     return 0;
 }
-

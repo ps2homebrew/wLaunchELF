@@ -35,25 +35,26 @@
 #include <string.h>
 #include <sifrpc.h>
 
-int Check_ESR_Disc(void){
-	sceCdRMode ReadMode;
-	int result;
-	unsigned char SectorBuffer[2112];
+int Check_ESR_Disc(void)
+{
+    sceCdRMode ReadMode;
+    int result;
+    unsigned char SectorBuffer[2112];
 
-	ReadMode.trycount=5;
-	ReadMode.spindlctrl=SCECdSpinNom;
-	ReadMode.datapattern=SCECdSecS2048;
-	ReadMode.pad=0;
+    ReadMode.trycount = 5;
+    ReadMode.spindlctrl = SCECdSpinNom;
+    ReadMode.datapattern = SCECdSecS2048;
+    ReadMode.pad = 0;
 
-	result=sceCdReadDVDV(14, 1, SectorBuffer, &ReadMode); // read LBA 14
-	sceCdSync(0);
-	if(result!=0){
-		if(sceCdGetError()==SCECdErNO){
-			result=(!strncmp(SectorBuffer + 37, "+NSR", 4))?1:0;
-		}
-		else result=-1;
-	}
-	else result=-1;
+    result = sceCdReadDVDV(14, 1, SectorBuffer, &ReadMode);  // read LBA 14
+    sceCdSync(0);
+    if (result != 0) {
+        if (sceCdGetError() == SCECdErNO) {
+            result = (!strncmp(SectorBuffer + 37, "+NSR", 4)) ? 1 : 0;
+        } else
+            result = -1;
+    } else
+        result = -1;
 
-	return result;
+    return result;
 }

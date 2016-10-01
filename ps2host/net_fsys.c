@@ -17,12 +17,14 @@
 
 #include "net_fio.h"
 
-#define IOCTL_RENAME     0xFEEDC0DE  //dlanor: Used for the Ioctl request code => Rename
+#define IOCTL_RENAME 0xFEEDC0DE  //dlanor: Used for the Ioctl request code => Rename
 
 #ifdef DEBUG
 #define dbgprintf(args...) printf(args)
 #else
-#define dbgprintf(args...) do { } while(0)
+#define dbgprintf(args...) \
+    do {                   \
+    } while (0)
 #endif
 
 static char fsname[] = "host";
@@ -36,7 +38,7 @@ struct filedesc_info
 {
     int unkn0;
     int unkn4;
-    int device_id;   // the X in hostX
+    int device_id;  // the X in hostX
     int own_fd;
 };
 //dlanor: In fact this struct is declared elsewhere as iop_file_t, with
@@ -60,12 +62,12 @@ static int fsys_pid = 0;
 //dlanor: We also need a flag to note when we must ignore an Mkdir call
 //dlanor: because it is caused by the bug IOMAN.IRX has for fioRemove.
 //
-int lastopen_fd;   //descriptor of the most recently opened file/folder
-int	renamed_fd;    //descriptor of renamed file/folder awaiting closure
-int remove_flag=0; //Set in fsysRemove, cleared by all other fsysXXXXX
-int remove_result; //Set in fsysRemove, so fsysMkdir can use it for bug
+int lastopen_fd;      //descriptor of the most recently opened file/folder
+int renamed_fd;       //descriptor of renamed file/folder awaiting closure
+int remove_flag = 0;  //Set in fsysRemove, cleared by all other fsysXXXXX
+int remove_result;    //Set in fsysRemove, so fsysMkdir can use it for bug
 
-typedef void (*th_func_p)(void *); //dlanor: added to suppress warnings
+typedef void (*th_func_p)(void *);  //dlanor: added to suppress warnings
 
 //----------------------------------------------------------------------------
 static void fsysInit(iop_device_t *driver)
@@ -76,34 +78,33 @@ static void fsysInit(iop_device_t *driver)
 
     dbgprintf("initializing %s\n", driver->name);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     // Start socket server thread
 
-    mythread.attr = 0x02000000; // attr
-    mythread.option = 0; // option
-    mythread.thread = (th_func_p) pko_file_serv; // entry
+    mythread.attr = 0x02000000;                  // attr
+    mythread.option = 0;                         // option
+    mythread.thread = (th_func_p)pko_file_serv;  // entry
     mythread.stacksize = 0x800;
-    mythread.priority = 0x45; // We really should choose prio w more effort
+    mythread.priority = 0x45;  // We really should choose prio w more effort
 
     pid = CreateThread(&mythread);
 
     if (pid > 0) {
-        if ((i=StartThread(pid, NULL)) < 0) {
+        if ((i = StartThread(pid, NULL)) < 0) {
             printf("StartThread failed (%d)\n", i);
         }
-    } 
-    else {
+    } else {
         printf("CreateThread failed (%d)\n", pid);
     }
-    
+
     fsys_pid = pid;
     dbgprintf("Thread id: %x\n", pid);
 }
 //----------------------------------------------------------------------------
 static int fsysDestroy(void)
 {
-		remove_flag = 0;
+    remove_flag = 0;
 
     WaitSema(fsys_sema);
     pko_close_fsys();
@@ -117,21 +118,21 @@ static int fsysDestroy(void)
 //----------------------------------------------------------------------------
 static int dummyFormat()
 {
-		remove_flag = 0;
+    remove_flag = 0;
 
     printf("dummy Format function called\n");
     return -5;
 }
 //----------------------------------------------------------------------------
-static int fsysOpen( int fd, char *name, int mode)
+static int fsysOpen(int fd, char *name, int mode)
 {
     struct filedesc_info *fd_info;
     int fsys_fd;
-    
+
     dbgprintf("fsysOpen..\n");
     dbgprintf("  fd: %x, name: %s, mode: %d\n\n", fd, name, mode);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     fd_info = (struct filedesc_info *)fd;
 
@@ -145,27 +146,29 @@ static int fsysOpen( int fd, char *name, int mode)
     return fsys_fd;
 }
 //----------------------------------------------------------------------------
-static int fsysClose( int fd)
+static int fsysClose(int fd)
 {
     int remote_fd = ((struct filedesc_info *)fd)->own_fd;
     int ret;
-    
+
     dbgprintf("fsys_close..\n"
-           "  fd: %x\n\n", fd);
+              "  fd: %x\n\n",
+              fd);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
-    if (remote_fd != renamed_fd){
-      WaitSema(fsys_sema);
-      ret = pko_close_file(remote_fd);    
-      SignalSema(fsys_sema);
-    } else  ret = 0;
+    if (remote_fd != renamed_fd) {
+        WaitSema(fsys_sema);
+        ret = pko_close_file(remote_fd);
+        SignalSema(fsys_sema);
+    } else
+        ret = 0;
     renamed_fd = -1;
 
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysRead( int fd, char *buf, int size)
+static int fsysRead(int fd, char *buf, int size)
 {
     struct filedesc_info *fd_info;
     int ret;
@@ -173,12 +176,13 @@ static int fsysRead( int fd, char *buf, int size)
     fd_info = (struct filedesc_info *)fd;
 
     dbgprintf("fsysRead..."
-           "  fd: %x\n"
-           "  bf: %x\n"
-           "  sz: %d\n"
-           "  ow: %d\n\n", fd, (int)buf, size, fd_info->own_fd);
+              "  fd: %x\n"
+              "  bf: %x\n"
+              "  sz: %d\n"
+              "  ow: %d\n\n",
+              fd, (int)buf, size, fd_info->own_fd);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     WaitSema(fsys_sema);
     ret = pko_read_file(fd_info->own_fd, buf, size);
@@ -187,15 +191,16 @@ static int fsysRead( int fd, char *buf, int size)
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysWrite( int fd, char *buf, int size)
+static int fsysWrite(int fd, char *buf, int size)
 {
     struct filedesc_info *fd_info;
     int ret;
-    
-    dbgprintf("fsysWrite..."
-           "  fd: %x\n", fd);
 
-		remove_flag = 0;
+    dbgprintf("fsysWrite..."
+              "  fd: %x\n",
+              fd);
+
+    remove_flag = 0;
 
     fd_info = (struct filedesc_info *)fd;
     WaitSema(fsys_sema);
@@ -204,17 +209,18 @@ static int fsysWrite( int fd, char *buf, int size)
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysLseek( int fd, unsigned int offset, int whence)
+static int fsysLseek(int fd, unsigned int offset, int whence)
 {
     struct filedesc_info *fd_info;
     int ret;
 
     dbgprintf("fsysLseek..\n"
-           "  fd: %x\n"
-           "  of: %x\n"
-           "  wh: %x\n\n", fd, offset, whence);
+              "  fd: %x\n"
+              "  of: %x\n"
+              "  wh: %x\n\n",
+              fd, offset, whence);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     fd_info = (struct filedesc_info *)fd;
     WaitSema(fsys_sema);
@@ -223,77 +229,76 @@ static int fsysLseek( int fd, unsigned int offset, int whence)
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysIoctl(iop_file_t* file, unsigned long request, void *data)
+static int fsysIoctl(iop_file_t *file, unsigned long request, void *data)
 {
-    int remote_fd = ((struct filedesc_info *) file)->own_fd;
+    int remote_fd = ((struct filedesc_info *)file)->own_fd;
     int ret;
     dbgprintf("fsysioctl..\n");
     dbgprintf("  fd: %x\n"
               "  rq: %x\n"
               "  dp: %x\n\n", );
 
-		remove_flag = 0;
+    remove_flag = 0;
 
-		if (request == IOCTL_RENAME){
-		  if (lastopen_fd == remote_fd){
-        WaitSema(fsys_sema);
-        ret = pko_ioctl(remote_fd, request, data);
-        SignalSema(fsys_sema);
-        if ((ret == 0) || (ret == -6))
-        	renamed_fd = remote_fd;
-      } else {
-        printf("Ioctl Rename function used incorrectly.\n");
-        ret = -5;
-
-    	}
+    if (request == IOCTL_RENAME) {
+        if (lastopen_fd == remote_fd) {
+            WaitSema(fsys_sema);
+            ret = pko_ioctl(remote_fd, request, data);
+            SignalSema(fsys_sema);
+            if ((ret == 0) || (ret == -6))
+                renamed_fd = remote_fd;
+        } else {
+            printf("Ioctl Rename function used incorrectly.\n");
+            ret = -5;
+        }
     } else {
-      printf("Ioctl function called with invalid request code\n");
-      ret = -5;
+        printf("Ioctl function called with invalid request code\n");
+        ret = -5;
     }
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysRemove(iop_file_t* file, char *name)
+static int fsysRemove(iop_file_t *file, char *name)
 {
     int ret;
     dbgprintf("fsysRemove..\n");
     dbgprintf("  name: %s\n\n", name);
 
-		remove_flag = 1;
+    remove_flag = 1;
 
     WaitSema(fsys_sema);
     ret = pko_remove(name);
     SignalSema(fsys_sema);
 
-		remove_result = ret;
+    remove_result = ret;
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysMkdir(iop_file_t* file, char *name, int mode)
+static int fsysMkdir(iop_file_t *file, char *name, int mode)
 {
     int ret;
     dbgprintf("fsysMkdir..\n");
     dbgprintf("  name: '%s'\n\n", name);
 
-		if (remove_flag == 0){
-    	WaitSema(fsys_sema);
-    	ret = pko_mkdir(name, mode);
-    	SignalSema(fsys_sema);
+    if (remove_flag == 0) {
+        WaitSema(fsys_sema);
+        ret = pko_mkdir(name, mode);
+        SignalSema(fsys_sema);
     } else {
-    	remove_flag = 0;
-    	ret = remove_result;
+        remove_flag = 0;
+        ret = remove_result;
     }
 
     return ret;
 }
 //----------------------------------------------------------------------------
-static int fsysRmdir(iop_file_t* file, char *name)
+static int fsysRmdir(iop_file_t *file, char *name)
 {
     int ret;
     dbgprintf("fsysRmdir..\n");
     dbgprintf("  name: %s\n\n", name);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     WaitSema(fsys_sema);
     ret = pko_rmdir(name);
@@ -306,13 +311,13 @@ static int fsysDopen(int fd, char *name)
 {
     struct filedesc_info *fd_info;
     int fsys_fd;
-    
+
     dbgprintf("fsysDopen..\n");
     dbgprintf("  fd: %x, name: %s\n\n", fd, name);
 
     fd_info = (struct filedesc_info *)fd;
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     WaitSema(fsys_sema);
     fsys_fd = pko_open_dir(name);
@@ -328,17 +333,19 @@ static int fsysDclose(int fd)
 {
     int remote_fd = ((struct filedesc_info *)fd)->own_fd;
     int ret;
-    
-    dbgprintf("fsys_dclose..\n"
-           "  fd: %x\n\n", fd);
-    
-		remove_flag = 0;
 
-    if (remote_fd != renamed_fd){
-      WaitSema(fsys_sema);
-      ret = pko_close_dir(remote_fd);    
-      SignalSema(fsys_sema);
-    } else  ret = 0;
+    dbgprintf("fsys_dclose..\n"
+              "  fd: %x\n\n",
+              fd);
+
+    remove_flag = 0;
+
+    if (remote_fd != renamed_fd) {
+        WaitSema(fsys_sema);
+        ret = pko_close_dir(remote_fd);
+        SignalSema(fsys_sema);
+    } else
+        ret = 0;
     renamed_fd = -1;
 
     return ret;
@@ -352,23 +359,23 @@ static int fsysDread(int fd, void *buf)
     fd_info = (struct filedesc_info *)fd;
 
     dbgprintf("fsysDread..."
-           "  fd: %x\n"
-           "  bf: %x\n"
-           "  ow: %d\n\n", fd, (int)buf, fd_info->own_fd);
+              "  fd: %x\n"
+              "  bf: %x\n"
+              "  ow: %d\n\n",
+              fd, (int)buf, fd_info->own_fd);
 
-		remove_flag = 0;
+    remove_flag = 0;
 
     WaitSema(fsys_sema);
     ret = pko_read_dir(fd_info->own_fd, buf);
     SignalSema(fsys_sema);
 
     return ret;
-
 }
 //----------------------------------------------------------------------------
 static int dummyGetstat()
 {
-		remove_flag = 0;
+    remove_flag = 0;
 
     printf("dummy Getstat function called\n");
     return -5;
@@ -376,33 +383,33 @@ static int dummyGetstat()
 //----------------------------------------------------------------------------
 static int dummyChstat()
 {
-		remove_flag = 0;
+    remove_flag = 0;
 
     printf("dummy Chstat function called\n");
     return -5;
 }
 //----------------------------------------------------------------------------
 iop_device_ops_t fsys_functarray =
-{	(void *)fsysInit,
-	(void *)fsysDestroy,
-	(void *)dummyFormat,   //init, deinit, format
-	(void *)fsysOpen,
-	(void *)fsysClose,
-	(void *)fsysRead,      //open, close, read,
-	(void *)fsysWrite,
-	(void *)fsysLseek,
-	(void *)fsysIoctl,     //write, lseek, ioctl
-	(void *)fsysRemove,
-	(void *)fsysMkdir,
-	(void *)fsysRmdir,     //remove, mkdir, rmdir
-	(void *)fsysDopen,
-	(void *)fsysDclose,
-	(void *)fsysDread,     //dopen, dclose, dread
-	(void *)dummyGetstat,
-	(void *)dummyChstat }; //getstat, chstat
+    {(void *)fsysInit,
+     (void *)fsysDestroy,
+     (void *)dummyFormat,  //init, deinit, format
+     (void *)fsysOpen,
+     (void *)fsysClose,
+     (void *)fsysRead,  //open, close, read,
+     (void *)fsysWrite,
+     (void *)fsysLseek,
+     (void *)fsysIoctl,  //write, lseek, ioctl
+     (void *)fsysRemove,
+     (void *)fsysMkdir,
+     (void *)fsysRmdir,  //remove, mkdir, rmdir
+     (void *)fsysDopen,
+     (void *)fsysDclose,
+     (void *)fsysDread,  //dopen, dclose, dread
+     (void *)dummyGetstat,
+     (void *)dummyChstat};  //getstat, chstat
 
-iop_device_t fsys_driver = { fsname, 16, 1, "fsys driver", 
-							&fsys_functarray };
+iop_device_t fsys_driver = {fsname, 16, 1, "fsys driver",
+                            &fsys_functarray};
 //----------------------------------------------------------------------------
 // Entry point for mounting the file system
 int fsysMount(void)

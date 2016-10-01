@@ -11,11 +11,11 @@ extern "C" {
 
 int CDVD_Init();
 int CDVD_DiskReady(int mode);
-int CDVD_FindFile(const char* fname, struct TocEntry* tocEntry);
+int CDVD_FindFile(const char *fname, struct TocEntry *tocEntry);
 void CDVD_Stop();
 int CDVD_TrayReq(int mode);
 int CDVD_DiskReady(int mode);
-int CDVD_GetDir(const char* pathname, const char* extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char* new_pathname);
+int CDVD_GetDir(const char *pathname, const char *extensions, enum CDVD_getMode getMode, struct TocEntry tocEntry[], unsigned int req_entries, char *new_pathname);
 void CDVD_FlushCache();
 unsigned int CDVD_GetSize();
 
@@ -25,4 +25,4 @@ unsigned int CDVD_GetSize();
 #endif
 
 
-#endif // _CDVD_H
+#endif  // _CDVD_H
