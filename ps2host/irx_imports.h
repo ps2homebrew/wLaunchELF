@@ -13,7 +13,7 @@
 
 
 /* Please keep these in alphabetical order!  */
-#if 0  /* EEUG: WHY ? */
+#if 0 /* EEUG: WHY ? */
 #include "cdvdman.h"
 #endif
 #include "intrman.h"

@@ -23,7 +23,7 @@ int pko_open_dir(char *path);
 int pko_read_dir(int fd, void *buf);
 int pko_close_dir(int fd);
 int pko_make_dir(char *path);
-int pko_ioctl(int fd,  unsigned long request, void *data);
+int pko_ioctl(int fd, unsigned long request, void *data);
 int pko_remove(char *name);
 int pko_mkdir(char *name, int mode);
 int pko_rmdir(char *name);
