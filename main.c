@@ -118,8 +118,6 @@ char netConfig[IPCONF_MAX_LEN + 64];  //Adjust size as needed
 //State of module collections
 int have_NetModules = 0;
 int have_HDD_modules = 0;
-//State of sbv_patches
-int have_sbv_patches = 0;
 //Old State of Checkable Modules (valid header)
 int old_sio2man = 0;
 int old_sior = 0;
@@ -659,12 +657,9 @@ void delay(int count)
 //---------------------------------------------------------------------------
 void initsbv_patches(void)
 {
-    if (!have_sbv_patches) {
-        dbgprintf("Init MrBrown sbv_patches\n");
-        sbv_patch_enable_lmb();
-        sbv_patch_disable_prefix_check();
-        have_sbv_patches = 1;
-    }
+   dbgprintf("Init MrBrown sbv_patches\n");
+   sbv_patch_enable_lmb();
+   sbv_patch_disable_prefix_check();
 }
 //------------------------------
 //endfunc initsbv_patches
@@ -947,8 +942,6 @@ void loadBasicModules(void)
         SifLoadModule("rom0:SIO2MAN", 0, NULL);
         have_sio2man = 1;
     }
-
-    initsbv_patches();  //NB: Must be used before loading uLE_embedded modules
 
 #ifdef SIO_DEBUG
     int id;
@@ -2045,8 +2038,7 @@ void Reset()
     SifInitRpc(0);
     SifLoadFileInit();
     fioInit();
-    sbv_patch_enable_lmb();
-    sbv_patch_disable_prefix_check();
+    initsbv_patches();
 
     have_cdvd = 0;
     have_usbd = 0;
@@ -2059,7 +2051,6 @@ void Reset()
     have_ps2kbd = 0;
     have_NetModules = 0;
     have_HDD_modules = 0;
-    have_sbv_patches = 0;
 
     CheckModules();
     loadBasicModules();
@@ -2126,8 +2117,7 @@ int main(int argc, char *argv[])
         SifInitRpc(0);
         SifLoadFileInit();
         fioInit();
-        sbv_patch_enable_lmb();
-        sbv_patch_disable_prefix_check();
+        initsbv_patches();
     }
     CheckModules();
     loadBasicModules();
