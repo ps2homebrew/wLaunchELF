@@ -832,8 +832,6 @@ int genRemove(char *path)
             (void)fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
     } else {
         ret = fioRemove(path);
-        if (!strncmp("mc", path, 2))  //exception for MCMAN, which has its own fix
-            ret = fioRmdir(path);     //  Remove accidental dir (ancient ioman bug)
     }                                 //ends if clauses
     return ret;
 }
