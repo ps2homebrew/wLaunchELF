@@ -118,24 +118,6 @@ char netConfig[IPCONF_MAX_LEN + 64];  //Adjust size as needed
 //State of module collections
 int have_NetModules = 0;
 int have_HDD_modules = 0;
-//Old State of Checkable Modules (valid header)
-int old_sio2man = 0;
-int old_sior = 0;
-int old_mcman = 0;
-int old_mcserv = 0;
-int old_padman = 0;
-int old_fakehost = 0;
-int old_poweroff = 0;
-int old_iomanx = 0;
-int old_filexio = 0;
-int old_ps2dev9 = 0;
-int old_ps2ip = 0;
-int old_ps2atad = 0;
-int old_ps2hdd = 0;
-int old_ps2fs = 0;
-int old_ps2netfs = 0;
-int old_smbman = 0;
-int old_vmc_fs = 0;
 //State of Uncheckable Modules (invalid header)
 int have_cdvd = 0;
 int have_usbd = 0;
@@ -309,32 +291,6 @@ void Show_About_uLE(void)
 //------------------------------
 //endfunc Show_About_uLE
 //---------------------------------------------------------------------------
-//Function to check for presence of key modules
-//------------------------------
-void CheckModules(void)
-{
-    smod_mod_info_t mod_t;
-
-    old_sio2man = (have_sio2man = smod_get_mod_by_name(IOPMOD_NAME_SIO2MAN, &mod_t));
-    old_sior = (have_sior = smod_get_mod_by_name(IOPMOD_NAME_SIOR, &mod_t));
-    old_mcman = (have_mcman = smod_get_mod_by_name(IOPMOD_NAME_MCMAN, &mod_t));
-    old_mcserv = (have_mcserv = smod_get_mod_by_name(IOPMOD_NAME_MCSERV, &mod_t));
-    old_padman = (have_padman = smod_get_mod_by_name(IOPMOD_NAME_PADMAN, &mod_t));
-    old_fakehost = (have_fakehost = smod_get_mod_by_name(IOPMOD_NAME_FAKEHOST, &mod_t));
-    old_poweroff = (have_poweroff = smod_get_mod_by_name(IOPMOD_NAME_POWEROFF, &mod_t));
-    old_iomanx = (have_iomanx = smod_get_mod_by_name(IOPMOD_NAME_IOMANX, &mod_t));
-    old_filexio = (have_filexio = smod_get_mod_by_name(IOPMOD_NAME_FILEXIO, &mod_t));
-    old_ps2dev9 = (have_ps2dev9 = smod_get_mod_by_name(IOPMOD_NAME_PS2DEV9, &mod_t));
-    old_ps2ip = (have_ps2ip = smod_get_mod_by_name(IOPMOD_NAME_PS2IP, &mod_t));
-    old_ps2atad = (have_ps2atad = smod_get_mod_by_name(IOPMOD_NAME_PS2ATAD, &mod_t));
-    old_ps2hdd = (have_ps2hdd = smod_get_mod_by_name(IOPMOD_NAME_PS2HDD, &mod_t));
-    old_ps2fs = (have_ps2fs = smod_get_mod_by_name(IOPMOD_NAME_PS2FS, &mod_t));
-    old_ps2netfs = (have_ps2netfs = smod_get_mod_by_name(IOPMOD_NAME_PS2NETFS, &mod_t));
-    old_smbman = (have_smbman = smod_get_mod_by_name(IOPMOD_NAME_SMBMAN, &mod_t));
-    old_vmc_fs = (have_vmc_fs = smod_get_mod_by_name(IOPMOD_NAME_VMC_FS, &mod_t));
-}
-//------------------------------
-//endfunc CheckModules
 //---------------------------------------------------------------------------
 // Parse network configuration from IPCONFIG.DAT
 // Now completely rewritten to fix some problems
@@ -2053,7 +2009,6 @@ void Reset()
     have_NetModules = 0;
     have_HDD_modules = 0;
 
-    CheckModules();
     loadBasicModules();
     mcReset();
     mcInit(MC_TYPE_MC);
@@ -2120,7 +2075,6 @@ int main(int argc, char *argv[])
         fioInit();
         initsbv_patches();
     }
-    CheckModules();
     loadBasicModules();
     mcInit(MC_TYPE_MC);
     genInit();
