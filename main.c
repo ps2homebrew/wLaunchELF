@@ -182,9 +182,9 @@ DiscType DiscTypes[] = {
     {SCECdNODISC, "!"},
     {SCECdDETCT, "??"},
     {SCECdDETCTCD, "CD ?"},
-    {SCECdDETCTDVDS, "DVD ?"},
-    {SCECdDETCTDVDD, "DVD 2?"},
-    {SCECdUNKNOWN, "???"},
+    {SCECdDETCTDVDS, "DVD-SL ?"},
+    {SCECdDETCTDVDD, "DVD-DL ?"},
+    {SCECdUNKNOWN, "Unknown"},
     {SCECdPSCD, "PS1 CD"},
     {SCECdPSCDDA, "PS1 CDDA"},
     {SCECdPS2CD, "PS2 CD"},
@@ -194,7 +194,7 @@ DiscType DiscTypes[] = {
     {SCECdESRDVD_1, "ESR DVD (on)"},
     {SCECdCDDA, "Audio CD"},
     {SCECdDVDV, "Video DVD"},
-    {SCECdIllegalMedia, "????"},
+    {SCECdIllegalMedia, "Unsupported"},
     {0x00, ""}  //end of list
 };              //ends DiscTypes array
 //---------------------------------------------------------------------------
@@ -1838,10 +1838,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
             RunElf(tmp);
         return;
     } else if (!stricmp(path, setting->Misc_PS2Browser)) {
-        __asm__ __volatile__(
-            "	li $3, 0x04;"
-            "	syscall;"
-            "	nop;");
+        Exit(0);
         //There has been a major change in the code for calling PS2Browser
         //The method above is borrowed from PS2MP3. It's independent of ELF loader
         //The method below was used earlier, but causes reset with new ELF loader
