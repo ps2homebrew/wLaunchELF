@@ -197,12 +197,54 @@ DiscType DiscTypes[] = {
     {SCECdIllegalMedia, "Unsupported"},
     {0x00, ""}  //end of list
 };              //ends DiscTypes array
+
+//Static function declarations
+static int PrintRow(int row_f, char *text_p);
+static int PrintPos(int row_f, int column, char *text_p);
+static void Show_About_uLE(void);
+static void getIpConfig(void);
+static void setLaunchKeys(void);
+static int drawMainScreen(void);
+static int drawMainScreen2(int TV_mode);
+static void delay(int count);
+static void initsbv_patches(void);
+static void load_ps2dev9(void);
+static void load_ps2ip(void);
+static void load_ps2atad(void);
+#ifdef SMB
+static void load_smbman(void);
+#endif
+static void ShowDebugInfo(void);
+static void load_ps2ftpd(void);
+static void load_ps2netfs(void);
+static void loadBasicModules(void);
+static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
+static int loadExternalModule(char *modPath, void *defBase, int defSize);
+static void loadUsbDModule(void);
+static void loadKbdModules(void);
+static void poweroffHandler(int i);
+static void setupPowerOff(void);
+static void loadNetModules(void);
+static void startKbd(void);
+static int scanSystemCnf(unsigned char *name, unsigned char *value);
+static int readSystemCnf(void);
+static void ShowFont(void);
+static void triggerPowerOff(void);
+static void Validate_CNF_Path(void);
+static void Set_CNF_Path(void);
+static int reloadConfig(void);
+static void incConfig(void);
+static int exists(char *path);
+static void CleanUp(void);
+static void RunElf(char *pathin);
+static void Reset(void);
+static void InitializeBootExecPath();
 //---------------------------------------------------------------------------
 //executable code
 //---------------------------------------------------------------------------
 //Function to print a text row to the 'gs' screen
 //------------------------------
-int PrintRow(int row_f, char *text_p)
+static int PrintRow(int row_f, char *text_p)
 {
     static int row;
     int x = (Menu_start_x + 4);
@@ -219,7 +261,7 @@ int PrintRow(int row_f, char *text_p)
 //---------------------------------------------------------------------------
 //Function to print a text row with text positioning
 //------------------------------
-int PrintPos(int row_f, int column, char *text_p)
+static int PrintPos(int row_f, int column, char *text_p)
 {
     static int row;
     int x = (Menu_start_x + 4 + column * FONT_WIDTH);
@@ -236,7 +278,7 @@ int PrintPos(int row_f, int column, char *text_p)
 //---------------------------------------------------------------------------
 //Function to show a screen with program credits ("About uLE")
 //------------------------------
-void Show_About_uLE(void)
+static void Show_About_uLE(void)
 {
     char TextRow[256];
     int event, post_event = 0;
@@ -334,7 +376,7 @@ static void getIpConfig(void)
 //------------------------------
 //endfunc getIpConfig
 //---------------------------------------------------------------------------
-void setLaunchKeys(void)
+static void setLaunchKeys(void)
 {
     if (!setting->LK_Flag[12])
         strcpy(setting->LK_Path[12], setting->Misc_Configure);
@@ -346,7 +388,7 @@ void setLaunchKeys(void)
 //------------------------------
 //endfunc setLaunchKeys()
 //---------------------------------------------------------------------------
-int drawMainScreen(void)
+static int drawMainScreen(void)
 {
     int nElfs = 0;
     int i;
@@ -492,7 +534,7 @@ int drawMainScreen(void)
 //------------------------------
 //endfunc drawMainScreen
 //---------------------------------------------------------------------------
-int drawMainScreen2(int TV_mode)
+static int drawMainScreen2(int TV_mode)
 {
     int nElfs = 0;
     int i;
@@ -592,7 +634,7 @@ int drawMainScreen2(int TV_mode)
 //------------------------------
 //endfunc drawMainScreen2
 //---------------------------------------------------------------------------
-void delay(int count)
+static void delay(int count)
 {
     int i;
     int ret;
@@ -605,7 +647,7 @@ void delay(int count)
 //------------------------------
 //endfunc delay
 //---------------------------------------------------------------------------
-void initsbv_patches(void)
+static void initsbv_patches(void)
 {
    dbgprintf("Init MrBrown sbv_patches\n");
    sbv_patch_enable_lmb();
@@ -614,7 +656,7 @@ void initsbv_patches(void)
 //------------------------------
 //endfunc initsbv_patches
 //---------------------------------------------------------------------------
-void load_ps2dev9(void)
+static void load_ps2dev9(void)
 {
     int ret;
 
@@ -626,7 +668,7 @@ void load_ps2dev9(void)
 //------------------------------
 //endfunc load_ps2dev9
 //---------------------------------------------------------------------------
-void load_ps2ip(void)
+static void load_ps2ip(void)
 {
     int ret;
 
@@ -645,7 +687,7 @@ void load_ps2ip(void)
 //------------------------------
 //endfunc load_ps2ip
 //---------------------------------------------------------------------------
-void load_ps2atad(void)
+static void load_ps2atad(void)
 {
     int ret;
     static char hddarg[] = "-o"
@@ -699,7 +741,7 @@ void load_ps2host(void)
 //endfunc load_ps2host
 //---------------------------------------------------------------------------
 #ifdef SMB
-void load_smbman(void)
+static void load_smbman(void)
 {
     int ret;
 
@@ -718,7 +760,7 @@ void load_smbman(void)
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
-void ShowDebugInfo(void)
+static void ShowDebugInfo(void)
 {
     char TextRow[256];
     int i, event, post_event = 0;
@@ -824,7 +866,7 @@ void load_vmc_fs(void)
 //------------------------------
 //endfunc load_vmc_fs
 //---------------------------------------------------------------------------
-void load_ps2ftpd(void)
+static void load_ps2ftpd(void)
 {
     int ret;
     int arglen;
@@ -842,7 +884,7 @@ void load_ps2ftpd(void)
 //------------------------------
 //endfunc load_ps2ftpd
 //---------------------------------------------------------------------------
-void load_ps2netfs(void)
+static void load_ps2netfs(void)
 {
     int ret;
 
@@ -984,7 +1026,7 @@ int uLE_cdStop(void)
 // needed anymore, is entirely the responsibility of the caller,
 // though, of course, none is allocated if the file is not found.
 //---------------------------------------------------------------------------
-int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
+static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 {  //The first three variables are local variants similar to the arguments
     char filePath[MAX_PATH];
     char *pathSep;
@@ -1059,7 +1101,7 @@ int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 // normally the value returned will be 1 for an internal default
 // module, but 2 for an external module..
 //---------------------------------------------------------------------------
-int loadExternalModule(char *modPath, void *defBase, int defSize)
+static int loadExternalModule(char *modPath, void *defBase, int defSize)
 {
     void *extBase;
     int extSize;
@@ -1084,7 +1126,7 @@ int loadExternalModule(char *modPath, void *defBase, int defSize)
 //------------------------------
 //endfunc loadExternalModule
 //---------------------------------------------------------------------------
-void loadUsbDModule(void)
+static void loadUsbDModule(void)
 {
     if ((!have_usbd) && (loadExternalModule(setting->usbd_file, &usbd_irx, size_usbd_irx)))
         have_usbd = 1;
@@ -1110,7 +1152,7 @@ void loadUsbModules(void)
 //------------------------------
 //endfunc loadUsbModules
 //---------------------------------------------------------------------------
-void loadKbdModules(void)
+static void loadKbdModules(void)
 {
     loadUsbDModule();
     if ((have_usbd && !have_ps2kbd) && (loadExternalModule(setting->usbkbd_file, &ps2kbd_irx, size_ps2kbd_irx)))
@@ -1133,21 +1175,18 @@ void loadHdlInfoModule(void)
 //------------------------------
 //endfunc loadHdlInfoModule
 //---------------------------------------------------------------------------
-void poweroffHandler(int i)
+static void poweroffHandler(int i)
 {
-    //hddPowerOff(); //deprecated
     poweroffShutdown();
 }
 //------------------------------
 //endfunc poweroffHandler
 //---------------------------------------------------------------------------
-void setupPowerOff(void)
+static void setupPowerOff(void)
 {
     int ret;
 
     if (!done_setupPowerOff) {
-        //hddPreparePoweroff(); //deprecated
-        //hddSetUserPoweroffCallback((void *)poweroffHandler, NULL); //deprecated
         if (!have_poweroff) {
             SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
             have_poweroff = 1;
@@ -1175,7 +1214,7 @@ void loadHddModules(void)
 //---------------------------------------------------------------------------
 // Load Network modules by EP (modified by RA)
 //------------------------------
-void loadNetModules(void)
+static void loadNetModules(void)
 {
     if (!have_NetModules) {
         loadHddModules();
@@ -1198,7 +1237,7 @@ void loadNetModules(void)
 //------------------------------
 //endfunc loadNetModules
 //---------------------------------------------------------------------------
-void startKbd(void)
+static void startKbd(void)
 {
     int kbd_fd;
     void *mapBase;
@@ -1232,7 +1271,7 @@ void startKbd(void)
 //---------------------------------------------------------------------------
 //scanSystemCnf will check for a standard variable of a SYSTEM.CNF file
 //------------------------------
-int scanSystemCnf(unsigned char *name, unsigned char *value)
+static int scanSystemCnf(unsigned char *name, unsigned char *value)
 {
     if (!strcmp(name, "BOOT"))
         strncat(SystemCnf_BOOT, value, MAX_PATH - 1);
@@ -1251,7 +1290,7 @@ int scanSystemCnf(unsigned char *name, unsigned char *value)
 //---------------------------------------------------------------------------
 //readSystemCnf will read standard settings from a SYSTEM.CNF file
 //------------------------------
-int readSystemCnf(void)
+static int readSystemCnf(void)
 {
     int dummy, var_cnt;
     unsigned char *RAM_p, *CNF_p, *name, *value;
@@ -1296,7 +1335,7 @@ int readSystemCnf(void)
 //------------------------------
 //endfunc readSystemCnf
 //---------------------------------------------------------------------------
-void ShowFont(void)
+static void ShowFont(void)
 {
     int test_type = 0;
     int test_types = 2;  //Patch test_types for number of test loops
@@ -1409,7 +1448,7 @@ done_test:
 //------------------------------
 //endfunc ShowFont
 //---------------------------------------------------------------------------
-void triggerPowerOff(void)
+static void triggerPowerOff(void)
 {
     char filepath[MAX_PATH] = "xyz:/imaginary/hypothetical/doesn't.exist";
     FILE *File;
@@ -1424,7 +1463,7 @@ void triggerPowerOff(void)
 //------------------------------
 //endfunc triggerPowerOff
 //---------------------------------------------------------------------------
-void Validate_CNF_Path(void)
+static void Validate_CNF_Path(void)
 {
     char cnf_path[MAX_PATH];
 
@@ -1436,7 +1475,7 @@ void Validate_CNF_Path(void)
 //------------------------------
 //endfunc Validate_CNF_Path
 //---------------------------------------------------------------------------
-void Set_CNF_Path(void)
+static void Set_CNF_Path(void)
 {
     char *tmp;
 
@@ -1455,7 +1494,7 @@ void Set_CNF_Path(void)
 //endfunc Set_CNF_Path
 //---------------------------------------------------------------------------
 //Reload CNF, possibly after a path change
-int reloadConfig()
+static int reloadConfig(void)
 {
     char tmp[MAX_PATH];
     int CNF_error = -1;
@@ -1498,7 +1537,7 @@ int reloadConfig()
 //endfunc reloadConfig
 //---------------------------------------------------------------------------
 // Config Cycle Left  (--) by EP
-void decConfig()
+static void decConfig()
 {
     if (numCNF > 0)
         numCNF--;
@@ -1511,7 +1550,7 @@ void decConfig()
 //endfunc decConfig
 //---------------------------------------------------------------------------
 // Config Cycle Right (++) by EP
-void incConfig()
+static void incConfig(void)
 {
     if (numCNF < maxCNF - 1)
         numCNF++;
@@ -1525,7 +1564,7 @@ void incConfig()
 //---------------------------------------------------------------------------
 //exists.  Tests if a file exists or not
 //------------------------------
-int exists(char *path)
+static int exists(char *path)
 {
     int fd;
 
@@ -1578,7 +1617,7 @@ int uLE_related(char *pathout, char *pathin)
 //---------------------------------------------------------------------------
 //CleanUp releases uLE stuff preparatory to launching some other application
 //------------------------------
-void CleanUp(void)
+static void CleanUp(void)
 {
     clrScr(GS_SETREG_RGBA(0x00, 0x00, 0x00, 0));
     drawScr();
@@ -1598,7 +1637,7 @@ void CleanUp(void)
 //---------------------------------------------------------------------------
 // Run ELF. The generic ELF launcher.
 //------------------------------
-void RunElf(char *pathin)
+static void RunElf(char *pathin)
 {
     char tmp[MAX_PATH];
     static char path[MAX_PATH];
@@ -1981,7 +2020,7 @@ static void Reset()
 //------------------------------
 //endfunc Reset
 //---------------------------------------------------------------------------
-int InitializeRegion()
+int uLE_InitializeRegion(void)
 {
     int ROMVER_fd;
     static int TVMode = -1;
@@ -2025,13 +2064,13 @@ int InitializeRegion()
     return TVMode;
 }
 //------------------------------
-//endfunc InitializeRegion
+//endfunc uLE_InitializeRegion
 //---------------------------------------------------------------------------
 static void InitializeBootExecPath()
 {
     char file[12];
 
-    InitializeRegion();
+    uLE_InitializeRegion();
 
     //Handle special cases, before osdmain.elf was supported.
     switch(ROMVER_data[4]) {
@@ -2141,7 +2180,7 @@ int main(int argc, char *argv[])
 
     LastDir[0] = 0;
 
-    TV_mode = InitializeRegion();  //Let console region decide TV_mode
+    TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
     if (TV_mode == TV_mode_PAL) {    //Test console TV mode
         gs_vmode = GS_MODE_PAL;
         SCREEN_WIDTH = 640;

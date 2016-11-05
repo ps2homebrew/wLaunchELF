@@ -172,10 +172,8 @@ void loadCdModules(void);
 void loadUsbModules(void);
 void loadHddModules(void);
 void loadHdlInfoModule(void);
-void setupPowerOff(void);
 int uLE_related(char *pathout, char *pathin);
-int InitializeRegion();
-int exists(char *path);
+int uLE_InitializeRegion(void);
 int uLE_cdDiscValid(void);
 int uLE_cdStop(void);
 

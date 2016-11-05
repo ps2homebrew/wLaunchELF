@@ -573,7 +573,7 @@ void updateScreenMode(int adapt_XY)
     int New_TV_mode = setting->TV_mode;
 
     if ((New_TV_mode != TV_mode_NTSC) && (New_TV_mode != TV_mode_PAL) && (New_TV_mode != TV_mode_VGA)) {  //If no forced request
-        New_TV_mode = InitializeRegion();                                                                 //Let console region decide TV_mode
+        New_TV_mode = uLE_InitializeRegion();                                                                 //Let console region decide TV_mode
     }
 
     if (New_TV_mode != TV_mode) {
