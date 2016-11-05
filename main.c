@@ -147,8 +147,6 @@ int have_ps2netfs = 0;
 int have_smbman = 0;
 int have_vmc_fs = 0;
 
-int force_IOP = 0;  //flags presence of incompatible drivers, so we must reset IOP
-
 int menu_LK[15];  //holds RunElf index for each valid main menu entry
 
 int done_setupPowerOff = 0;
@@ -1987,7 +1985,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 void Reset()
 {
     SifInitRpc(0);
-    //Reset IOP borrowed from uLaunchelf
     while (!SifIopReset(NULL, 0)) {
     };
     while (!SifIopSync()) {
@@ -2042,19 +2039,23 @@ int uLE_detect_TV_mode()
 //#endif
 
 //---------------------------------------------------------------------------
+enum BOOT_DEVICE {
+    BOOT_DEVICE_CDVD	= 0,
+    BOOT_DEVICE_MC,
+    BOOT_DEVICE_MASS,
+    BOOT_DEVICE_HOST,
+    BOOT_DEVICE_HDD,
+
+    BOOT_DEV_UNKNOWN	= -1
+};
+
 int main(int argc, char *argv[])
 {
     char *p, CNF_pathname[MAX_PATH];
     int event, post_event = 0;
     char RunPath[MAX_PATH];
     int RunELF_index, nElfs = 0;
-    int hdd_booted = 0;
-    int host_or_hdd_booted = 0;
-    int mass_booted = 0;  //flags boot made with compatible mass drivers
-    int mass_needed = 0;  //flags need to load compatible mass drivers
-    int mc_booted = 0;
-    int cdvd_booted = 0;
-    int host_booted = 0;
+    enum BOOT_DEVICE boot = BOOT_DEV_UNKNOWN;
     int gs_vmode;
     int CNF_error = -1;  //assume error until CNF correctly loaded
     int i;
@@ -2063,24 +2064,10 @@ int main(int argc, char *argv[])
     for (i = 0; (i < argc) && (i < 8); i++)
         boot_argv[i] = argv[i];
 
-    force_IOP = 1;
-    SifInitRpc(0);
-    if (force_IOP == 1) {
-        while (!SifIopReset(NULL, 0)) {
-        };
-        while (!SifIopSync()) {
-        };
-        SifInitRpc(0);
-        SifLoadFileInit();
-        fioInit();
-        initsbv_patches();
-    }
-    loadBasicModules();
-    mcInit(MC_TYPE_MC);
+    Reset();
     genInit();
     Init_Default_Language();
 
-    force_IOP = 0;
     LaunchElfDir[0] = 0;
     if ((argc > 0) && argv[0]) {
         strcpy(LaunchElfDir, argv[0]);
@@ -2093,42 +2080,27 @@ int main(int argc, char *argv[])
                     if (LaunchElfDir[i] == '\\')
                         LaunchElfDir[i] = '/';
                 }
-                force_IOP = 1;    //Note incompatible drivers present (as yet ignored)
-                mass_needed = 1;  //Note need to load compatible mass: drivers
-            } else {              //else we booted with normal homebrew mass: drivers
-                mass_booted = 1;  //Note presence of compatible mass: drivers
-            }
+            }   //else we booted with normal homebrew mass: drivers
+
+            boot = BOOT_DEVICE_MASS;
         } else if (!strncmp(argv[0], "mc", 2))
-            mc_booted = 1;
+            boot = BOOT_DEVICE_MC;
         else if (!strncmp(argv[0], "cd", 2))
-            cdvd_booted = 1;
+            boot = BOOT_DEVICE_CDVD;
         else if ((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
-            hdd_booted = 1;                      //Modify this section later to cover Dev2 needs !!!
-        else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDD" (boot from mbr)
-            hdd_booted = 1;
+            boot = BOOT_DEVICE_HDD;                      //Modify this section later to cover Dev2 needs !!!
+        else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
+            boot = BOOT_DEVICE_HDD;
             strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
         }
     }
     strcpy(boot_path, LaunchElfDir);
 
     if (!strncmp(LaunchElfDir, "host", 4)) {
-        host_or_hdd_booted = 1;
         if (have_fakehost)
-            hdd_booted = 1;
+            boot = BOOT_DEVICE_HDD;
         else
-            host_booted = 1;
-    }
-
-    if (host_booted)  //Fix untestable modules for host booting
-    {
-        have_ps2smap = 1;
-        have_ps2host = 1;
-    }
-
-    if (mass_booted)  //Fix untestable module for USB_mass booting
-    {
-        have_usbd = 1;
-        have_usb_mass = 1;
+            boot = BOOT_DEVICE_HOST;
     }
 
     if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
@@ -2181,14 +2153,11 @@ int main(int argc, char *argv[])
         setting->TV_mode = TV_mode_VGA;
     }
 
-    if (setting->resetIOP) {
-        Reset();
-        if (!strncmp(LaunchElfDir, "mass", 4))
-            loadUsbModules();
-        else if (!strncmp(LaunchElfDir, "host:", 5)) {
-            getIpConfig();
-            initHOST();
-        }
+    if (boot == BOOT_DEVICE_MASS)
+        loadUsbModules();
+    else if (boot == BOOT_DEVICE_HOST) {
+        getIpConfig();
+        initHOST();
     }
     //Last chance to look at bootup screen, so allow braking here
     /*
@@ -2206,7 +2175,7 @@ int main(int argc, char *argv[])
     gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
 
     loadFont("");  //Some font must be loaded before loading some device modules
-    if (hdd_booted && !strncmp(LaunchElfDir, "hdd", 3)) {
+    if ((boot == BOOT_DEVICE_HDD) && !strncmp(LaunchElfDir, "hdd", 3)) {
         //Patch DMS4 Dev2 booting here, when we learn more about how it works
         //Trying to mount that partition for loading CNF simply crashes.
         //We may need a new IOP reset method for this.
