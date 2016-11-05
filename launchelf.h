@@ -176,7 +176,7 @@ void loadHddModules(void);
 void loadHdlInfoModule(void);
 void setupPowerOff(void);
 int uLE_related(char *pathout, char *pathin);
-int uLE_detect_TV_mode();
+int InitializeRegion();
 int exists(char *path);
 int uLE_cdDiscValid(void);
 int uLE_cdStop(void);

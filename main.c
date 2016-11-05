@@ -167,7 +167,7 @@ char default_ESR_path[] = "mc:/BOOT/ESR.ELF";
 char default_OSDSYS_path[] = "mc:/B?EXEC-SYSTEM/osdmain.elf";
 
 char ROMVER_data[20];  //16 byte file read from rom0:ROMVER at init
-char rough_region;     //E==Europe, A==US,  I==Japan
+char rough_region;     //E==Europe, A==US, I==Japan, H==Asia, C==China
 
 int cdmode;      //Last detected disc type
 int old_cdmode;  //used for disc change detection
@@ -1817,7 +1817,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
                 //At this point all args are ready to use internal DVD player
 
                 //We must check for an updated player on MC
-                dvdpl_path[6] = ROMVER_data[4];
+                dvdpl_path[6] = rough_region;
                 dvdpl_update = 0;
                 for (i = 0; i < 2; i++) {
                     dvdpl_path[2] = '0' + i;
@@ -2015,23 +2015,50 @@ void Reset()
 //------------------------------
 //endfunc Reset
 //---------------------------------------------------------------------------
-int uLE_detect_TV_mode()
+int InitializeRegion()
 {
     int ROMVER_fd;
+    static int TVMode = -1;
 
-    ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
-    if (ROMVER_fd < 0)
-        return TV_mode_NTSC;  //NTSC is default mode for unidentified console
-    genRead(ROMVER_fd, ROMVER_data, 16);
-    genClose(ROMVER_fd);
-    ROMVER_data[16] = 0;
+    if(TVMode < 0)  {
+        ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
+        if (ROMVER_fd < 0) {
+            rough_region = 'X';
+            TVMode = TV_mode_NTSC;  //NTSC is default mode for unidentified console
+            return TVMode;
+        }
+        genRead(ROMVER_fd, ROMVER_data, 16);
+        genClose(ROMVER_fd);
+        ROMVER_data[16] = 0;
 
-    if (ROMVER_data[4] == 'E')
-        return TV_mode_PAL;  //PAL mode is identified by 'E' for Europe
-    return TV_mode_NTSC;     //All other cases need NTSC
+        switch (ROMVER_data[4]) {
+            case 'J':
+                rough_region = 'I';
+                break;
+            case 'E':
+                rough_region = 'E';
+                break;
+            case 'A':
+            case 'H': //Asia shares the same letter as USA.
+                rough_region = 'A';
+                break;
+            case 'C':
+                rough_region = 'C';
+                break;
+            default:
+                rough_region = 'X';
+        }
+
+        if (ROMVER_data[4] == 'E')
+            TVMode = TV_mode_PAL;  //PAL mode is identified by 'E' for Europe
+        else
+            TVMode = TV_mode_NTSC; //All other cases need NTSC
+    }
+
+    return TVMode;
 }
 //------------------------------
-//endfunc uLE_detect_TV_mode
+//endfunc InitializeRegion
 //---------------------------------------------------------------------------
 
 //#ifdef SMB
@@ -2111,7 +2138,7 @@ int main(int argc, char *argv[])
 
     LastDir[0] = 0;
 
-    TV_mode = uLE_detect_TV_mode();  //Let console region decide TV_mode
+    TV_mode = InitializeRegion();  //Let console region decide TV_mode
     if (TV_mode == TV_mode_PAL) {    //Test console TV mode
         gs_vmode = GS_MODE_PAL;
         SCREEN_WIDTH = 640;
@@ -2129,13 +2156,6 @@ int main(int argc, char *argv[])
     } /* end else */
     Frame_end_y = Menu_end_y + 4;
     Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
-
-    if (ROMVER_data[4] == 'J')
-        rough_region = 'I';
-    else if (ROMVER_data[4] == 'E')
-        rough_region = 'E';
-    else
-        rough_region = 'A';
     default_OSDSYS_path[5] = rough_region;
 
     //RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
