@@ -693,8 +693,8 @@ void setPartyList(void)
 //--------------------------------------------------------------
 // The following group of file handling functions are used to allow
 // the main program to access files without having to deal with the
-// difference between fio and fileXio devices directly in each call.
-// Even so, paths for fileXio are assumed to be already prepared so
+// difference between device-specific needs directly in each call.
+// Even so, special paths are assumed to be already prepared so
 // as to be accepted by fileXio calls (so HDD file access use "pfs")
 // Generic functions for this purpose that have been added so far are:
 // genInit(void), genLimObjName(uLE_path, reserve),
@@ -702,19 +702,6 @@ void setPartyList(void)
 // genOpen(path, mode), genClose(fd), genDopen(path), genDclose(fd),
 // genLseek(fd,where,how), genRead(fd,buf,size), genWrite(fd,buf,size)
 // genRemove(path), genRmdir(path)
-//--------------------------------------------------------------
-int gen_fd[256];  //Allow up to 256 generic file handles
-int gen_io[256];  //For each handle, also memorize io type
-//--------------------------------------------------------------
-void genInit(void)
-{
-    int i;
-
-    for (i = 0; i < 256; i++)
-        gen_fd[i] = -1;
-}
-//------------------------------
-//endfunc genInit
 //--------------------------------------------------------------
 void genLimObjName(char *uLE_path, int reserve)
 {
@@ -809,13 +796,9 @@ int genRmdir(char *path)
     int ret;
 
     genLimObjName(path, 0);
-    if (!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)) {
-        ret = fileXioRmdir(path);
-        if (!strncmp(path, "vmc", 3))
-            (void)fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
-    } else {
-        ret = fioRmdir(path);
-    }
+    ret = fileXioRmdir(path);
+    if (!strncmp(path, "vmc", 3))
+        fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
     return ret;
 }
 //------------------------------
@@ -826,13 +809,9 @@ int genRemove(char *path)
     int ret;
 
     genLimObjName(path, 0);
-    if (!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)) {
-        ret = fileXioRemove(path);
-        if (!strncmp(path, "vmc", 3))
-            (void)fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
-    } else {
-        ret = fioRemove(path);
-    }                                 //ends if clauses
+    ret = fileXioRemove(path);
+    if (!strncmp(path, "vmc", 3))
+        fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
     return ret;
 }
 //------------------------------
@@ -840,43 +819,15 @@ int genRemove(char *path)
 //--------------------------------------------------------------
 int genOpen(char *path, int mode)
 {
-    int i, fd, io;
-
     genLimObjName(path, 0);
-    for (i = 0; i < 256; i++)
-        if (gen_fd[i] < 0)
-            break;
-    if (i > 255)
-        return -1;
-
-    if (!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)) {
-        fd = fileXioOpen(path, mode, fileMode);
-        io = 1;
-    } else {
-        fd = fioOpen(path, mode);
-        io = 0;
-    }
-    if (fd < 0)
-        return fd;
-
-    gen_fd[i] = fd;
-    gen_io[i] = io;
-    return i;
+    return fileXioOpen(path, mode, fileMode);
 }
 //------------------------------
 //endfunc genOpen
 //--------------------------------------------------------------
 int genDopen(char *path)
 {
-    int i, fd, io;
-
-    for (i = 0; i < 256; i++)
-        if (gen_fd[i] < 0)
-            break;
-    if (i > 255) {
-        //printf("genDopen(\"%s\") => no free descriptors\r\n", path);
-        return -1;
-    }
+    int fd;
 
     if (!strncmp(path, "pfs", 3) || !strncmp(path, "vmc", 3)) {
         char tmp[MAX_PATH];
@@ -885,97 +836,46 @@ int genDopen(char *path)
         if (tmp[strlen(tmp) - 1] == '/')
             tmp[strlen(tmp) - 1] = '\0';
         fd = fileXioDopen(tmp);
-        io = 3;
     } else {
-        fd = fioDopen(path);
-        io = 2;
-    }
-    if (fd < 0) {
-        //printf("genDopen(\"%s\") => low error %d\r\n", path, fd);
-        return fd;
+        fd = fileXioDopen(path);
     }
 
-    gen_fd[i] = fd;
-    gen_io[i] = io;
-    //printf("genDopen(\"%s\") =>dd = %d\r\n", path, i);
-    return i;
+    return fd;
 }
 //------------------------------
 //endfunc genDopen
 //--------------------------------------------------------------
 int genLseek(int fd, int where, int how)
 {
-    if ((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-        return -1;
-
-    if (gen_io[fd])
-        return fileXioLseek(gen_fd[fd], where, how);
-    else
-        return fioLseek(gen_fd[fd], where, how);
+    return fileXioLseek(fd, where, how);
 }
 //------------------------------
 //endfunc genLseek
 //--------------------------------------------------------------
 int genRead(int fd, void *buf, int size)
 {
-    if ((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-        return -1;
-
-    if (gen_io[fd])
-        return fileXioRead(gen_fd[fd], buf, size);
-    else
-        return fioRead(gen_fd[fd], buf, size);
+    return fileXioRead(fd, buf, size);
 }
 //------------------------------
 //endfunc genRead
 //--------------------------------------------------------------
 int genWrite(int fd, void *buf, int size)
 {
-    if ((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-        return -1;
-
-    if (gen_io[fd])
-        return fileXioWrite(gen_fd[fd], buf, size);
-    else
-        return fioWrite(gen_fd[fd], buf, size);
+    return fileXioWrite(fd, buf, size);
 }
 //------------------------------
 //endfunc genWrite
 //--------------------------------------------------------------
 int genClose(int fd)
 {
-    int ret;
-
-    if ((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-        return -1;
-
-    if (gen_io[fd] == 1)
-        ret = fileXioClose(gen_fd[fd]);
-    else if (gen_io[fd] == 0)
-        ret = fioClose(gen_fd[fd]);
-    else
-        return -1;
-    gen_fd[fd] = -1;
-    return ret;
+    return fileXioClose(fd);
 }
 //------------------------------
 //endfunc genClose
 //--------------------------------------------------------------
 int genDclose(int fd)
 {
-    int ret;
-
-    if ((fd < 0) || (fd > 255) || (gen_fd[fd] < 0))
-        return -1;
-
-    if (gen_io[fd] == 3)
-        ret = fileXioDclose(gen_fd[fd]);
-    else if (gen_io[fd] == 2)
-        ret = fioDclose(gen_fd[fd]);
-    else
-        return -1;
-    gen_fd[fd] = -1;
-    return ret;
+    return fileXioDclose(fd);
 }
 //------------------------------
 //endfunc genDclose
@@ -1097,7 +997,7 @@ int readHDD(const char *path, FILEINFO *info, int max)
 void scan_USB_mass(void)
 {
     int i;
-    fio_stat_t chk_stat;
+    iox_stat_t chk_stat;
     char mass_path[8] = "mass0:/";
 
     if ((USB_mass_max_drives < 2)  //No need for dynamic lists with only one drive
@@ -1106,7 +1006,7 @@ void scan_USB_mass(void)
 
     for (i = 0; i < USB_mass_max_drives; i++) {
         mass_path[4] = '0' + i;
-        if (fioGetstat(mass_path, &chk_stat) < 0) {
+        if (fileXioGetStat(mass_path, &chk_stat) < 0) {
             USB_mass_ix[i] = 0;
             continue;
         }
@@ -1120,7 +1020,7 @@ void scan_USB_mass(void)
 //--------------------------------------------------------------
 int readMASS(const char *path, FILEINFO *info, int max)
 {
-    fio_dirent_t record;
+    iox_dirent_t record;
     int n = 0, dd = -1;
 
     loadUsbModules();
@@ -1128,17 +1028,17 @@ int readMASS(const char *path, FILEINFO *info, int max)
     if (!USB_mass_scanned)
         scan_USB_mass();
 
-    if ((dd = fioDopen(path)) < 0)
+    if ((dd = fileXioDopen(path)) < 0)
         goto exit;  //exit if error opening directory
-    while (fioDread(dd, &record) > 0) {
-        if ((FIO_SO_ISDIR(record.stat.mode)) && (!strcmp(record.name, ".") || !strcmp(record.name, "..")))
+    while (fileXioDread(dd, &record) > 0) {
+        if ((FIO_S_ISDIR(record.stat.mode)) && (!strcmp(record.name, ".") || !strcmp(record.name, "..")))
             continue;  //Skip entry if pseudo-folder "." or ".."
 
         strcpy(info[n].name, record.name);
         clear_mcTable(&info[n].stats);
-        if (FIO_SO_ISDIR(record.stat.mode)) {
+        if (FIO_S_ISDIR(record.stat.mode)) {
             info[n].stats.attrFile = MC_ATTR_norm_folder;
-        } else if (FIO_SO_ISREG(record.stat.mode)) {
+        } else if (FIO_S_ISREG(record.stat.mode)) {
             info[n].stats.attrFile = MC_ATTR_norm_file;
             info[n].stats.fileSizeByte = record.stat.size;
             info[n].stats.unknown4[0] = record.stat.hisize;
@@ -1156,7 +1056,7 @@ int readMASS(const char *path, FILEINFO *info, int max)
 
 exit:
     if (dd >= 0)
-        fioDclose(dd);  //Close directory if opened above
+        fileXioDclose(dd);  //Close directory if opened above
     return n;
 }
 //------------------------------
@@ -1205,13 +1105,13 @@ void initHOST(void)
 
     load_ps2host();
     host_error = 0;
-    if ((fd = fioOpen("host:elflist.txt", O_RDONLY)) >= 0) {
-        fioClose(fd);
+    if ((fd = fileXioOpen("host:elflist.txt", O_RDONLY, 0666)) >= 0) {
+        fileXioClose(fd);
         host_elflist = 1;
     } else {
         host_elflist = 0;
-        if ((fd = fioDopen("host:")) >= 0)
-            fioDclose(fd);
+        if ((fd = fileXioDopen("host:")) >= 0)
+            fileXioDclose(fd);
         else
             host_error = 1;
     }
@@ -1220,7 +1120,7 @@ void initHOST(void)
 //--------------------------------------------------------------
 int readHOST(const char *path, FILEINFO *info, int max)
 {
-    fio_dirent_t hostcontent;
+    iox_dirent_t hostcontent;
     int hfd, rv, size, contentptr, hostcount = 0;
     char *elflisttxt, elflistchar;
     char host_path[MAX_PATH], host_next[MAX_PATH];
@@ -1231,16 +1131,16 @@ int readHOST(const char *path, FILEINFO *info, int max)
     if (!strncmp(path, "host:/", 6))
         strcpy(host_path + 5, path + 6);
     if ((host_elflist) && !strcmp(host_path, "host:")) {
-        if ((hfd = fioOpen("host:elflist.txt", O_RDONLY)) < 0)
+        if ((hfd = fileXioOpen("host:elflist.txt", O_RDONLY, 0)) < 0)
             return 0;
-        if ((size = fioLseek(hfd, 0, SEEK_END)) <= 0) {
-            fioClose(hfd);
+        if ((size = fileXioLseek(hfd, 0, SEEK_END)) <= 0) {
+            fileXioClose(hfd);
             return 0;
         }
         elflisttxt = (char *)malloc(size);
-        fioLseek(hfd, 0, SEEK_SET);
-        fioRead(hfd, elflisttxt, size);
-        fioClose(hfd);
+        fileXioLseek(hfd, 0, SEEK_SET);
+        fileXioRead(hfd, elflisttxt, size);
+        fileXioClose(hfd);
         contentptr = 0;
         for (rv = 0; rv <= size; rv++) {
             elflistchar = elflisttxt[rv];
@@ -1248,12 +1148,12 @@ int readHOST(const char *path, FILEINFO *info, int max)
                 host_next[contentptr] = 0;
                 snprintf(host_path, MAX_PATH - 1, "%s%s", "host:", host_next);
                 clear_mcTable(&info[hostcount].stats);
-                if ((hfd = fioOpen(makeHostPath(Win_path, host_path), O_RDONLY)) >= 0) {
-                    fioClose(hfd);
+                if ((hfd = fileXioOpen(makeHostPath(Win_path, host_path), O_RDONLY, 0666)) >= 0) {
+                    fileXioClose(hfd);
                     info[hostcount].stats.attrFile = MC_ATTR_norm_file;
                     makeFslPath(info[hostcount++].name, host_next);
-                } else if ((hfd = fioDopen(Win_path)) >= 0) {
-                    fioDclose(hfd);
+                } else if ((hfd = fileXioDopen(Win_path)) >= 0) {
+                    fileXioDclose(hfd);
                     info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
                     makeFslPath(info[hostcount++].name, host_next);
                 }
@@ -1270,10 +1170,10 @@ int readHOST(const char *path, FILEINFO *info, int max)
     }
     //This point is only reached if elflist.txt is NOT to be used
 
-    if ((hfd = fioDopen(makeHostPath(Win_path, host_path))) < 0)
+    if ((hfd = fileXioDopen(makeHostPath(Win_path, host_path))) < 0)
         return 0;
     strcpy(host_path, Win_path);
-    while ((rv = fioDread(hfd, &hostcontent))) {
+    while ((rv = fileXioDread(hfd, &hostcontent))) {
         if (strcmp(hostcontent.name, ".") && strcmp(hostcontent.name, "..")) {
             size_valid = 1;
             time_valid = 1;
@@ -1281,7 +1181,7 @@ int readHOST(const char *path, FILEINFO *info, int max)
             strcpy(info[hostcount].name, hostcontent.name);
             clear_mcTable(&info[hostcount].stats);
 
-            if (!(hostcontent.stat.mode & FIO_SO_IFDIR))  //if not a directory
+            if (!(hostcontent.stat.mode & FIO_S_IFDIR))  //if not a directory
                 info[hostcount].stats.attrFile = MC_ATTR_norm_file;
             else
                 info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
@@ -1297,7 +1197,7 @@ int readHOST(const char *path, FILEINFO *info, int max)
                 break;
         }
     }
-    fioDclose(hfd);
+    fileXioDclose(hfd);
     strcpy(info[hostcount].name, "\0");
     return hostcount;
 }
@@ -1762,10 +1662,11 @@ char *PathPad_menu(const char *path)
 //--------------------------------------------------------------
 u64 getFileSize(const char *path, const FILEINFO *file)
 {
+    iox_stat_t stat;
     u64 size, filesize;
     FILEINFO files[MAX_ENTRY];
     char dir[MAX_PATH], party[MAX_NAME];
-    int nfiles, i, ret, fd;
+    int nfiles, i, ret;
 
     if (file->stats.attrFile & MC_ATTR_SUBDIR) {  //Folder object to size up
         sprintf(dir, "%s%s/", path, file->name);
@@ -1788,15 +1689,9 @@ u64 getFileSize(const char *path, const FILEINFO *file)
             sprintf(dir, "%s%s", path, file->name);
         if (!strncmp(dir, "host:/", 6))
             makeHostPath(dir + 5, dir + 6);
-        if (!strncmp(path, "hdd", 3) || !strncmp(path, "vmc", 3)) {
-            fd = fileXioOpen(dir, O_RDONLY, fileMode);
-            size = fileXioLseek(fd, 0, SEEK_END);
-            fileXioClose(fd);
-        } else {
-            fd = fioOpen(dir, O_RDONLY);
-            size = fioLseek(fd, 0, SEEK_END);
-            fioClose(fd);
-        }
+
+        fileXioGetStat(dir, &stat);
+        size = stat.size;
     }
     return size;
 }
@@ -1847,15 +1742,15 @@ int delete (const char *path, const FILEINFO *file)
             pathSep = strchr(path, '/');
             strcpy(dir, path);
             strcat(dir, file->name);
-            ret = fioRmdir(dir);
+            ret = fileXioRmdir(dir);
             if ((ret < 0) && (dir[4] == ':')) {
                 sprintf(dir, "mass0:%s%s", &path[5], file->name);
-                ret = fioRmdir(dir);
+                ret = fileXioRmdir(dir);
             }
 
         } else if (!strncmp(path, "host", 4)) {
             sprintf(dir, "%s%s", path, file->name);
-            ret = fioRmdir(dir);
+            ret = fileXioRmdir(dir);
         }
     } else {  //The object to delete is a file
         if (!strncmp(path, "mc", 2)) {
@@ -1868,7 +1763,7 @@ int delete (const char *path, const FILEINFO *file)
             ret = fileXioRemove(dir);
             (void)fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
         } else if ((!strncmp(path, "mass", 4)) || (!strncmp(path, "host", 4))) {
-            ret = fioRemove(dir);
+            ret = fileXioRemove(dir);
         }
     }
     return ret;
@@ -1899,12 +1794,12 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
     } else if (!strncmp(path, "mc", 2)) {
         sprintf(oldPath, "%s%s", path, file->name);
         sprintf(newPath, "%s%s", path, name);
-        if ((test = fioDopen(newPath)) >= 0) {  //Does folder of same name exist ?
-            fioDclose(test);
-            ret = -17;
-        } else if ((test = fioOpen(newPath, O_RDONLY)) >= 0) {  //Does file of same name exist ?
-            fioClose(test);
-            ret = -17;
+        if ((test = fileXioDopen(newPath)) >= 0) {  //Does folder of same name exist ?
+            fileXioDclose(test);
+            ret = -EEXIST;
+        } else if ((test = fileXioOpen(newPath, O_RDONLY, 0666)) >= 0) {  //Does file of same name exist ?
+            fileXioClose(test);
+            ret = -EEXIST;
         } else {  //No file/folder of the same name exists
             mcGetInfo(path[2] - '0', 0, &mctype_PSx, NULL, NULL);
             mcSync(0, NULL, &test);
@@ -1913,13 +1808,13 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
             mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  //Fix file stats
             mcSync(0, NULL, &test);
             if (ret == -4)
-                ret = -17;
+                ret = -EEXIST;
             else {  //PS1 MC !
                 strncpy((void *)file->stats.name, name, 32);
                 mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  //Fix file stats
                 mcSync(0, NULL, &test);
                 if (ret == -4)
-                    ret = -17;
+                    ret = -EEXIST;
             }
         }
     } else if (!strncmp(path, "host", 4)) {
@@ -1932,16 +1827,16 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
         strcat(oldPath, file->name);
         strcat(newPath, name);
         if (file->stats.attrFile & MC_ATTR_SUBDIR) {  //Rename a folder ?
-            ret = (temp_fd = fioDopen(oldPath));
+            ret = (temp_fd = fileXioDopen(oldPath));
             if (temp_fd >= 0) {
-                ret = fioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
-                fioDclose(temp_fd);
+                ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
+                fileXioDclose(temp_fd);
             }
         } else if (file->stats.attrFile & MC_ATTR_FILE) {  //Rename a file ?
-            ret = (temp_fd = fioOpen(oldPath, O_RDONLY));
+            ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY, 0666));
             if (temp_fd >= 0) {
-                ret = fioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
-                fioClose(temp_fd);
+                ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
+                fileXioClose(temp_fd);
             }
         } else  //This was neither a folder nor a file !!!
             return -1;
@@ -1973,7 +1868,7 @@ int newdir(const char *path, const char *name)
         genLimObjName(dir, 0);
         if ((ret = fileXioDopen(dir)) >= 0) {
             fileXioDclose(ret);
-            ret = -17;  //return fileXio error code for pre-existing folder
+            ret = -EEXIST;  //return fileXio error code for pre-existing folder
         } else {
             ret = fileXioMkdir(dir, fileMode);
         }
@@ -1984,26 +1879,26 @@ int newdir(const char *path, const char *name)
         mcMkDir(path[2] - '0', 0, dir);
         mcSync(0, NULL, &ret);
         if (ret == -4)
-            ret = -17;  //return fileXio error code for pre-existing folder
+            ret = -EEXIST;  //return fileXio error code for pre-existing folder
     } else if (!strncmp(path, "mass", 4)) {
         strcpy(dir, path);
         strcat(dir, name);
         genLimObjName(dir, 0);
-        ret = fioMkdir(dir);
+        ret = fileXioMkdir(dir, fileMode);
     } else if (!strncmp(path, "host", 4)) {
         strcpy(dir, path);
         strcat(dir, name);
         genLimObjName(dir, 0);
         if (!strncmp(dir, "host:/", 6))
             makeHostPath(dir + 5, dir + 6);
-        if ((ret = fioDopen(dir)) >= 0) {
-            fioDclose(ret);
-            ret = -17;  //return fileXio error code for pre-existing folder
+        if ((ret = fileXioDopen(dir)) >= 0) {
+            fileXioDclose(ret);
+            ret = -EEXIST;  //return fileXio error code for pre-existing folder
         } else {
-            ret = fioMkdir(dir);  //Create the new folder
+            ret = fileXioMkdir(dir, fileMode);  //Create the new folder
         }
     } else {  //Device not recognized
-        ret = -1;
+        ret = -ENODEV;
     }
     return ret;
 }
@@ -2016,7 +1911,6 @@ int newdir(const char *path, const char *name)
 int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
     FILEINFO newfile, files[MAX_ENTRY];
-    fio_stat_t fio_stat;
     iox_stat_t iox_stat;
     char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH],
         progress[MAX_PATH * 4],
@@ -2347,7 +2241,9 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
                 mcSync(0, NULL, &dummy);
             } else {                            //Handle folder copied to non-MC
-                if (!strncmp(out, "pfs", 3)) {  //for pfs on HDD we use fileXio_ stuff
+                if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+                } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+                } else {                                //for other devices we use fileXio_ stuff
                     memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
                     memcpy(iox_stat.mtime, (void *)&file.stats._modify, 8);
                     memcpy(iox_stat.atime, iox_stat.mtime, 8);
@@ -2355,18 +2251,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                     if (!strncmp(in, "host", 4)) {               //Handle folder copied from host:
                         ret = 0;                                 //Request NO stat change
                     }
-                    ////					dummy = fileXioChStat(out, &iox_stat, ret); //disabled due to bugs
-                } else if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
-                } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
-                } else {                                //for other devices we use fio_ stuff
-                    memcpy(fio_stat.ctime, (void *)&file.stats._create, 8);
-                    memcpy(fio_stat.mtime, (void *)&file.stats._modify, 8);
-                    memcpy(fio_stat.atime, fio_stat.mtime, 8);
-                    ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
-                    if (!strncmp(in, "host", 4)) {               //Handle folder copied from host:
-                        ret = 0;                                 //Request NO stat change
-                    }
-                    dummy = fioChstat(out, &fio_stat, ret);  //(no such devices yet)
+                    dummy = fileXioChStat(out, &iox_stat, ret);
                 }
             }
         }
@@ -2639,7 +2524,9 @@ non_PSU_RESTORE_init:
             mcSync(0, NULL, &dummy);
         }
     } else {                            //Handle file copied to non-MC
-        if (!strncmp(out, "pfs", 3)) {  //for pfs on HDD we use fileXio_ stuff
+        if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
+        } else {                                //for other devices we use fileXio_ stuff
             memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
             memcpy(iox_stat.mtime, (void *)&file.stats._modify, 8);
             memcpy(iox_stat.atime, iox_stat.mtime, 8);
@@ -2647,18 +2534,7 @@ non_PSU_RESTORE_init:
             if (!strncmp(in, "host", 4)) {               //Handle file copied from host:
                 ret = 0;                                 //Request NO stat change
             }
-            ////			dummy = fileXioChStat(out, &iox_stat, ret); //disabled due to bugs
-        } else if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
-        } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
-        } else {                                //for other devices we use fio_ stuff
-            memcpy(fio_stat.ctime, (void *)&file.stats._create, 8);
-            memcpy(fio_stat.mtime, (void *)&file.stats._modify, 8);
-            memcpy(fio_stat.atime, fio_stat.mtime, 8);
-            ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
-            if (!strncmp(in, "host", 4)) {               //Handle file copied from host:
-                ret = 0;                                 //Request NO stat change
-            }
-            dummy = fioChstat(out, &fio_stat, ret);  //(no such devices yet)
+            dummy = fileXioChStat(out, &iox_stat, ret);
         }
     }
 
@@ -4101,10 +3977,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 		printf("file =\"%s\"\r\n", files[sel].name);
 		if	(!strncmp(filepath, "host:/", 6))
 			makeHostPath(filepath+5, filepath+6);
-		if(!strncmp(filepath, "hdd", 3))
-			test = fileXioGetStat(filepath, &stats);
-		else
-			test = fioGetstat(filepath, (fio_stat_t *) &stats);
+		test = fileXioGetStat(filepath, &stats);
 		printf("test = %d\r\n", test);
 		printf("mode = %08X\r\n", stats.mode);
 		printf("attr = %08X\r\n", stats.attr);

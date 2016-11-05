@@ -590,8 +590,8 @@ void saveConfig(char *mainMsg, char *CNF)
             else
                 sprintf(c, "mc%d:/SYS-CONF", CheckMC());
 
-            if ((fd = fioDopen(c)) >= 0) {
-                fioDclose(fd);
+            if ((fd = fileXioDopen(c)) >= 0) {
+                fileXioDclose(fd);
                 char strtmp[MAX_PATH] = "/";
                 strcat(c, strcat(strtmp, CNF));
             } else {
@@ -604,8 +604,8 @@ void saveConfig(char *mainMsg, char *CNF)
     ret = genFixPath(c, cnf_path);
     if ((ret < 0) || ((fd = genOpen(cnf_path, O_CREAT | O_WRONLY | O_TRUNC)) < 0)) {
         sprintf(c, "mc%d:/SYS-CONF", CheckMC());
-        if ((fd = fioDopen(c)) >= 0) {
-            fioDclose(fd);
+        if ((fd = fileXioDopen(c)) >= 0) {
+            fileXioDclose(fd);
             char strtmp[MAX_PATH] = "/";
             strcat(c, strcat(strtmp, CNF));
         } else {

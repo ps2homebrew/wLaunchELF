@@ -17,7 +17,6 @@
 #include <libhdd.h>
 #include <libmc.h>
 #include <libpad.h>
-#include <fileio.h>
 #include <sys/stat.h>
 #include <iopheap.h>
 #include <errno.h>
@@ -34,7 +33,6 @@
 #include <dmaKit.h>
 #include <cdvd_rpc.h>
 #include <libcdvd.h>
-//#include "mass_rpc.h" //disused in switch to usbhdfsd
 #include "iopmod_name.h"
 #include <libjpg.h>
 #include <libkbd.h>
@@ -298,7 +296,6 @@ char *makeHostPath(char *dp, char *sp);
 int ynDialog(const char *message);
 void nonDialog(char *message);
 int keyboard(char *out, int max);
-void genInit(void);
 void genLimObjName(char *uLE_path, int reserve);
 int genFixPath(char *uLE_path, char *gen_path);
 int genOpen(char *path, int mode);

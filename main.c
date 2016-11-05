@@ -83,8 +83,6 @@ enum {
     DPAD
 };
 
-void Reset();
-
 int TV_mode;
 int selected = 0;
 int timeout = 0, prev_timeout = 1;
@@ -136,8 +134,6 @@ int have_mcserv = 0;
 int have_padman = 0;
 int have_fakehost = 0;
 int have_poweroff = 0;
-int have_iomanx = 0;
-int have_filexio = 0;
 int have_ps2dev9 = 0;
 int have_ps2ip = 0;
 int have_ps2atad = 0;
@@ -614,40 +610,14 @@ void initsbv_patches(void)
    dbgprintf("Init MrBrown sbv_patches\n");
    sbv_patch_enable_lmb();
    sbv_patch_disable_prefix_check();
-   sbv_patch_fileio();
 }
 //------------------------------
 //endfunc initsbv_patches
-//---------------------------------------------------------------------------
-void load_iomanx(void)
-{
-    int ret;
-
-    if (!have_iomanx) {
-        SifExecModuleBuffer(&iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
-        have_iomanx = 1;
-    }
-}
-//------------------------------
-//endfunc load_iomanx
-//---------------------------------------------------------------------------
-void load_filexio(void)
-{
-    int ret;
-
-    if (!have_filexio) {
-        SifExecModuleBuffer(&filexio_irx, size_filexio_irx, 0, NULL, &ret);
-        have_filexio = 1;
-    }
-}
-//------------------------------
-//endfunc load_filexio
 //---------------------------------------------------------------------------
 void load_ps2dev9(void)
 {
     int ret;
 
-    load_iomanx();
     if (!have_ps2dev9) {
         SifExecModuleBuffer(&ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
         have_ps2dev9 = 1;
@@ -846,8 +816,6 @@ void load_vmc_fs(void)
 {
     int ret;
 
-    load_iomanx();
-    load_filexio();
     if (!have_vmc_fs) {
         SifExecModuleBuffer(&vmc_fs_irx, size_vmc_fs_irx, 0, NULL, &ret);
         have_vmc_fs = 1;
@@ -887,9 +855,12 @@ void load_ps2netfs(void)
 //------------------------------
 //endfunc load_ps2netfs
 //---------------------------------------------------------------------------
-void loadBasicModules(void)
+static void loadBasicModules(void)
 {
     int ret;
+
+    SifExecModuleBuffer(&iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
+    SifExecModuleBuffer(&filexio_irx, size_filexio_irx, 0, NULL, &ret);
 
     SifExecModuleBuffer(&allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  //unlocks cdvd for reading on psx dvr
 
@@ -1054,7 +1025,7 @@ int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
     } else {
         (void)uLE_related(filePath, argPath);
     }
-    //Here 'filePath' is a valid path for fio or fileXio operations
+    //Here 'filePath' is a valid path for file I/O operations
     //Which means we can now use generic file I/O
     File = fopen(filePath, "r");
     if (File != NULL) {
@@ -1183,8 +1154,6 @@ void setupPowerOff(void)
         }
         poweroffInit();
         poweroffSetCallback((void *)poweroffHandler, NULL);
-        load_iomanx();
-        load_filexio();
         load_ps2dev9();
         done_setupPowerOff = 1;
     }
@@ -1241,19 +1210,19 @@ void startKbd(void)
         PS2KbdInit();
         ps2kbd_opened = 1;
         if (setting->kbdmap_file[0]) {
-            if ((kbd_fd = fioOpen(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
+            if ((kbd_fd = fileXioOpen(PS2KBD_DEVFILE, O_RDONLY, 0666)) >= 0) {
                 printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n", kbd_fd, setting->kbdmap_file);
                 if (loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
                     if (mapSize == 0x600) {
-                        fioIoctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
-                        fioIoctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase + 0x300);
-                        fioIoctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase + 0x400);
-                        fioIoctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase + 0x500);
+                        fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
+                        fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase + 0x300);
+                        fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase + 0x400);
+                        fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase + 0x500);
                     }
                     printf("Freeing buffer after setting Kbd maps\r\n");
                     free(mapBase);
                 }
-                fioClose(kbd_fd);
+                fileXioClose(kbd_fd);
             }
         }
     }
@@ -1982,7 +1951,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 //---------------------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 // dlanor: but changed now, as the original was badly bugged
-void Reset()
+static void Reset()
 {
     SifInitRpc(0);
     while (!SifIopReset(NULL, 0)) {
@@ -1991,7 +1960,6 @@ void Reset()
     };
     SifInitRpc(0);
     SifLoadFileInit();
-    fioInit();
     initsbv_patches();
 
     have_cdvd = 0;
@@ -2007,6 +1975,7 @@ void Reset()
     have_HDD_modules = 0;
 
     loadBasicModules();
+    fileXioInit();
     mcReset();
     mcInit(MC_TYPE_MC);
     //	padReset();
@@ -2130,7 +2099,6 @@ int main(int argc, char *argv[])
         boot_argv[i] = argv[i];
 
     Reset();
-    genInit();
     Init_Default_Language();
 
     LaunchElfDir[0] = 0;

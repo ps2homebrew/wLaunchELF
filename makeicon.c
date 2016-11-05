@@ -302,20 +302,20 @@ int make_icon(char *icontext, char *filename)
     tex_printXY(icontext, 0, 0, 0xFFFF);      // (string,xpos,ypos,color)
     u32 tex_size = tex_compresRLE();          // compress the texture, overwrites tex_buffer
 
-    int f = fioOpen(filename, O_WRONLY | O_CREAT);  //open/create the file
-    if (f < 0)
+    FILE *f = fopen(filename, "wb");  //open/create the file
+    if (f == NULL)
         return -1;
-    fioWrite(f, &icn_head, sizeof(icn_head));
+    fwrite(&icn_head, sizeof(icn_head), 1, f);
     for (i = 0; i < icn_head.num_vertices; i++) {
-        fioWrite(f, &icn_vertices[i], sizeof(icn_vertices[i]));
-        fioWrite(f, &normals[i / 3], sizeof(normals[i / 3]));
-        fioWrite(f, &texdata[i], sizeof(texdata[i]));
+        fwrite(&icn_vertices[i], sizeof(icn_vertices[i]), 1, f);
+        fwrite(&normals[i / 3], sizeof(normals[i / 3]), 1, f);
+        fwrite(&texdata[i], sizeof(texdata[i]), 1, f);
     }
-    fioWrite(f, &icn_anim_head, sizeof(icn_anim_head));
-    fioWrite(f, &framedata, sizeof(framedata));
-    fioWrite(f, &tex_size, 4);
-    fioWrite(f, tex_buffer, tex_size);
-    fioClose(f);
+    fwrite(&icn_anim_head, sizeof(icn_anim_head), 1, f);
+    fwrite(&framedata, 1, sizeof(framedata), f);
+    fwrite(&tex_size, 4, 1, f);
+    fwrite(tex_buffer, 1, tex_size, f);
+    fclose(f);
     return 0;
 }
 //--------------------------------------------------------------
@@ -359,11 +359,11 @@ int make_iconsys(char *title, char *iconname, char *filename)
     strcpy(icon_sys.copy, iconname);
     strcpy(icon_sys.del, iconname);
 
-    int f = fioOpen(filename, O_WRONLY | O_CREAT);  // open/create the file
-    if (f < 0)
+    FILE *f = fopen(filename, "wb");  // open/create the file
+    if (f == NULL)
         return -1;
-    fioWrite(f, &icon_sys, sizeof(icon_sys));
-    fioClose(f);
+    fwrite(&icon_sys, 1, sizeof(icon_sys), f);
+    fclose(f);
 
     return 0;
 }
