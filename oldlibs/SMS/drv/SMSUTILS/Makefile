@@ -8,6 +8,5 @@ all: $(IOP_BIN)
 clean:
 	rm -f *.elf *.o *.a *.irx
 
-include $(PS2SDKSRC)/Defs.make
-include $(PS2SDKSRC)/iop/Rules.make
-include $(PS2SDKSRC)/iop/Rules.release
+include $(PS2SDK)/Defs.make
+include ../../../../Rules.make

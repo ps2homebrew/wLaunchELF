@@ -42,6 +42,39 @@ BIN2O = $(PS2SDK)/bin/bin2o
 %.o : %.s
 	$(IOP_AS) $(IOP_ASFLAGS) $< -o $@
 
+#Rules for the PS2SDK-styled projects (objects in objs/, binary in bin/)
+$(IOP_OBJS_DIR)%.o : $(IOP_SRC_DIR)%.c
+	$(IOP_CC) $(IOP_CFLAGS) -c $< -o $@
+
+$(IOP_OBJS_DIR)%.o : $(IOP_SRC_DIR)%.S
+	$(IOP_CC) $(IOP_CFLAGS) $(IOP_INCS) -c $< -o $@
+
+$(IOP_OBJS_DIR)%.o : $(IOP_SRC_DIR)%.s
+	$(IOP_AS) $(IOP_ASFLAGS) $< -o $@
+
+# A rule to build imports.lst.
+$(IOP_OBJS_DIR)%.o : $(IOP_SRC_DIR)%.lst
+	$(ECHO) "#include \"irx_imports.h\"" > $(IOP_OBJS_DIR)build-imports.c
+	cat $< >> $(IOP_OBJS_DIR)build-imports.c
+	$(IOP_CC) $(IOP_CFLAGS) -I$(IOP_SRC_DIR) -c $(IOP_OBJS_DIR)build-imports.c -o $@
+	-rm -f $(IOP_OBJS_DIR)build-imports.c
+
+# A rule to build exports.tab.
+$(IOP_OBJS_DIR)%.o : $(IOP_SRC_DIR)%.tab
+	$(ECHO) "#include \"irx.h\"" > $(IOP_OBJS_DIR)build-exports.c
+	cat $< >> $(IOP_OBJS_DIR)build-exports.c
+	$(IOP_CC) $(IOP_CFLAGS) -I$(IOP_SRC_DIR) -c $(IOP_OBJS_DIR)build-exports.c -o $@
+	-rm -f $(IOP_OBJS_DIR)build-exports.c
+
+$(IOP_OBJS_DIR):
+	$(MKDIR) -p $(IOP_OBJS_DIR)
+
+$(IOP_BIN_DIR):
+	$(MKDIR) -p $(IOP_BIN_DIR)
+
+$(IOP_LIB_DIR):
+	$(MKDIR) -p $(IOP_LIB_DIR)
+
 # A rule to build imports.lst.
 %.o : %.lst
 	$(ECHO) "#include \"irx_imports.h\"" > build-imports.c
