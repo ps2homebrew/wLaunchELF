@@ -164,9 +164,9 @@ char SystemCnf_VER[10];    //Arbitrary. Real value should always be shorter
 char SystemCnf_VMODE[10];  //Arbitrary, same deal. As yet unused
 
 char default_ESR_path[] = "mc:/BOOT/ESR.ELF";
-char default_OSDSYS_path[] = "mc:/B?EXEC-SYSTEM/osdmain.elf";
+char default_OSDSYS_path[30];
 
-char ROMVER_data[20];  //16 byte file read from rom0:ROMVER at init
+char ROMVER_data[16];  //16 byte file read from rom0:ROMVER at init
 char rough_region;     //E==Europe, A==US, I==Japan, H==Asia, C==China
 
 int cdmode;      //Last detected disc type
@@ -2023,13 +2023,14 @@ int InitializeRegion()
     if(TVMode < 0)  {
         ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
         if (ROMVER_fd < 0) {
+            memset(ROMVER_data, 0, sizeof(ROMVER_data));
             rough_region = 'X';
             TVMode = TV_mode_NTSC;  //NTSC is default mode for unidentified console
             return TVMode;
         }
         genRead(ROMVER_fd, ROMVER_data, 16);
         genClose(ROMVER_fd);
-        ROMVER_data[16] = 0;
+        ROMVER_data[15] = 0;
 
         switch (ROMVER_data[4]) {
             case 'J':
@@ -2059,6 +2060,43 @@ int InitializeRegion()
 }
 //------------------------------
 //endfunc InitializeRegion
+//---------------------------------------------------------------------------
+static void InitializeBootExecPath()
+{
+    char file[12];
+
+    InitializeRegion();
+
+    //Handle special cases, before osdmain.elf was supported.
+    switch(ROMVER_data[4]) {
+        case 'E':
+            if(!strncmp(ROMVER_data, "0120", 4))
+                strcpy(file, "osd130.elf");
+            else
+                strcpy(file, "osdmain.elf");
+            break;
+        case 'A':
+            if(!strncmp(ROMVER_data, "0110", 4))
+                strcpy(file, "osd120.elf");
+            else
+                strcpy(file, "osdmain.elf");
+            break;
+        case 'J':
+            if(!strncmp(ROMVER_data, "0100", 4))
+                strcpy(file, "osdsys.elf");
+            else if(!strncmp(ROMVER_data, "0101", 4))
+                strcpy(file, "osd110.elf");
+            else
+                strcpy(file, "osdmain.elf");
+            break;
+        default: //Asia and China
+           strcpy(file, "osdmain.elf");
+    }
+
+    sprintf(default_OSDSYS_path, "mc:/B%cEXEC-SYSTEM/%s", rough_region, file);
+}
+//------------------------------
+//endfunc InitializeBootExecPath
 //---------------------------------------------------------------------------
 
 //#ifdef SMB
@@ -2156,7 +2194,7 @@ int main(int argc, char *argv[])
     } /* end else */
     Frame_end_y = Menu_end_y + 4;
     Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
-    default_OSDSYS_path[5] = rough_region;
+    InitializeBootExecPath();
 
     //RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
     CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
