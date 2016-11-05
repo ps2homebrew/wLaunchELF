@@ -114,43 +114,36 @@ char gw[16] = "192.168.0.1";
 char netConfig[IPCONF_MAX_LEN + 64];  //Adjust size as needed
 
 //State of module collections
-int have_NetModules = 0;
-int have_HDD_modules = 0;
+static u8 have_NetModules = 0;
+static u8 have_HDD_modules = 0;
 //State of Uncheckable Modules (invalid header)
-int have_cdvd = 0;
-int have_usbd = 0;
-int have_usb_mass = 0;
-int have_ps2smap = 0;
-int have_ps2host = 0;
-int have_ps2ftpd = 0;
-int have_ps2kbd = 0;
-int have_hdl_info = 0;
+static u8 have_cdvd = 0;
+static u8 have_usbd = 0;
+static u8 have_usb_mass = 0;
+static u8 have_ps2smap = 0;
+static u8 have_ps2host = 0;
+static u8 have_ps2ftpd = 0;
+static u8 have_ps2kbd = 0;
+static u8 have_hdl_info = 0;
 //State of Checkable Modules (valid header)
-int have_urgent = 0;  //flags presence of urgently needed modules
-int have_sio2man = 0;
-int have_sior = 0;
-int have_mcman = 0;
-int have_mcserv = 0;
-int have_padman = 0;
-int have_fakehost = 0;
-int have_poweroff = 0;
-int have_ps2dev9 = 0;
-int have_ps2ip = 0;
-int have_ps2atad = 0;
-int have_ps2hdd = 0;
-int have_ps2fs = 0;
-int have_ps2netfs = 0;
-int have_smbman = 0;
-int have_vmc_fs = 0;
+static u8 have_poweroff = 0;
+static u8 have_ps2dev9 = 0;
+static u8 have_ps2ip = 0;
+static u8 have_ps2atad = 0;
+static u8 have_ps2hdd = 0;
+static u8 have_ps2fs = 0;
+static u8 have_ps2netfs = 0;
+static u8 have_smbman = 0;
+static u8 have_vmc_fs = 0;
 
 int menu_LK[15];  //holds RunElf index for each valid main menu entry
 
-int done_setupPowerOff = 0;
-int ps2kbd_opened = 0;
+static u8 done_setupPowerOff = 0;
+static u8 ps2kbd_opened = 0;
 
-int boot_argc;
-char *boot_argv[8];
-char boot_path[MAX_PATH];
+static int boot_argc;
+static char *boot_argv[8];
+static char boot_path[MAX_PATH];
 
 //Variables for SYSTEM.CNF processing
 int BootDiscType = 0;
@@ -906,10 +899,7 @@ static void loadBasicModules(void)
 
     SifExecModuleBuffer(&allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  //unlocks cdvd for reading on psx dvr
 
-    if (!have_sio2man) {
-        SifLoadModule("rom0:SIO2MAN", 0, NULL);
-        have_sio2man = 1;
-    }
+    SifLoadModule("rom0:SIO2MAN", 0, NULL);
 
 #ifdef SIO_DEBUG
     int id;
@@ -919,28 +909,16 @@ static void loadBasicModules(void)
 
     SIOR_Init(0x20);
 
-    if (!have_sior) {
-        id = SifExecModuleBuffer(&sior_irx, size_sior_irx, 0, NULL, &ret);
-        scr_printf("\t sior id=%d _start ret=%d\n", id, ret);
-        DPRINTF("sior id=%d _start ret=%d\n", id, ret);
-        have_sior = 1;
-    }
+    id = SifExecModuleBuffer(&sior_irx, size_sior_irx, 0, NULL, &ret);
+    scr_printf("\t sior id=%d _start ret=%d\n", id, ret);
+    DPRINTF("sior id=%d _start ret=%d\n", id, ret);
 #endif
 
-    if (!have_mcman) {
-        SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret);  //Home
-        //SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
-        have_mcman = 1;
-    }
-    if (!have_mcserv) {
-        SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  //Home
-        //SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
-        have_mcserv = 1;
-    }
-    if (!have_padman) {
-        SifLoadModule("rom0:PADMAN", 0, NULL);
-        have_padman = 1;
-    }
+    SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret);  //Home
+    //SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
+    SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  //Home
+    //SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
+    SifLoadModule("rom0:PADMAN", 0, NULL);
 }
 //------------------------------
 //endfunc loadBasicModules
@@ -2166,10 +2144,7 @@ int main(int argc, char *argv[])
     strcpy(boot_path, LaunchElfDir);
 
     if (!strncmp(LaunchElfDir, "host", 4)) {
-        if (have_fakehost)
-            boot = BOOT_DEVICE_HDD;
-        else
-            boot = BOOT_DEVICE_HOST;
+        boot = BOOT_DEVICE_HOST;
     }
 
     if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
