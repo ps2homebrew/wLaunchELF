@@ -1,8 +1,7 @@
--fix uLe to be working with FULL_IOMAN (so no need for yet antoher ps2sdk compiling)
 -set uLe to pass proper boot flags into elfs launched from hdd (I mean get rid of fakehost)
 -bind button combination for interrupting HDD_manager (cause with 200 partition it takes 7 minutes and it will be useful to stop hdd manager at some point)
 -rewrite ftp part to be more stable
--get rid of $PS2SDKSRC (VMC and SMS stuff)
 -make SMB (samba share) working 
 -fix a bug that there is not possible to set up elf launch path into hdd0:/ paths. I mean you can load config files from that paths but not launching elfs. You can launch elf only if you directly select elf from file manager. BTW pfs path works ))
-- test ps3 usbd.irx compatibility
+-cleanup code.
+-check if (and why) chstat() was commented to not work with PFS.
