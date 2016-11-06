@@ -122,7 +122,7 @@ clean:
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean
-	rm -f *.o *.a *.s *.ELF
+	rm -f *.s $(EE_OBJS) $(EE_BIN) $(EE_BIN_PKD)
 
 rebuild: clean all
 

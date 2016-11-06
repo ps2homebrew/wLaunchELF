@@ -5,3 +5,4 @@
 -fix a bug that there is not possible to set up elf launch path into hdd0:/ paths. I mean you can load config files from that paths but not launching elfs. You can launch elf only if you directly select elf from file manager. BTW pfs path works ))
 -cleanup code.
 -check if (and why) chstat() was commented to not work with PFS.
+-add psone mc cards access

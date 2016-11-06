@@ -47,7 +47,7 @@ int _start()
     memcpy(buf, Header, 32);
     memcpy(buf + 48, psxver, 11);
 
-    if ((file = open(buf + 48, O_RDONLY)) <= 0) {
+    if ((file = open((char *)buf + 48, O_RDONLY)) <= 0) {
         buf[16] = 0xC0;
         buf[17] = 0xF9;
 

@@ -37,7 +37,7 @@ endif
 all: $(EE_BIN)
 
 clean:
-	rm -f *.o *.a *.s *.elf
+	rm -f -r $(EE_OBJS) $(EE_BIN)
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
