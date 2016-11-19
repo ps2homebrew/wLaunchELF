@@ -5,3 +5,5 @@
 *.o
 *.swp
 *.tmp
+*.bin.c
+*.irx

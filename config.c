@@ -310,7 +310,7 @@ unsigned char *preloadCNF(char *path)
     CNF_size = genLseek(fd, 0, SEEK_END);
     printf("CNF_size=%d\n", CNF_size);
     genLseek(fd, 0, SEEK_SET);
-    RAM_p = (char *)malloc(CNF_size);
+    RAM_p = (unsigned char *)malloc(CNF_size);
     if (RAM_p == NULL) {
         genClose(fd);
         goto failed_load;
@@ -325,7 +325,7 @@ unsigned char *preloadCNF(char *path)
 //---------------------------------------------------------------------------
 //scanSkinCNF will check for most cosmetic variables of a CNF
 //------------------------------
-int scanSkinCNF(unsigned char *name, unsigned char *value)
+int scanSkinCNF(char *name, char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
         setting->color[0] = hextoul(value);
@@ -384,7 +384,7 @@ int loadSkinCNF(char *path)
         return -1;
     CNF_p = RAM_p;
     for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
-        dummy = scanSkinCNF(name, value);
+        dummy = scanSkinCNF((char *)name, (char *)value);
     free(RAM_p);
     updateScreenMode(0);
     if (setting->skin)
@@ -783,19 +783,19 @@ int loadConfig(char *mainMsg, char *CNF)
 
     CNF_version = 0;                                                       // The CNF version is still unidentified
     for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++) {  // A variable was found, now we dispose of its value.
-        if (!strcmp(name, "CNF_version")) {
-            CNF_version = atoi(value);
+        if (!strcmp((char *)name, "CNF_version")) {
+            CNF_version = atoi((char *)value);
             continue;
         } else if (CNF_version == 0)
             goto failed_load;  // Refuse unidentified CNF
 
-        if (scanSkinCNF(name, value))
+        if (scanSkinCNF((char *)name, (char *)value))
             continue;
 
         for (i = 0; i < 17; i++) {
             sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
-            if (!strncmp(name, tsts, len)) {
-                strcpy(setting->LK_Path[i], value);
+            if (!strncmp((char *)name, tsts, len)) {
+                strcpy(setting->LK_Path[i], (char *)value);
                 setting->LK_Flag[i] = 1;
                 break;
             }
@@ -805,114 +805,114 @@ int loadConfig(char *mainMsg, char *CNF)
         //----------
         //In the next group, the Misc device must be defined before its subprograms
         //----------
-        else if (!strcmp(name, "Misc"))
+        else if (!strcmp((char *)name, "Misc"))
             sprintf(setting->Misc, "%s/", value);
-        else if (!strcmp(name, "Misc_PS2Disc"))
+        else if (!strcmp((char *)name, "Misc_PS2Disc"))
             sprintf(setting->Misc_PS2Disc, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_FileBrowser"))
+        else if (!strcmp((char *)name, "Misc_FileBrowser"))
             sprintf(setting->Misc_FileBrowser, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_PS2Browser"))
+        else if (!strcmp((char *)name, "Misc_PS2Browser"))
             sprintf(setting->Misc_PS2Browser, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_PS2Net"))
+        else if (!strcmp((char *)name, "Misc_PS2Net"))
             sprintf(setting->Misc_PS2Net, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_PS2PowerOff"))
+        else if (!strcmp((char *)name, "Misc_PS2PowerOff"))
             sprintf(setting->Misc_PS2PowerOff, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_HddManager"))
+        else if (!strcmp((char *)name, "Misc_HddManager"))
             sprintf(setting->Misc_HddManager, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_TextEditor"))
+        else if (!strcmp((char *)name, "Misc_TextEditor"))
             sprintf(setting->Misc_TextEditor, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_JpgViewer"))
+        else if (!strcmp((char *)name, "Misc_JpgViewer"))
             sprintf(setting->Misc_JpgViewer, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Configure"))
+        else if (!strcmp((char *)name, "Misc_Configure"))
             sprintf(setting->Misc_Configure, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Load_CNFprev"))
+        else if (!strcmp((char *)name, "Misc_Load_CNFprev"))
             sprintf(setting->Misc_Load_CNFprev, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Load_CNFnext"))
+        else if (!strcmp((char *)name, "Misc_Load_CNFnext"))
             sprintf(setting->Misc_Load_CNFnext, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Set_CNF_Path"))
+        else if (!strcmp((char *)name, "Misc_Set_CNF_Path"))
             sprintf(setting->Misc_Set_CNF_Path, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Load_CNF"))
+        else if (!strcmp((char *)name, "Misc_Load_CNF"))
             sprintf(setting->Misc_Load_CNF, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_ShowFont"))
+        else if (!strcmp((char *)name, "Misc_ShowFont"))
             sprintf(setting->Misc_ShowFont, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_Debug_Info"))
+        else if (!strcmp((char *)name, "Misc_Debug_Info"))
             sprintf(setting->Misc_Debug_Info, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_About_uLE"))
+        else if (!strcmp((char *)name, "Misc_About_uLE"))
             sprintf(setting->Misc_About_uLE, "%s%s", setting->Misc, value);
-        else if (!strcmp(name, "Misc_OSDSYS"))
+        else if (!strcmp((char *)name, "Misc_OSDSYS"))
             sprintf(setting->Misc_OSDSYS, "%s%s", setting->Misc, value);
         //----------
-        else if (!strcmp(name, "LK_auto_Timer"))
+        else if (!strcmp((char *)name, "LK_auto_Timer"))
             setting->timeout = atoi(value);
-        else if (!strcmp(name, "Menu_Hide_Paths"))
+        else if (!strcmp((char *)name, "Menu_Hide_Paths"))
             setting->Hide_Paths = atoi(value);
         //---------- NB: color settings moved to scanSkinCNF
-        else if (!strcmp(name, "Init_CDVD_Check"))
+        else if (!strcmp((char *)name, "Init_CDVD_Check"))
             setting->discControl = atoi(value);
-        else if (!strcmp(name, "Init_Reset_IOP"))
+        else if (!strcmp((char *)name, "Init_Reset_IOP"))
             setting->resetIOP = atoi(value);
-        else if (!strcmp(name, "Menu_Pages"))
+        else if (!strcmp((char *)name, "Menu_Pages"))
             setting->numCNF = atoi(value);
-        else if (!strcmp(name, "GUI_Swap_Keys"))
+        else if (!strcmp((char *)name, "GUI_Swap_Keys"))
             setting->swapKeys = atoi(value);
-        else if (!strcmp(name, "USBD_FILE"))
+        else if (!strcmp((char *)name, "USBD_FILE"))
             strcpy(setting->usbd_file, value);
-        else if (!strcmp(name, "NET_HOSTwrite"))
+        else if (!strcmp((char *)name, "NET_HOSTwrite"))
             setting->HOSTwrite = atoi(value);
-        else if (!strcmp(name, "Menu_Title")) {
-            strncpy(setting->Menu_Title, value, MAX_MENU_TITLE);
+        else if (!strcmp((char *)name, "Menu_Title")) {
+            strncpy(setting->Menu_Title, (char *)value, MAX_MENU_TITLE);
             setting->Menu_Title[MAX_MENU_TITLE] = '\0';
-        } else if (!strcmp(name, "Init_Delay"))
-            setting->Init_Delay = atoi(value);
-        else if (!strcmp(name, "USBKBD_USED"))
-            setting->usbkbd_used = atoi(value);
-        else if (!strcmp(name, "USBKBD_FILE"))
-            strcpy(setting->usbkbd_file, value);
-        else if (!strcmp(name, "KBDMAP_FILE"))
-            strcpy(setting->kbdmap_file, value);
-        else if (!strcmp(name, "Menu_Show_Titles"))
-            setting->Show_Titles = atoi(value);
-        else if (!strcmp(name, "PathPad_Lock"))
-            setting->PathPad_Lock = atoi(value);
-        else if (!strcmp(name, "CNF_Path"))
-            strcpy(setting->CNF_Path, value);
-        else if (!strcmp(name, "USBMASS_FILE"))
-            strcpy(setting->usbmass_file, value);
-        else if (!strcmp(name, "LANG_FILE"))
-            strcpy(setting->lang_file, value);
-        else if (!strcmp(name, "FONT_FILE"))
-            strcpy(setting->font_file, value);
+        } else if (!strcmp((char *)name, "Init_Delay"))
+            setting->Init_Delay = atoi((char *)value);
+        else if (!strcmp((char *)name, "USBKBD_USED"))
+            setting->usbkbd_used = atoi((char *)value);
+        else if (!strcmp((char *)name, "USBKBD_FILE"))
+            strcpy(setting->usbkbd_file, (char *)value);
+        else if (!strcmp((char *)name, "KBDMAP_FILE"))
+            strcpy(setting->kbdmap_file, (char *)value);
+        else if (!strcmp((char *)name, "Menu_Show_Titles"))
+            setting->Show_Titles = atoi((char *)value);
+        else if (!strcmp((char *)name, "PathPad_Lock"))
+            setting->PathPad_Lock = atoi((char *)value);
+        else if (!strcmp((char *)name, "CNF_Path"))
+            strcpy(setting->CNF_Path, (char *)value);
+        else if (!strcmp((char *)name, "USBMASS_FILE"))
+            strcpy(setting->usbmass_file, (char *)value);
+        else if (!strcmp((char *)name, "LANG_FILE"))
+            strcpy(setting->lang_file, (char *)value);
+        else if (!strcmp((char *)name, "FONT_FILE"))
+            strcpy(setting->font_file, (char *)value);
         //----------
-        else if (!strcmp(name, "JpgView_Timer"))
-            setting->JpgView_Timer = atoi(value);
-        else if (!strcmp(name, "JpgView_Trans"))
-            setting->JpgView_Trans = atoi(value);
-        else if (!strcmp(name, "JpgView_Full"))
-            setting->JpgView_Full = atoi(value);
+        else if (!strcmp((char *)name, "JpgView_Timer"))
+            setting->JpgView_Timer = atoi((char *)value);
+        else if (!strcmp((char *)name, "JpgView_Trans"))
+            setting->JpgView_Trans = atoi((char *)value);
+        else if (!strcmp((char *)name, "JpgView_Full"))
+            setting->JpgView_Full = atoi((char *)value);
         //----------
-        else if (!strcmp(name, "PSU_HugeNames"))
-            setting->PSU_HugeNames = atoi(value);
-        else if (!strcmp(name, "PSU_DateNames"))
-            setting->PSU_DateNames = atoi(value);
-        else if (!strcmp(name, "PSU_NoOverwrite"))
-            setting->PSU_NoOverwrite = atoi(value);
-        else if (!strcmp(name, "FB_NoIcons"))
-            setting->FB_NoIcons = atoi(value);
+        else if (!strcmp((char *)name, "PSU_HugeNames"))
+            setting->PSU_HugeNames = atoi((char *)value);
+        else if (!strcmp((char *)name, "PSU_DateNames"))
+            setting->PSU_DateNames = atoi((char *)value);
+        else if (!strcmp((char *)name, "PSU_NoOverwrite"))
+            setting->PSU_NoOverwrite = atoi((char *)value);
+        else if (!strcmp((char *)name, "FB_NoIcons"))
+            setting->FB_NoIcons = atoi((char *)value);
         //----------
         else {
             for (i = 0; i < 16; i++) {
                 sprintf(tsts, "LK_%s_Title", LK_ID[i]);
-                if (!strcmp(name, tsts)) {
-                    strncpy(setting->LK_Title[i], value, MAX_ELF_TITLE - 1);
+                if (!strcmp((char *)name, tsts)) {
+                    strncpy(setting->LK_Title[i], (char *)value, MAX_ELF_TITLE - 1);
                     break;
                 }
             }
             if (i < 16)
                 continue;
-            else if (!strncmp(name, "PathPad[", 8)) {
+            else if (!strncmp((char *)name, "PathPad[", 8)) {
                 i = atoi(name + 8);
                 if (i < 30) {
-                    strncpy(PathPad[i], value, MAX_PATH - 1);
+                    strncpy(PathPad[i], (char *)value, MAX_PATH - 1);
                     PathPad[i][MAX_PATH - 1] = '\0';
                 }
             }
@@ -1062,44 +1062,44 @@ void Config_Skin(void)
             x = Menu_start_x;
             y = Menu_start_y;
 
-            printXY(LNG(SKIN_SETTINGS), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(SKIN_SETTINGS), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->skin) == 0)
                 sprintf(c, "  %s: %s", LNG(Skin_Path), LNG(NULL));
             else
                 sprintf(c, "  %s: %s", LNG(Skin_Path), setting->skin);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(Apply_New_Skin));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Brightness), Brightness);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->GUI_skin) == 0)
                 sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), LNG(NULL));
             else
                 sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), setting->GUI_skin);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(Apply_GUI_Skin));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Show_Menu)
                 sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (current_preview == PREVIEW_PIC)
@@ -1107,7 +1107,7 @@ void Config_Skin(void)
             else
                 sprintf(c, "%s ", LNG(GUI));
             strcat(c, LNG(Skin_Preview));
-            printXY(c, SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 4) + 78 - FONT_HEIGHT, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 4) + 78 - FONT_HEIGHT, setting->color[3], TRUE, 0);
 
             //Cursor positioning section
             y = Menu_start_y + s * (FONT_HEIGHT);
@@ -1321,7 +1321,7 @@ void Config_Screen(void)
             for (i = 0; i < 8; i++) {
                 y = Menu_start_y;
                 sprintf(c, "%s%d", LNG(Color), i + 1);
-                printXY(c, x + (space * (i + 1)) - (printXY(c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y,
+                printXY((const unsigned char *)c, x + (space * (i + 1)) - (printXY((const unsigned char *)c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y,
                         setting->color[3], TRUE, space - FONT_WIDTH / 2);
                 if (i == 0)
                     sprintf(c, "%s", LNG(Backgr));
@@ -1333,23 +1333,23 @@ void Config_Screen(void)
                     sprintf(c, "%s", LNG(Normal));
                 else if (i >= 4)
                     sprintf(c, "%s%d", LNG(Graph), i - 3);
-                printXY(c, x + (space * (i + 1)) - (printXY(c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y + FONT_HEIGHT,
+                printXY((const unsigned char *)c, x + (space * (i + 1)) - (printXY((const unsigned char *)c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y + FONT_HEIGHT,
                         setting->color[3], TRUE, space - FONT_WIDTH / 2);
                 y += FONT_HEIGHT * 2;
-                printXY("R:", x, y, setting->color[3], TRUE, 0);
+                printXY((const unsigned char *)"R:", x, y, setting->color[3], TRUE, 0);
                 sprintf(c, "%02lX", rgb[i][0]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
-                printXY("G:", x, y, setting->color[3], TRUE, 0);
+                printXY((const unsigned char *)"G:", x, y, setting->color[3], TRUE, 0);
                 sprintf(c, "%02lX", rgb[i][1]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
-                printXY("B:", x, y, setting->color[3], TRUE, 0);
+                printXY((const unsigned char *)"B:", x, y, setting->color[3], TRUE, 0);
                 sprintf(c, "%02lX", rgb[i][2]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
                 sprintf(c, "ÿ4");
-                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[i], TRUE, 0);
+                printXY((const unsigned char *)c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[i], TRUE, 0);
             }  //ends loop for colour RGB values
             y += FONT_HEIGHT * 2;
             sprintf(c, "  %s: ", LNG(TV_mode));
@@ -1361,15 +1361,15 @@ void Config_Screen(void)
                 strcat(c, "VGA");
             else
                 strcat(c, "AUTO");
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s: %d", LNG(Screen_X_offset), setting->screen_x);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s: %d", LNG(Screen_Y_offset), setting->screen_y);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1377,18 +1377,18 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Interlace), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Interlace), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s...", LNG(Skin_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Load_Skin_CNF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Save_Skin_CNF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1396,7 +1396,7 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Menu_Title), LNG(NULL));
             else
                 sprintf(c, "  %s: %s", LNG(Menu_Title), setting->Menu_Title);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1404,22 +1404,22 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Menu_Frame), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Menu_Frame), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Popup_Opaque)
                 sprintf(c, "  %s: %s", LNG(Popups_Opaque), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Popups_Opaque), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Use_Default_Screen_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -1637,101 +1637,101 @@ void Config_Startup(void)
                 sprintf(c, "  %s: %s", LNG(Reset_IOP), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Reset_IOP), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Number_of_CNFs), setting->numCNF);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->swapKeys)
                 sprintf(c, "  %s: ÿ1:%s ÿ0:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
             else
                 sprintf(c, "  %s: ÿ0:%s ÿ1:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbd_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USBD_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USBD_IRX), setting->usbd_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Initial_Delay), setting->Init_Delay);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Default_Timeout), setting->timeout);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->usbkbd_used)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Used), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Used), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbkbd_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_IRX), setting->usbkbd_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->kbdmap_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Map), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Map), setting->kbdmap_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->CNF_Path) == 0)
                 sprintf(c, "  %s: %s", LNG(CNF_Path_override), LNG(NONE));
             else
                 sprintf(c, "  %s: %s", LNG(CNF_Path_override), setting->CNF_Path);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbmass_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Mass_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Mass_IRX), setting->usbmass_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->lang_file) == 0)
                 sprintf(c, "  %s: %s", LNG(Language_File), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(Language_File), setting->lang_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->font_file) == 0)
                 sprintf(c, "  %s: %s", LNG(Font_File), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(Font_File), setting->font_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->LK_Path[15]) == 0)
                 sprintf(c, "  ESR elf: %s", LNG(DEFAULT));
             else
                 sprintf(c, "  ESR elf: %s", setting->LK_Path[15]);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->LK_Path[16]) == 0)
                 sprintf(c, "  OSDSYS kelf: %s", LNG(DEFAULT));
             else
                 sprintf(c, "  OSDSYS kelf: %s", setting->LK_Path[16]);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -2002,7 +2002,7 @@ void Config_Network(void)
             x = Menu_start_x;
             y = Menu_start_y;
 
-            printXY(LNG(NETWORK_SETTINGS), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(NETWORK_SETTINGS), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
@@ -2012,21 +2012,21 @@ void Config_Network(void)
                           strlen(LNG(Netmask)) + 5;
             len = (len > strlen(LNG(Gateway)) + 5) ? len : strlen(LNG(Gateway)) + 5;
             sprintf(c, "%s:", LNG(IP_Address));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.ip[0], ipdata.ip[1], ipdata.ip[2], ipdata.ip[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "%s:", LNG(Netmask));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.nm[0], ipdata.nm[1], ipdata.nm[2], ipdata.nm[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "%s:", LNG(Gateway));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.gw[0], ipdata.gw[1], ipdata.gw[2], ipdata.gw[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
@@ -2034,12 +2034,12 @@ void Config_Network(void)
             if (uLE_related(path, "uLE:/IPCONFIG.DAT") != 1)
                 strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
             sprintf(c, "  %s \"%s\"", LNG(Save_to), path);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -2198,7 +2198,7 @@ void config(char *mainMsg, char *CNF)
 
             x = Menu_start_x;
             y = Menu_start_y;
-            printXY(LNG(Button_Settings), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(Button_Settings), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             for (i = 0; i < 12; i++) {
                 switch (i) {
@@ -2240,7 +2240,7 @@ void config(char *mainMsg, char *CNF)
                         break;
                 }
                 strcat(c, setting->LK_Path[i]);
-                printXY(c, x, y, setting->color[3], TRUE, 0);
+                printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
             }
 
@@ -2250,38 +2250,38 @@ void config(char *mainMsg, char *CNF)
                 sprintf(c, "  %s: %s", LNG(Show_launch_titles), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Show_launch_titles), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->discControl)
                 sprintf(c, "  %s: %s", LNG(Disc_control), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Disc_control), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Hide_Paths)
                 sprintf(c, "  %s: %s", LNG(Hide_full_ELF_paths), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Hide_full_ELF_paths), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s...", LNG(Screen_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Startup_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Network_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(OK));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Cancel));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
 
             //Cursor positioning section
             y = Menu_start_y + (s + 1) * FONT_HEIGHT;

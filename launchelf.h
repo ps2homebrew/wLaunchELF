@@ -330,7 +330,7 @@ void JpgViewer(void);
 /* lang.c */
 typedef struct Language
 {
-    u8 *String;
+    char *String;
 } Language;
 
 enum {

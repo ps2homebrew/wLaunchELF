@@ -50,7 +50,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
     memcpy(mcbuffer, &g_Vmc_Image[f->unit].header, sizeof(struct superblock));
 
     //  Write header page
-    writePage(g_Vmc_Image[f->unit].fd, mcbuffer, Page_Num);
+    writePage(g_Vmc_Image[f->unit].fd, (unsigned char *)mcbuffer, Page_Num);
 
     Page_Num++;
 
@@ -94,7 +94,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
                     }
                 }
 
-                writePage(g_Vmc_Image[f->unit].fd, mcbuffer2, Page_Num2);
+                writePage(g_Vmc_Image[f->unit].fd, (unsigned char *)mcbuffer2, Page_Num2);
 
                 Page_Num2++;
                 memset(mcbuffer2, g_Vmc_Image[f->unit].erase_byte, g_Vmc_Image[f->unit].header.page_size);
@@ -104,10 +104,10 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
                     ((unsigned int *)mcbuffer2)[y] = FREE_CLUSTER;
                 }
 
-                writePage(g_Vmc_Image[f->unit].fd, mcbuffer2, Page_Num2);
+                writePage(g_Vmc_Image[f->unit].fd, (unsigned char *)mcbuffer2, Page_Num2);
             }
 
-            writePage(g_Vmc_Image[f->unit].fd, mcbuffer, Page_Num);
+            writePage(g_Vmc_Image[f->unit].fd, (unsigned char *)mcbuffer, Page_Num);
         }
     }
 
@@ -214,7 +214,7 @@ int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
             memset(&dirent, 0, sizeof(dirent));
 
             // fill direntry file information
-            strcpy(dirent.name, filename);
+            strcpy((char *)dirent.name, filename);
             dirent.length = 0;
             dirent.cluster = EOF_CLUSTER;
             dirent.mode = DF_EXISTS | DF_0400 | DF_FILE | DF_READ | DF_WRITE | DF_EXECUTE;  //  0x8417
@@ -441,7 +441,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
     while (data_read < size) {
 
         //  Read in the file_cluster
-        readCluster(fprivdata->gendata.fd, cluster_data, fprivdata->file_cluster + fprivdata->gendata.first_allocatable);
+        readCluster(fprivdata->gendata.fd, (unsigned char *)cluster_data, fprivdata->file_cluster + fprivdata->gendata.first_allocatable);
 
         //  We have 1024 bytes in cluster_data now, but we already read in cluster_offset bytes
         //  So we now need to copy whats left into the buffer that was passed to us
@@ -996,7 +996,7 @@ int Vmc_Mkdir(iop_file_t *f, const char *path1, int mode)
 
         //  fill new direntry
         new_dirent.mode = DF_EXISTS | DF_0400 | DF_DIRECTORY | DF_READ | DF_WRITE | DF_EXECUTE;  //  0x8427
-        strcpy(new_dirent.name, newdir);
+        strcpy((char *)new_dirent.name, newdir);
         getPs2Time(&new_dirent.created);
         getPs2Time(&new_dirent.modified);
 
@@ -1615,7 +1615,7 @@ int Vmc_Rename(iop_file_t *f, const char *path, const char *new_name)
     }
 
     //  Change the name of the object
-    strcpy(dirent.name, new_name);
+    strcpy((char *)dirent.name, new_name);
 
     // Update timestamp
     getPs2Time(&dirent.modified);

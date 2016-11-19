@@ -439,20 +439,20 @@ void setScrTmp(const char *msg0, const char *msg1)
 
     x = SCREEN_MARGIN;
     y = Menu_title_y;
-    printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
+    printXY((const unsigned char *)setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
     sprintf(temp_txt, " ÿ4 LaunchELF %s ÿ4", ULE_VERSION);
-    printXY(temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
+    printXY((const unsigned char *)temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
             setting->color[1], TRUE, 0);
 
     strncpy(LastMessage, msg0, MAX_TEXT_LINE);
     LastMessage[MAX_TEXT_LINE] = '\0';
-    printXY(msg0, x, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY((const unsigned char *)msg0, x, Menu_message_y, setting->color[2], TRUE, 0);
 
     if (setting->Menu_Frame)
         drawFrame(SCREEN_MARGIN, Frame_start_y,
                   SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
 
-    printXY(msg1, x, Menu_tooltip_y, setting->color[2], TRUE, 0);
+    printXY((const unsigned char *)msg1, x, Menu_tooltip_y, setting->color[2], TRUE, 0);
 }
 //--------------------------------------------------------------
 void drawSprite(u64 color, int x1, int y1, int x2, int y2)
@@ -506,7 +506,7 @@ void drawMsg(const char *msg)
     LastMessage[MAX_TEXT_LINE] = '\0';
     drawSprite(setting->color[0], 0, Menu_message_y - 1,
                SCREEN_WIDTH, Frame_start_y);
-    printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY((const unsigned char *)msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
     drawScr();
 }
 //--------------------------------------------------------------
@@ -514,7 +514,7 @@ void drawLastMsg(void)
 {
     drawSprite(setting->color[0], 0, Menu_message_y - 1,
                SCREEN_WIDTH, Frame_start_y);
-    printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY((const unsigned char *)LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
     drawScr();
 }
 //--------------------------------------------------------------
@@ -573,7 +573,7 @@ void updateScreenMode(int adapt_XY)
     int New_TV_mode = setting->TV_mode;
 
     if ((New_TV_mode != TV_mode_NTSC) && (New_TV_mode != TV_mode_PAL) && (New_TV_mode != TV_mode_VGA)) {  //If no forced request
-        New_TV_mode = uLE_InitializeRegion();                                                                 //Let console region decide TV_mode
+        New_TV_mode = uLE_InitializeRegion();                                                             //Let console region decide TV_mode
     }
 
     if (New_TV_mode != TV_mode) {
@@ -778,7 +778,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                         if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
                             if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
                                 if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
-                                    (void *)TexPicture.Mem = malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
+                                    TexPicture.Mem = (u32 *)malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
                                     RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
                                     W = PicW;
                                     PicW = PicH;
@@ -1052,11 +1052,11 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
     int text_spacing = 8;
 
     if (space > 0) {
-        while ((strlen(s) * text_spacing) > space)
+        while ((strlen((char *)s) * text_spacing) > space)
             if (--text_spacing <= 5)
                 break;
     } else {
-        while ((strlen(s) * text_spacing) > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * 2)
+        while ((strlen((char *)s) * text_spacing) > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * 2)
             if (--text_spacing <= 5)
                 break;
     }
