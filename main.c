@@ -10,60 +10,60 @@
 //dlanor: I'm correcting all these erroneous 'u8 *name' declarations
 //dlanor: They are not pointers at all, but pure block addresses
 //dlanor: Thus they should be declared as 'void name'
-extern void iomanx_irx;
-extern int size_iomanx_irx;
-extern void filexio_irx;
-extern int size_filexio_irx;
-extern void ps2dev9_irx;
-extern int size_ps2dev9_irx;
-extern void ps2ip_irx;
-extern int size_ps2ip_irx;
-extern void ps2smap_irx;
-extern int size_ps2smap_irx;
-extern void smsutils_irx;
-extern int size_smsutils_irx;
-extern void ps2host_irx;
-extern int size_ps2host_irx;
+extern unsigned char iomanx_irx;
+extern unsigned int size_iomanx_irx;
+extern unsigned char filexio_irx;
+extern unsigned int size_filexio_irx;
+extern unsigned char ps2dev9_irx;
+extern unsigned int size_ps2dev9_irx;
+extern unsigned char ps2ip_irx;
+extern unsigned int size_ps2ip_irx;
+extern unsigned char ps2smap_irx;
+extern unsigned int size_ps2smap_irx;
+extern unsigned char smsutils_irx;
+extern unsigned int size_smsutils_irx;
+extern unsigned char ps2host_irx;
+extern unsigned int size_ps2host_irx;
 #ifdef SMB
-extern void smbman_irx;
-extern int size_smbman_irx;
+extern unsigned char smbman_irx;
+extern unsigned int size_smbman_irx;
 #endif
-extern void vmc_fs_irx;
-extern int size_vmc_fs_irx;
-extern void ps2ftpd_irx;
-extern int size_ps2ftpd_irx;
-extern void ps2atad_irx;
-extern int size_ps2atad_irx;
-extern void ps2hdd_irx;
-extern int size_ps2hdd_irx;
-extern void ps2fs_irx;
-extern int size_ps2fs_irx;
-extern void poweroff_irx;
-extern int size_poweroff_irx;
-extern void loader_elf;
-extern int size_loader_elf;
-extern void ps2netfs_irx;
-extern int size_ps2netfs_irx;
-extern void iopmod_irx;
-extern int size_iopmod_irx;
-extern void usbd_irx;
-extern int size_usbd_irx;
-extern void usb_mass_irx;
-extern int size_usb_mass_irx;
-extern void cdvd_irx;
-extern int size_cdvd_irx;
-extern void ps2kbd_irx;
-extern int size_ps2kbd_irx;
-extern void hdl_info_irx;
-extern int size_hdl_info_irx;
-extern void mcman_irx;
-extern int size_mcman_irx;
-extern void mcserv_irx;
-extern int size_mcserv_irx;
-extern void sior_irx;
-extern int size_sior_irx;
-extern void allowdvdv_irx;
-extern int size_allowdvdv_irx;
+extern unsigned char vmc_fs_irx;
+extern unsigned int size_vmc_fs_irx;
+extern unsigned char ps2ftpd_irx;
+extern unsigned int size_ps2ftpd_irx;
+extern unsigned char ps2atad_irx;
+extern unsigned int size_ps2atad_irx;
+extern unsigned char ps2hdd_irx;
+extern unsigned int size_ps2hdd_irx;
+extern unsigned char ps2fs_irx;
+extern unsigned int size_ps2fs_irx;
+extern unsigned char poweroff_irx;
+extern unsigned int size_poweroff_irx;
+extern unsigned char loader_elf;
+extern unsigned int size_loader_elf;
+extern unsigned char ps2netfs_irx;
+extern unsigned int size_ps2netfs_irx;
+extern unsigned char iopmod_irx;
+extern unsigned int size_iopmod_irx;
+extern unsigned char usbd_irx;
+extern unsigned int size_usbd_irx;
+extern unsigned char usb_mass_irx;
+extern unsigned int size_usb_mass_irx;
+extern unsigned char cdvd_irx;
+extern unsigned int size_cdvd_irx;
+extern unsigned char ps2kbd_irx;
+extern unsigned int size_ps2kbd_irx;
+extern unsigned char hdl_info_irx;
+extern unsigned int size_hdl_info_irx;
+extern unsigned char mcman_irx;
+extern unsigned int size_mcman_irx;
+extern unsigned char mcserv_irx;
+extern unsigned int size_mcserv_irx;
+extern unsigned char sior_irx;
+extern unsigned int size_sior_irx;
+extern unsigned char allowdvdv_irx;
+extern unsigned int size_allowdvdv_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -219,7 +219,7 @@ static void poweroffHandler(int i);
 static void setupPowerOff(void);
 static void loadNetModules(void);
 static void startKbd(void);
-static int scanSystemCnf(unsigned char *name, unsigned char *value);
+static int scanSystemCnf(char *name, char *value);
 static int readSystemCnf(void);
 static void ShowFont(void);
 static void triggerPowerOff(void);
@@ -246,7 +246,7 @@ static int PrintRow(int row_f, char *text_p)
     if (row_f >= 0)
         row = row_f;
     y = (Menu_start_y + FONT_HEIGHT * row++);
-    printXY(text_p, x, y, setting->color[3], TRUE, 0);
+    printXY((const unsigned char *)text_p, x, y, setting->color[3], TRUE, 0);
     return row;
 }
 //------------------------------
@@ -263,7 +263,7 @@ static int PrintPos(int row_f, int column, char *text_p)
     if (row_f >= 0)
         row = row_f;
     y = (Menu_start_y + FONT_HEIGHT * row++);
-    printXY(text_p, x, y, setting->color[3], TRUE, 0);
+    printXY((const unsigned char *)text_p, x, y, setting->color[3], TRUE, 0);
     return row;
 }
 //------------------------------
@@ -406,7 +406,7 @@ static int drawMainScreen(void)
             sprintf(c, "%s: %s", LNG(TIMEOUT), LNG(Halted));
     }
     if (c[0]) {
-        printXY(c, x, y, setting->color[3], TRUE, 0);
+        printXY((const unsigned char *)c, x, y, setting->color[3], TRUE, 0);
         y += FONT_HEIGHT * 2;
     }
     for (i = 0; i < 15; i++) {
@@ -484,29 +484,29 @@ static int drawMainScreen(void)
                           strlen(LNG(RIGHT)) + 2;
             if (i == 13) {  // LEFT
                 if (strlen(LNG(RIGHT)) + 2 > strlen(LNG(LEFT)) + 2)
-                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
-                                        ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH :
-                                        (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
+                    printXY((const unsigned char *)c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
+                                                               ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH :
+                                                               (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
                 else
-                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
-                                        0 :
-                                        (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
+                    printXY((const unsigned char *)c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
+                                                               0 :
+                                                               (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
             } else if (i == 14) {  // RIGHT
                 if (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2)
-                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
-                                        ((strlen(LNG(LEFT)) + 2) - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH :
-                                        (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
+                    printXY((const unsigned char *)c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
+                                                               ((strlen(LNG(LEFT)) + 2) - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH :
+                                                               (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
                 else
-                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
-                                        0 :
-                                        (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
+                    printXY((const unsigned char *)c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
+                                                               0 :
+                                                               (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
             } else
-                printXY(c, x + (len > 9 ? (len - 9) * FONT_WIDTH : 0), y, color, TRUE, 0);
-            printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH), y, color, TRUE, 0);
+                printXY((const unsigned char *)c, x + (len > 9 ? (len - 9) * FONT_WIDTH : 0), y, color, TRUE, 0);
+            printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH), y, color, TRUE, 0);
             y += FONT_HEIGHT;
         }  //ends clause for defined LK_Path[i] valid for menu
     }      //ends for
@@ -553,21 +553,21 @@ static int drawMainScreen2(int TV_mode)
     }
 
     if (TV_mode == TV_mode_PAL) {
-        printXY(c, x + 448, y + FONT_HEIGHT + 6, setting->color[3], TRUE, 0);
+        printXY((const unsigned char *)c, x + 448, y + FONT_HEIGHT + 6, setting->color[3], TRUE, 0);
         y += FONT_HEIGHT + 5;
         yo_first = 5;
         yo_step = FONT_HEIGHT * 2;
         yo_config = -92;
         xo_config = 370;
     } else if (TV_mode == TV_mode_NTSC) {
-        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
+        printXY((const unsigned char *)c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
         y += FONT_HEIGHT - 3;
         yo_first = 3;
         yo_step = FONT_HEIGHT * 2 - 4;
         yo_config = -80;
         xo_config = 360;
     } else {  // TV_mode == TV_mode_VGA
-        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
+        printXY((const unsigned char *)c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
         y += FONT_HEIGHT - 3;
         yo_first = 3;
         yo_step = FONT_HEIGHT * 2 - 4;
@@ -602,15 +602,15 @@ static int drawMainScreen2(int TV_mode)
                           strlen(LNG(LEFT)) + 2 :
                           strlen(LNG(RIGHT)) + 2;
             if (i == 0)
-                printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 20, y, color, TRUE, 0);
+                printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 20, y, color, TRUE, 0);
             else if (i == 12)
-                printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
+                printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
             else if (i == 13)
-                printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
+                printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
             else if (i == 14)
-                printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
+                printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
             else
-                printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 10, y, color, TRUE, 0);
+                printXY((const unsigned char *)f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 10, y, color, TRUE, 0);
         }  //ends clause for defined LK_Path[i] valid for menu
         y += yo_step;
         if (i == 0)
@@ -642,9 +642,9 @@ static void delay(int count)
 //---------------------------------------------------------------------------
 static void initsbv_patches(void)
 {
-   dbgprintf("Init MrBrown sbv_patches\n");
-   sbv_patch_enable_lmb();
-   sbv_patch_disable_prefix_check();
+    dbgprintf("Init MrBrown sbv_patches\n");
+    sbv_patch_enable_lmb();
+    sbv_patch_disable_prefix_check();
 }
 //------------------------------
 //endfunc initsbv_patches
@@ -1249,7 +1249,7 @@ static void startKbd(void)
 //---------------------------------------------------------------------------
 //scanSystemCnf will check for a standard variable of a SYSTEM.CNF file
 //------------------------------
-static int scanSystemCnf(unsigned char *name, unsigned char *value)
+static int scanSystemCnf(char *name, char *value)
 {
     if (!strcmp(name, "BOOT"))
         strncat(SystemCnf_BOOT, value, MAX_PATH - 1);
@@ -1282,7 +1282,7 @@ static int readSystemCnf(void)
     if ((RAM_p = preloadCNF("cdrom0:\\SYSTEM.CNF;1")) != NULL) {
         CNF_p = RAM_p;
         for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
-            dummy = scanSystemCnf(name, value);
+            dummy = scanSystemCnf((char *)name, (char *)value);
         free(RAM_p);
     }
 
@@ -2003,7 +2003,7 @@ int uLE_InitializeRegion(void)
     int ROMVER_fd;
     static int TVMode = -1;
 
-    if(TVMode < 0)  {
+    if (TVMode < 0) {
         ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
         if (ROMVER_fd < 0) {
             memset(ROMVER_data, 0, sizeof(ROMVER_data));
@@ -2023,7 +2023,7 @@ int uLE_InitializeRegion(void)
                 rough_region = 'E';
                 break;
             case 'A':
-            case 'H': //Asia shares the same letter as USA.
+            case 'H':  //Asia shares the same letter as USA.
                 rough_region = 'A';
                 break;
             case 'C':
@@ -2036,7 +2036,7 @@ int uLE_InitializeRegion(void)
         if (ROMVER_data[4] == 'E')
             TVMode = TV_mode_PAL;  //PAL mode is identified by 'E' for Europe
         else
-            TVMode = TV_mode_NTSC; //All other cases need NTSC
+            TVMode = TV_mode_NTSC;  //All other cases need NTSC
     }
 
     return TVMode;
@@ -2051,29 +2051,29 @@ static void InitializeBootExecPath()
     uLE_InitializeRegion();
 
     //Handle special cases, before osdmain.elf was supported.
-    switch(ROMVER_data[4]) {
+    switch (ROMVER_data[4]) {
         case 'E':
-            if(!strncmp(ROMVER_data, "0120", 4))
+            if (!strncmp(ROMVER_data, "0120", 4))
                 strcpy(file, "osd130.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
         case 'A':
-            if(!strncmp(ROMVER_data, "0110", 4))
+            if (!strncmp(ROMVER_data, "0110", 4))
                 strcpy(file, "osd120.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
         case 'J':
-            if(!strncmp(ROMVER_data, "0100", 4))
+            if (!strncmp(ROMVER_data, "0100", 4))
                 strcpy(file, "osdsys.elf");
-            else if(!strncmp(ROMVER_data, "0101", 4))
+            else if (!strncmp(ROMVER_data, "0101", 4))
                 strcpy(file, "osd110.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
-        default: //Asia and China
-           strcpy(file, "osdmain.elf");
+        default:  //Asia and China
+            strcpy(file, "osdmain.elf");
     }
 
     sprintf(default_OSDSYS_path, "mc:/B%cEXEC-SYSTEM/%s", rough_region, file);
@@ -2088,13 +2088,13 @@ static void InitializeBootExecPath()
 
 //---------------------------------------------------------------------------
 enum BOOT_DEVICE {
-    BOOT_DEVICE_CDVD	= 0,
+    BOOT_DEVICE_CDVD = 0,
     BOOT_DEVICE_MC,
     BOOT_DEVICE_MASS,
     BOOT_DEVICE_HOST,
     BOOT_DEVICE_HDD,
 
-    BOOT_DEV_UNKNOWN	= -1
+    BOOT_DEV_UNKNOWN = -1
 };
 
 int main(int argc, char *argv[])
@@ -2127,7 +2127,7 @@ int main(int argc, char *argv[])
                     if (LaunchElfDir[i] == '\\')
                         LaunchElfDir[i] = '/';
                 }
-            }   //else we booted with normal homebrew mass: drivers
+            }  //else we booted with normal homebrew mass: drivers
 
             boot = BOOT_DEVICE_MASS;
         } else if (!strncmp(argv[0], "mc", 2))
@@ -2135,7 +2135,7 @@ int main(int argc, char *argv[])
         else if (!strncmp(argv[0], "cd", 2))
             boot = BOOT_DEVICE_CDVD;
         else if ((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
-            boot = BOOT_DEVICE_HDD;                      //Modify this section later to cover Dev2 needs !!!
+            boot = BOOT_DEVICE_HDD;              //Modify this section later to cover Dev2 needs !!!
         else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
             boot = BOOT_DEVICE_HDD;
             strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
@@ -2156,7 +2156,7 @@ int main(int argc, char *argv[])
     LastDir[0] = 0;
 
     TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
-    if (TV_mode == TV_mode_PAL) {    //Test console TV mode
+    if (TV_mode == TV_mode_PAL) {      //Test console TV mode
         gs_vmode = GS_MODE_PAL;
         SCREEN_WIDTH = 640;
         SCREEN_HEIGHT = 512;

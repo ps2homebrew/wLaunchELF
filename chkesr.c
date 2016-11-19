@@ -50,7 +50,7 @@ int Check_ESR_Disc(void)
     sceCdSync(0);
     if (result != 0) {
         if (sceCdGetError() == SCECdErNO) {
-            result = (!strncmp(SectorBuffer + 37, "+NSR", 4)) ? 1 : 0;
+            result = (!strncmp((char *)SectorBuffer + 37, "+NSR", 4)) ? 1 : 0;
         } else
             result = -1;
     } else

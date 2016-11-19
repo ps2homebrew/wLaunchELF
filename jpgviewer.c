@@ -87,28 +87,28 @@ static void Command_List(void)
             y = cSprite_Y1 + FONT_HEIGHT / 2;
             x = cSprite_X1 + 2 * FONT_WIDTH;
 
-            printXY(LNG(Start_StartStop_Slideshow), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(Start_StartStop_Slideshow), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(L1R1_Slideshow_Timer), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(L1R1_Slideshow_Timer), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(L2R2_Slideshow_Transition), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(L2R2_Slideshow_Transition), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(LeftRight_Pad_PrevNext_Picture), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(LeftRight_Pad_PrevNext_Picture), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(UpDown_Pad_Rotate_Picture), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(UpDown_Pad_Rotate_Picture), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(Left_Joystick_Panorama), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(Left_Joystick_Panorama), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             if (swapKeys)
                 sprintf(tmp, "ÿ1: %s", LNG(FullScreen_Mode));
             else
                 sprintf(tmp, "ÿ0: %s", LNG(FullScreen_Mode));
-            printXY(tmp, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)tmp, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(tmp, "ÿ3: %s", LNG(Exit_To_Jpg_Browser));
-            printXY(tmp, x, y, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)tmp, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
         }  //ends if(event||post_event).
@@ -841,7 +841,7 @@ void JpgViewer(void)
                     }
                     if (files[top + i].stats.attrFile & MC_ATTR_SUBDIR)
                         strcat(tmp, "/");
-                    printXY(tmp, x + 4, y, color, TRUE, name_limit);
+                    printXY((const unsigned char *)tmp, x + 4, y, color, TRUE, name_limit);
                     y += FONT_HEIGHT;
 
                 } else {  //Thumbnail mode
@@ -887,7 +887,7 @@ void JpgViewer(void)
                 frame:
                     drawFrame(x, y, x + 72, (y + 55), color);
 
-                    Len = printXY(tmp, 0, 0, 0, FALSE, 0);
+                    Len = printXY((const unsigned char *)tmp, 0, 0, 0, FALSE, 0);
                     if (Len > 72 && top + i == jpg_browser_sel) {
                         if (t % 0x10 == 0) {
                             strcpy(tmp1, tmp + print_name);
@@ -895,16 +895,16 @@ void JpgViewer(void)
                             if (++print_name > (Len / FONT_WIDTH - 10))
                                 print_name = 0;
                         }
-                        Len = printXY(tmp1, 0, 0, 0, FALSE, 0);
-                        printXY(tmp1, x + 72 / 2 - Len / 2, (y + 58), color, TRUE, 0);
+                        Len = printXY((const unsigned char *)tmp1, 0, 0, 0, FALSE, 0);
+                        printXY((const unsigned char *)tmp1, x + 72 / 2 - Len / 2, (y + 58), color, TRUE, 0);
                     } else if (Len > 72) {
                         tmp[7] = '.';
                         tmp[8] = '.';
                         tmp[9] = '.';
                         tmp[10] = '\0';
-                        printXY(tmp, x - 4, (y + 58), color, TRUE, 0);
+                        printXY((const unsigned char *)tmp, x - 4, (y + 58), color, TRUE, 0);
                     } else
-                        printXY(tmp, x + 72 / 2 - Len / 2, (y + 58), color, TRUE, 0);
+                        printXY((const unsigned char *)tmp, x + 72 / 2 - Len / 2, (y + 58), color, TRUE, 0);
 
                     if (TV_mode == TV_mode_NTSC)
                         y += 71 + 15;

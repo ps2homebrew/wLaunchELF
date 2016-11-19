@@ -400,9 +400,9 @@ int ynDialog(const char *message)
 
             //Cursor positioning section
             x = (tw - 96) / 4;
-            printXY(LNG(OK), dx + a + x + FONT_WIDTH,
+            printXY((const unsigned char *)LNG(OK), dx + a + x + FONT_WIDTH,
                     (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3], TRUE, 0);
-            printXY(LNG(CANCEL), dx + dw - x - (strlen(LNG(CANCEL)) + 1) * FONT_WIDTH,
+            printXY((const unsigned char *)LNG(CANCEL), dx + dw - x - (strlen(LNG(CANCEL)) + 1) * FONT_WIDTH,
                     (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3], TRUE, 0);
             if (sel == 0)
                 drawChar(LEFT_CUR, dx + a + x, (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3]);
@@ -480,7 +480,7 @@ void nonDialog(char *message)
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 {
-    unsigned char *p, ca, cb;
+    char *p, ca, cb;
     int i, n, ret, aElf = FALSE, bElf = FALSE, t = (file_sort == 2);
 
     if (file_sort == 0)
@@ -591,9 +591,9 @@ int readMC(const char *path, FILEINFO *info, int max)
 
     for (i = j = 0; i < ret; i++) {
         if (mcDir[i].attrFile & MC_ATTR_SUBDIR &&
-            (!strcmp(mcDir[i].name, ".") || !strcmp(mcDir[i].name, "..")))
+            (!strcmp((char *)mcDir[i].name, ".") || !strcmp((char *)mcDir[i].name, "..")))
             continue;  //Skip pseudopaths "." and ".."
-        strcpy(info[j].name, mcDir[i].name);
+        strcpy(info[j].name, (char *)mcDir[i].name);
         info[j].stats = mcDir[i];
         j++;
     }
@@ -915,7 +915,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
             info[i].stats.unknown4[0] = dirbuf.stat.hisize;
         } else
             continue;  //Skip entry which is neither a file nor a folder
-        strncpy(info[i].stats.name, info[i].name, 32);
+        strncpy((char *)info[i].stats.name, info[i].name, 32);
         memcpy((void *)&info[i].stats._create, dirbuf.stat.ctime, 8);
         memcpy((void *)&info[i].stats._modify, dirbuf.stat.mtime, 8);
         i++;
@@ -1282,7 +1282,7 @@ int getGameTitle(const char *path, const FILEINFO *file, char *out)
             if (tst != sizeof(PSU_head))
                 goto finish;  //Abort if read fails
             PSU_head.name[sizeof(PSU_head.name)] = '\0';
-            if (!strcmp(PSU_head.name, "icon.sys")) {
+            if (!strcmp((char *)PSU_head.name, "icon.sys")) {
                 genLseek(fd, 0xC0, SEEK_CUR);
                 goto read_title;
             }
@@ -1518,7 +1518,7 @@ int menu(const char *path, FILEINFO *file)
                 else
                     color = setting->color[1];
 
-                printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
+                printXY((const unsigned char *)tmp, mSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 y += FONT_HEIGHT;
             }
             if (sel < NUM_MENU)
@@ -1537,7 +1537,7 @@ int menu(const char *path, FILEINFO *file)
             if (sel == PASTE)
                 sprintf(tmp + strlen(tmp), " ÿ2:%s", LNG(PasteRename));
             sprintf(tmp + strlen(tmp), " ÿ3:%s", LNG(Back));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY((const unsigned char *)tmp, x, y, setting->color[2], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -1627,7 +1627,7 @@ char *PathPad_menu(const char *path)
                 sprintf(textrow, "%02d=", (sel_x * 10 + i));
                 strncat(textrow, PathPad[sel_x * 10 + i], 64);
                 textrow[67] = '\0';
-                printXY(textrow, dx + 2 + a, (dy + a + 2 + i * FONT_HEIGHT), color, TRUE, 0);
+                printXY((const unsigned char *)textrow, dx + 2 + a, (dy + a + 2 + i * FONT_HEIGHT), color, TRUE, 0);
             }
 
             //Tooltip section
@@ -1650,7 +1650,7 @@ char *PathPad_menu(const char *path)
             }
             sprintf(tmp, "ÿ3:%s L1/R1:%s", LNG(Back), LNG(Page_leftright));
             strcat(textrow, tmp);
-            printXY(textrow, x, y, setting->color[2], TRUE, 0);
+            printXY((const unsigned char *)textrow, x, y, setting->color[2], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -1989,7 +1989,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                     *cp++ = '_';
                     *cp = '\0';
                 }
-                transcpy_sjis(cp, file.title);
+                transcpy_sjis((unsigned char *)cp, (unsigned char *)file.title);
             }
             //Here game title has been used for the name if requested, either alone
             //or combined with the original folder name (for PSU_HugeNames)
@@ -2064,7 +2064,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
             ret = newdir(outPath, newfile.name);
             if (ret == -17) {  //NB: 'newdir' must return -17 for ALL pre-existing folder cases
                 ret = getGameTitle(outPath, &newfile, newfile.title);
-                transcpy_sjis(tmp, newfile.title);
+                transcpy_sjis((unsigned char *)tmp, (unsigned char *)newfile.title);
                 sprintf(progress,
                         "%s:\n"
                         "%s%s/\n"
@@ -2166,7 +2166,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 //finally, we must adjust attributes of the new file copy, to ensure
                 //correct timestamps and attributes (requires MC-specific functions)
                 strcpy(tmp, out);
-                strncat(tmp, files[0].stats.name, 32);
+                strncat(tmp, (char *)files[0].stats.name, 32);
                 mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  //Wakeup call
                 mcSync(0, NULL, &dummy);
                 mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &files[0].stats, MC_SFI);  //Fix file stats
@@ -2215,7 +2215,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 size = genRead(in_fd, (void *)&stats, 64);
                 if (size == 64) {
                     strcpy(tmp, out);
-                    strncat(tmp, stats.name, 32);
+                    strncat(tmp, (char *)stats.name, 32);
                     mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  //Wakeup call
                     mcSync(0, NULL, &dummy);
                     mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &stats, MC_SFI);  //Fix file stats
@@ -2240,8 +2240,8 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 }                                               //ends non-MC source clause
                 mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
                 mcSync(0, NULL, &dummy);
-            } else {                            //Handle folder copied to non-MC
-                if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+            } else {                                    //Handle folder copied to non-MC
+                if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
                 } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
                 } else {                                //for other devices we use fileXio_ stuff
                     memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
@@ -2523,8 +2523,8 @@ non_PSU_RESTORE_init:
             mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
             mcSync(0, NULL, &dummy);
         }
-    } else {                            //Handle file copied to non-MC
-        if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+    } else {                                    //Handle file copied to non-MC
+        if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
         } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
         } else {                                //for other devices we use fileXio_ stuff
             memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
@@ -2581,7 +2581,7 @@ int keyboard(char *out, int max)
     int KEY_LEN;
     int cur = 0, sel = 0, i = 0, x, y, t = 0;
     char tmp[256], *p;
-    unsigned char KeyPress;
+    char KeyPress;
 
     p = strrchr(out, '.');
     if (p == NULL)
@@ -2740,7 +2740,7 @@ int keyboard(char *out, int max)
             drawOpSprite(setting->color[1],
                          KEY_X, KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1,
                          KEY_X + KEY_W - 1, KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS - 1);
-            printXY(out, KEY_X + LINE_THICKNESS + 3, KEY_Y + LINE_THICKNESS + 1, setting->color[3], TRUE, 0);
+            printXY((const unsigned char *)out, KEY_X + LINE_THICKNESS + 3, KEY_Y + LINE_THICKNESS + 1, setting->color[3], TRUE, 0);
             if (((event | post_event) & 4) && (t & 0x10)) {
                 drawOpSprite(setting->color[2],
                              KEY_X + LINE_THICKNESS + 1 + cur * 8,
@@ -2752,10 +2752,10 @@ int keyboard(char *out, int max)
                 drawChar(KEY[i],
                          KEY_X + LINE_THICKNESS + 12 + (i % WFONTS) * (FONT_WIDTH + 12),
                          KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (i / WFONTS) * FONT_HEIGHT, setting->color[3]);
-            printXY(LNG(OK),
+            printXY((const unsigned char *)LNG(OK),
                     KEY_X + LINE_THICKNESS + 12,
                     KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[3], TRUE, 0);
-            printXY(LNG(CANCEL),
+            printXY((const unsigned char *)LNG(CANCEL),
                     KEY_X + KEY_W - 1 - (strlen(LNG(CANCEL)) + 2) * FONT_WIDTH,
                     KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[3], TRUE, 0);
 
@@ -2779,7 +2779,7 @@ int keyboard(char *out, int max)
             }
             sprintf(tmp + strlen(tmp), ":%s ÿ2:%s L1:%s R1:%s START:%s ÿ3:%s",
                     LNG(BackSpace), LNG(SPACE), LNG(Left), LNG(Right), LNG(Enter), LNG(Exit));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY((const unsigned char *)tmp, x, y, setting->color[2], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -2916,9 +2916,9 @@ int keyboard2(char *out, int max)
 			drawOpSprite(setting->color[1],
 				KEY_X, KEY_Y+20,
 				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
-			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE, 0);
+			printXY((const unsigned char *)out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE, 0);
 			if(((event|post_event)&4) && (t & 0x10)){
-				printXY("|",
+				printXY((const unsigned char *)"|",
 					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE, 0);
 			}
 			for(i=0; i<KEY_LEN; i++)
@@ -2926,7 +2926,7 @@ int keyboard2(char *out, int max)
 					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
 					KEY_Y+28 + (i/WFONTS)*16,
 					setting->color[3]);
-			printXY("OK                       CANCEL",
+			printXY((const unsigned char *)"OK                       CANCEL",
 				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE, 0);
 
 			//Cursor positioning section
@@ -2943,10 +2943,10 @@ int keyboard2(char *out, int max)
 			drawSprite(setting->color[0], 0, y-1, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
-				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
+				printXY((const unsigned char *)"ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
 					x, y, setting->color[2], TRUE, 0);
 			else
-				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
+				printXY((const unsigned char *)"ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
 					x, y, setting->color[2], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
@@ -3188,7 +3188,7 @@ int BrowserModePopup(void)
                         if (fd >= 0) {
                             test = genLseek(fd, 0, SEEK_END);
                             if (test == 55016) {
-                                elisaFnt = (char *)malloc(test);
+                                elisaFnt = (unsigned char *)malloc(test);
                                 genLseek(fd, 0, SEEK_SET);
                                 genRead(fd, elisaFnt, test);
                             }
@@ -3238,7 +3238,7 @@ int BrowserModePopup(void)
                 else
                     tmp[0] = 0;
 
-                printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+                printXY((const unsigned char *)tmp, mSprite_X1 + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 //Display marker for current modes
                 if ((file_show == i - 2) || (file_sort == i - 8))
                     drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH / 2, y, setting->color[2]);
@@ -3782,9 +3782,9 @@ int getFilePath(char *out, int cnfmode)
                 if (files[top + i].stats.attrFile & MC_ATTR_SUBDIR)
                     strcat(tmp, "/");
                 if (title_flag)
-                    printXY_sjis(tmp, x + 4, y, color, TRUE);
+                    printXY_sjis((const unsigned char *)tmp, x + 4, y, color, TRUE);
                 else
-                    printXY(tmp, x + 4, y, color, TRUE, name_limit);
+                    printXY((const unsigned char *)tmp, x + 4, y, color, TRUE, name_limit);
                 if (file_show > 0) {
                     //					unsigned int size = files[top+i].stats.fileSizeByte;
                     unsigned long long size = ((unsigned long long)files[top + i].stats.unknown4[0] << 32) | files[top + i].stats.fileSizeByte;
@@ -3821,7 +3821,7 @@ int getFilePath(char *out, int cnfmode)
                                 timestamp.sec);
                     }
 
-                    printXY(tmp, x + 4 + 44 * FONT_WIDTH, y, color, TRUE, 0);
+                    printXY((const unsigned char *)tmp, x + 4 + 44 * FONT_WIDTH, y, color, TRUE, 0);
                 }
                 if (setting->FB_NoIcons) {  //if FileBrowser should not use icons
                     if (marks[top + i])
@@ -3909,7 +3909,7 @@ int getFilePath(char *out, int cnfmode)
                 drawSprite(setting->color[0],
                            SCREEN_WIDTH - SCREEN_MARGIN - (ret + 1) * FONT_WIDTH, (Menu_message_y - 1),
                            SCREEN_WIDTH - SCREEN_MARGIN, (Menu_message_y + FONT_HEIGHT));
-                printXY(tmp,
+                printXY((const unsigned char *)tmp,
                         SCREEN_WIDTH - SCREEN_MARGIN - ret * FONT_WIDTH,
                         (Menu_message_y),
                         setting->color[2], TRUE, 0);

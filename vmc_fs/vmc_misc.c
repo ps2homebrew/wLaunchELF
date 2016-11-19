@@ -64,10 +64,10 @@ unsigned int getDirentryFromPath(struct direntry *retval, const char *path, stru
         // Now that we have a pages worth of data, check if it is the
         // Directory we are searching for.
 
-        if (memcmp(dirent.name, path + pathoffset, strlen(dirent.name)) == 0) {
+        if (memcmp(dirent.name, path + pathoffset, strlen((char *)dirent.name)) == 0) {
 
             // Increase the path offset by the length of the directory
-            pathoffset += strlen(dirent.name);
+            pathoffset += strlen((char *)dirent.name);
 
             // If the next item in the pathname is the null terminator,
             // we must be at the end of the path string, and that means
@@ -155,7 +155,7 @@ unsigned int addPseudoEntries(struct gen_privdata *gendata, struct direntry *par
     memset(&pseudo_entries, 0, sizeof(pseudo_entries));
 
     // fill pseudo entries
-    strcpy(pseudo_entries.name, ".");
+    strcpy((char *)pseudo_entries.name, ".");
     pseudo_entries.dir_entry = parent->length;
     pseudo_entries.length = 0;
     pseudo_entries.cluster = parent->cluster;
@@ -167,7 +167,7 @@ unsigned int addPseudoEntries(struct gen_privdata *gendata, struct direntry *par
     // write first pseudo entry
     writePage(gendata->fd, (unsigned char *)&pseudo_entries, (pseudo_entries_cluster + gendata->first_allocatable) * g_Vmc_Image[unit].header.pages_per_cluster);
 
-    strcpy(pseudo_entries.name, "..");
+    strcpy((char *)pseudo_entries.name, "..");
     pseudo_entries.dir_entry = 0;
     pseudo_entries.cluster = 0;
 
@@ -393,7 +393,7 @@ int setDefaultSpec(int unit)
 
     memset(&g_Vmc_Image[unit].header, g_Vmc_Image[unit].erase_byte, sizeof(struct superblock));
 
-    strcpy(g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
+    strcpy((char *)g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
 
     DEBUGPRINT(4, "vmc_fs: SuperBlock Info: magic[40]             : %s\n", g_Vmc_Image[unit].header.magic);
 
@@ -639,10 +639,10 @@ int buildECC(int unit, char *Page_Data, char *ECC_Data)
     memcpy(Data_Chunk[3], Page_Data + 384, 128);
 
     // Ask for 128 bytes chunk ECC calculation, it returns 3 bytes per chunk
-    calculateECC(ECC_Chunk[0], Data_Chunk[0]);
-    calculateECC(ECC_Chunk[1], Data_Chunk[1]);
-    calculateECC(ECC_Chunk[2], Data_Chunk[2]);
-    calculateECC(ECC_Chunk[3], Data_Chunk[3]);
+    calculateECC(ECC_Chunk[0], (unsigned char *)Data_Chunk[0]);
+    calculateECC(ECC_Chunk[1], (unsigned char *)Data_Chunk[1]);
+    calculateECC(ECC_Chunk[2], (unsigned char *)Data_Chunk[2]);
+    calculateECC(ECC_Chunk[3], (unsigned char *)Data_Chunk[3]);
 
     // Prepare Padding as ECC took only 12 bytes and stand on 16 bytes
     memset(ECC_Pad, g_Vmc_Image[unit].erase_byte, sizeof(ECC_Pad));
