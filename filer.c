@@ -2240,8 +2240,8 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 }                                               //ends non-MC source clause
                 mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
                 mcSync(0, NULL, &dummy);
-            } else {                            //Handle folder copied to non-MC
-                if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+            } else {                                    //Handle folder copied to non-MC
+                if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
                 } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
                 } else {                                //for other devices we use fileXio_ stuff
                     memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
@@ -2523,8 +2523,8 @@ non_PSU_RESTORE_init:
             mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
             mcSync(0, NULL, &dummy);
         }
-    } else {                            //Handle file copied to non-MC
-        if (!strncmp(out, "host", 4)) {  //for files copied to host: we skip Chstat
+    } else {                                    //Handle file copied to non-MC
+        if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
         } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
         } else {                                //for other devices we use fileXio_ stuff
             memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
