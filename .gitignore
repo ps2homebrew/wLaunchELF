@@ -5,3 +5,5 @@
 *.o
 *.swp
 *.tmp
+*.irx
+*.s
