@@ -5,116 +5,145 @@ SMB = 0
 
 EE_BIN = BOOT.ELF
 EE_BIN_PKD = ULE.ELF
-EE_OBJS = main.o pad.o config.o elf.o draw.o loader.o filer.o \
-	poweroff.o iomanx.o filexio.o ps2atad.o ps2dev9.o smsutils.o ps2ip.o\
-	ps2smap.o ps2hdd.o ps2fs.o ps2netfs.o usbd.o usbhdfsd.o mcman.o mcserv.o\
-	cdvd.o ps2ftpd.o ps2host.o vmc_fs.o fakehost.o ps2kbd.o\
-	hdd.o hdl_rpc.o hdl_info.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr.o sior.o allowdvdv.o
+EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
+	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o smsutils_irx.o ps2ip_irx.o\
+	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
+	cdvd_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o fakehost_irx.o ps2kbd_irx.o\
+	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
+	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
 ifeq ($(SMB),1)
 	EE_OBJS += smbman.o
 endif
 
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include -Ioldlibs/libcdvd/ee
 
-EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -Loldlibs/bin -s
+EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -Loldlibs/libcdvd/lib -s
 EE_LIBS = -lpad -lgskit -ldmakit -ljpeg -lmc -lhdd -lcdvdfs -lkbd -lmf -lcdvd -lc -lfileXio -lpatches -lpoweroff -ldebug -lc -lsior
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
 endif
 
-all:	$(EE_BIN)
-		ps2-packer $(EE_BIN) $(EE_BIN_PKD)
+.PHONY: all run reset clean rebuild
+
+all: $(EE_BIN_PKD)
+
+$(EE_BIN_PKD): $(EE_BIN)
+	ps2-packer $< $@
 
 run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF
 reset: clean
 	ps2client -h 192.168.0.10 reset
 
-mcman.s:
-	bin2s $(PS2SDK)/iop/irx/mcman.irx mcman.s mcman_irx
+mcman_irx.s: $(PS2SDK)/iop/irx/mcman.irx
+	bin2s $< $@ mcman_irx
 
-mcserv.s:
-	bin2s $(PS2SDK)/iop/irx/mcserv.irx mcserv.s mcserv_irx
+mcserv_irx.s: $(PS2SDK)/iop/irx/mcserv.irx
+	bin2s $< $@ mcserv_irx
 
-usbd.s:
-	bin2s $(PS2SDK)/iop/irx/usbd.irx usbd.s usbd_irx
+usbd_irx.s: $(PS2SDK)/iop/irx/usbd.irx
+	bin2s $< $@ usbd_irx
 
-usbhdfsd.s:
-	bin2s $(PS2SDK)/iop/irx/usbhdfsd.irx usbhdfsd.s usb_mass_irx
+usbhdfsd_irx.s: $(PS2SDK)/iop/irx/usbhdfsd.irx
+	bin2s $< $@ usb_mass_irx
 
-cdvd.s:
-	bin2s oldlibs/bin/cdvd.irx cdvd.s cdvd_irx
+oldlibs/libcdvd/lib/cdvd.irx: oldlibs/libcdvd
+	$(MAKE) -C $<
 
-poweroff.s:
-	bin2s $(PS2SDK)/iop/irx/poweroff.irx poweroff.s poweroff_irx
+cdvd_irx.s: oldlibs/libcdvd/lib/cdvd.irx
+	bin2s $< $@ cdvd_irx
 
-iomanx.s:
-	bin2s $(PS2SDK)/iop/irx/iomanX.irx iomanx.s iomanx_irx
+poweroff_irx.s: $(PS2SDK)/iop/irx/poweroff.irx
+	bin2s $< $@ poweroff_irx
 
-filexio.s:
-	bin2s $(PS2SDK)/iop/irx/fileXio.irx filexio.s filexio_irx
+iomanx_irx.s: $(PS2SDK)/iop/irx/iomanX.irx
+	bin2s $< $@ iomanx_irx
 
-ps2dev9.s:
-	bin2s $(PS2SDK)/iop/irx/ps2dev9.irx ps2dev9.s ps2dev9_irx
+filexio_irx.s: $(PS2SDK)/iop/irx/fileXio.irx
+	bin2s $< $@ filexio_irx
 
-ps2ip.s:
-	bin2s oldlibs/bin/SMSTCPIP.irx ps2ip.s ps2ip_irx
+ps2dev9_irx.s: $(PS2SDK)/iop/irx/ps2dev9.irx
+	bin2s $< $@ ps2dev9_irx
 
-ps2smap.s:
-	bin2s oldlibs/bin/SMSMAP.irx ps2smap.s ps2smap_irx
+oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx: oldlibs/SMS/drv/SMSTCPIP
+	$(MAKE) -C $<
 
-smsutils.s:
-	bin2s oldlibs/bin/SMSUTILS.irx smsutils.s smsutils_irx
+ps2ip_irx.s: oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx
+	bin2s $< $@ ps2ip_irx
 
-ps2ftpd.s:
-	bin2s oldlibs/bin/ps2ftpd.irx ps2ftpd.s ps2ftpd_irx
+oldlibs/SMS/drv/SMSMAP/SMSMAP.irx: oldlibs/SMS/drv/SMSMAP
+	$(MAKE) -C $<
 
-ps2atad.s:
-	bin2s $(PS2SDK)/iop/irx/ps2atad.irx ps2atad.s ps2atad_irx
+ps2smap_irx.s: oldlibs/SMS/drv/SMSMAP/SMSMAP.irx
+	bin2s $< $@ ps2smap_irx
 
-ps2hdd.s:
-	bin2s $(PS2SDK)/iop/irx/ps2hdd.irx ps2hdd.s ps2hdd_irx
+oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx: oldlibs/SMS/drv/SMSUTILS
+	$(MAKE) -C $<
 
-ps2fs.s:
-	bin2s $(PS2SDK)/iop/irx/ps2fs.irx ps2fs.s ps2fs_irx
+smsutils_irx.s: oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx
+	bin2s $< $@ smsutils_irx
 
-ps2netfs.s:
-	bin2s $(PS2SDK)/iop/irx/ps2netfs.irx ps2netfs.s ps2netfs_irx
+oldlibs/ps2ftpd/bin/ps2ftpd.irx: oldlibs/ps2ftpd
+	$(MAKE) -C $<
 
-fakehost.s:
-	bin2s $(PS2SDK)/iop/irx/fakehost.irx fakehost.s fakehost_irx
+ps2ftpd_irx.s: oldlibs/ps2ftpd/bin/ps2ftpd.irx
+	bin2s $< $@ ps2ftpd_irx
 
-hdl_info.s:
-	$(MAKE) -C hdl_info
-	bin2s hdl_info/hdl_info.irx hdl_info.s hdl_info_irx
+ps2atad_irx.s: $(PS2SDK)/iop/irx/ps2atad.irx
+	bin2s $< $@ ps2atad_irx
 
-ps2host.s:
-	$(MAKE) -C ps2host
-	bin2s ps2host/ps2host.irx ps2host.s ps2host_irx
+ps2hdd_irx.s: $(PS2SDK)/iop/irx/ps2hdd.irx
+	bin2s $< $@ ps2hdd_irx
+
+ps2fs_irx.s: $(PS2SDK)/iop/irx/ps2fs.irx
+	bin2s $< $@ ps2fs_irx
+
+ps2netfs_irx.s: $(PS2SDK)/iop/irx/ps2netfs.irx
+	bin2s $< $@ ps2netfs_irx
+
+fakehost_irx.s: $(PS2SDK)/iop/irx/fakehost.irx
+	bin2s $< $@ fakehost_irx
+
+hdl_info/hdl_info.irx: hdl_info
+	$(MAKE) -C $<
+
+hdl_info_irx.s: hdl_info/hdl_info.irx
+	bin2s $< $@ hdl_info_irx
+
+ps2host/ps2host.irx: ps2host
+	$(MAKE) -C $<
+
+ps2host_irx.s: ps2host/ps2host.irx
+	bin2s $< $@ ps2host_irx
 
 ifeq ($(SMB),1)
-smbman.s:
-	bin2s $(PS2SDK)/iop/irx/smbman.irx smbman.s smbman_irx
+smbman_irx.s: $(PS2SDK)/iop/irx/smbman.irx
+	bin2s $< $@ smbman_irx
 endif
 
-vmc_fs.s:
-	$(MAKE) -C vmc_fs
-	bin2s vmc_fs/vmc_fs.irx vmc_fs.s vmc_fs_irx
+vmc_fs/vmc_fs.irx: vmc_fs
+	$(MAKE) -C $<
 
-loader.s:
-	$(MAKE) -C loader
-	bin2s loader/loader.elf loader.s loader_elf
+vmc_fs_irx.s: vmc_fs/vmc_fs.irx
+	bin2s $< $@ vmc_fs_irx
 
-ps2kbd.s:
-	bin2s $(PS2SDK)/iop/irx/ps2kbd.irx ps2kbd.s ps2kbd_irx
+loader/loader.elf: loader
+	$(MAKE) -C $<
 
-sior.s:
-	bin2s $(PS2SDK)/iop/irx/sior.irx sior.s sior_irx
+loader_elf.s: loader/loader.elf
+	bin2s $< $@ loader_elf
 
-allowdvdv.s:
-	$(MAKE) -C AllowDVDV
-	bin2s AllowDVDV/AllowDVDV.irx allowdvdv.s allowdvdv_irx
+ps2kbd_irx.s: $(PS2SDK)/iop/irx/ps2kbd.irx
+	bin2s $< $@ ps2kbd_irx
+
+sior_irx.s: $(PS2SDK)/iop/irx/sior.irx
+	bin2s $< $@ sior_irx
+
+AllowDVDV/AllowDVDV.irx: AllowDVDV
+	$(MAKE) -C $<
+
+allowdvdv_irx.s: AllowDVDV/AllowDVDV.irx
+	bin2s $< $@ allowdvdv_irx
 
 clean:
 	$(MAKE) -C hdl_info clean
@@ -122,6 +151,11 @@ clean:
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean
+	$(MAKE) -C oldlibs/libcdvd clean
+	$(MAKE) -C oldlibs/SMS/drv/SMSTCPIP clean
+	$(MAKE) -C oldlibs/SMS/drv/SMSMAP clean
+	$(MAKE) -C oldlibs/SMS/drv/SMSUTILS clean
+	$(MAKE) -C oldlibs/ps2ftpd clean
 	rm -f *.s $(EE_OBJS) $(EE_BIN) $(EE_BIN_PKD)
 
 rebuild: clean all
