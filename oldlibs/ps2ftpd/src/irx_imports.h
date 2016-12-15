@@ -12,19 +12,18 @@
 #include "irx.h"
 
 /* Please keep these in alphabetical order!  */
-#include "cdvdman.h"
-#include "intrman.h"
-#include "iomanX.h"
-#include "ps2ip.h"
-#include "sifcmd.h"
-#include "sifman.h"
-#include "stdio.h"
-#include "sysclib.h"
-#include "sysmem.h"
-#include "thbase.h"
-#include "dns.h"
-#include "ioman_mod.h"
-#include "iopmgr.h"
+#include <cdvdman.h>
+#include <intrman.h>
+#include <iomanX.h>
+#include <ps2ip.h>
+#include <sifcmd.h>
+#include <sifman.h>
+#include <stdio.h>
+#include <sysclib.h>
+#include <sysmem.h>
+#include <thbase.h>
+#include <ioman_mod.h>
+#include <iopmgr.h>
 
 #define getsockopt lwip_getsockopt
 #define setsockopt lwip_setsockopt

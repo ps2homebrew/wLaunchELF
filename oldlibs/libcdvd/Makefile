@@ -1,16 +1,19 @@
 # Remove the line below, if you want to disable silent mode
 #.SILENT:
 
-all: build-ee build-iop
+all: lib/libcdvdfs.a lib/cdvd.irx
+
+lib:
+	mkdir -p $@
 
 clean:
 	$(MAKE) -C ee clean
 	$(MAKE) -C iop clean
 
-build-iop:
+lib/cdvd.irx: iop | lib
 	@echo Building IRX
-	$(MAKE) -C iop
+	$(MAKE) -C $<
 
-build-ee:
+lib/libcdvdfs.a: ee | lib
 	@echo Building EE client
-	$(MAKE) -C ee
+	$(MAKE) -C $<

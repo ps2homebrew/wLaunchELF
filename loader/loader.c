@@ -118,8 +118,8 @@ int main(int argc, char *argv[])
     if (argc == 1) {  // should be two params passed by menu
         SifExitRpc();
         return 0;
-               // leave this here for adding mc0, host or other
-               // to be added in future
+        // leave this here for adding mc0, host or other
+        // to be added in future
     }
     if (argc == 2)  // if call came from hddmenu.elf
     {               // arg1=path to ELF, arg2=partition to mount
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
     FlushCache(0);
     ret = SifLoadElf(HDDpath, &elfdata);
     dbgprintf("SifLoadElf returned %i\n", ret);
-    if(ret == 0) {
+    if (ret == 0) {
         if (!strncmp(HDDpath, "pfs0", 4)) {
             strcpy(fakepart, HDDpath);
             ptr = strrchr(fakepart, '/');
@@ -161,7 +161,8 @@ int main(int argc, char *argv[])
         ExecPS2((void *)elfdata.epc, (void *)elfdata.gp, 1, args);
     } else {
         dbgprintf("failed\n"
-        	  "Could not execute file %s\n", HDDpath);
+                  "Could not execute file %s\n",
+                  HDDpath);
 
         SifExitRpc();
     }

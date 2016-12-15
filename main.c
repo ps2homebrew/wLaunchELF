@@ -642,9 +642,9 @@ static void delay(int count)
 //---------------------------------------------------------------------------
 static void initsbv_patches(void)
 {
-   dbgprintf("Init MrBrown sbv_patches\n");
-   sbv_patch_enable_lmb();
-   sbv_patch_disable_prefix_check();
+    dbgprintf("Init MrBrown sbv_patches\n");
+    sbv_patch_enable_lmb();
+    sbv_patch_disable_prefix_check();
 }
 //------------------------------
 //endfunc initsbv_patches
@@ -2003,7 +2003,7 @@ int uLE_InitializeRegion(void)
     int ROMVER_fd;
     static int TVMode = -1;
 
-    if(TVMode < 0)  {
+    if (TVMode < 0) {
         ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
         if (ROMVER_fd < 0) {
             memset(ROMVER_data, 0, sizeof(ROMVER_data));
@@ -2023,7 +2023,7 @@ int uLE_InitializeRegion(void)
                 rough_region = 'E';
                 break;
             case 'A':
-            case 'H': //Asia shares the same letter as USA.
+            case 'H':  //Asia shares the same letter as USA.
                 rough_region = 'A';
                 break;
             case 'C':
@@ -2036,7 +2036,7 @@ int uLE_InitializeRegion(void)
         if (ROMVER_data[4] == 'E')
             TVMode = TV_mode_PAL;  //PAL mode is identified by 'E' for Europe
         else
-            TVMode = TV_mode_NTSC; //All other cases need NTSC
+            TVMode = TV_mode_NTSC;  //All other cases need NTSC
     }
 
     return TVMode;
@@ -2051,29 +2051,29 @@ static void InitializeBootExecPath()
     uLE_InitializeRegion();
 
     //Handle special cases, before osdmain.elf was supported.
-    switch(ROMVER_data[4]) {
+    switch (ROMVER_data[4]) {
         case 'E':
-            if(!strncmp(ROMVER_data, "0120", 4))
+            if (!strncmp(ROMVER_data, "0120", 4))
                 strcpy(file, "osd130.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
         case 'A':
-            if(!strncmp(ROMVER_data, "0110", 4))
+            if (!strncmp(ROMVER_data, "0110", 4))
                 strcpy(file, "osd120.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
         case 'J':
-            if(!strncmp(ROMVER_data, "0100", 4))
+            if (!strncmp(ROMVER_data, "0100", 4))
                 strcpy(file, "osdsys.elf");
-            else if(!strncmp(ROMVER_data, "0101", 4))
+            else if (!strncmp(ROMVER_data, "0101", 4))
                 strcpy(file, "osd110.elf");
             else
                 strcpy(file, "osdmain.elf");
             break;
-        default: //Asia and China
-           strcpy(file, "osdmain.elf");
+        default:  //Asia and China
+            strcpy(file, "osdmain.elf");
     }
 
     sprintf(default_OSDSYS_path, "mc:/B%cEXEC-SYSTEM/%s", rough_region, file);
@@ -2088,13 +2088,13 @@ static void InitializeBootExecPath()
 
 //---------------------------------------------------------------------------
 enum BOOT_DEVICE {
-    BOOT_DEVICE_CDVD	= 0,
+    BOOT_DEVICE_CDVD = 0,
     BOOT_DEVICE_MC,
     BOOT_DEVICE_MASS,
     BOOT_DEVICE_HOST,
     BOOT_DEVICE_HDD,
 
-    BOOT_DEV_UNKNOWN	= -1
+    BOOT_DEV_UNKNOWN = -1
 };
 
 int main(int argc, char *argv[])
@@ -2127,7 +2127,7 @@ int main(int argc, char *argv[])
                     if (LaunchElfDir[i] == '\\')
                         LaunchElfDir[i] = '/';
                 }
-            }   //else we booted with normal homebrew mass: drivers
+            }  //else we booted with normal homebrew mass: drivers
 
             boot = BOOT_DEVICE_MASS;
         } else if (!strncmp(argv[0], "mc", 2))
@@ -2135,7 +2135,7 @@ int main(int argc, char *argv[])
         else if (!strncmp(argv[0], "cd", 2))
             boot = BOOT_DEVICE_CDVD;
         else if ((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
-            boot = BOOT_DEVICE_HDD;                      //Modify this section later to cover Dev2 needs !!!
+            boot = BOOT_DEVICE_HDD;              //Modify this section later to cover Dev2 needs !!!
         else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
             boot = BOOT_DEVICE_HDD;
             strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
@@ -2156,7 +2156,7 @@ int main(int argc, char *argv[])
     LastDir[0] = 0;
 
     TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
-    if (TV_mode == TV_mode_PAL) {    //Test console TV mode
+    if (TV_mode == TV_mode_PAL) {      //Test console TV mode
         gs_vmode = GS_MODE_PAL;
         SCREEN_WIDTH = 640;
         SCREEN_HEIGHT = 512;
