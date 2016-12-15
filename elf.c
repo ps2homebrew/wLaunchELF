@@ -167,7 +167,6 @@ void RunLoaderElf(char *filename, char *party)
     }
 
     /* Let's go.  */
-    fioExit();
     SifInitRpc(0);
     SifExitRpc();
     FlushCache(0);

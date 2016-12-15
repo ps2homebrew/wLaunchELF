@@ -128,9 +128,7 @@ typedef struct
     u64 color[8];
     int screen_x;
     int screen_y;
-    int discControl;
     int interlace;
-    int resetIOP;
     int numCNF;
     int swapKeys;
     int HOSTwrite;

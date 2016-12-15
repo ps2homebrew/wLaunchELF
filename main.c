@@ -1506,8 +1506,7 @@ static int reloadConfig(void)
 
     timeout = (setting->timeout + 1) * 1000;
     timeout_start = Timer();
-    if (setting->discControl)
-        loadCdModules();
+    loadCdModules();
 
     return CNF_error;
 }
@@ -2246,8 +2245,7 @@ int main(int argc, char *argv[])
     //Here IOP reset (if done) has been completed, so it's time to load and init drivers
     getIpConfig();
 
-    if (setting->discControl)
-        loadCdModules();
+    loadCdModules();
 
     TimerInit();
     WaitTime = Timer();
@@ -2286,9 +2284,6 @@ int main(int argc, char *argv[])
         int DiscType_ix;
 
         //Background event section
-        if (!setting->discControl)
-            goto done_discControl;
-
         uLE_cdStop();              //Test disc state and if needed stop disc (updates cdmode)
         if (cdmode == old_cdmode)  //if disc detection did not change state
             goto done_discControl;

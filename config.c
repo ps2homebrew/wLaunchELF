@@ -15,11 +15,9 @@ enum {
     DEF_COLOR6 = GS_SETREG_RGBA(0, 96, 0, 0),       //Graph2
     DEF_COLOR7 = GS_SETREG_RGBA(224, 224, 224, 0),  //Graph3
     DEF_COLOR8 = GS_SETREG_RGBA(0, 0, 0, 0),        //Graph4
-    DEF_DISCCONTROL = FALSE,
     DEF_INTERLACE = TRUE,
     DEF_MENU_FRAME = TRUE,
     DEF_MENU = TRUE,
-    DEF_RESETIOP = TRUE,
     DEF_NUMCNF = 1,
     DEF_SWAPKEYS = FALSE,
     DEF_HOSTWRITE = FALSE,
@@ -39,7 +37,6 @@ enum {
 
     DEFAULT = 0,
     SHOW_TITLES = 12,
-    DISCCONTROL,
     FILENAME,
     SCREEN,
     SETTINGS,
@@ -489,8 +486,6 @@ void saveConfig(char *mainMsg, char *CNF)
     sprintf(tmp + CNF_size,
             "LK_auto_Timer = %d\r\n"
             "Menu_Hide_Paths = %d\r\n"
-            "Init_CDVD_Check = %d\r\n"
-            "Init_Reset_IOP = %d\r\n"
             "Menu_Pages = %d\r\n"
             "GUI_Swap_Keys = %d\r\n"
             "USBD_FILE = %s\r\n"
@@ -516,8 +511,6 @@ void saveConfig(char *mainMsg, char *CNF)
             "%n",                      // %n causes NO output, but only a measurement
             setting->timeout,          //auto_Timer
             setting->Hide_Paths,       //Menu_Hide_Paths
-            setting->discControl,      //Init_CDVD_Check
-            setting->resetIOP,         //Init_Reset_IOP
             setting->numCNF,           //Menu_Pages
             setting->swapKeys,         //GUI_Swap_Keys
             setting->usbd_file,        //USBD_FILE
@@ -687,11 +680,9 @@ void initConfig(void)
     setting->color[7] = DEF_COLOR8;
     setting->screen_x = SCREEN_X;
     setting->screen_y = SCREEN_Y;
-    setting->discControl = DEF_DISCCONTROL;
     setting->interlace = DEF_INTERLACE;
     setting->Menu_Frame = DEF_MENU_FRAME;
     setting->Show_Menu = DEF_MENU;
-    setting->resetIOP = DEF_RESETIOP;
     setting->numCNF = DEF_NUMCNF;
     setting->swapKeys = DEF_SWAPKEYS;
     setting->HOSTwrite = DEF_HOSTWRITE;
@@ -847,10 +838,6 @@ int loadConfig(char *mainMsg, char *CNF)
         else if (!strcmp(name, "Menu_Hide_Paths"))
             setting->Hide_Paths = atoi(value);
         //---------- NB: color settings moved to scanSkinCNF
-        else if (!strcmp(name, "Init_CDVD_Check"))
-            setting->discControl = atoi(value);
-        else if (!strcmp(name, "Init_Reset_IOP"))
-            setting->resetIOP = atoi(value);
         else if (!strcmp(name, "Menu_Pages"))
             setting->numCNF = atoi(value);
         else if (!strcmp(name, "GUI_Swap_Keys"))
@@ -1496,7 +1483,7 @@ void Config_Screen(void)
 //---------------------------------------------------------------------------
 void Config_Startup(void)
 {
-    int s, max_s = 16;  //define cursor index and its max value
+    int s, max_s = 15;  //define cursor index and its max value
     int x, y;
     int event, post_event = 0;
     char c[MAX_PATH];
@@ -1533,71 +1520,69 @@ void Config_Startup(void)
                     s = 1;
             } else if ((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 event |= 2;  //event |= valid pad command
-                if (s == 2 && setting->numCNF > 1)
+                if (s == 1 && setting->numCNF > 1)
                     setting->numCNF--;
-                else if (s == 4)
+                else if (s == 3)
                     setting->usbd_file[0] = '\0';
-                else if (s == 5 && setting->Init_Delay > 0)
+                else if (s == 4 && setting->Init_Delay > 0)
                     setting->Init_Delay--;
-                else if (s == 6 && setting->timeout > 0)
+                else if (s == 5 && setting->timeout > 0)
                     setting->timeout--;
-                else if (s == 8)
+                else if (s == 7)
                     setting->usbkbd_file[0] = '\0';
-                else if (s == 9)
+                else if (s == 8)
                     setting->kbdmap_file[0] = '\0';
-                else if (s == 10)
+                else if (s == 9)
                     setting->CNF_Path[0] = '\0';
-                else if (s == 11)
+                else if (s == 10)
                     setting->usbmass_file[0] = '\0';
-                else if (s == 12) {
+                else if (s == 11) {
                     setting->lang_file[0] = '\0';
                     Load_External_Language();
-                } else if (s == 13) {
+                } else if (s == 12) {
                     setting->font_file[0] = '\0';
                     loadFont("");
-                } else if (s == 14) {  //clear ESR file choice
+                } else if (s == 13) {  //clear ESR file choice
                     setting->LK_Path[15][0] = 0;
                     setting->LK_Flag[15] = 0;
-                } else if (s == 15) {  //clear OSDSYS file choice
+                } else if (s == 14) {  //clear OSDSYS file choice
                     setting->LK_Path[16][0] = 0;
                     setting->LK_Flag[16] = 0;
                 }
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
                 event |= 2;  //event |= valid pad command
                 if (s == 1)
-                    setting->resetIOP = !setting->resetIOP;
-                else if (s == 2)
                     setting->numCNF++;
-                else if (s == 3)
+                else if (s == 2)
                     setting->swapKeys = !setting->swapKeys;
-                else if (s == 4)
+                else if (s == 3)
                     getFilePath(setting->usbd_file, USBD_IRX_CNF);
-                else if (s == 5)
+                else if (s == 4)
                     setting->Init_Delay++;
-                else if (s == 6)
+                else if (s == 5)
                     setting->timeout++;
-                else if (s == 7)
+                else if (s == 6)
                     setting->usbkbd_used = !setting->usbkbd_used;
-                else if (s == 8)
+                else if (s == 7)
                     getFilePath(setting->usbkbd_file, USBKBD_IRX_CNF);
-                else if (s == 9)
+                else if (s == 8)
                     getFilePath(setting->kbdmap_file, KBDMAP_FILE_CNF);
-                else if (s == 10) {
+                else if (s == 9) {
                     char *tmp;
 
                     getFilePath(setting->CNF_Path, CNF_PATH_CNF);
                     if ((tmp = strrchr(setting->CNF_Path, '/')))
                         tmp[1] = '\0';
-                } else if (s == 11)
+                } else if (s == 10)
                     getFilePath(setting->usbmass_file, USBMASS_IRX_CNF);
-                else if (s == 12) {
+                else if (s == 11) {
                     getFilePath(setting->lang_file, LANG_CNF);
                     Load_External_Language();
-                } else if (s == 13) {
+                } else if (s == 12) {
                     getFilePath(setting->font_file, FONT_CNF);
                     if (loadFont(setting->font_file) == 0)
                         setting->font_file[0] = '\0';
-                } else if (s == 14) {  //Make ESR file choice
+                } else if (s == 13) {  //Make ESR file choice
                     getFilePath(setting->LK_Path[15], LK_ELF_CNF);
                     if (!strncmp(setting->LK_Path[15], "mc0", 3) ||
                         !strncmp(setting->LK_Path[15], "mc1", 3)) {
@@ -1606,7 +1591,7 @@ void Config_Startup(void)
                     }
                     if (setting->LK_Path[15][0])
                         setting->LK_Flag[15] = 1;
-                } else if (s == 15) {  //Make OSDSYS file choice
+                } else if (s == 14) {  //Make OSDSYS file choice
                     getFilePath(setting->LK_Path[16], TEXT_CNF);
                     if (!strncmp(setting->LK_Path[16], "mc0", 3) ||
                         !strncmp(setting->LK_Path[16], "mc1", 3)) {
@@ -1632,13 +1617,6 @@ void Config_Startup(void)
             printXY(LNG(STARTUP_SETTINGS), x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
-
-            if (setting->resetIOP)
-                sprintf(c, "  %s: %s", LNG(Reset_IOP), LNG(ON));
-            else
-                sprintf(c, "  %s: %s", LNG(Reset_IOP), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
-            y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Number_of_CNFs), setting->numCNF);
             printXY(c, x, y, setting->color[3], TRUE, 0);
@@ -1742,20 +1720,20 @@ void Config_Startup(void)
             drawChar(LEFT_CUR, x, y, setting->color[3]);
 
             //Tooltip section
-            if ((s == 1) || (s == 3) || (s == 7)) {  //resetIOP || usbkbd_used
+            if ((s == 2) || (s == 6)) {  //usbkbd_used
                 if (swapKeys)
                     sprintf(c, "ÿ1:%s", LNG(Change));
                 else
                     sprintf(c, "ÿ0:%s", LNG(Change));
-            } else if ((s == 2) || (s == 5) || (s == 6)) {  //numCNF || Init_Delay || timeout
+            } else if ((s == 1) || (s == 4) || (s == 5)) {  //numCNF || Init_Delay || timeout
                 if (swapKeys)
                     sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
                 else
                     sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
-            } else if ((s == 4) || (s == 8) || (s == 9) || (s == 10) || (s == 11)
+            } else if ((s == 3) || (s == 7) || (s == 8) || (s == 9) || (s == 10)
                        //usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
                        //Language||Fontfile||ESR_elf||OSDSYS_kelf
-                       || (s == 12) || (s == 13) || (s == 14) || (s == 15)) {
+                       || (s == 11) || (s == 12) || (s == 13) || (s == 14)) {
                 if (swapKeys)
                     sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Browse), LNG(Clear));
                 else
@@ -2153,8 +2131,6 @@ void config(char *mainMsg, char *CNF)
                     setting->Show_Titles = !setting->Show_Titles;
                 else if (s == FILENAME)
                     setting->Hide_Paths = !setting->Hide_Paths;
-                else if (s == DISCCONTROL)
-                    setting->discControl = !setting->discControl;
                 else if (s == SCREEN)
                     Config_Screen();
                 else if (s == SETTINGS)
@@ -2253,13 +2229,6 @@ void config(char *mainMsg, char *CNF)
             printXY(c, x, y, setting->color[3], TRUE, 0);
             y += FONT_HEIGHT;
 
-            if (setting->discControl)
-                sprintf(c, "  %s: %s", LNG(Disc_control), LNG(ON));
-            else
-                sprintf(c, "  %s: %s", LNG(Disc_control), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
-            y += FONT_HEIGHT;
-
             if (setting->Hide_Paths)
                 sprintf(c, "  %s: %s", LNG(Hide_full_ELF_paths), LNG(ON));
             else
@@ -2295,7 +2264,7 @@ void config(char *mainMsg, char *CNF)
                     sprintf(c, "ÿ1:%s ÿ0:%s ÿ2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
                 else
                     sprintf(c, "ÿ0:%s ÿ1:%s ÿ2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
-            } else if ((s == SHOW_TITLES) || (s == FILENAME) || (s == DISCCONTROL)) {
+            } else if ((s == SHOW_TITLES) || (s == FILENAME)) {
                 if (swapKeys)
                     sprintf(c, "ÿ1:%s", LNG(Change));
                 else
@@ -2315,8 +2284,7 @@ void config(char *mainMsg, char *CNF)
         event = 0;
 
     }  //ends while
-    if (setting->discControl)
-        loadCdModules();
+    loadCdModules();
 }  //ends config
 //---------------------------------------------------------------------------
 // End of file: config.c

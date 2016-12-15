@@ -721,9 +721,8 @@ void JpgViewer(void)
             jpg_browser_cd = FALSE;
             jpg_browser_up = FALSE;
         }  //ends if(jpg_browser_cd)
-        if (setting->discControl && !strncmp(path, "cdfs", 4)) {
+        if (!strncmp(path, "cdfs", 4)) {
             CDVD_Stop();
-            sceCdSync(0);
         }
         if (top > jpg_browser_nfiles - rows)
             top = jpg_browser_nfiles - rows;
