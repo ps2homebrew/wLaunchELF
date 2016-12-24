@@ -20,8 +20,6 @@ extern void ps2ip_irx;
 extern int size_ps2ip_irx;
 extern void ps2smap_irx;
 extern int size_ps2smap_irx;
-extern void smsutils_irx;
-extern int size_smsutils_irx;
 extern void ps2host_irx;
 extern int size_ps2host_irx;
 #ifdef SMB
@@ -667,7 +665,6 @@ static void load_ps2ip(void)
 
     load_ps2dev9();
     if (!have_ps2ip) {
-        SifExecModuleBuffer(&smsutils_irx, size_smsutils_irx, 0, NULL, &ret);
         SifExecModuleBuffer(&ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
         have_ps2ip = 1;
     }

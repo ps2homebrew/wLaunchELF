@@ -20,9 +20,6 @@
 #include "net_fio.h"
 #include "hostlink.h"
 
-#define ntohl(x) htonl(x)
-#define ntohs(x) htons(x)
-
 unsigned int remote_pc_addr = 0xffffffff;
 
 #define PACKET_MAXSIZE 4096

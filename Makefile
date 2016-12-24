@@ -6,7 +6,7 @@ SMB = 0
 EE_BIN = BOOT.ELF
 EE_BIN_PKD = ULE.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
-	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o smsutils_irx.o ps2ip_irx.o\
+	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o\
 	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
 	cdvd_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o fakehost_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
@@ -65,23 +65,11 @@ filexio_irx.s: $(PS2SDK)/iop/irx/fileXio.irx
 ps2dev9_irx.s: $(PS2SDK)/iop/irx/ps2dev9.irx
 	bin2s $< $@ ps2dev9_irx
 
-oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx: oldlibs/SMS/drv/SMSTCPIP
-	$(MAKE) -C $<
-
-ps2ip_irx.s: oldlibs/SMS/drv/SMSTCPIP/bin/SMSTCPIP.irx
+ps2ip_irx.s: $(PS2SDK)/iop/irx/ps2ip.irx
 	bin2s $< $@ ps2ip_irx
 
-oldlibs/SMS/drv/SMSMAP/SMSMAP.irx: oldlibs/SMS/drv/SMSMAP
-	$(MAKE) -C $<
-
-ps2smap_irx.s: oldlibs/SMS/drv/SMSMAP/SMSMAP.irx
+ps2smap_irx.s: $(PS2DEV)/ps2eth/smap/ps2smap.irx
 	bin2s $< $@ ps2smap_irx
-
-oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx: oldlibs/SMS/drv/SMSUTILS
-	$(MAKE) -C $<
-
-smsutils_irx.s: oldlibs/SMS/drv/SMSUTILS/SMSUTILS.irx
-	bin2s $< $@ smsutils_irx
 
 oldlibs/ps2ftpd/bin/ps2ftpd.irx: oldlibs/ps2ftpd
 	$(MAKE) -C $<
@@ -152,9 +140,6 @@ clean:
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean
 	$(MAKE) -C oldlibs/libcdvd clean
-	$(MAKE) -C oldlibs/SMS/drv/SMSTCPIP clean
-	$(MAKE) -C oldlibs/SMS/drv/SMSMAP clean
-	$(MAKE) -C oldlibs/SMS/drv/SMSUTILS clean
 	$(MAKE) -C oldlibs/ps2ftpd clean
 	rm -f *.s $(EE_OBJS) $(EE_BIN) $(EE_BIN_PKD)
 
