@@ -76,11 +76,11 @@ SETTING *tmpsetting;
 // CNF file. Input and output data is handled via its pointer parameters.
 // The return value flags 'false' when no variable is found. (normal at EOF)
 //---------------------------------------------------------------------------
-int get_CNF_string(unsigned char **CNF_p_p,
-                   unsigned char **name_p_p,
-                   unsigned char **value_p_p)
+int get_CNF_string(char **CNF_p_p,
+                   char **name_p_p,
+                   char **value_p_p)
 {
-    unsigned char *np, *vp, *tp = *CNF_p_p;
+    char *np, *vp, *tp = *CNF_p_p;
 
 start_line:
     while ((*tp <= ' ') && (*tp > '\0'))
@@ -164,14 +164,14 @@ size_t storeSkinCNF(char *cnf_buf)
     size_t CNF_size;
 
     sprintf(cnf_buf,
-            "GUI_Col_1_ABGR = %08lX\r\n"
-            "GUI_Col_2_ABGR = %08lX\r\n"
-            "GUI_Col_3_ABGR = %08lX\r\n"
-            "GUI_Col_4_ABGR = %08lX\r\n"
-            "GUI_Col_5_ABGR = %08lX\r\n"
-            "GUI_Col_6_ABGR = %08lX\r\n"
-            "GUI_Col_7_ABGR = %08lX\r\n"
-            "GUI_Col_8_ABGR = %08lX\r\n"
+            "GUI_Col_1_ABGR = %08X\r\n"
+            "GUI_Col_2_ABGR = %08X\r\n"
+            "GUI_Col_3_ABGR = %08X\r\n"
+            "GUI_Col_4_ABGR = %08X\r\n"
+            "GUI_Col_5_ABGR = %08X\r\n"
+            "GUI_Col_6_ABGR = %08X\r\n"
+            "GUI_Col_7_ABGR = %08X\r\n"
+            "GUI_Col_8_ABGR = %08X\r\n"
             "SKIN_FILE = %s\r\n"
             "GUI_SKIN_FILE = %s\r\n"
             "SKIN_Brightness = %d\r\n"
@@ -183,14 +183,14 @@ size_t storeSkinCNF(char *cnf_buf)
             "Menu_Frame = %d\r\n"
             "Show_Menu = %d\r\n"
             "%n",                   // %n causes NO output, but only a measurement
-            setting->color[0],      //Col_1
-            setting->color[1],      //Col_2
-            setting->color[2],      //Col_3
-            setting->color[3],      //Col_4
-            setting->color[4],      //Col_5
-            setting->color[5],      //Col_6
-            setting->color[6],      //Col_7
-            setting->color[7],      //Col_8
+            (u32)setting->color[0], //Col_1
+            (u32)setting->color[1], //Col_2
+            (u32)setting->color[2], //Col_3
+            (u32)setting->color[3], //Col_4
+            (u32)setting->color[4], //Col_5
+            (u32)setting->color[5], //Col_6
+            (u32)setting->color[6], //Col_7
+            (u32)setting->color[7], //Col_8
             setting->skin,          //SKIN_FILE
             setting->GUI_skin,      //GUI_SKIN_FILE
             setting->Brightness,    //SKIN_Brightness
@@ -290,12 +290,12 @@ test:
 //---------------------------------------------------------------------------
 //preloadCNF loads an entire CNF file into RAM it allocates
 //------------------------------
-unsigned char *preloadCNF(char *path)
+char *preloadCNF(char *path)
 {
     int fd, tst;
     size_t CNF_size;
     char cnf_path[MAX_PATH];
-    unsigned char *RAM_p;
+    char *RAM_p;
 
     fd = -1;
     if ((tst = genFixPath(path, cnf_path)) >= 0)
@@ -322,7 +322,7 @@ unsigned char *preloadCNF(char *path)
 //---------------------------------------------------------------------------
 //scanSkinCNF will check for most cosmetic variables of a CNF
 //------------------------------
-int scanSkinCNF(unsigned char *name, unsigned char *value)
+int scanSkinCNF(char *name, char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
         setting->color[0] = hextoul(value);
@@ -374,14 +374,14 @@ int scanSkinCNF(unsigned char *name, unsigned char *value)
 //------------------------------
 int loadSkinCNF(char *path)
 {
-    int dummy, var_cnt;
-    unsigned char *RAM_p, *CNF_p, *name, *value;
+    int var_cnt;
+    char *RAM_p, *CNF_p, *name, *value;
 
     if (!(RAM_p = preloadCNF(path)))
         return -1;
     CNF_p = RAM_p;
     for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
-        dummy = scanSkinCNF(name, value);
+        scanSkinCNF(name, value);
     free(RAM_p);
     updateScreenMode(0);
     if (setting->skin)
@@ -716,7 +716,7 @@ int loadConfig(char *mainMsg, char *CNF)
     char tsts[20];
     char path[MAX_PATH];
     char cnf_path[MAX_PATH];
-    unsigned char *RAM_p, *CNF_p, *name, *value;
+    char *RAM_p, *CNF_p, *name, *value;
 
     initConfig();
 
@@ -1139,7 +1139,7 @@ void Config_Screen(void)
     int s, max_s = 35;  //define cursor index and its max value
     int x, y;
     int event, post_event = 0;
-    u64 rgb[8][3];
+    u8 rgb[8][3];
     char c[MAX_PATH];
     int space = ((SCREEN_WIDTH - SCREEN_MARGIN - 4 * FONT_WIDTH) - (Menu_start_x + 2 * FONT_WIDTH)) / 8;
 
@@ -1324,15 +1324,15 @@ void Config_Screen(void)
                         setting->color[3], TRUE, space - FONT_WIDTH / 2);
                 y += FONT_HEIGHT * 2;
                 printXY("R:", x, y, setting->color[3], TRUE, 0);
-                sprintf(c, "%02lX", rgb[i][0]);
+                sprintf(c, "%02X", rgb[i][0]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
                 printXY("G:", x, y, setting->color[3], TRUE, 0);
-                sprintf(c, "%02lX", rgb[i][1]);
+                sprintf(c, "%02X", rgb[i][1]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
                 printXY("B:", x, y, setting->color[3], TRUE, 0);
-                sprintf(c, "%02lX", rgb[i][2]);
+                sprintf(c, "%02X", rgb[i][2]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
                 y += FONT_HEIGHT;
                 sprintf(c, "ÿ4");

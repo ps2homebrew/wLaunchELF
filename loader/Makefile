@@ -1,10 +1,5 @@
- EE_INCS := $(EE_INCS) -I$(PS2SDK)/sbv/include
-
-EE_CFLAGS  := -mips3 -ffreestanding -fno-builtin -G0 \
-		-fshort-double -mlong64 -mhard-float -mno-abicalls -O2 -EL -Wall \
-		$(EE_INCS) $(EE_CFLAGS)
-
-EE_ASFLAGS := -EL -G0 $(EE_ASFLAGS)
+EE_CFLAGS  := -G0 -O2 -EL -Wall -D_EE
+EE_ASFLAGS += -EL -G0
 
 ###dlanor: adjust these three, for PS2Link compatibility tests
 ###dlanor: old LaunchELF used LA=0x90000, SA=0xB0000, SS=0x08000
@@ -23,13 +18,11 @@ LDPARAMS := -Wl,--defsym -Wl,_stack_size=$(STACKSIZE) -Wl,--defsym -Wl,_stack=$(
 
 EE_LDFLAGS += -Wl,-Ttext -Wl,$(LOADADDR) -s $(LDPARAMS)
 
-EE_LDFLAGS := $(EE_LDFLAGS) -L$(PS2SDK)/sbv/lib \
-
 EE_BIN = loader.elf
 
 EE_OBJS = loader.o
 
-EE_LIBS = -lfileXio -lpatches
+EE_LIBS =
 ifeq ($(DEBUG),1)
 EE_LIBS += -ldebug
 endif

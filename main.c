@@ -7,60 +7,57 @@
 #include "ps2smb.h"
 #endif
 
-//dlanor: I'm correcting all these erroneous 'u8 *name' declarations
-//dlanor: They are not pointers at all, but pure block addresses
-//dlanor: Thus they should be declared as 'void name'
-extern void iomanx_irx;
+extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
-extern void filexio_irx;
+extern u8 filexio_irx[];
 extern int size_filexio_irx;
-extern void ps2dev9_irx;
+extern u8 ps2dev9_irx[];
 extern int size_ps2dev9_irx;
-extern void ps2ip_irx;
+extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
-extern void ps2smap_irx;
+extern u8 ps2smap_irx[];
 extern int size_ps2smap_irx;
-extern void ps2host_irx;
+extern u8 ps2host_irx[];
 extern int size_ps2host_irx;
 #ifdef SMB
-extern void smbman_irx;
+extern u8 smbman_irx[];
 extern int size_smbman_irx;
 #endif
-extern void vmc_fs_irx;
+extern u8 vmc_fs_irx[];
 extern int size_vmc_fs_irx;
-extern void ps2ftpd_irx;
+extern u8 ps2ftpd_irx[];
 extern int size_ps2ftpd_irx;
-extern void ps2atad_irx;
+extern u8 ps2atad_irx[];
 extern int size_ps2atad_irx;
-extern void ps2hdd_irx;
+extern u8 ps2hdd_irx[];
 extern int size_ps2hdd_irx;
-extern void ps2fs_irx;
+extern u8 ps2fs_irx[];
 extern int size_ps2fs_irx;
-extern void poweroff_irx;
+extern u8 poweroff_irx[];
 extern int size_poweroff_irx;
-extern void loader_elf;
+extern u8 loader_elf;
 extern int size_loader_elf;
-extern void ps2netfs_irx;
+extern u8 ps2netfs_irx[];
 extern int size_ps2netfs_irx;
-extern void iopmod_irx;
+extern u8 iopmod_irx[];
 extern int size_iopmod_irx;
-extern void usbd_irx;
+extern u8 usbd_irx[];
 extern int size_usbd_irx;
-extern void usb_mass_irx;
+extern u8 usb_mass_irx[];
 extern int size_usb_mass_irx;
-extern void cdvd_irx;
+extern u8 cdvd_irx[];
 extern int size_cdvd_irx;
-extern void ps2kbd_irx;
+extern u8 ps2kbd_irx[];
 extern int size_ps2kbd_irx;
-extern void hdl_info_irx;
+extern u8 hdl_info_irx[];
 extern int size_hdl_info_irx;
-extern void mcman_irx;
+extern u8 mcman_irx[];
 extern int size_mcman_irx;
-extern void mcserv_irx;
+extern u8 mcserv_irx[];
 extern int size_mcserv_irx;
-extern void sior_irx;
+extern u8 sior_irx[];
 extern int size_sior_irx;
-extern void allowdvdv_irx;
+extern u8 allowdvdv_irx[];
 extern int size_allowdvdv_irx;
 
 //#define DEBUG
@@ -217,7 +214,7 @@ static void poweroffHandler(int i);
 static void setupPowerOff(void);
 static void loadNetModules(void);
 static void startKbd(void);
-static int scanSystemCnf(unsigned char *name, unsigned char *value);
+static int scanSystemCnf(char *name, char *value);
 static int readSystemCnf(void);
 static void ShowFont(void);
 static void triggerPowerOff(void);
@@ -652,7 +649,7 @@ static void load_ps2dev9(void)
     int ret;
 
     if (!have_ps2dev9) {
-        SifExecModuleBuffer(&ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
         have_ps2dev9 = 1;
     }
 }
@@ -665,11 +662,11 @@ static void load_ps2ip(void)
 
     load_ps2dev9();
     if (!have_ps2ip) {
-        SifExecModuleBuffer(&ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
         have_ps2ip = 1;
     }
     if (!have_ps2smap) {
-        SifExecModuleBuffer(&ps2smap_irx, size_ps2smap_irx,
+        SifExecModuleBuffer(ps2smap_irx, size_ps2smap_irx,
                             if_conf_len, &if_conf[0], &ret);
         have_ps2smap = 1;
     }
@@ -701,15 +698,15 @@ static void load_ps2atad(void)
 
     load_ps2dev9();
     if (!have_ps2atad) {
-        SifExecModuleBuffer(&ps2atad_irx, size_ps2atad_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(ps2atad_irx, size_ps2atad_irx, 0, NULL, &ret);
         have_ps2atad = 1;
     }
     if (!have_ps2hdd) {
-        SifExecModuleBuffer(&ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
+        SifExecModuleBuffer(ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
         have_ps2hdd = 1;
     }
     if (!have_ps2fs) {
-        SifExecModuleBuffer(&ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
+        SifExecModuleBuffer(ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
         have_ps2fs = 1;
     }
 }
@@ -723,7 +720,7 @@ void load_ps2host(void)
     setupPowerOff();  //resolves the stall out when opening host: from LaunchELF's FileBrowser
     load_ps2ip();
     if (!have_ps2host) {
-        SifExecModuleBuffer(&ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(ps2host_irx, size_ps2host_irx, 0, NULL, &ret);
         have_ps2host = 1;
     }
 }
@@ -738,7 +735,7 @@ static void load_smbman(void)
     setupPowerOff();  //resolves stall out when opening smb: FileBrowser
     load_ps2ip();
     if (!have_smbman) {
-        SifExecModuleBuffer(&smbman_irx, size_smbman_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(smbman_irx, size_smbman_irx, 0, NULL, &ret);
         have_smbman = 1;
     }
 }
@@ -754,9 +751,9 @@ static void ShowDebugInfo(void)
 {
     char TextRow[256];
     int i, event, post_event = 0;
+#ifdef SMB
     int row;
 
-#ifdef SMB
     load_smbman();
     loadSMBCNF("mc0:/SYS-CONF/SMB.CNF");
     smbCurrentServer = 0;
@@ -809,9 +806,10 @@ static void ShowDebugInfo(void)
             sprintf(TextRow, "boot_path == \"%s\"", boot_path);
             PrintRow(-1, TextRow);
             sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
+#ifndef SMB
+            PrintRow(-1, TextRow);
+#else
             row = PrintRow(-1, TextRow);
-
-#ifdef SMB
             int si = smbCurrentServer;
             sprintf(TextRow, "Server Index = %d of %d", si, smbServerListCount);
             PrintRow(row + 1, TextRow);
@@ -849,7 +847,7 @@ void load_vmc_fs(void)
     int ret;
 
     if (!have_vmc_fs) {
-        SifExecModuleBuffer(&vmc_fs_irx, size_vmc_fs_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(vmc_fs_irx, size_vmc_fs_irx, 0, NULL, &ret);
         have_vmc_fs = 1;
     }
 }
@@ -867,7 +865,7 @@ static void load_ps2ftpd(void)
 
     load_ps2ip();
     if (!have_ps2ftpd) {
-        SifExecModuleBuffer(&ps2ftpd_irx, size_ps2ftpd_irx, arglen, arg_p, &ret);
+        SifExecModuleBuffer(ps2ftpd_irx, size_ps2ftpd_irx, arglen, arg_p, &ret);
         have_ps2ftpd = 1;
     }
 }
@@ -880,7 +878,7 @@ static void load_ps2netfs(void)
 
     load_ps2ip();
     if (!have_ps2netfs) {
-        SifExecModuleBuffer(&ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(ps2netfs_irx, size_ps2netfs_irx, 0, NULL, &ret);
         have_ps2netfs = 1;
     }
 }
@@ -891,10 +889,10 @@ static void loadBasicModules(void)
 {
     int ret;
 
-    SifExecModuleBuffer(&iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
-    SifExecModuleBuffer(&filexio_irx, size_filexio_irx, 0, NULL, &ret);
+    SifExecModuleBuffer(iomanx_irx, size_iomanx_irx, 0, NULL, &ret);
+    SifExecModuleBuffer(filexio_irx, size_filexio_irx, 0, NULL, &ret);
 
-    SifExecModuleBuffer(&allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  //unlocks cdvd for reading on psx dvr
+    SifExecModuleBuffer(allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  //unlocks cdvd for reading on psx dvr
 
     SifLoadModule("rom0:SIO2MAN", 0, NULL);
 
@@ -906,14 +904,14 @@ static void loadBasicModules(void)
 
     SIOR_Init(0x20);
 
-    id = SifExecModuleBuffer(&sior_irx, size_sior_irx, 0, NULL, &ret);
+    id = SifExecModuleBuffer(sior_irx, size_sior_irx, 0, NULL, &ret);
     scr_printf("\t sior id=%d _start ret=%d\n", id, ret);
     DPRINTF("sior id=%d _start ret=%d\n", id, ret);
 #endif
 
-    SifExecModuleBuffer(&mcman_irx, size_mcman_irx, 0, NULL, &ret);  //Home
+    SifExecModuleBuffer(mcman_irx, size_mcman_irx, 0, NULL, &ret);  //Home
     //SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
-    SifExecModuleBuffer(&mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  //Home
+    SifExecModuleBuffer(mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  //Home
     //SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
     SifLoadModule("rom0:PADMAN", 0, NULL);
 }
@@ -925,7 +923,7 @@ void loadCdModules(void)
     int ret;
 
     if (!have_cdvd) {
-        SifExecModuleBuffer(&cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(cdvd_irx, size_cdvd_irx, 0, NULL, &ret);
         sceCdInit(SCECdINoD);  // SCECdINoD init without check for a disc. Reduces risk of a lockup if the drive is in a erroneous state.
         CDVD_Init();
         have_cdvd = 1;
@@ -1142,7 +1140,7 @@ void loadHdlInfoModule(void)
 
     if (!have_hdl_info) {
         drawMsg(LNG(Loading_HDL_Info_Module));
-        SifExecModuleBuffer(&hdl_info_irx, size_hdl_info_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(hdl_info_irx, size_hdl_info_irx, 0, NULL, &ret);
         ret = Hdl_Info_BindRpc();
         have_hdl_info = 1;
     }
@@ -1163,7 +1161,7 @@ static void setupPowerOff(void)
 
     if (!done_setupPowerOff) {
         if (!have_poweroff) {
-            SifExecModuleBuffer(&poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
+            SifExecModuleBuffer(poweroff_irx, size_poweroff_irx, 0, NULL, &ret);
             have_poweroff = 1;
         }
         poweroffInit();
@@ -1246,7 +1244,7 @@ static void startKbd(void)
 //---------------------------------------------------------------------------
 //scanSystemCnf will check for a standard variable of a SYSTEM.CNF file
 //------------------------------
-static int scanSystemCnf(unsigned char *name, unsigned char *value)
+static int scanSystemCnf(char *name, char *value)
 {
     if (!strcmp(name, "BOOT"))
         strncat(SystemCnf_BOOT, value, MAX_PATH - 1);
@@ -1267,8 +1265,8 @@ static int scanSystemCnf(unsigned char *name, unsigned char *value)
 //------------------------------
 static int readSystemCnf(void)
 {
-    int dummy, var_cnt;
-    unsigned char *RAM_p, *CNF_p, *name, *value;
+    int var_cnt;
+    char *RAM_p, *CNF_p, *name, *value;
 
     BootDiscType = 0;
     SystemCnf_BOOT[0] = '\0';
@@ -1279,7 +1277,7 @@ static int readSystemCnf(void)
     if ((RAM_p = preloadCNF("cdrom0:\\SYSTEM.CNF;1")) != NULL) {
         CNF_p = RAM_p;
         for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
-            dummy = scanSystemCnf(name, value);
+            scanSystemCnf(name, value);
         free(RAM_p);
     }
 

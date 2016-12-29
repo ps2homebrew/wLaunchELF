@@ -225,9 +225,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum);
 void drawScr(void);
 void drawFrame(int x1, int y1, int x2, int y2, u64 color);
 void drawChar(unsigned int c, int x, int y, u64 colour);
-int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space);
+int printXY(const char *s, int x, int y, u64 colour, int draw, int space);
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int);
-u8 *transcpy_sjis(u8 *d, u8 *s);
+char *transcpy_sjis(char *d, const unsigned char *s);
 void loadIcon(void);
 int loadFont(char *path_arg);
 //Comment out WriteFont_C when not used (also requires patch in draw.c)
@@ -263,16 +263,16 @@ extern SETTING *setting;
 void initConfig(void);
 int loadConfig(char *, char *);  //0==OK, -1==load failed
 void config(char *, char *);
-int get_CNF_string(unsigned char **CNF_p_p,
-                   unsigned char **name_p_p,
-                   unsigned char **value_p_p);  //main CNF name,value parser
-unsigned char *preloadCNF(char *path);          //loads file into RAM it allocates
+int get_CNF_string(char **CNF_p_p,
+                   char **name_p_p,
+                   char **value_p_p);  //main CNF name,value parser
+char *preloadCNF(char *path);          //loads file into RAM it allocates
 
 /* filer.c */
 typedef struct
 {
     char name[MAX_NAME];
-    char title[32 * 2 + 1];
+    unsigned char title[32 * 2 + 1];
     mcTable stats;
 } FILEINFO;
 
@@ -328,7 +328,7 @@ void JpgViewer(void);
 /* lang.c */
 typedef struct Language
 {
-    u8 *String;
+    char *String;
 } Language;
 
 enum {

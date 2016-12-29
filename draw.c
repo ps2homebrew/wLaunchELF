@@ -56,7 +56,7 @@ const u16 font404[] = {
     0, 0};
 
 // ASCII‚ÆSJIS‚Ì•ÏŠ·—p”z—ñ
-const unsigned char sjis_lookup_81[256] = {
+static const u8 sjis_lookup_81[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x00
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x10
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x20
@@ -74,7 +74,7 @@ const unsigned char sjis_lookup_81[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xE0
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xF0
 };
-const unsigned char sjis_lookup_82[256] = {
+static const u8 sjis_lookup_82[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x00
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x10
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x20
@@ -778,7 +778,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                         if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
                             if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
                                 if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
-                                    (void *)TexPicture.Mem = malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
+                                    TexPicture.Mem = (u32*)malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
                                     RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
                                     W = PicW;
                                     PicW = PicH;
@@ -1045,7 +1045,7 @@ void drawChar2(int n, int x, int y, u64 colour)
 //endfunc drawChar2
 //--------------------------------------------------------------
 // draw a string of characters, without shift-JIS support
-int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int space)
+int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
 {
     unsigned int c1, c2;
     int i;
@@ -1099,7 +1099,7 @@ int printXY(const unsigned char *s, int x, int y, u64 colour, int draw, int spac
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 {
     int n;
-    unsigned char ascii;
+    u8 ascii;
     u16 code;
     int i, j, tmp;
 
@@ -1201,7 +1201,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                             ascii = sjis_lookup_82[code & 0x00FF];
                         if (ascii != 0xFF) {
                             if (draw)
-                                drawChar(ascii, x, y, colour);
+                                drawChar((char)ascii, x, y, colour);
                         } else {
                             if (draw)
                                 drawChar('_', x, y, colour);
@@ -1227,7 +1227,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 //endfunc printXY_sjis
 //--------------------------------------------------------------
 //translate a string from shift-JIS to ascii (for gamesave titles)
-u8 *transcpy_sjis(u8 *d, u8 *s)
+char *transcpy_sjis(char *d, const unsigned char *s)
 {
     u8 ascii;
     u16 code1, code2;
@@ -1244,12 +1244,12 @@ u8 *transcpy_sjis(u8 *d, u8 *s)
             else if (code1 == 0x82)
                 ascii = sjis_lookup_82[code2];
             if (ascii != 0xFF) {
-                d[j++] = ascii;
+                d[j++] = (char)ascii;
             } else {
                 d[j++] = '_';
             }
         } else {  //First char lacks top bit set or no following char (non-SJIS)
-            d[j++] = code1;
+            d[j++] = (char)code1;
         }
     }             //ends for
     d[j] = '\0';  //terminate result string
