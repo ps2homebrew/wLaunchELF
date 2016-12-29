@@ -203,19 +203,18 @@ int FtpServer_HandleEvents(FtpServer *pServer)
 
         sl = sizeof(sa);
         if ((s = accept(pServer->m_iSocket, (struct sockaddr *)&sa, &sl)) >= 0) {
-            FtpClient *pClient;
+#ifdef DEBUG
             unsigned int addr;
             unsigned short port;
 
             addr = htonl(sa.sin_addr.s_addr);
             port = htons(sa.sin_port);
 
-#ifdef DEBUG
             printf("ps2ftpd: new client session (%d.%d.%d.%d:%d)\n",
                    (addr >> 24) & 0xff, (addr >> 16) & 0xff, (addr >> 8) & 0xff, addr & 0xff,
                    port);
 #endif
-            pClient = FtpServer_OnClientConnect(pServer, s);
+            FtpServer_OnClientConnect(pServer, s);
         }
     }
 
