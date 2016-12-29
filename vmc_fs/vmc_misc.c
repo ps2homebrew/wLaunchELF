@@ -393,7 +393,7 @@ int setDefaultSpec(int unit)
 
     memset(&g_Vmc_Image[unit].header, g_Vmc_Image[unit].erase_byte, sizeof(struct superblock));
 
-    strcpy(g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
+    strcpy((char*)g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
 
     DEBUGPRINT(4, "vmc_fs: SuperBlock Info: magic[40]             : %s\n", g_Vmc_Image[unit].header.magic);
 
@@ -592,7 +592,7 @@ const unsigned char ECC_XOR_Table[256] = {
 //----------------------------------------------------------------------------
 // Calculate ECC for a 128 bytes chunk of data
 //----------------------------------------------------------------------------
-int calculateECC(char *ECC_Chunk, const unsigned char *Data_Chunk)
+static void calculateECC(u8 *ECC_Chunk, const u8 *Data_Chunk)
 {
     int i, c;
 
@@ -617,20 +617,18 @@ int calculateECC(char *ECC_Chunk, const unsigned char *Data_Chunk)
     ECC_Chunk[1] &= 0x7f;
     ECC_Chunk[2] = ~ECC_Chunk[2];
     ECC_Chunk[2] &= 0x7f;
-
-    return 1;
 }
 
 
 //----------------------------------------------------------------------------
 // Build ECC from a complet page of data
 //----------------------------------------------------------------------------
-int buildECC(int unit, char *Page_Data, char *ECC_Data)
+void buildECC(int unit, const u8 *Page_Data, u8 *ECC_Data)
 {
 
-    char Data_Chunk[4][128];
-    char ECC_Chunk[4][3];
-    char ECC_Pad[4];
+    u8 Data_Chunk[4][128];
+    u8 ECC_Chunk[4][3];
+    u8 ECC_Pad[4];
 
     // This is to divide the page in 128 bytes chunks
     memcpy(Data_Chunk[0], Page_Data + 0, 128);
@@ -654,6 +652,4 @@ int buildECC(int unit, char *Page_Data, char *ECC_Data)
     memcpy(ECC_Data + 6, ECC_Chunk[2], 3);
     memcpy(ECC_Data + 9, ECC_Chunk[3], 3);
     memcpy(ECC_Data + 12, ECC_Pad, 4);
-
-    return 1;
 }

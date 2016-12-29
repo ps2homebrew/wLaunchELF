@@ -21,7 +21,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     struct direntry dirent;
     int all_sector;
-    char *mcbuffer, *mcbuffer2;
+    u8 *mcbuffer, *mcbuffer2;
     unsigned int i, j, k, x, y, last_blk_sector, Page_Num, Page_Num2;
 
     Page_Num = 0;
@@ -41,8 +41,8 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
         }
     }
 
-    mcbuffer = (char *)malloc((g_Vmc_Image[f->unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
-    mcbuffer2 = (char *)malloc((g_Vmc_Image[f->unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    mcbuffer = (u8 *)malloc((g_Vmc_Image[f->unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    mcbuffer2 = (u8 *)malloc((g_Vmc_Image[f->unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 
     DEBUGPRINT(3, "vmc_fs: format start\n");
 
@@ -432,9 +432,9 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
     //  the size of a cluster.
 
     int data_read = 0;   //  How much data we have read in so far
-    char *cluster_data;  //  Temporary storage for a cluster of data
+    u8 *cluster_data;  //  Temporary storage for a cluster of data
 
-    cluster_data = (char *)malloc((g_Vmc_Image[f->unit].cluster_size + 0xFF) & ~(unsigned int)0xFF);
+    cluster_data = (u8 *)malloc((g_Vmc_Image[f->unit].cluster_size + 0xFF) & ~(unsigned int)0xFF);
     memset(cluster_data, 0, g_Vmc_Image[f->unit].cluster_size);
 
     //  While we still have data to read in
@@ -2214,7 +2214,6 @@ int Vmc_Clean(int unit)
     int i = 0;
     unsigned int cluster_value = 0;
     unsigned int cluster_mask = 0;
-    int object_remove = FALSE;
     struct gen_privdata gendata;
 
     gendata.fd = g_Vmc_Image[unit].fd;
@@ -2246,8 +2245,6 @@ int Vmc_Clean(int unit)
                 DEBUGPRINT(6, "vmc_fs: Setting cluster %d as free cluster.\n", i);
 
                 setFatEntry(gendata.fd, i - gendata.first_allocatable, FREE_CLUSTER, gendata.indir_fat_clusters, FAT_SET);
-
-                object_remove = TRUE;
             }
         }
     }

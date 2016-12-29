@@ -176,7 +176,7 @@ struct direntry
     vmc_datetime modified;       //  Modification time.
     unsigned int attr;           //  User defined attribute.
     unsigned char unused1[28];   //  -
-    unsigned char name[32];      //  Zero terminated name for this directory entry.
+    char name[32];               //  Zero terminated name for this directory entry.
     unsigned char unused2[416];  //  -
 };
 
@@ -286,11 +286,11 @@ unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, unsig
 
 //  ps2.c
 int eraseBlock(int fd, unsigned int block);
-int writePage(int fd, unsigned char *page, unsigned int pagenum);
-int writeCluster(int fd, unsigned char *cluster, unsigned int clusternum);
-int writeClusterPart(int fd, unsigned char *cluster, unsigned int clusternum, int cluster_offset, int size);
-int readPage(int fd, unsigned char *page, unsigned int pagenum);
-int readCluster(int fd, unsigned char *cluster, unsigned int clusternum);
+int writePage(int fd, u8 *page, unsigned int pagenum);
+int writeCluster(int fd, u8 *cluster, unsigned int clusternum);
+int writeClusterPart(int fd, u8 *cluster, unsigned int clusternum, int cluster_offset, int size);
+int readPage(int fd, u8 *page, unsigned int pagenum);
+int readCluster(int fd, u8 *cluster, unsigned int clusternum);
 
 
 //  misc.c
@@ -300,4 +300,4 @@ void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, str
 unsigned int getFreeCluster(struct gen_privdata *gendata, int unit);
 int getPs2Time(vmc_datetime *tm);
 int setDefaultSpec(int unit);
-int buildECC(int unit, char *Page_Data, char *ECC_Data);
+void buildECC(int unit, const u8 *Page_Data, u8 *ECC_Data);

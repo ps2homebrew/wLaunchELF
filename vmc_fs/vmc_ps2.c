@@ -3,7 +3,7 @@
 
 // Functions specific to the ps2
 
-int readPage(int fd, unsigned char *page, unsigned int pagenum)
+int readPage(int fd, u8 *page, unsigned int pagenum)
 {
 
     int unit;
@@ -26,18 +26,18 @@ int readPage(int fd, unsigned char *page, unsigned int pagenum)
     return 0;
 }
 
-int readCluster(int fd, unsigned char *cluster, unsigned int clusternum)
+int readCluster(int fd, u8 *cluster, unsigned int clusternum)
 {
 
     int i, unit;
-    char *Page_Data;
+    u8 *Page_Data;
     unsigned int Page_Num;
 
     unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
-    Page_Data = (char *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
@@ -53,7 +53,7 @@ int readCluster(int fd, unsigned char *cluster, unsigned int clusternum)
     return 0;
 }
 
-int writePage(int fd, unsigned char *page, unsigned int pagenum)
+int writePage(int fd, u8 *page, unsigned int pagenum)
 {
 
     int unit;
@@ -75,9 +75,9 @@ int writePage(int fd, unsigned char *page, unsigned int pagenum)
 
     if (g_Vmc_Image[unit].ecc_flag) {
 
-        char *ECC_Data;
+        u8 *ECC_Data;
 
-        ECC_Data = (char *)malloc((0x10 + 0xFF) & ~(unsigned int)0xFF);
+        ECC_Data = (u8 *)malloc((0x10 + 0xFF) & ~(unsigned int)0xFF);
 
         buildECC(unit, page, ECC_Data);
         write(fd, ECC_Data, 0x10);
@@ -88,18 +88,18 @@ int writePage(int fd, unsigned char *page, unsigned int pagenum)
     return 0;
 }
 
-int writeCluster(int fd, unsigned char *cluster, unsigned int clusternum)
+int writeCluster(int fd, u8 *cluster, unsigned int clusternum)
 {
 
     int i, unit;
-    char *Page_Data;
+    u8 *Page_Data;
     unsigned int Page_Num;
 
     unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
-    Page_Data = (char *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
@@ -114,11 +114,11 @@ int writeCluster(int fd, unsigned char *cluster, unsigned int clusternum)
     return 0;
 }
 
-int writeClusterPart(int fd, unsigned char *cluster, unsigned int clusternum, int cluster_offset, int size)
+int writeClusterPart(int fd, u8 *cluster, unsigned int clusternum, int cluster_offset, int size)
 {
 
     int i, unit;
-    char *Page_Data;
+    u8 *Page_Data;
     unsigned int Page_Num, Page_offset;
 
     unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
@@ -126,7 +126,7 @@ int writeClusterPart(int fd, unsigned char *cluster, unsigned int clusternum, in
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
     Page_offset = cluster_offset;
 
-    Page_Data = (char *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
@@ -168,12 +168,12 @@ int eraseBlock(int fd, unsigned int block)
 {
 
     int i, unit;
-    char *Page_Data;
+    u8 *Page_Data;
     unsigned int Page_Num;
 
     unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
 
-    Page_Data = (char *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 
     Page_Num = block * g_Vmc_Image[unit].header.pages_per_block;
 
