@@ -1279,7 +1279,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
             tst = genRead(fd, (void *)&PSU_head, sizeof(PSU_head));
             if (tst != sizeof(PSU_head))
                 goto finish;  //Abort if read fails
-            PSU_head.name[sizeof(PSU_head.name)] = '\0';
+            PSU_head.name[sizeof(PSU_head.name) - 1] = '\0';
             if (!strcmp((char*)PSU_head.name, "icon.sys")) {
                 genLseek(fd, 0xC0, SEEK_CUR);
                 goto read_title;
