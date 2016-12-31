@@ -3948,7 +3948,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
                 size = -1;
         }
     }
-    printf("size result = %llu\r\n", size);
+    printf("size result = %lu\r\n", size);
     if (size < 0) {
         strcpy(mess, LNG(Size_test_Failed));
         text_pos = strlen(mess);
@@ -3959,7 +3959,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
         else if (size >= 1024)
             sprintf(mess, "%s = %.1fKB%n", LNG(SIZE), (double)size / 1024, &text_inc);
         else
-            sprintf(mess, "%s = %lluB%n", LNG(SIZE), size, &text_inc);
+            sprintf(mess, "%s = %luB%n", LNG(SIZE), size, &text_inc);
         text_pos += text_inc;
     }
 
