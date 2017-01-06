@@ -273,7 +273,7 @@ typedef struct
 {
     char name[MAX_NAME];
     unsigned char title[32 * 2 + 1];
-    mcTable stats;
+    sceMcTblGetDir stats;
 } FILEINFO;
 
 #define MOUNT_LIMIT 4

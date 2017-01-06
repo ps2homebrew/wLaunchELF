@@ -169,9 +169,9 @@ int USB_mass_loaded = 0;   //0==none, 1==internal, 2==external
 //--------------------------------------------------------------
 //executable code
 //--------------------------------------------------------------
-void clear_mcTable(mcTable *mcT)
+void clear_mcTable(sceMcTblGetDir *mcT)
 {
-    memset((void *)mcT, 0, sizeof(mcTable));
+    memset((void *)mcT, 0, sizeof(sceMcTblGetDir));
 }
 //--------------------------------------------------------------
 void clear_psu_header(psu_header *psu)
@@ -213,7 +213,7 @@ int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
     strcpy(fullpath, path);
     if (file != NULL) {
         strcat(fullpath, file->name);
-        if (file->stats.attrFile & MC_ATTR_SUBDIR)
+        if (file->stats.AttrFile & MC_ATTR_SUBDIR)
             strcat(fullpath, "/");
     }
     if ((p = strchr(&fullpath[6], '/')) == NULL)
@@ -486,8 +486,8 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
     if (file_sort == 0)
         return 0;  //return 0 for unsorted mode
 
-    if ((a->stats.attrFile & MC_ATTR_OBJECT) == (b->stats.attrFile & MC_ATTR_OBJECT)) {
-        if (a->stats.attrFile & MC_ATTR_FILE) {
+    if ((a->stats.AttrFile & MC_ATTR_OBJECT) == (b->stats.AttrFile & MC_ATTR_OBJECT)) {
+        if (a->stats.AttrFile & MC_ATTR_FILE) {
             p = strrchr(a->name, '.');
             if (p != NULL && !stricmp(p + 1, "ELF"))
                 aElf = TRUE;
@@ -502,8 +502,8 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
         if (file_sort == 3) {      //Sort by timestamp
             t = (file_show == 2);  //Set secondary sort criterion
             if (time_valid) {
-                u64 time_a = *(u64 *)&a->stats._modify;
-                u64 time_b = *(u64 *)&b->stats._modify;
+                u64 time_a = *(u64 *)&a->stats._Modify;
+                u64 time_b = *(u64 *)&b->stats._Modify;
                 if (time_a > time_b)
                     return -1;  //NB: reversed comparison for falling order
                 if (time_a < time_b)
@@ -541,7 +541,7 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
         return 0;
     }
 
-    if (a->stats.attrFile & MC_ATTR_SUBDIR)
+    if (a->stats.AttrFile & MC_ATTR_SUBDIR)
         return -1;
     else
         return 1;
@@ -572,7 +572,7 @@ void sort(FILEINFO *a, int left, int right)
 //--------------------------------------------------------------
 int readMC(const char *path, FILEINFO *info, int max)
 {
-    static mcTable mcDir[MAX_ENTRY] __attribute__((aligned(64)));
+    static sceMcTblGetDir mcDir[MAX_ENTRY] __attribute__((aligned(64)));
     char dir[MAX_PATH];
     int i, j, ret;
 
@@ -586,14 +586,14 @@ int readMC(const char *path, FILEINFO *info, int max)
 
     strcpy(dir, &path[4]);
     strcat(dir, "*");
-    mcGetDir(path[2] - '0', 0, dir, 0, MAX_ENTRY - 2, (mcTable *)mcDir);
+    mcGetDir(path[2] - '0', 0, dir, 0, MAX_ENTRY - 2, mcDir);
     mcSync(0, NULL, &ret);
 
     for (i = j = 0; i < ret; i++) {
-        if (mcDir[i].attrFile & MC_ATTR_SUBDIR &&
-            (!strcmp((char*)mcDir[i].name, ".") || !strcmp((char*)mcDir[i].name, "..")))
+        if (mcDir[i].AttrFile & MC_ATTR_SUBDIR &&
+            (!strcmp((char*)mcDir[i].EntryName, ".") || !strcmp((char*)mcDir[i].EntryName, "..")))
             continue;  //Skip pseudopaths "." and ".."
-        strcpy(info[j].name, (char*)mcDir[i].name);
+        strcpy(info[j].name, (char*)mcDir[i].EntryName);
         info[j].stats = mcDir[i];
         j++;
     }
@@ -637,11 +637,11 @@ int readCD(const char *path, FILEINFO *info, int max)
         strcpy(info[j].name, TocEntryList[i].filename);
         clear_mcTable(&info[j].stats);
         if (TocEntryList[i].fileProperties & 0x02) {
-            info[j].stats.attrFile = MC_ATTR_norm_folder;
+            info[j].stats.AttrFile = MC_ATTR_norm_folder;
         } else {
-            info[j].stats.attrFile = MC_ATTR_norm_file;
-            info[j].stats.fileSizeByte = TocEntryList[i].fileSize;
-            info[j].stats.unknown4[0] = 0;  //Assuming a CD can't have a single 4GB file
+            info[j].stats.AttrFile = MC_ATTR_norm_file;
+            info[j].stats.FileSizeByte = TocEntryList[i].fileSize;
+            info[j].stats.Reserve2 = 0;  //Assuming a CD can't have a single 4GB file
         }
         j++;
     }
@@ -901,7 +901,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
         //			info[i].stats.attrFile = MC_ATTR_norm_folder;
         //		}
         if (dirbuf.stat.mode & MC_ATTR_SUBDIR) {  //NB: vmcfs usage
-            info[i].stats.attrFile = dirbuf.stat.mode;
+            info[i].stats.AttrFile = dirbuf.stat.mode;
         }
         //		else if(dirbuf.stat.mode & FIO_S_IFREG){  //NB: normal usage (non-vmcfs)
         //			info[i].stats.attrFile = MC_ATTR_norm_file;
@@ -909,14 +909,14 @@ int readVMC(const char *path, FILEINFO *info, int max)
         //			info[i].stats.unknown4[0] = dirbuf.stat.hisize;
         //		}
         else if (dirbuf.stat.mode & MC_ATTR_FILE) {  //NB: vmcfs usage
-            info[i].stats.attrFile = dirbuf.stat.mode;
-            info[i].stats.fileSizeByte = dirbuf.stat.size;
-            info[i].stats.unknown4[0] = dirbuf.stat.hisize;
+            info[i].stats.AttrFile = dirbuf.stat.mode;
+            info[i].stats.FileSizeByte = dirbuf.stat.size;
+            info[i].stats.Reserve2 = dirbuf.stat.hisize;
         } else
             continue;  //Skip entry which is neither a file nor a folder
-        strncpy((char*)info[i].stats.name, info[i].name, 32);
-        memcpy((void *)&info[i].stats._create, dirbuf.stat.ctime, 8);
-        memcpy((void *)&info[i].stats._modify, dirbuf.stat.mtime, 8);
+        strncpy((char*)info[i].stats.EntryName, info[i].name, 32);
+        memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
+        memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
         i++;
         if (i == max)
             break;
@@ -946,7 +946,7 @@ int readHDD(const char *path, FILEINFO *info, int max)
     if (!strcmp(path, "hdd0:/")) {
         for (i = 0; i < nparties; i++) {
             strcpy(info[i].name, parties[i]);
-            info[i].stats.attrFile = MC_ATTR_norm_folder;
+            info[i].stats.AttrFile = MC_ATTR_norm_folder;
         }
         return nparties;
     }
@@ -968,16 +968,16 @@ int readHDD(const char *path, FILEINFO *info, int max)
         strcpy(info[i].name, dirbuf.name);
         clear_mcTable(&info[i].stats);
         if (dirbuf.stat.mode & FIO_S_IFDIR) {
-            info[i].stats.attrFile = MC_ATTR_norm_folder;
+            info[i].stats.AttrFile = MC_ATTR_norm_folder;
         } else if (dirbuf.stat.mode & FIO_S_IFREG) {
-            info[i].stats.attrFile = MC_ATTR_norm_file;
-            info[i].stats.fileSizeByte = dirbuf.stat.size;
-            info[i].stats.unknown4[0] = dirbuf.stat.hisize;
+            info[i].stats.AttrFile = MC_ATTR_norm_file;
+            info[i].stats.FileSizeByte = dirbuf.stat.size;
+            info[i].stats.Reserve2 = dirbuf.stat.hisize;
         } else
             continue;  //Skip entry which is neither a file nor a folder
-        strncpy((char*)info[i].stats.name, info[i].name, 32);
-        memcpy((void *)&info[i].stats._create, dirbuf.stat.ctime, 8);
-        memcpy((void *)&info[i].stats._modify, dirbuf.stat.mtime, 8);
+        strncpy((char*)info[i].stats.EntryName, info[i].name, 32);
+        memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
+        memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
         i++;
         if (i == max)
             break;
@@ -1036,16 +1036,16 @@ int readMASS(const char *path, FILEINFO *info, int max)
         strcpy(info[n].name, record.name);
         clear_mcTable(&info[n].stats);
         if (FIO_S_ISDIR(record.stat.mode)) {
-            info[n].stats.attrFile = MC_ATTR_norm_folder;
+            info[n].stats.AttrFile = MC_ATTR_norm_folder;
         } else if (FIO_S_ISREG(record.stat.mode)) {
-            info[n].stats.attrFile = MC_ATTR_norm_file;
-            info[n].stats.fileSizeByte = record.stat.size;
-            info[n].stats.unknown4[0] = record.stat.hisize;
+            info[n].stats.AttrFile = MC_ATTR_norm_file;
+            info[n].stats.FileSizeByte = record.stat.size;
+            info[n].stats.Reserve2 = record.stat.hisize;
         } else
             continue;  //Skip entry which is neither a file nor a folder
-        strncpy((char*)info[n].stats.name, info[n].name, 32);
-        memcpy((void *)&info[n].stats._create, record.stat.ctime, 8);
-        memcpy((void *)&info[n].stats._modify, record.stat.mtime, 8);
+        strncpy((char*)info[n].stats.EntryName, info[n].name, 32);
+        memcpy((void *)&info[n].stats._Create, record.stat.ctime, 8);
+        memcpy((void *)&info[n].stats._Modify, record.stat.mtime, 8);
         n++;
         if (n == max)
             break;
@@ -1149,11 +1149,11 @@ int readHOST(const char *path, FILEINFO *info, int max)
                 clear_mcTable(&info[hostcount].stats);
                 if ((hfd = fileXioOpen(makeHostPath(Win_path, host_path), O_RDONLY, 0666)) >= 0) {
                     fileXioClose(hfd);
-                    info[hostcount].stats.attrFile = MC_ATTR_norm_file;
+                    info[hostcount].stats.AttrFile = MC_ATTR_norm_file;
                     makeFslPath(info[hostcount++].name, host_next);
                 } else if ((hfd = fileXioDopen(Win_path)) >= 0) {
                     fileXioDclose(hfd);
-                    info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
+                    info[hostcount].stats.AttrFile = MC_ATTR_norm_folder;
                     makeFslPath(info[hostcount++].name, host_next);
                 }
                 contentptr = 0;
@@ -1181,16 +1181,16 @@ int readHOST(const char *path, FILEINFO *info, int max)
             clear_mcTable(&info[hostcount].stats);
 
             if (!(hostcontent.stat.mode & FIO_S_IFDIR))  //if not a directory
-                info[hostcount].stats.attrFile = MC_ATTR_norm_file;
+                info[hostcount].stats.AttrFile = MC_ATTR_norm_file;
             else
-                info[hostcount].stats.attrFile = MC_ATTR_norm_folder;
+                info[hostcount].stats.AttrFile = MC_ATTR_norm_folder;
 
-            info[hostcount].stats.fileSizeByte = hostcontent.stat.size;
-            info[hostcount].stats.unknown4[0] = hostcontent.stat.hisize;  //taking an unused(?) unknown for the high bits
-            memcpy((void *)&info[hostcount].stats._create, hostcontent.stat.ctime, 8);
-            info[hostcount].stats._create.year += 1900;
-            memcpy((void *)&info[hostcount].stats._modify, hostcontent.stat.mtime, 8);
-            info[hostcount].stats._modify.year += 1900;
+            info[hostcount].stats.FileSizeByte = hostcontent.stat.size;
+            info[hostcount].stats.Reserve2 = hostcontent.stat.hisize;  //taking an unused(?) unknown for the high bits
+            memcpy((void *)&info[hostcount].stats._Create, hostcontent.stat.ctime, 8);
+            info[hostcount].stats._Create.Year += 1900;
+            memcpy((void *)&info[hostcount].stats._Modify, hostcontent.stat.mtime, 8);
+            info[hostcount].stats._Modify.Year += 1900;
             hostcount++;
             if (hostcount >= max)
                 break;
@@ -1256,13 +1256,13 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     } else {
         strcpy(dir, path);
         strcat(dir, file->name);
-        if (file->stats.attrFile & MC_ATTR_SUBDIR)
+        if (file->stats.AttrFile & MC_ATTR_SUBDIR)
             strcat(dir, "/");
     }
 
     ret = -1;  //Assume that result will be failure, to simplify aborts
 
-    if ((file->stats.attrFile & MC_ATTR_SUBDIR) == 0) {
+    if ((file->stats.AttrFile & MC_ATTR_SUBDIR) == 0) {
         //Here we know that the object needing a title is a file
         strcpy(tmpdir, dir);                      //Copy the pathname for file access
         cp = strrchr(tmpdir, '.');                //Find the extension, if any
@@ -1420,7 +1420,7 @@ int menu(const char *path, FILEINFO *file)
         enable[RENAME] = FALSE;
     }
 
-    if ((file->stats.attrFile & MC_ATTR_SUBDIR) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
+    if ((file->stats.AttrFile & MC_ATTR_SUBDIR) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
         enable[MOUNTVMC0] = FALSE;  //forbid insane VMC mounting
         enable[MOUNTVMC1] = FALSE;  //forbid insane VMC mounting
     }
@@ -1666,7 +1666,7 @@ u64 getFileSize(const char *path, const FILEINFO *file)
     char dir[MAX_PATH], party[MAX_NAME];
     int nfiles, i, ret;
 
-    if (file->stats.attrFile & MC_ATTR_SUBDIR) {  //Folder object to size up
+    if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Folder object to size up
         sprintf(dir, "%s%s/", path, file->name);
         nfiles = getDir(dir, files);
         for (i = size = 0; i < nfiles; i++) {
@@ -1714,7 +1714,7 @@ int delete (const char *path, const FILEINFO *file)
     if (!strncmp(dir, "host:/", 6))
         makeHostPath(dir + 5, dir + 6);
 
-    if (file->stats.attrFile & MC_ATTR_SUBDIR) {  //Is the object to delete a folder ?
+    if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Is the object to delete a folder ?
         strcat(dir, "/");
         nfiles = getDir(dir, files);
         for (i = 0; i < nfiles; i++) {
@@ -1799,13 +1799,13 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
             mcGetInfo(path[2] - '0', 0, &mctype_PSx, NULL, NULL);
             mcSync(0, NULL, &test);
             if (mctype_PSx == 2)  //PS2 MC ?
-                strncpy((void *)file->stats.name, name, 32);
+                strncpy((void *)file->stats.EntryName, name, 32);
             mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  //Fix file stats
             mcSync(0, NULL, &test);
             if (ret == -4)
                 ret = -EEXIST;
             else {  //PS1 MC !
-                strncpy((void *)file->stats.name, name, 32);
+                strncpy((void *)file->stats.EntryName, name, 32);
                 mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  //Fix file stats
                 mcSync(0, NULL, &test);
                 if (ret == -4)
@@ -1821,13 +1821,13 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
         strcpy(newPath, oldPath + 5);
         strcat(oldPath, file->name);
         strcat(newPath, name);
-        if (file->stats.attrFile & MC_ATTR_SUBDIR) {  //Rename a folder ?
+        if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Rename a folder ?
             ret = (temp_fd = fileXioDopen(oldPath));
             if (temp_fd >= 0) {
                 ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
                 fileXioDclose(temp_fd);
             }
-        } else if (file->stats.attrFile & MC_ATTR_FILE) {  //Rename a file ?
+        } else if (file->stats.AttrFile & MC_ATTR_FILE) {  //Rename a file ?
             ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY, 0666));
             if (temp_fd >= 0) {
                 ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
@@ -1914,7 +1914,7 @@ int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
     size_t size;//, outsize;
     int ret = -1, pfsout = -1, pfsin = -1, in_fd = -1, out_fd = -1, buffSize;
     int dummy;
-    mcTable stats;
+    sceMcTblGetDir stats;
     int speed = 0;
     int remain_time = 0, TimeDiff = 0;
     long old_size = 0, SizeDiff = 0;
@@ -1961,7 +1961,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
     //The physical device specifiers remain in 'inPath' and 'outPath'
 
     //Here we have an object to copy, which may be either a file or a folder
-    if (file.stats.attrFile & MC_ATTR_SUBDIR) {
+    if (file.stats.AttrFile & MC_ATTR_SUBDIR) {
         //Here we have a folder to copy, starting with an attempt to create it
         //This is where we must act differently for PSU backup, creating a PSU file instead
         if (PasteMode == PM_PSU_BACKUP) {
@@ -2159,7 +2159,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 //finally, we must adjust attributes of the new file copy, to ensure
                 //correct timestamps and attributes (requires MC-specific functions)
                 strcpy(tmp, out);
-                strncat(tmp, (const char*)files[0].stats.name, 32);
+                strncat(tmp, (const char*)files[0].stats.EntryName, 32);
                 mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  //Wakeup call
                 mcSync(0, NULL, &dummy);
                 mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &files[0].stats, MC_SFI);  //Fix file stats
@@ -2208,7 +2208,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 size = genRead(in_fd, (void *)&stats, 64);
                 if (size == 64) {
                     strcpy(tmp, out);
-                    strncat(tmp, (const char*)stats.name, 32);
+                    strncat(tmp, (const char*)stats.EntryName, 32);
                     mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  //Wakeup call
                     mcSync(0, NULL, &dummy);
                     mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &stats, MC_SFI);  //Fix file stats
@@ -2226,7 +2226,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 mcSync(0, NULL, &dummy);
                 ret = MC_SFI;                                   //default request for changing entire mcTable
                 if (strncmp(in, "mc", 2)) {                     //Handle file copied from non-MC to MC
-                    file.stats.attrFile = MC_ATTR_norm_folder;  //normalize MC folder attribute
+                    file.stats.AttrFile = MC_ATTR_norm_folder;  //normalize MC folder attribute
                     if (!strncmp(in, "host", 4)) {              //Handle folder copied from host: to MC
                         ret = 4;                                //request change only of main attribute for host:
                     }                                           //ends host: source clause
@@ -2237,8 +2237,8 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                 if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
                 } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
                 } else {                                //for other devices we use fileXio_ stuff
-                    memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
-                    memcpy(iox_stat.mtime, (void *)&file.stats._modify, 8);
+                    memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
+                    memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
                     memcpy(iox_stat.atime, iox_stat.mtime, 8);
                     ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
                     if (!strncmp(in, "host", 4)) {               //Handle folder copied from host:
@@ -2508,7 +2508,7 @@ non_PSU_RESTORE_init:
         mcSync(0, NULL, &dummy);
         ret = MC_SFI;                                 //default request for changing entire mcTable
         if (strncmp(in, "mc", 2)) {                   //Handle file copied from non-MC to MC
-            file.stats.attrFile = MC_ATTR_norm_file;  //normalize MC file attribute
+            file.stats.AttrFile = MC_ATTR_norm_file;  //normalize MC file attribute
             if (!strncmp(in, "host", 4)) {            //Handle folder copied from host: to MC
                 ret = 4;                              //request change only of main attribute for host:
             }                                         //ends host: source clause
@@ -2521,8 +2521,8 @@ non_PSU_RESTORE_init:
         if (!strncmp(out, "host", 4)) {         //for files copied to host: we skip Chstat
         } else if (!strncmp(out, "mass", 4)) {  //for files copied to mass: we skip Chstat
         } else {                                //for other devices we use fileXio_ stuff
-            memcpy(iox_stat.ctime, (void *)&file.stats._create, 8);
-            memcpy(iox_stat.mtime, (void *)&file.stats._modify, 8);
+            memcpy(iox_stat.ctime, (void *)&file.stats._Create, 8);
+            memcpy(iox_stat.mtime, (void *)&file.stats._Modify, 8);
             memcpy(iox_stat.atime, iox_stat.mtime, 8);
             ret = FIO_CST_CT | FIO_CST_AT | FIO_CST_MT;  //Request timestamp stat change
             if (!strncmp(in, "host", 4)) {               //Handle file copied from host:
@@ -2968,24 +2968,24 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
             scan_USB_mass();   //then allow another scan here (timer dependent)
 
         strcpy(files[nfiles].name, "mc0:");
-        files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
         strcpy(files[nfiles].name, "mc1:");
-        files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
         strcpy(files[nfiles].name, "hdd0:");
-        files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
         strcpy(files[nfiles].name, "cdfs:");
-        files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
         if ((cnfmode != USBD_IRX_CNF) && (cnfmode != USBKBD_IRX_CNF) && (cnfmode != USBMASS_IRX_CNF)) {
             //The condition above blocks selecting USB drivers from USB devices
             if (USB_mass_ix[0] || !USB_mass_scanned) {
                 strcpy(files[nfiles].name, "mass:");
-                files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
             }
             for (i = 1; i < 10; i++) {
                 if (USB_mass_ix[i]) {
                     strcpy(files[nfiles].name, "mass0:");
                     files[nfiles].name[4] = USB_mass_ix[i];
-                    files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+                    files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
                 }
             }
         }
@@ -2993,21 +2993,21 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
             //This condition blocks selecting any CONFIG items on PC
             //or in a virtual memory card
             strcpy(files[nfiles].name, "host:");
-            files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+            files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
             if (vmcMounted[0]) {
                 strcpy(files[nfiles].name, "vmc0:");
-                files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
             }
             if (vmcMounted[1]) {
                 strcpy(files[nfiles].name, "vmc1:");
-                files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
             }
         }
         if (cnfmode < 2) {
             //This condition blocks use of MISC pseudo-device for drivers and skins
             //And allows this device only for launch keys and for normal browsing
             strcpy(files[nfiles].name, LNG(MISC));
-            files[nfiles].stats.attrFile = MC_ATTR_SUBDIR;
+            files[nfiles].stats.AttrFile = MC_ATTR_SUBDIR;
             nfiles++;
         }
         for (i = 0; i < nfiles; i++)
@@ -3018,55 +3018,55 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         //-- Start case for MISC command pseudo folder with function links --
         nfiles = 0;
         strcpy(files[nfiles].name, "..");
-        files[nfiles++].stats.attrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
         if (cnfmode) {  //Stop recursive FileBrowser entry, only allow it for launch keys
             strcpy(files[nfiles].name, LNG(FileBrowser));
-            files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+            files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         }
         strcpy(files[nfiles].name, LNG(PS2Browser));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(PS2Disc));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(PS2Net));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(PS2PowerOff));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(HddManager));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(TextEditor));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(JpgViewer));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Configure));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Load_CNFprev));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Load_CNFnext));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Set_CNF_Path));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Load_CNF));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         //Next 2 lines add an optional font test routine
         strcpy(files[nfiles].name, LNG(ShowFont));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(Debug_Info));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(About_uLE));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         strcpy(files[nfiles].name, LNG(OSDSYS));
-        files[nfiles++].stats.attrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
         for (i = 0; i < nfiles; i++)
             files[i].title[0] = 0;
         //-- End case for MISC command pseudo folder with function links --
     } else {
         //-- Start case for normal folder with file/folder links --
         strcpy(files[0].name, "..");
-        files[0].stats.attrFile = MC_ATTR_SUBDIR;
+        files[0].stats.AttrFile = MC_ATTR_SUBDIR;
         nfiles = getDir(path, &files[1]) + 1;
         if (strcmp(ext, "*")) {
             for (i = j = 1; i < nfiles; i++) {
-                if (files[i].stats.attrFile & MC_ATTR_SUBDIR)
+                if (files[i].stats.AttrFile & MC_ATTR_SUBDIR)
                     files[j++] = files[i];
                 else {
                     p = strrchr(files[i].name, '.');
@@ -3344,7 +3344,7 @@ int getFilePath(char *out, int cnfmode)
             else if (new_pad & PAD_TRIANGLE)
                 browser_up = TRUE;
             else if ((swapKeys && (new_pad & PAD_CROSS)) || (!swapKeys && (new_pad & PAD_CIRCLE))) {  //Pushed OK
-                if (files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR) {
+                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
                     //pushed OK for a folder
                     if (!strcmp(files[browser_sel].name, ".."))
                         browser_up = TRUE;
@@ -3368,7 +3368,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
             } else if (new_pad & PAD_R3) {  //New clause for uLE-relative paths
-                if (files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR) {
+                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
                     //pushed R3 for a folder (navigate to uLE CNF folder)
                     strcpy(path, LaunchElfDir);
                     if ((p = strchr(path, ':'))) {                         //device separator ?
@@ -3415,7 +3415,7 @@ int getFilePath(char *out, int cnfmode)
                 }
             } else if (cnfmode == SAVE_CNF) {  //Generic Save commands
                 if (new_pad & PAD_START) {
-                    if (files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR) {
+                    if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
                         //no file was highlighted, so prep to save with empty filename
                         strcpy(out, path);
                         rv = 0;  //flag pure path selected
@@ -3462,7 +3462,7 @@ int getFilePath(char *out, int cnfmode)
                     else if (ret == DELETE) {
                         if (nmarks == 0) {  //dlanor: using title was inappropriate here (filesystem op)
                             sprintf(tmp, "%s", files[browser_sel].name);
-                            if (files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
+                            if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR)
                                 strcat(tmp, "/");
                             sprintf(tmp1, "\n%s ?", LNG(Delete));
                             strcat(tmp, tmp1);
@@ -3474,7 +3474,7 @@ int getFilePath(char *out, int cnfmode)
                             int first_deleted = 0;
                             if (nmarks == 0) {
                                 strcpy(tmp, files[browser_sel].name);
-                                if (files[browser_sel].stats.attrFile & MC_ATTR_SUBDIR)
+                                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR)
                                     strcat(tmp, "/");
                                 sprintf(tmp1, " %s", LNG(deleting));
                                 strcat(tmp, tmp1);
@@ -3486,7 +3486,7 @@ int getFilePath(char *out, int cnfmode)
                                         if (!first_deleted)     //if this is the first mark
                                             first_deleted = i;  //then memorize it for cursor positioning
                                         strcpy(tmp, files[i].name);
-                                        if (files[i].stats.attrFile & MC_ATTR_SUBDIR)
+                                        if (files[i].stats.AttrFile & MC_ATTR_SUBDIR)
                                             strcat(tmp, "/");
                                         sprintf(tmp1, " %s", LNG(deleting));
                                         strcat(tmp, tmp1);
@@ -3766,7 +3766,7 @@ int getFilePath(char *out, int cnfmode)
                 if (name_limit) {                   //Do we need to check name length ?
                     int name_end = name_limit / 7;  //Max string length for acceptable spacing
 
-                    if (files[top + i].stats.attrFile & MC_ATTR_SUBDIR)
+                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
                         name_end -= 1;             //For folders, reserve one character for final '/'
                     if (strlen(tmp) > name_end) {  //Is name too long for clean display ?
                         tmp[name_end - 1] = '~';   //indicate filename abbreviation
@@ -3774,7 +3774,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
 
-                if (files[top + i].stats.attrFile & MC_ATTR_SUBDIR)
+                if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
                     strcat(tmp, "/");
                 if (title_flag)
                     printXY_sjis(mcTitle, x + 4, y, color, TRUE);
@@ -3782,10 +3782,10 @@ int getFilePath(char *out, int cnfmode)
                     printXY(tmp, x + 4, y, color, TRUE, name_limit);
                 if (file_show > 0) {
                     //					unsigned int size = files[top+i].stats.fileSizeByte;
-                    unsigned long long size = ((unsigned long long)files[top + i].stats.unknown4[0] << 32) | files[top + i].stats.fileSizeByte;
+                    unsigned long long size = ((unsigned long long)files[top + i].stats.Reserve2 << 32) | files[top + i].stats.FileSizeByte;
                     int scale = 0;  //0==Bytes, 1==KBytes, 2==MBytes, 3==GB
                     char scale_s[6] = " KMGTP";
-                    PS2TIME timestamp = *(PS2TIME *)&files[top + i].stats._modify;
+                    PS2TIME timestamp = *(PS2TIME *)&files[top + i].stats._Modify;
 
                     if (!size_valid)
                         size = 0;
@@ -3822,7 +3822,7 @@ int getFilePath(char *out, int cnfmode)
                     if (marks[top + i])
                         drawChar('*', x - 6, y, setting->color[3]);
                 } else {  //if Icons must be used in front of file/folder names
-                    if (files[top + i].stats.attrFile & MC_ATTR_SUBDIR) {
+                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR) {
                         iconbase = ICON_FOLDER;
                         iconcolr = 4;
                     } else {
@@ -3992,13 +3992,13 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 */
         //----- End of section for debug display of attributes -----
         sprintf(mess + text_pos, " m=%04X %04d.%02d.%02d %02d:%02d:%02d%n",
-                files[sel].stats.attrFile,
-                files[sel].stats._modify.year,
-                files[sel].stats._modify.month,
-                files[sel].stats._modify.day,
-                files[sel].stats._modify.hour,
-                files[sel].stats._modify.min,
-                files[sel].stats._modify.sec,
+                files[sel].stats.AttrFile,
+                files[sel].stats._Modify.Year,
+                files[sel].stats._Modify.Month,
+                files[sel].stats._Modify.Day,
+                files[sel].stats._Modify.Hour,
+                files[sel].stats._Modify.Min,
+                files[sel].stats._Modify.Sec,
                 &text_inc);
         text_pos += text_inc;
         if (!strncmp(path, "mc", 2)) {
@@ -4008,7 +4008,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
             text_pos += text_inc;
         }
         //sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
-        unsigned long long size = ((unsigned long long)files[sel].stats.unknown4[0] << 32) | files[sel].stats.fileSizeByte;
+        unsigned long long size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
         //Max length is 20 characters+NULL
         char sizeC[21] = {0};
         char *sizeP = &sizeC[21];
@@ -4037,7 +4037,7 @@ void subfunc_Paste(char *mess, char *path)
 
     for (i = 0; i < nclipFiles; i++) {
         strcpy(tmp, clipFiles[i].name);
-        if (clipFiles[i].stats.attrFile & MC_ATTR_SUBDIR)
+        if (clipFiles[i].stats.AttrFile & MC_ATTR_SUBDIR)
             strcat(tmp, "/");
         sprintf(tmp1, " %s", LNG(pasting));
         strcat(tmp, tmp1);
