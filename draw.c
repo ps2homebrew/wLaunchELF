@@ -1062,7 +1062,7 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
     }
 
     i = 0;
-    while ((c1 = s[i++]) != 0) {
+    while ((c1 = (unsigned char)s[i++]) != 0) {
         if (c1 != 0xFF) {  // Normal character
             if (draw)
                 drawChar(c1, x, y, colour);
@@ -1072,7 +1072,7 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
             continue;
         }  //End if for normal character
         // Here we got a sequence starting with 0xFF ('ÿ')
-        if ((c2 = s[i++]) == 0)
+        if ((c2 = (unsigned char)s[i++]) == 0)
             break;
         if ((c2 < '0') || (c2 > '='))
             continue;
