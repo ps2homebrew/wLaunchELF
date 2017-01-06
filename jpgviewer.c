@@ -589,7 +589,7 @@ void JpgViewer(void)
                 if (--SlideShowTrans < 1)
                     SlideShowTrans = 4;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {  //Pushed OK
-                if (files[jpg_browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
+                if (files[jpg_browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
                     //pushed OK for a folder
                     thumb_load = TRUE;
                     if (!strcmp(files[jpg_browser_sel].name, "..")) {
@@ -778,7 +778,7 @@ void JpgViewer(void)
                         if (i >= top && thumb_test[i] == LOADED)
                             ++thumb_num;
                     } /* end for */
-                    if (thumb_test[jpg_browser_sel] == NOTLOADED && !(files[jpg_browser_sel].stats.AttrFile & MC_ATTR_SUBDIR)) {
+                    if (thumb_test[jpg_browser_sel] == NOTLOADED && !(files[jpg_browser_sel].stats.AttrFile & sceMcFileAttrSubdir)) {
                         sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
                         loadSkin(THUMB_PIC, jpgpath, thumb_top + thumb_num);
                         thumb_test[jpg_browser_sel] = testthumb;
@@ -831,21 +831,21 @@ void JpgViewer(void)
                     if (name_limit) {                   //Do we need to check name length ?
                         int name_end = name_limit / 7;  //Max string length for acceptable spacing
 
-                        if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
+                        if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
                             name_end -= 1;             //For folders, reserve one character for final '/'
                         if (strlen(tmp) > name_end) {  //Is name too long for clean display ?
                             tmp[name_end - 1] = '~';   //indicate filename abbreviation
                             tmp[name_end] = 0;         //abbreviate name length to make room for details
                         }
                     }
-                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
+                    if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
                         strcat(tmp, "/");
                     printXY(tmp, x + 4, y, color, TRUE, name_limit);
                     y += FONT_HEIGHT;
 
                 } else {  //Thumbnail mode
 
-                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR) {
+                    if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir) {
                         strcat(tmp, "/");
                         gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
                         gsKit_set_primalpha(gsGlobal, GS_SETREG_ALPHA(0, 1, 0, 1, 0), 0);

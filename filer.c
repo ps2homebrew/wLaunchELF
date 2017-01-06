@@ -213,7 +213,7 @@ int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
     strcpy(fullpath, path);
     if (file != NULL) {
         strcat(fullpath, file->name);
-        if (file->stats.AttrFile & MC_ATTR_SUBDIR)
+        if (file->stats.AttrFile & sceMcFileAttrSubdir)
             strcat(fullpath, "/");
     }
     if ((p = strchr(&fullpath[6], '/')) == NULL)
@@ -487,7 +487,7 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
         return 0;  //return 0 for unsorted mode
 
     if ((a->stats.AttrFile & MC_ATTR_OBJECT) == (b->stats.AttrFile & MC_ATTR_OBJECT)) {
-        if (a->stats.AttrFile & MC_ATTR_FILE) {
+        if (a->stats.AttrFile & sceMcFileAttrFile) {
             p = strrchr(a->name, '.');
             if (p != NULL && !stricmp(p + 1, "ELF"))
                 aElf = TRUE;
@@ -541,7 +541,7 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
         return 0;
     }
 
-    if (a->stats.AttrFile & MC_ATTR_SUBDIR)
+    if (a->stats.AttrFile & sceMcFileAttrSubdir)
         return -1;
     else
         return 1;
@@ -590,7 +590,7 @@ int readMC(const char *path, FILEINFO *info, int max)
     mcSync(0, NULL, &ret);
 
     for (i = j = 0; i < ret; i++) {
-        if (mcDir[i].AttrFile & MC_ATTR_SUBDIR &&
+        if (mcDir[i].AttrFile & sceMcFileAttrSubdir &&
             (!strcmp((char*)mcDir[i].EntryName, ".") || !strcmp((char*)mcDir[i].EntryName, "..")))
             continue;  //Skip pseudopaths "." and ".."
         strcpy(info[j].name, (char*)mcDir[i].EntryName);
@@ -891,7 +891,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
 
     while (fileXioDread(fd, &dirbuf) > 0) {
         //		if(dirbuf.stat.mode & FIO_S_IFDIR &&  //NB: normal usage (non-vmcfs)
-        if (dirbuf.stat.mode & MC_ATTR_SUBDIR &&  //NB: nonstandard usage of vmcfs
+        if (dirbuf.stat.mode & sceMcFileAttrSubdir &&  //NB: nonstandard usage of vmcfs
             (!strcmp(dirbuf.name, ".") || !strcmp(dirbuf.name, "..")))
             continue;  //Skip pseudopaths "." and ".."
 
@@ -900,7 +900,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
         //		if(dirbuf.stat.mode & FIO_S_IFDIR){  //NB: normal usage (non-vmcfs)
         //			info[i].stats.attrFile = MC_ATTR_norm_folder;
         //		}
-        if (dirbuf.stat.mode & MC_ATTR_SUBDIR) {  //NB: vmcfs usage
+        if (dirbuf.stat.mode & sceMcFileAttrSubdir) {  //NB: vmcfs usage
             info[i].stats.AttrFile = dirbuf.stat.mode;
         }
         //		else if(dirbuf.stat.mode & FIO_S_IFREG){  //NB: normal usage (non-vmcfs)
@@ -908,7 +908,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
         //			info[i].stats.fileSizeByte = dirbuf.stat.size;
         //			info[i].stats.unknown4[0] = dirbuf.stat.hisize;
         //		}
-        else if (dirbuf.stat.mode & MC_ATTR_FILE) {  //NB: vmcfs usage
+        else if (dirbuf.stat.mode & sceMcFileAttrFile) {  //NB: vmcfs usage
             info[i].stats.AttrFile = dirbuf.stat.mode;
             info[i].stats.FileSizeByte = dirbuf.stat.size;
             info[i].stats.Reserve2 = dirbuf.stat.hisize;
@@ -1256,13 +1256,13 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     } else {
         strcpy(dir, path);
         strcat(dir, file->name);
-        if (file->stats.AttrFile & MC_ATTR_SUBDIR)
+        if (file->stats.AttrFile & sceMcFileAttrSubdir)
             strcat(dir, "/");
     }
 
     ret = -1;  //Assume that result will be failure, to simplify aborts
 
-    if ((file->stats.AttrFile & MC_ATTR_SUBDIR) == 0) {
+    if ((file->stats.AttrFile & sceMcFileAttrSubdir) == 0) {
         //Here we know that the object needing a title is a file
         strcpy(tmpdir, dir);                      //Copy the pathname for file access
         cp = strrchr(tmpdir, '.');                //Find the extension, if any
@@ -1420,7 +1420,7 @@ int menu(const char *path, FILEINFO *file)
         enable[RENAME] = FALSE;
     }
 
-    if ((file->stats.AttrFile & MC_ATTR_SUBDIR) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
+    if ((file->stats.AttrFile & sceMcFileAttrSubdir) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
         enable[MOUNTVMC0] = FALSE;  //forbid insane VMC mounting
         enable[MOUNTVMC1] = FALSE;  //forbid insane VMC mounting
     }
@@ -1666,7 +1666,7 @@ u64 getFileSize(const char *path, const FILEINFO *file)
     char dir[MAX_PATH], party[MAX_NAME];
     int nfiles, i, ret;
 
-    if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Folder object to size up
+    if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Folder object to size up
         sprintf(dir, "%s%s/", path, file->name);
         nfiles = getDir(dir, files);
         for (i = size = 0; i < nfiles; i++) {
@@ -1714,7 +1714,7 @@ int delete (const char *path, const FILEINFO *file)
     if (!strncmp(dir, "host:/", 6))
         makeHostPath(dir + 5, dir + 6);
 
-    if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Is the object to delete a folder ?
+    if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Is the object to delete a folder ?
         strcat(dir, "/");
         nfiles = getDir(dir, files);
         for (i = 0; i < nfiles; i++) {
@@ -1821,13 +1821,13 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
         strcpy(newPath, oldPath + 5);
         strcat(oldPath, file->name);
         strcat(newPath, name);
-        if (file->stats.AttrFile & MC_ATTR_SUBDIR) {  //Rename a folder ?
+        if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Rename a folder ?
             ret = (temp_fd = fileXioDopen(oldPath));
             if (temp_fd >= 0) {
                 ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
                 fileXioDclose(temp_fd);
             }
-        } else if (file->stats.AttrFile & MC_ATTR_FILE) {  //Rename a file ?
+        } else if (file->stats.AttrFile & sceMcFileAttrFile) {  //Rename a file ?
             ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY, 0666));
             if (temp_fd >= 0) {
                 ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
@@ -1961,7 +1961,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
     //The physical device specifiers remain in 'inPath' and 'outPath'
 
     //Here we have an object to copy, which may be either a file or a folder
-    if (file.stats.AttrFile & MC_ATTR_SUBDIR) {
+    if (file.stats.AttrFile & sceMcFileAttrSubdir) {
         //Here we have a folder to copy, starting with an attempt to create it
         //This is where we must act differently for PSU backup, creating a PSU file instead
         if (PasteMode == PM_PSU_BACKUP) {
@@ -2130,9 +2130,9 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
                     ret = -1;
                     break;
                 }
-                if ((PSU_head.size == 0) && (PSU_head.attr & MC_ATTR_SUBDIR))  //Dummy/Pseudo folder entry ?
+                if ((PSU_head.size == 0) && (PSU_head.attr & sceMcFileAttrSubdir))  //Dummy/Pseudo folder entry ?
                     continue;                                                  //Just ignore dummies
-                if (PSU_head.attr & MC_ATTR_SUBDIR) {                          //break with error on weird folder in PSU
+                if (PSU_head.attr & sceMcFileAttrSubdir) {                          //break with error on weird folder in PSU
                     ret = -1;
                     break;
                 }
@@ -2968,24 +2968,24 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
             scan_USB_mass();   //then allow another scan here (timer dependent)
 
         strcpy(files[nfiles].name, "mc0:");
-        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         strcpy(files[nfiles].name, "mc1:");
-        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         strcpy(files[nfiles].name, "hdd0:");
-        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         strcpy(files[nfiles].name, "cdfs:");
-        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         if ((cnfmode != USBD_IRX_CNF) && (cnfmode != USBKBD_IRX_CNF) && (cnfmode != USBMASS_IRX_CNF)) {
             //The condition above blocks selecting USB drivers from USB devices
             if (USB_mass_ix[0] || !USB_mass_scanned) {
                 strcpy(files[nfiles].name, "mass:");
-                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
             }
             for (i = 1; i < 10; i++) {
                 if (USB_mass_ix[i]) {
                     strcpy(files[nfiles].name, "mass0:");
                     files[nfiles].name[4] = USB_mass_ix[i];
-                    files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+                    files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
                 }
             }
         }
@@ -2993,21 +2993,21 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
             //This condition blocks selecting any CONFIG items on PC
             //or in a virtual memory card
             strcpy(files[nfiles].name, "host:");
-            files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+            files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
             if (vmcMounted[0]) {
                 strcpy(files[nfiles].name, "vmc0:");
-                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
             }
             if (vmcMounted[1]) {
                 strcpy(files[nfiles].name, "vmc1:");
-                files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+                files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
             }
         }
         if (cnfmode < 2) {
             //This condition blocks use of MISC pseudo-device for drivers and skins
             //And allows this device only for launch keys and for normal browsing
             strcpy(files[nfiles].name, LNG(MISC));
-            files[nfiles].stats.AttrFile = MC_ATTR_SUBDIR;
+            files[nfiles].stats.AttrFile = sceMcFileAttrSubdir;
             nfiles++;
         }
         for (i = 0; i < nfiles; i++)
@@ -3018,55 +3018,55 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         //-- Start case for MISC command pseudo folder with function links --
         nfiles = 0;
         strcpy(files[nfiles].name, "..");
-        files[nfiles++].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         if (cnfmode) {  //Stop recursive FileBrowser entry, only allow it for launch keys
             strcpy(files[nfiles].name, LNG(FileBrowser));
-            files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+            files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         }
         strcpy(files[nfiles].name, LNG(PS2Browser));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(PS2Disc));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(PS2Net));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(PS2PowerOff));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(HddManager));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(TextEditor));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(JpgViewer));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Configure));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Load_CNFprev));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Load_CNFnext));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Set_CNF_Path));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Load_CNF));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         //Next 2 lines add an optional font test routine
         strcpy(files[nfiles].name, LNG(ShowFont));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(Debug_Info));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(About_uLE));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         strcpy(files[nfiles].name, LNG(OSDSYS));
-        files[nfiles++].stats.AttrFile = MC_ATTR_FILE;
+        files[nfiles++].stats.AttrFile = sceMcFileAttrFile;
         for (i = 0; i < nfiles; i++)
             files[i].title[0] = 0;
         //-- End case for MISC command pseudo folder with function links --
     } else {
         //-- Start case for normal folder with file/folder links --
         strcpy(files[0].name, "..");
-        files[0].stats.AttrFile = MC_ATTR_SUBDIR;
+        files[0].stats.AttrFile = sceMcFileAttrSubdir;
         nfiles = getDir(path, &files[1]) + 1;
         if (strcmp(ext, "*")) {
             for (i = j = 1; i < nfiles; i++) {
-                if (files[i].stats.AttrFile & MC_ATTR_SUBDIR)
+                if (files[i].stats.AttrFile & sceMcFileAttrSubdir)
                     files[j++] = files[i];
                 else {
                     p = strrchr(files[i].name, '.');
@@ -3344,7 +3344,7 @@ int getFilePath(char *out, int cnfmode)
             else if (new_pad & PAD_TRIANGLE)
                 browser_up = TRUE;
             else if ((swapKeys && (new_pad & PAD_CROSS)) || (!swapKeys && (new_pad & PAD_CIRCLE))) {  //Pushed OK
-                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
+                if (files[browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
                     //pushed OK for a folder
                     if (!strcmp(files[browser_sel].name, ".."))
                         browser_up = TRUE;
@@ -3368,7 +3368,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
             } else if (new_pad & PAD_R3) {  //New clause for uLE-relative paths
-                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
+                if (files[browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
                     //pushed R3 for a folder (navigate to uLE CNF folder)
                     strcpy(path, LaunchElfDir);
                     if ((p = strchr(path, ':'))) {                         //device separator ?
@@ -3415,7 +3415,7 @@ int getFilePath(char *out, int cnfmode)
                 }
             } else if (cnfmode == SAVE_CNF) {  //Generic Save commands
                 if (new_pad & PAD_START) {
-                    if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR) {
+                    if (files[browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
                         //no file was highlighted, so prep to save with empty filename
                         strcpy(out, path);
                         rv = 0;  //flag pure path selected
@@ -3462,7 +3462,7 @@ int getFilePath(char *out, int cnfmode)
                     else if (ret == DELETE) {
                         if (nmarks == 0) {  //dlanor: using title was inappropriate here (filesystem op)
                             sprintf(tmp, "%s", files[browser_sel].name);
-                            if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR)
+                            if (files[browser_sel].stats.AttrFile & sceMcFileAttrSubdir)
                                 strcat(tmp, "/");
                             sprintf(tmp1, "\n%s ?", LNG(Delete));
                             strcat(tmp, tmp1);
@@ -3474,7 +3474,7 @@ int getFilePath(char *out, int cnfmode)
                             int first_deleted = 0;
                             if (nmarks == 0) {
                                 strcpy(tmp, files[browser_sel].name);
-                                if (files[browser_sel].stats.AttrFile & MC_ATTR_SUBDIR)
+                                if (files[browser_sel].stats.AttrFile & sceMcFileAttrSubdir)
                                     strcat(tmp, "/");
                                 sprintf(tmp1, " %s", LNG(deleting));
                                 strcat(tmp, tmp1);
@@ -3486,7 +3486,7 @@ int getFilePath(char *out, int cnfmode)
                                         if (!first_deleted)     //if this is the first mark
                                             first_deleted = i;  //then memorize it for cursor positioning
                                         strcpy(tmp, files[i].name);
-                                        if (files[i].stats.AttrFile & MC_ATTR_SUBDIR)
+                                        if (files[i].stats.AttrFile & sceMcFileAttrSubdir)
                                             strcat(tmp, "/");
                                         sprintf(tmp1, " %s", LNG(deleting));
                                         strcat(tmp, tmp1);
@@ -3765,7 +3765,7 @@ int getFilePath(char *out, int cnfmode)
                 if (name_limit) {                   //Do we need to check name length ?
                     int name_end = name_limit / 7;  //Max string length for acceptable spacing
 
-                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
+                    if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
                         name_end -= 1;             //For folders, reserve one character for final '/'
                     if (strlen(tmp) > name_end) {  //Is name too long for clean display ?
                         tmp[name_end - 1] = '~';   //indicate filename abbreviation
@@ -3773,7 +3773,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
 
-                if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
+                if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
                     strcat(tmp, "/");
                 if (mcTitle != NULL)
                     printXY_sjis(mcTitle, x + 4, y, color, TRUE);
@@ -3821,7 +3821,7 @@ int getFilePath(char *out, int cnfmode)
                     if (marks[top + i])
                         drawChar('*', x - 6, y, setting->color[3]);
                 } else {  //if Icons must be used in front of file/folder names
-                    if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR) {
+                    if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir) {
                         iconbase = ICON_FOLDER;
                         iconcolr = 4;
                     } else {
@@ -4036,7 +4036,7 @@ void subfunc_Paste(char *mess, char *path)
 
     for (i = 0; i < nclipFiles; i++) {
         strcpy(tmp, clipFiles[i].name);
-        if (clipFiles[i].stats.AttrFile & MC_ATTR_SUBDIR)
+        if (clipFiles[i].stats.AttrFile & sceMcFileAttrSubdir)
             strcat(tmp, "/");
         sprintf(tmp1, " %s", LNG(pasting));
         strcat(tmp, tmp1);
