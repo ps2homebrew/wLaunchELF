@@ -3740,7 +3740,7 @@ int getFilePath(char *out, int cnfmode)
 
             for (i = 0; i < rows; i++)  //Repeat loop for each browser text row
             {
-                int title_flag = 0;  //Assume that normal file/folder names are wanted
+                mcTitle = NULL;      //Assume that normal file/folder names are to be displayed
                 int name_limit = 0;  //Assume that no name length problems exist
 
                 if (top + i >= browser_nfiles)
@@ -3754,7 +3754,6 @@ int getFilePath(char *out, int cnfmode)
                     strcpy(tmp, "..");
                 else if ((file_show == 2) && files[top + i].title[0] != 0) {
                     mcTitle = files[top + i].title;
-                    title_flag = 1;
                 } else {  //Show normal file/folder names
                     strcpy(tmp, files[top + i].name);
                     if (file_show > 0) {  //Does display mode include file details ?
@@ -3776,7 +3775,7 @@ int getFilePath(char *out, int cnfmode)
 
                 if (files[top + i].stats.AttrFile & MC_ATTR_SUBDIR)
                     strcat(tmp, "/");
-                if (title_flag)
+                if (mcTitle != NULL)
                     printXY_sjis(mcTitle, x + 4, y, color, TRUE);
                 else
                     printXY(tmp, x + 4, y, color, TRUE, name_limit);
