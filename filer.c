@@ -1393,21 +1393,6 @@ int menu(const char *path, FILEINFO *file)
         enable[NEWICON] = FALSE;
     }
 
-    if (!strncmp(path, "mass", 4)) {
-        enable[RENAME] = FALSE;
-    }
-
-    /* commented due to MC modules by jimmikaelkael (allow rename)
-	if(!strncmp(path, "mc", 2)){
-		int test;
-
-		mcGetInfo(path[2]-'0', 0, &mctype_PSx, NULL, NULL);
-		mcSync(0, NULL, &test);
-		if (mctype_PSx == 2) //PS2 MC ?
-			enable[RENAME] = FALSE;
-	}
-*/
-
     if (nmarks == 0) {
         if (!strcmp(file->name, "..")) {
             enable[COPY] = FALSE;
@@ -1734,16 +1719,7 @@ int delete (const char *path, const FILEINFO *file)
             ret = fileXioRmdir(dir);
             fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 
-        } else if (!strncmp(path, "mass", 4)) {
-            strcpy(dir, path);
-            strcat(dir, file->name);
-            ret = fileXioRmdir(dir);
-            if ((ret < 0) && (dir[4] == ':')) {
-                sprintf(dir, "mass0:%s%s", &path[5], file->name);
-                ret = fileXioRmdir(dir);
-            }
-
-        } else if (!strncmp(path, "host", 4)) {
+        } else {  //For all other devices
             sprintf(dir, "%s%s", path, file->name);
             ret = fileXioRmdir(dir);
         }
@@ -1757,7 +1733,7 @@ int delete (const char *path, const FILEINFO *file)
         } else if (!strncmp(path, "vmc", 3)) {
             ret = fileXioRemove(dir);
             fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
-        } else if ((!strncmp(path, "mass", 4)) || (!strncmp(path, "host", 4))) {
+        } else {  //For all other devices
             ret = fileXioRemove(dir);
         }
     }
@@ -1781,10 +1757,6 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
             return -1;
         oldPath[3] = newPath[3] = ret + '0';
 
-        ret = fileXioRename(oldPath, newPath);
-    } else if (!strncmp(path, "vmc", 3)) {
-        sprintf(oldPath, "%s%s", path, file->name);
-        sprintf(newPath, "%s%s", path, name);
         ret = fileXioRename(oldPath, newPath);
     } else if (!strncmp(path, "mc", 2)) {
         sprintf(oldPath, "%s%s", path, file->name);
@@ -1835,8 +1807,30 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
             }
         } else  //This was neither a folder nor a file !!!
             return -1;
-    } else  //The device was not recognized
-        return -1;
+    } else if (!strncmp(path, "mass", 4)) {
+        int temp_fd;
+
+        sprintf(oldPath, "%s%s", path, file->name);
+
+        if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Rename a folder ?
+            ret = (temp_fd = fileXioDopen(oldPath));
+            if (temp_fd >= 0) {
+                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)name);
+                fileXioDclose(temp_fd);
+            }
+        } else if (file->stats.AttrFile & sceMcFileAttrFile) {  //Rename a file ?
+            ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY, 0666));
+            if (temp_fd >= 0) {
+                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)name);
+                fileXioClose(temp_fd);
+            }
+        } else  //This was neither a folder nor a file !!!
+            return -1;
+    } else {    //For all other devices
+        sprintf(oldPath, "%s%s", path, file->name);
+        sprintf(newPath, "%s%s", path, name);
+        ret = fileXioRename(oldPath, newPath);
+    }
 
     return ret;
 }
@@ -1853,7 +1847,6 @@ int newdir(const char *path, const char *name)
         if (ret < 0)
             return -1;
         dir[3] = ret + '0';
-        //fileXioChdir(dir);
         strcat(dir, name);
         genLimObjName(dir, 0);
         ret = fileXioMkdir(dir, fileMode);
@@ -1875,11 +1868,6 @@ int newdir(const char *path, const char *name)
         mcSync(0, NULL, &ret);
         if (ret == -4)
             ret = -EEXIST;  //return fileXio error code for pre-existing folder
-    } else if (!strncmp(path, "mass", 4)) {
-        strcpy(dir, path);
-        strcat(dir, name);
-        genLimObjName(dir, 0);
-        ret = fileXioMkdir(dir, fileMode);
     } else if (!strncmp(path, "host", 4)) {
         strcpy(dir, path);
         strcat(dir, name);
@@ -1892,8 +1880,11 @@ int newdir(const char *path, const char *name)
         } else {
             ret = fileXioMkdir(dir, fileMode);  //Create the new folder
         }
-    } else {  //Device not recognized
-        ret = -ENODEV;
+    } else {  //For all other devices
+        strcpy(dir, path);
+        strcat(dir, name);
+        genLimObjName(dir, 0);
+        ret = fileXioMkdir(dir, fileMode);
     }
     return ret;
 }

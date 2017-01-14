@@ -2,7 +2,7 @@
 #define LAUNCHELF_H
 
 #define ULE_VERSION "v4.43a"
-#define ULE_VERDATE "2014.06.27"
+#define ULE_VERDATE __DATE__
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 
@@ -36,6 +36,7 @@
 #include <libjpg.h>
 #include <libkbd.h>
 #include <floatlib.h>
+#include <usbhdfsd.h>
 #include "hdl_rpc.h"
 
 #include <sio.h>
