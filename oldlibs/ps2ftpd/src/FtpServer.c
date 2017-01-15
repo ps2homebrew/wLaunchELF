@@ -65,7 +65,7 @@ void FtpServer_Destroy(FtpServer *pServer)
 
 int FtpServer_Start(FtpServer *pServer)
 {
-    int opt;
+//    int opt;
     int s;
     struct sockaddr_in sa;
 
@@ -80,12 +80,13 @@ int FtpServer_Start(FtpServer *pServer)
 
     // make a few settings
 
+/*  SP193: Is this necessary? If it is, a custom build of LWIP is required (SO_REUSE is disabled by default at compile-time)
     opt = 1;
     if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         disconnect(s);
         printf("ps2ftpd: Could not change socket options.\n");
         return -1;
-    }
+    } */
 
     // try to bind socket
 
