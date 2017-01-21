@@ -9,7 +9,7 @@
 // mode can be FORMAT_FULL which mean erase all pages before formatting.
 // or FORMAT_FAST which skip erasing all pages before formatting.
 //----------------------------------------------------------------------------
-int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, size_t arglen)
+int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, int arglen)
 {
 
     if (!g_Vmc_Initialized)
@@ -818,13 +818,13 @@ int Vmc_Lseek(iop_file_t *f, int offset, int whence)
 // Control command.
 // IOCTL_VMCFS_RECOVER :  Recover an object marked as none existing. ( data must be a valid path to an object in vmc file )
 //----------------------------------------------------------------------------
-int Vmc_Ioctl(iop_file_t *f, unsigned long request, void *data)
+int Vmc_Ioctl(iop_file_t *f, int cmd, void *data)
 {
 
     if (!g_Vmc_Initialized)
         return VMCFS_ERR_INITIALIZED;
 
-    switch (request) {
+    switch (cmd) {
 
         case IOCTL_VMCFS_RECOVER: {
 
@@ -834,7 +834,7 @@ int Vmc_Ioctl(iop_file_t *f, unsigned long request, void *data)
 
         default:
 
-            DEBUGPRINT(1, "vmc_fs: Unrecognized ioctl command %ld\n", request);
+            DEBUGPRINT(1, "vmc_fs: Unrecognized ioctl command %d\n", cmd);
             break;
     }
 
@@ -1654,7 +1654,7 @@ int Vmc_Sync(iop_file_t *f, const char *device, int flag)
 //----------------------------------------------------------------------------
 // Mount a vmc file with fileXioMount(... call.
 //----------------------------------------------------------------------------
-int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, void *arg, unsigned int arg_len)
+int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, void *arg, int arg_len)
 {
     int errcode;
 
@@ -1783,7 +1783,7 @@ int Vmc_Umount(iop_file_t *f, const char *fsname)
 //----------------------------------------------------------------------------
 // Not Implemented for the moment.
 //----------------------------------------------------------------------------
-long long Vmc_Lseek64(iop_file_t *f, long long offset, int whence)
+s64 Vmc_Lseek64(iop_file_t *f, s64 offset, int whence)
 {
 
     return VMCFS_ERR_IMPLEMENTED;
