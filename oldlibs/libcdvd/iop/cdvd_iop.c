@@ -281,6 +281,8 @@ int isValidDisc(void)
     int result;
 
     switch (sceCdGetDiskType()) {
+	case SCECdPSCD:
+	case SCECdPSCDDA:
         case SCECdPS2CD:
         case SCECdPS2CDDA:
         case SCECdPS2DVD:
