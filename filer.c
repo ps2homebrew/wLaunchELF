@@ -1809,19 +1809,23 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
             return -1;
     } else if (!strncmp(path, "mass", 4)) {
         int temp_fd;
+	const char *pPath;
 
         sprintf(oldPath, "%s%s", path, file->name);
+	if((pPath = strchr(path, ':')) == NULL)
+		return -EINVAL;	//Unsupported path.
+        sprintf(newPath, "%s%s", pPath+1, name);
 
         if (file->stats.AttrFile & sceMcFileAttrSubdir) {  //Rename a folder ?
             ret = (temp_fd = fileXioDopen(oldPath));
             if (temp_fd >= 0) {
-                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)name);
+                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)newPath);
                 fileXioDclose(temp_fd);
             }
         } else if (file->stats.AttrFile & sceMcFileAttrFile) {  //Rename a file ?
             ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY, 0666));
             if (temp_fd >= 0) {
-                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)name);
+                ret = fileXioIoctl(temp_fd, USBMASS_IOCTL_RENAME, (void*)newPath);
                 fileXioClose(temp_fd);
             }
         } else  //This was neither a folder nor a file !!!
