@@ -1509,7 +1509,7 @@ int Vmc_Getstat(iop_file_t *f, const char *path, iox_stat_t *stat)
 //----------------------------------------------------------------------------
 // Put stats to an object in vmc image.
 //----------------------------------------------------------------------------
-int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int unknown)
+int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int statmask)
 {
 
     if (!g_Vmc_Initialized)
@@ -1545,15 +1545,20 @@ int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int u
         return -1;
     }
 
-    dirent.mode = stat->mode;
-    dirent.attr = stat->attr;
-    dirent.length = stat->size;
+    if(statmask & FIO_CST_MODE) {
+        //  File mode bits. Only Read, Write, Execute and Protected can be changed.
+        dirent.mode = (dirent.mode & ~(DF_READ | DF_WRITE | DF_EXECUTE | DF_PROTECTED)) | (stat->mode & (DF_READ | DF_WRITE | DF_EXECUTE | DF_PROTECTED));
+    }
 
-    //  File created Time  /  Date
-    memcpy(&dirent.created, stat->ctime, sizeof(vmc_datetime));
+    if(statmask & FIO_CST_CT) {
+        //  File created Time  /  Date
+        memcpy(&dirent.created, stat->ctime, sizeof(vmc_datetime));
+    }
 
-    //  File Modification Time  /  Date
-    memcpy(&dirent.created, stat->mtime, sizeof(vmc_datetime));
+    if(statmask & FIO_CST_MT) {
+        //  File Modification Time  /  Date
+        memcpy(&dirent.created, stat->mtime, sizeof(vmc_datetime));
+    }
 
     //  Write this change
     writePage(gendata.fd, (unsigned char *)&dirent, (dirent_cluster + gendata.first_allocatable) * g_Vmc_Image[f->unit].header.pages_per_cluster + gendata.dirent_page);
