@@ -1150,6 +1150,12 @@ void loadHdlInfoModule(void)
 //---------------------------------------------------------------------------
 static void poweroffHandler(int i)
 {
+    /* Close all files */
+    fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
+    /* Switch off DEV9 */
+    while(fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0){};
+
+    /* Power-off the PlayStation 2 console. */
     poweroffShutdown();
 }
 //------------------------------
