@@ -130,6 +130,8 @@ static u8 have_ps2fs = 0;
 static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
+//State of whether DEV9 was successfully loaded or not.
+static u8 ps2dev9_loaded = 0;
 
 int menu_LK[15];  //holds RunElf index for each valid main menu entry
 
@@ -649,7 +651,7 @@ static void load_ps2dev9(void)
     int ret;
 
     if (!have_ps2dev9) {
-        SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret);
+        ps2dev9_loaded = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret) >= 0;
         have_ps2dev9 = 1;
     }
 }
@@ -1150,10 +1152,13 @@ void loadHdlInfoModule(void)
 //---------------------------------------------------------------------------
 static void poweroffHandler(int i)
 {
-    /* Close all files */
-    fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
-    /* Switch off DEV9 */
-    while(fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0){};
+    if (ps2dev9_loaded)
+    {
+      /* Close all files */
+      fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
+      /* Switch off DEV9 */
+      while(fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0){};
+    }
 
     /* Power-off the PlayStation 2 console. */
     poweroffShutdown();
