@@ -1,15 +1,3 @@
 issue that needs to be addressed with ps2ftpd:
 
-Fix FileSystem_GetFileSize function in FileSystem.c. It's currently disabled for the pfs driver otherwise it results in:
-
-For SIZE command:
-ps2fs: Error: Unused cache returned
-
-When transferring a file to a mounted hdd partition:
-ps2fs: Warning: NULL buffer returned
-
-It wasn't really a problem before but it prevents rename from working properly if the function is allowed to call getstat. It's directly do to this system call in FileSystem.c that pfs apparently doesn't like:
-
-if( pContext->m_kFile.device->ops->getstat( &(pContext->m_kFile), pFile, (io_stat_t*)&stat ) < 0 )
-
-Currently it's disabled for pfs although calling the SIZE command did actually work. Of course, the size command never worked when trying to get the size of a file that was being transferred from the pc side.
+Unable to respond to LIST command from FTP clients like filezilla

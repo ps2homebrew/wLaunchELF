@@ -790,10 +790,6 @@ int FileSystem_GetFileSize(FSContext *pContext, const char *pFile)
 
             memset(&stat, 0, sizeof(stat));
 
-            // break early if hdd, otherwise get status results in "ps2fs: Warning: NULL buffer returned"
-            if (!strcmp(pContext->m_kFile.device->name, "pfs"))
-                break;
-
             // get status from root directory of device
             if (pContext->m_kFile.device->ops->getstat(&(pContext->m_kFile), pFile, &stat) < 0)
                 break;
