@@ -212,6 +212,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
 static int loadExternalModule(char *modPath, void *defBase, int defSize);
 static void loadUsbDModule(void);
 static void loadKbdModules(void);
+static void closeAllAndPoweroff(void);
 static void poweroffHandler(int i);
 static void setupPowerOff(void);
 static void loadNetModules(void);
@@ -1150,7 +1151,7 @@ void loadHdlInfoModule(void)
 //------------------------------
 //endfunc loadHdlInfoModule
 //---------------------------------------------------------------------------
-static void poweroffHandler(int i)
+static void closeAllAndPoweroff(void)
 {
     if (ps2dev9_loaded)
     {
@@ -1162,6 +1163,13 @@ static void poweroffHandler(int i)
 
     /* Power-off the PlayStation 2 console. */
     poweroffShutdown();
+}
+//------------------------------
+//endfunc closeAllAndPoweroff
+//---------------------------------------------------------------------------
+static void poweroffHandler(int i)
+{
+    closeAllAndPoweroff();
 }
 //------------------------------
 //endfunc poweroffHandler
@@ -1874,8 +1882,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         mainMsg[0] = 0;
         drawMsg(LNG(Powering_Off_Console));
         setupPowerOff();
-        //hddPowerOff(); //deprecated
-        poweroffShutdown();
+	closeAllAndPoweroff();
         poweroff_delay = 250;  //trigger delay for those without net adapter
         poweroff_start = Timer();
         return;
