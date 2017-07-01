@@ -1980,7 +1980,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 static void Reset()
 {
     SifInitRpc(0);
-    while (!SifIopReset(NULL, 0)) {
+    while (!SifIopReset("", 0)) {
     };
     while (!SifIopSync()) {
     };
