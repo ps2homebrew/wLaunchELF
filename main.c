@@ -224,6 +224,7 @@ static void triggerPowerOff(void);
 static void Validate_CNF_Path(void);
 static void Set_CNF_Path(void);
 static int reloadConfig(void);
+static void decConfig(void);
 static void incConfig(void);
 static int exists(char *path);
 static void CleanUp(void);
@@ -1241,7 +1242,7 @@ static void startKbd(void)
         PS2KbdInit();
         ps2kbd_opened = 1;
         if (setting->kbdmap_file[0]) {
-            if ((kbd_fd = fileXioOpen(PS2KBD_DEVFILE, O_RDONLY, 0666)) >= 0) {
+            if ((kbd_fd = fileXioOpen(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
                 printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n", kbd_fd, setting->kbdmap_file);
                 if (loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
                     if (mapSize == 0x600) {
@@ -1528,7 +1529,7 @@ static int reloadConfig(void)
 //endfunc reloadConfig
 //---------------------------------------------------------------------------
 // Config Cycle Left  (--) by EP
-static void decConfig()
+static void decConfig(void)
 {
     if (numCNF > 0)
         numCNF--;
