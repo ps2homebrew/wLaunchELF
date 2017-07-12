@@ -483,25 +483,17 @@ static int drawMainScreen(void)
                           strlen(LNG(RIGHT)) + 2;
             if (i == 13) {  // LEFT
                 if (strlen(LNG(RIGHT)) + 2 > strlen(LNG(LEFT)) + 2)
-                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
-                                        ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH :
-                                        (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
+                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ? ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH : (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
                 else
-                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
-                                        0 :
-                                        (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
+                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ? 0 : (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
             } else if (i == 14) {  // RIGHT
                 if (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2)
-                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ?
-                                        ((strlen(LNG(LEFT)) + 2) - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH :
-                                        (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
+                    printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ? ((strlen(LNG(LEFT)) + 2) - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH : (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
                 else
-                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ?
-                                        0 :
-                                        (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
+                    printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ? 0 : (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
             } else
                 printXY(c, x + (len > 9 ? (len - 9) * FONT_WIDTH : 0), y, color, TRUE, 0);
@@ -1154,12 +1146,12 @@ void loadHdlInfoModule(void)
 //---------------------------------------------------------------------------
 static void closeAllAndPoweroff(void)
 {
-    if (ps2dev9_loaded)
-    {
-      /* Close all files */
-      fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
-      /* Switch off DEV9 */
-      while(fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0){};
+    if (ps2dev9_loaded) {
+        /* Close all files */
+        fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
+        /* Switch off DEV9 */
+        while (fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0) {
+        };
     }
 
     /* Power-off the PlayStation 2 console. */
@@ -1883,7 +1875,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         mainMsg[0] = 0;
         drawMsg(LNG(Powering_Off_Console));
         setupPowerOff();
-	closeAllAndPoweroff();
+        closeAllAndPoweroff();
         poweroff_delay = 250;  //trigger delay for those without net adapter
         poweroff_start = Timer();
         return;

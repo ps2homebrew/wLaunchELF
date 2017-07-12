@@ -778,7 +778,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                         if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
                             if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
                                 if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
-                                    TexPicture.Mem = (u32*)malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
+                                    TexPicture.Mem = (u32 *)malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
                                     RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
                                     W = PicW;
                                     PicW = PicH;

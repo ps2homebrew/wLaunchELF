@@ -281,8 +281,8 @@ int isValidDisc(void)
     int result;
 
     switch (sceCdGetDiskType()) {
-	case SCECdPSCD:
-	case SCECdPSCDDA:
+        case SCECdPSCD:
+        case SCECdPSCDDA:
         case SCECdPS2CD:
         case SCECdPS2CDDA:
         case SCECdPS2DVD:
@@ -714,7 +714,7 @@ int CDVD_findfile(const char *fname, struct TocEntry *tocEntry)
 
         tocEntryPointer = (struct dirTocEntry *)CachedDirInfo.cache;
 
-        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length)) {
+        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length)) {
             if (tocEntryPointer->length == 0) {
 #ifdef DEBUG
                 printf("Got a null pointer entry, so either reached end of dir, or end of sector\n");
@@ -779,9 +779,9 @@ int CDVD_findfile(const char *fname, struct TocEntry *tocEntry)
         tocEntryPointer = (struct dirTocEntry *)CachedDirInfo.cache;
 
         if (CachedDirInfo.cache_offset == 0)
-            tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+            tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
-        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length)) {
+        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length)) {
             if (tocEntryPointer->length == 0) {
 #ifdef DEBUG
                 printf("Got a null pointer entry, so either reached end of dir, or end of sector\n");
@@ -1083,11 +1083,11 @@ int FindPath(char *pathname)
         tocEntryPointer = (struct dirTocEntry *)CachedDirInfo.cache;
 
         // Always skip the first entry (self-refencing entry)
-        tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+        tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
         dir_entry = 0;
 
-        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length)) {
+        for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length)) {
             // If we have a null toc entry, then we've either reached the end of the dir, or have reached a sector boundary
             if (tocEntryPointer->length == 0) {
 #ifdef DEBUG
@@ -1297,11 +1297,11 @@ int CDVD_GetDir_RPC(const char *pathname, const char *extensions, enum CDVD_getM
         tocEntryPointer = (struct dirTocEntry *)CachedDirInfo.cache;
 
         // skip the first self-referencing entry
-        tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+        tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
         // skip the parent entry if this is the root
         if (CachedDirInfo.path_depth == 0)
-            tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+            tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
         dir_entry = 0;
 
@@ -1311,7 +1311,7 @@ int CDVD_GetDir_RPC(const char *pathname, const char *extensions, enum CDVD_getM
 #endif
 
             // parse the current cache block
-            for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length)) {
+            for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length)) {
                 if (tocEntryPointer->length == 0) {
                     // if we have a toc entry length of zero,
                     // then we've either reached the end of the sector, or the end of the dir
@@ -1407,11 +1407,11 @@ int CDVD_GetDir_RPC(const char *pathname, const char *extensions, enum CDVD_getM
         tocEntryPointer = (struct dirTocEntry *)CachedDirInfo.cache;
 
         // skip the first self-referencing entry
-        tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+        tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
         // skip the parent entry if this is the root
         if (CachedDirInfo.path_depth == 0)
-            tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length);
+            tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length);
 
         dir_entry = 0;
 
@@ -1421,7 +1421,7 @@ int CDVD_GetDir_RPC(const char *pathname, const char *extensions, enum CDVD_getM
 #endif
 
             // parse the current cache block
-            for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8*)tocEntryPointer + tocEntryPointer->length)) {
+            for (; tocEntryPointer < (struct dirTocEntry *)(CachedDirInfo.cache + (CachedDirInfo.cache_size * 2048)); tocEntryPointer = (struct dirTocEntry *)((u8 *)tocEntryPointer + tocEntryPointer->length)) {
                 if (tocEntryPointer->length == 0) {
                     // if we have a toc entry length of zero,
                     // then we've either reached the end of the sector, or the end of the dir

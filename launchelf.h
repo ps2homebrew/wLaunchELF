@@ -36,7 +36,7 @@
 #include <libjpg.h>
 #include <libkbd.h>
 #include <floatlib.h>
-#include <usbhdfsd.h>
+#include <usbhdfsd-common.h>
 #include "hdl_rpc.h"
 
 #include <sio.h>

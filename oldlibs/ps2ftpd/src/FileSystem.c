@@ -902,7 +902,7 @@ ModuleInfo_t *FileSystem_GetModule(const char *pDevice)
 
     pkModule = (ModuleInfo_t *)0x800;
     while (NULL != pkModule) {
-        if (!strcmp((char*)pkModule->name, pDevice))
+        if (!strcmp((char *)pkModule->name, pDevice))
             break;
 
         pkModule = pkModule->next;
@@ -925,9 +925,9 @@ iop_device_t *FileSystem_ScanDevice(const char *pDevice, int iNumDevices, const 
 
     // determine offset
 
-    if (!strcmp(IOPMGR_IOMANX_IDENT, (char*)pkModule->name))
+    if (!strcmp(IOPMGR_IOMANX_IDENT, (char *)pkModule->name))
         offset = DEVINFO_IOMANX_OFFSET;
-    else if (!strcmp(IOPMGR_IOMAN_IDENT, (char*)pkModule->name))
+    else if (!strcmp(IOPMGR_IOMAN_IDENT, (char *)pkModule->name))
         offset = DEVINFO_IOMAN_OFFSET;
     else
         return NULL;  // unknown device, we cannot determine the offset here...
