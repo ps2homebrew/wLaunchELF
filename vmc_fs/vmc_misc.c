@@ -393,7 +393,7 @@ int setDefaultSpec(int unit)
 
     memset(&g_Vmc_Image[unit].header, g_Vmc_Image[unit].erase_byte, sizeof(struct superblock));
 
-    strcpy((char*)g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
+    strcpy((char *)g_Vmc_Image[unit].header.magic, "Sony PS2 Memory Card Format 1.2.0.0");
 
     DEBUGPRINT(4, "vmc_fs: SuperBlock Info: magic[40]             : %s\n", g_Vmc_Image[unit].header.magic);
 

@@ -182,26 +182,26 @@ size_t storeSkinCNF(char *cnf_buf)
             "Popup_Opaque = %d\r\n"
             "Menu_Frame = %d\r\n"
             "Show_Menu = %d\r\n"
-            "%n",                   // %n causes NO output, but only a measurement
-            (u32)setting->color[0], //Col_1
-            (u32)setting->color[1], //Col_2
-            (u32)setting->color[2], //Col_3
-            (u32)setting->color[3], //Col_4
-            (u32)setting->color[4], //Col_5
-            (u32)setting->color[5], //Col_6
-            (u32)setting->color[6], //Col_7
-            (u32)setting->color[7], //Col_8
-            setting->skin,          //SKIN_FILE
-            setting->GUI_skin,      //GUI_SKIN_FILE
-            setting->Brightness,    //SKIN_Brightness
-            setting->TV_mode,       //TV_mode
-            setting->interlace,     //Screen_Interlace
-            setting->screen_x,      //Screen_X
-            setting->screen_y,      //Screen_Y
-            setting->Popup_Opaque,  //Popup_Opaque
-            setting->Menu_Frame,    //Menu_Frame
-            setting->Show_Menu,     //Show_Menu
-            &CNF_size               // This variable measures the size of sprintf data
+            "%n",                    // %n causes NO output, but only a measurement
+            (u32)setting->color[0],  //Col_1
+            (u32)setting->color[1],  //Col_2
+            (u32)setting->color[2],  //Col_3
+            (u32)setting->color[3],  //Col_4
+            (u32)setting->color[4],  //Col_5
+            (u32)setting->color[5],  //Col_6
+            (u32)setting->color[6],  //Col_7
+            (u32)setting->color[7],  //Col_8
+            setting->skin,           //SKIN_FILE
+            setting->GUI_skin,       //GUI_SKIN_FILE
+            setting->Brightness,     //SKIN_Brightness
+            setting->TV_mode,        //TV_mode
+            setting->interlace,      //Screen_Interlace
+            setting->screen_x,       //Screen_X
+            setting->screen_y,       //Screen_Y
+            setting->Popup_Opaque,   //Popup_Opaque
+            setting->Menu_Frame,     //Menu_Frame
+            setting->Show_Menu,      //Show_Menu
+            &CNF_size                // This variable measures the size of sprintf data
             );
     return CNF_size;
 }

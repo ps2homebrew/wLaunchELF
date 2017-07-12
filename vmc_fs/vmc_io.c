@@ -431,8 +431,8 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
     //  We can determine what cluster in the link we should be in, by taking our overall position and dividing by 1024
     //  the size of a cluster.
 
-    int data_read = 0;   //  How much data we have read in so far
-    u8 *cluster_data;  //  Temporary storage for a cluster of data
+    int data_read = 0;  //  How much data we have read in so far
+    u8 *cluster_data;   //  Temporary storage for a cluster of data
 
     cluster_data = (u8 *)malloc((g_Vmc_Image[f->unit].cluster_size + 0xFF) & ~(unsigned int)0xFF);
     memset(cluster_data, 0, g_Vmc_Image[f->unit].cluster_size);
@@ -1545,17 +1545,17 @@ int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int s
         return -1;
     }
 
-    if(statmask & FIO_CST_MODE) {
+    if (statmask & FIO_CST_MODE) {
         //  File mode bits. Only Read, Write, Execute and Protected can be changed.
         dirent.mode = (dirent.mode & ~(DF_READ | DF_WRITE | DF_EXECUTE | DF_PROTECTED)) | (stat->mode & (DF_READ | DF_WRITE | DF_EXECUTE | DF_PROTECTED));
     }
 
-    if(statmask & FIO_CST_CT) {
+    if (statmask & FIO_CST_CT) {
         //  File created Time  /  Date
         memcpy(&dirent.created, stat->ctime, sizeof(vmc_datetime));
     }
 
-    if(statmask & FIO_CST_MT) {
+    if (statmask & FIO_CST_MT) {
         //  File Modification Time  /  Date
         memcpy(&dirent.created, stat->mtime, sizeof(vmc_datetime));
     }
