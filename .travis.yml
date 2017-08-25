@@ -1,0 +1,31 @@
+deploy:
+  provider: releases
+  api_key: $APIKEY
+  file: ULE.ELF
+  skip_cleanup: true
+  on:
+tags: true
+
+sudo: required
+
+install:
+ ## Dependencies
+- sudo apt-get install -yqqq gcc-4.4 patch wget make git libc6-dev zlib1g zlib1g-dev libucl1 libucl-dev libmpc-dev
+ ## ps2dev
+
+before_script:
+- export PS2DEV=${TRAVIS_ENV_DIR}/ps2dev
+- export PS2SDK=${PS2DEV}/ps2sdk
+- export PATH=${PATH}:${PS2DEV}/bin:${PS2DEV}/ee/bin:${PS2DEV}/iop/bin:${PS2DEV}/dvp/bin:${PS2SDK}/bin
+- git clone --quiet https://github.com/ps2dev/ps2toolchain.git
+- cd ps2toolchain/
+- travis_wait 60 bash ./toolchain.sh > /tmp/PS2TOOLCHAIN.log 2>&1
+- cd $TRAVIS_BUILD_DIR
+- export GSKIT=${PS2DEV}/gsKit
+- git clone --quiet https://github.com/ps2dev/gsKit.git
+- cd gsKit/
+- ./Setup.sh
+- cd $TRAVIS_BUILD_DIR
+
+script:
+- make
