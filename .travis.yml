@@ -19,12 +19,13 @@ before_script:
 - export PATH=${PATH}:${PS2DEV}/bin:${PS2DEV}/ee/bin:${PS2DEV}/iop/bin:${PS2DEV}/dvp/bin:${PS2SDK}/bin
 - git clone --quiet https://github.com/ps2dev/ps2toolchain.git
 - cd ps2toolchain/
-- travis_wait 60 bash ./toolchain.sh > /tmp/PS2TOOLCHAIN.log 2>&1
+#- bash ./toolchain.sh > /tmp/PS2TOOLCHAIN.log 2>&1
+- bash ./toolchain.sh
 - cd $TRAVIS_BUILD_DIR
 - export GSKIT=${PS2DEV}/gsKit
 - git clone --quiet https://github.com/ps2dev/gsKit.git
 - cd gsKit/
-- ./Setup.sh
+- bash ./Setup.sh
 - cd $TRAVIS_BUILD_DIR
 
 script:
