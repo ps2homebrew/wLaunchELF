@@ -14,7 +14,7 @@ install:
  ## ps2dev
 
 before_script:
-- export PS2DEV=${TRAVIS_ENV_DIR}/ps2dev
+- export PS2DEV=${HOME}/ps2dev
 - export PS2SDK=${PS2DEV}/ps2sdk
 - export PATH=${PATH}:${PS2DEV}/bin:${PS2DEV}/ee/bin:${PS2DEV}/iop/bin:${PS2DEV}/dvp/bin:${PS2SDK}/bin
 - git clone --quiet https://github.com/ps2dev/ps2toolchain.git
