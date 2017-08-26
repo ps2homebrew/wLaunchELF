@@ -19,7 +19,12 @@ before_script:
 - export PATH=${PATH}:${PS2DEV}/bin:${PS2DEV}/ee/bin:${PS2DEV}/iop/bin:${PS2DEV}/dvp/bin:${PS2SDK}/bin
 - git clone https://github.com/ps2dev/ps2toolchain.git
 - cd ps2toolchain/
-- travis_wait 60 bash ./toolchain.sh > /tmp/PS2TOOLCHAIN.log 2>&1
+- git checkout 9d1d184
+- travis_wait 60 bash ./toolchain.sh 1 > /tmp/PS2TOOLCHAIN1.log 2>&1
+- travis_wait 60 bash ./toolchain.sh 2 > /tmp/PS2TOOLCHAIN2.log 2>&1
+- travis_wait 60 bash ./toolchain.sh 3 > /tmp/PS2TOOLCHAIN3.log 2>&1
+- travis_wait 60 bash ./toolchain.sh 4 > /tmp/PS2TOOLCHAIN4.log 2>&1
+- travis_wait 60 bash ./toolchain.sh 5 > /tmp/PS2TOOLCHAIN5.log 2>&1
 - cd $TRAVIS_BUILD_DIR
 - git clone https://github.com/ps2dev/ps2sdk-ports.git
 - cd ps2sdk-ports/libjpeg
