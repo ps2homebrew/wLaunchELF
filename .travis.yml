@@ -21,11 +21,20 @@ before_script:
 - cd ps2toolchain/
 - travis_wait 60 bash ./toolchain.sh > /tmp/PS2TOOLCHAIN.log 2>&1
 - cd $TRAVIS_BUILD_DIR
+- git clone --quiet https://github.com/ps2dev/ps2sdk-ports.git
+- cd ps2sdk-ports/libjpeg
+- make 
+- make install
+- cd $TRAVIS_BUILD_DIR
 - export GSKIT=${PS2DEV}/gsKit
 - git clone --quiet https://github.com/ps2dev/gsKit.git
 - cd gsKit/
 - bash ./setup.sh
 - cd $TRAVIS_BUILD_DIR
+- git clone --quiet https://github.com/ps2dev/ps2-packer.git
+- cd ps2-packer
+- make 
+- make install
 
 script:
 - make
