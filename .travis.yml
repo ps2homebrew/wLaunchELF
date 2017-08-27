@@ -7,6 +7,7 @@ deploy:
   skip_cleanup: true
   on:
     tags: true
+    all_branches: true
 
 sudo: required
 
@@ -62,3 +63,4 @@ script:
 - cd $TRAVIS_BUILD_DIR
 - make
 - zip uLaunchelf_$TRAVIS_COMMIT.zip ULE.ELF
+- curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf.zip | grep transfer
