@@ -6,7 +6,7 @@ deploy:
   file: uLaunchelf_$TRAVIS_COMMIT.zip
   skip_cleanup: true
   on:
-tags: true
+    tags: true
 
 sudo: required
 
@@ -62,6 +62,3 @@ script:
 - cd $TRAVIS_BUILD_DIR
 - make
 - zip uLaunchelf_$TRAVIS_COMMIT.zip ULE.ELF
-# this will upload uLe build it even if we don't have tagged the commit
-- curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf.zip | grep transfer
-
