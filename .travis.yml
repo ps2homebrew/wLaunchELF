@@ -32,8 +32,8 @@ before_script:
 # installing ps2sdk at specific commit
 - git clone https://github.com/ps2dev/ps2sdk.git
 - cd ps2sdk
-- git checkout 9d1d184
-- make install
+#- git checkout 9d1d184
+- make -j2 install --silent
 - cd $TRAVIS_BUILD_DIR
 # installing ps2eth
 - git clone https://github.com/ps2dev/ps2eth.git
@@ -62,7 +62,6 @@ script:
 - cd $TRAVIS_BUILD_DIR
 - make
 - zip uLaunchelf_$TRAVIS_COMMIT.zip ULE.ELF
-
-after_script:
 # this will upload uLe build it even if we don't have tagged the commit
-- curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf_$TRAVIS_COMMIT.zip | grep transfer
+- curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf.zip | grep transfer
+
