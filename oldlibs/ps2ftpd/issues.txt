@@ -1,3 +1,0 @@
-issue that needs to be addressed with ps2ftpd:
-
-Unable to respond to LIST command from FTP clients like filezilla
