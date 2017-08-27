@@ -1,7 +1,9 @@
+# this is travis script for testing uLaunchELF compilation and automatic
+# upload in releases if branch is tagged
 deploy:
   provider: releases
   api_key: $APIKEY
-  file: ULE.ELF
+  file: uLaunchelf_$TRAVIS_COMMIT.zip
   skip_cleanup: true
   on:
 tags: true
@@ -14,27 +16,37 @@ install:
  ## ps2dev
 
 before_script:
+# setting environment
 - export PS2DEV=${HOME}/ps2dev
 - export PS2SDK=${PS2DEV}/ps2sdk
 - export PATH=${PATH}:${PS2DEV}/bin:${PS2DEV}/ee/bin:${PS2DEV}/iop/bin:${PS2DEV}/dvp/bin:${PS2SDK}/bin
+# installing ps2toolchain (without ps2sdk and ps2link)
 - git clone https://github.com/ps2dev/ps2toolchain.git
 - cd ps2toolchain/
-- git checkout 9d1d184
-- travis_wait 60 bash ./toolchain.sh 1 > /tmp/PS2TOOLCHAIN1.log 2>&1
-- travis_wait 60 bash ./toolchain.sh 2 > /tmp/PS2TOOLCHAIN2.log 2>&1
-- travis_wait 60 bash ./toolchain.sh 3 > /tmp/PS2TOOLCHAIN3.log 2>&1
-- travis_wait 60 bash ./toolchain.sh 4 > /tmp/PS2TOOLCHAIN4.log 2>&1
-- travis_wait 60 bash ./toolchain.sh 5 > /tmp/PS2TOOLCHAIN5.log 2>&1
+# scripts are silenced cause log will be enormous if we will see all output from toolchain setup
+- bash ./toolchain.sh 1 > /tmp/PS2TOOLCHAIN1.log 2>&1
+- bash ./toolchain.sh 2 > /tmp/PS2TOOLCHAIN2.log 2>&1
+- bash ./toolchain.sh 3 > /tmp/PS2TOOLCHAIN3.log 2>&1
+- bash ./toolchain.sh 4 > /tmp/PS2TOOLCHAIN4.log 2>&1
 - cd $TRAVIS_BUILD_DIR
+# installing ps2sdk at specific commit
+- git clone https://github.com/ps2dev/ps2sdk.git
+- cd ps2sdk
+- git checkout 9d1d184
+- make install
+- cd $TRAVIS_BUILD_DIR
+# installing libjpeg
 - git clone https://github.com/ps2dev/ps2sdk-ports.git
 - cd ps2sdk-ports/libjpeg
 - make install
 - cd $TRAVIS_BUILD_DIR
+# installing gsKit
 - export GSKIT=${PS2DEV}/gsKit
 - git clone https://github.com/ps2dev/gsKit.git
 - cd gsKit/
 - bash ./setup.sh
 - cd $TRAVIS_BUILD_DIR
+# installing ps2-packer
 - git clone https://github.com/ps2dev/ps2-packer.git
 - cd ps2-packer
 - make install
@@ -42,3 +54,8 @@ before_script:
 script:
 - cd $TRAVIS_BUILD_DIR
 - make
+- zip uLaunchelf_$TRAVIS_COMMIT.zip ULE.ELF
+
+after_script:
+# this will upload uLe build it even if we don't have tagged the commit
+- curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf_$TRAVIS_COMMIT.zip | grep transfer
