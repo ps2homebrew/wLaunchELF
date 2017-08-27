@@ -37,7 +37,7 @@ before_script:
 - cd $TRAVIS_BUILD_DIR
 # installing ps2eth
 - git clone https://github.com/ps2dev/ps2eth.git
-- cd ps2seth
+- cd ps2eth
 - make
 - mkdir -p $PS2DEV/ps2eth
 - tar c `find . -name \*irx` | tar x -C $PS2DEV/ps2eth
