@@ -32,5 +32,5 @@ all: $(EE_BIN)
 clean:
 	rm -f -r $(EE_OBJS) $(EE_BIN)
 
-include $(PS2SDK)/samples/Makefile.pref
-include $(PS2SDK)/samples/Makefile.eeglobal
+include $(PS2SDK)/Defs.make
+include Rules.make
