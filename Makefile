@@ -1,4 +1,4 @@
-.SILENT:
+#.SILENT:
 
 SMB = 0
 #set SMB to 1 to build uLe with smb support
@@ -26,7 +26,7 @@ endif
 
 .PHONY: all run reset clean rebuild
 
-all: $(EE_BIN_PKD)
+all: githash.h $(EE_BIN_PKD)
 
 $(EE_BIN_PKD): $(EE_BIN)
 	ps2-packer $< $@
@@ -35,6 +35,14 @@ run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:BOOT.ELF
 reset: clean
 	ps2client -h 192.168.0.10 reset
+
+githash.h:
+	echo -n '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
+	git show -s --format=%cd --date=local | tr -d "\n" >> $@ && \
+	echo '"\n#endif' >> $@
+	echo -n '#ifndef GIT_HASH\n#define GIT_HASH "' >> $@ && \
+	git rev-parse --short HEAD | tr -d "\n" >> $@ && \
+	echo '"\n#endif' >> $@
 
 mcman_irx.s: $(PS2SDK)/iop/irx/mcman.irx
 	bin2s $< $@ mcman_irx
@@ -142,7 +150,7 @@ clean:
 	$(MAKE) -C AllowDVDV clean
 	$(MAKE) -C oldlibs/libcdvd clean
 	$(MAKE) -C oldlibs/ps2ftpd clean
-	rm -f *.s $(EE_OBJS) $(EE_BIN) $(EE_BIN_PKD)
+	rm -f githash.h *.s $(EE_OBJS) $(EE_BIN) $(EE_BIN_PKD)
 
 rebuild: clean all
 
