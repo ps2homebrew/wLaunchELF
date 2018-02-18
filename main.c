@@ -295,7 +295,7 @@ static void Show_About_uLE(void)
             clrScr(setting->color[0]);
             sprintf(TextRow, "About wLaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
             PrintPos(03, hpos, TextRow);
-            sprintf(TextRow, "                          commit: %s", GIT_HASH);
+            sprintf(TextRow, "                         commit: %s", GIT_HASH);
             PrintPos(04, hpos, TextRow);
             PrintPos(05, hpos, "Project maintainers:");
             PrintPos(-1, hpos, "  sp193");

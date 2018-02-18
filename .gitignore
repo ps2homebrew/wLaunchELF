@@ -1,5 +1,6 @@
 *.a
 *.elf
+*.ELF
 *.erl
 *.exe
 *.o
