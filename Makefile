@@ -8,7 +8,7 @@ EE_BIN_PKD = ULE.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o\
 	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
-	cdvd_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o fakehost_irx.o ps2kbd_irx.o\
+	cdvd_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
 ifeq ($(SMB),1)
@@ -97,9 +97,6 @@ ps2fs_irx.s: $(PS2SDK)/iop/irx/ps2fs.irx
 
 ps2netfs_irx.s: $(PS2SDK)/iop/irx/ps2netfs.irx
 	bin2s $< $@ ps2netfs_irx
-
-fakehost_irx.s: $(PS2SDK)/iop/irx/fakehost.irx
-	bin2s $< $@ fakehost_irx
 
 hdl_info/hdl_info.irx: hdl_info
 	$(MAKE) -C $<

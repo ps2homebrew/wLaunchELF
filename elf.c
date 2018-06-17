@@ -7,8 +7,6 @@
 
 extern u8 *loader_elf;
 extern int size_loader_elf;
-extern u8 *fakehost_irx;
-extern int size_fakehost_irx;
 
 // ELF-loading stuff
 #define ELF_MAGIC 0x464c457f
@@ -119,36 +117,35 @@ void RunLoaderElf(char *filename, char *party)
     elf_header_t *eh;
     elf_pheader_t *eph;
     void *pdata;
-    int ret, i;
-    char *argv[2];
+    int i;
+    char *argv[2], bootpath[256];
 
     if ((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))) {
-        char fakepath[128], *p;
         if (0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)) {
             //Some error occurred, it could be due to something else having used pfs0
             unmountParty(0);  //So we try unmounting pfs0, to try again
             if (0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY))
                 return;  //If it still fails, we have to give up...
         }
-        strcpy(fakepath, filename);
-        p = strrchr(fakepath, '/');
-        if (p == NULL)
-            strcpy(fakepath, "pfs0:");
-        else {
-            p++;
-            *p = '\0';
+
+        if(strncmp(filename, "pfs0:", 5) == 0) {
+            sprintf(bootpath, "%s:pfs:%s", party, &filename[5]);
+        } else {
+            sprintf(bootpath, "%s:%s", party, filename);
         }
-        //printf("Loading fakehost.irx %i bytes\n", size_fakehost_irx);
-        //printf("Faking for path \"%s\" on partition \"%s\"\n", fakepath, party);
-        SifExecModuleBuffer(&fakehost_irx, size_fakehost_irx, strlen(fakepath), fakepath, &ret);
+
+        argv[0] = filename;
+        argv[1] = bootpath;
+    } else {
+        argv[0] = filename;
+        argv[1] = filename;
     }
 
     /* NB: LOADER.ELF is embedded  */
     boot_elf = (u8 *)&loader_elf;
     eh = (elf_header_t *)boot_elf;
     if (_lw((u32)&eh->ident) != ELF_MAGIC)
-        while (1)
-            ;
+        asm volatile("break\n");
 
     eph = (elf_pheader_t *)(boot_elf + eh->phoff);
 
@@ -167,15 +164,11 @@ void RunLoaderElf(char *filename, char *party)
     }
 
     /* Let's go.  */
-    SifInitRpc(0);
     SifExitRpc();
     FlushCache(0);
     FlushCache(2);
 
-    argv[0] = filename;
-    argv[1] = party;
-
-    ExecPS2((void *)eh->entry, 0, 2, argv);
+    ExecPS2((void *)eh->entry, NULL, 2, argv);
 }
 //------------------------------
 //End of func:  void RunLoaderElf(char *filename, char *party)
