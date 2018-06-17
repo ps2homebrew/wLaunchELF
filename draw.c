@@ -8,8 +8,8 @@ GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
 int testskin, testsetskin, testjpg, testthumb;
 int SCREEN_WIDTH = 640;
 int SCREEN_HEIGHT = 448;
-int SCREEN_X = 632;
-int SCREEN_Y = 50;
+int DEF_SCREEN_X = 0;
+int DEF_SCREEN_Y = 0;
 //dlanor: values shown above are defaults for NTSC mode
 u64 BrightColor;
 
@@ -518,37 +518,59 @@ void drawLastMsg(void)
     drawScr();
 }
 //--------------------------------------------------------------
-void setupGS(int gs_vmode)
+static void applyGSParams(void)
+{
+    switch(gsGlobal->Mode) {
+       case GS_MODE_VGA_640_60:
+            SCREEN_WIDTH = 640;
+            SCREEN_HEIGHT = 448;
+            Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
+            break;
+       case GS_MODE_PAL:
+            SCREEN_WIDTH = 640;
+            SCREEN_HEIGHT = 512;
+            Menu_end_y = Menu_start_y + 26 * FONT_HEIGHT;
+            break;
+       default:
+       case GS_MODE_NTSC:
+            SCREEN_WIDTH = 640;
+            SCREEN_HEIGHT = 448;
+            Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
+    }  // end TV_Mode change
+
+    Frame_end_y = Menu_end_y + 3;
+    Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
+
+    // Interlace Init
+    if (setting->interlace) {
+       gsGlobal->Interlace = GS_INTERLACED;
+       gsGlobal->Field = GS_FIELD;
+    } else {
+       gsGlobal->Interlace = GS_NONINTERLACED;
+       gsGlobal->Field = GS_FRAME;
+    }
+
+    // Init screen size
+    gsGlobal->Width = SCREEN_WIDTH;
+    if (gsGlobal->Mode == GS_MODE_VGA_640_60) {
+        gsGlobal->Height = SCREEN_HEIGHT;
+    } else {
+        //Interlaced video mode
+        gsGlobal->Height = setting->interlace ? SCREEN_HEIGHT : SCREEN_HEIGHT / 2;
+    }
+}
+
+void setupGS(void)
 {
     // GS Init
-    gsGlobal = gsKit_init_global_custom(
-        GS_RENDER_QUEUE_OS_POOLSIZE + GS_RENDER_QUEUE_OS_POOLSIZE / 2,  //eliminates overflow
-        GS_RENDER_QUEUE_PER_POOLSIZE);
-
-    // GS video mode
-    gsGlobal->Mode = gs_vmode;
+    gsGlobal = gsKit_init_global();
 
     // Screen size and Interlace Init
-    gsGlobal->Width = SCREEN_WIDTH;
-    if (setting->interlace) {
-        gsGlobal->Height = SCREEN_HEIGHT;
-        gsGlobal->Interlace = GS_INTERLACED;
-        gsGlobal->Field = GS_FIELD;
-        gsGlobal->MagV = 0;
-    } else {
-        gsGlobal->Height = SCREEN_HEIGHT / 2;
-        gsGlobal->Interlace = GS_NONINTERLACED;
-        gsGlobal->Field = GS_FRAME;
-        gsGlobal->MagV = 0;
-    }
     Old_Interlace = setting->interlace;
+    applyGSParams();
 
     // Clear Screen
     gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
-
-    // Screen Position Init
-    gsGlobal->StartX = setting->screen_x;
-    gsGlobal->StartY = setting->screen_y;
 
     // Buffer Init
     gsGlobal->PrimAAEnable = GS_SETTING_ON;
@@ -558,125 +580,65 @@ void setupGS(int gs_vmode)
     // DMAC Init
     dmaKit_init(D_CTRL_RELE_OFF, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC, D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
     dmaKit_chan_init(DMA_CHANNEL_GIF);
-    dmaKit_chan_init(DMA_CHANNEL_FROMSPR);
-    dmaKit_chan_init(DMA_CHANNEL_TOSPR);
 
-    // Screen Init
+    // Screen Init (will also clear screen once)
     gsKit_init_screen(gsGlobal);
+
+    // Screen Position Init
+    if (setting->screen_x < -gsGlobal->StartX)
+      setting->screen_x = -gsGlobal->StartX;
+    if (setting->screen_y < -gsGlobal->StartY)
+      setting->screen_y = -gsGlobal->StartY;
+    gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
+
+    // Screen render mode
     gsKit_mode_switch(gsGlobal, GS_ONESHOT);
-    gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
 }
 //--------------------------------------------------------------
-void updateScreenMode(int adapt_XY)
+void updateScreenMode(void)
 {
     int setGS_flag = 0;
     int New_TV_mode = setting->TV_mode;
 
-    if ((New_TV_mode != TV_mode_NTSC) && (New_TV_mode != TV_mode_PAL) && (New_TV_mode != TV_mode_VGA)) {  //If no forced request
-        New_TV_mode = uLE_InitializeRegion();                                                             //Let console region decide TV_mode
+    if (New_TV_mode == TV_mode_AUTO) {           //If no forced request
+        New_TV_mode = uLE_InitializeRegion();    //Let console region decide TV_mode
     }
 
     if (New_TV_mode != TV_mode) {
         setGS_flag = 1;
         TV_mode = New_TV_mode;
 
-        if (TV_mode == TV_mode_NTSC) {  //else use NTSC mode (forced or auto)
-            gsGlobal->Mode = GS_MODE_NTSC;
-            SCREEN_WIDTH = 640;
-            SCREEN_HEIGHT = 448;
-            if (adapt_XY) {
-                setting->screen_x += 362;
-                if (setting->interlace)
-                    setting->screen_y += 0;
-                else
-                    setting->screen_y -= 24;
-            }
-            Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
-        } else if (TV_mode == TV_mode_PAL) {  //Use PAL mode if chosen (forced or auto)
-            gsGlobal->Mode = GS_MODE_PAL;
-            SCREEN_WIDTH = 640;
-            SCREEN_HEIGHT = 512;
-            if (adapt_XY) {
-                setting->screen_x += 20;
-                if (setting->interlace)
-                    setting->screen_y += 22;
-                else
-                    setting->screen_y += 11;
-            }
-            Menu_end_y = Menu_start_y + 26 * FONT_HEIGHT;
-        } else {  //Use VGA mode if chosen (forced)
-            gsGlobal->Mode = GS_MODE_VGA_640_60;
-            SCREEN_WIDTH = 640;
-            SCREEN_HEIGHT = 448;
-            if (adapt_XY) {
-                setting->screen_x -= 382;
-                if (setting->interlace)
-                    setting->screen_y -= 22;
-                else
-                    setting->screen_y += 13;
-            }
-            Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
-        } /* end else */
-        Frame_end_y = Menu_end_y + 3;
-        Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
-
+        switch (New_TV_mode) {
+            case TV_mode_PAL:
+                gsGlobal->Mode = GS_MODE_PAL;
+                break;
+            case TV_mode_VGA:
+                gsGlobal->Mode = GS_MODE_VGA_640_60;
+                break;
+            default:
+            case TV_mode_NTSC:
+                gsGlobal->Mode = GS_MODE_NTSC;
+                break;
+        }
     }  // end TV_Mode change
 
     if (setting->interlace != Old_Interlace) {
         setGS_flag = 1;
         Old_Interlace = setting->interlace;
-
-        // Interlace Init
-        if (setting->interlace) {
-            gsGlobal->Interlace = GS_INTERLACED;
-            gsGlobal->Field = GS_FIELD;
-            if ((adapt_XY) && (TV_mode != TV_mode_VGA)) {
-                setting->screen_y = (setting->screen_y - 1) * 2;
-            }
-        } else {
-            gsGlobal->Interlace = GS_NONINTERLACED;
-            gsGlobal->Field = GS_FRAME;
-            if ((adapt_XY) && (TV_mode != TV_mode_VGA)) {
-                setting->screen_y = setting->screen_y / 2 + 1;
-            }
-        }
     }  // end Interlace change
 
-    // Init screen size
-    gsGlobal->Width = SCREEN_WIDTH;
-    gsGlobal->MagH = (TV_mode == TV_mode_VGA) ? 1 : 3;
-    if (setting->interlace) {
-        gsGlobal->Height = SCREEN_HEIGHT;
-        gsGlobal->MagV = 0;
-    } else {
-        gsGlobal->Height = SCREEN_HEIGHT / ((TV_mode == TV_mode_VGA) ? 1 : 2);
-        gsGlobal->MagV = 0;
-    }
+    // Init screen parameters
+    applyGSParams();
 
     // Init screen position
-    gsGlobal->StartX = setting->screen_x;
-    gsGlobal->StartY = setting->screen_y;
+    gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 
     if (setGS_flag) {
         // Clear screen before setting GS
         gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
         // Init screen modes
-        SetGsCrt(gsGlobal->Interlace, gsGlobal->Mode, gsGlobal->Field);
+        gsKit_init_screen(gsGlobal);
     }
-
-    GS_SET_DISPLAY1(gsGlobal->StartX,           // X position in the display area (in VCK unit
-                    gsGlobal->StartY,           // Y position in the display area (in Raster u
-                    gsGlobal->MagH,             // Horizontal Magnification
-                    gsGlobal->MagV,             // Vertical Magnification
-                    (gsGlobal->Width * 4) - 1,  // Display area width
-                    (gsGlobal->Height - 1));    // Display area height
-
-    GS_SET_DISPLAY2(gsGlobal->StartX,           // X position in the display area (in VCK units)
-                    gsGlobal->StartY,           // Y position in the display area (in Raster units)
-                    gsGlobal->MagH,             // Horizontal Magnification
-                    gsGlobal->MagV,             // Vertical Magnification
-                    (gsGlobal->Width * 4) - 1,  // Display area width
-                    (gsGlobal->Height - 1));    // Display area height
 }
 //--------------------------------------------------------------
 void loadSkin(int Picture, char *Path, int ThumbNum)

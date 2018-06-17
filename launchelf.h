@@ -201,8 +201,8 @@ extern int testskin, testsetskin, testjpg, testthumb;
 extern float PicWidth, PicHeight, PicW, PicH, PicCoeff;
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
-extern int SCREEN_X;
-extern int SCREEN_Y;
+extern int DEF_SCREEN_X;
+extern int DEF_SCREEN_Y;
 extern int Menu_start_x;
 extern int Menu_title_y;
 extern int Menu_message_y;
@@ -221,8 +221,8 @@ void drawPopSprite(u64 color, int x1, int y1, int x2, int y2);
 void drawOpSprite(u64 color, int x1, int y1, int x2, int y2);
 void drawMsg(const char *msg);
 void drawLastMsg(void);
-void setupGS(int gs_vmode);
-void updateScreenMode(int adapt_XY);
+void setupGS(void);
+void updateScreenMode(void);
 void clrScr(u64 color);
 void setBrightness(int Brightness);
 void loadSkin(int Picture, char *Path, int ThumbNum);
@@ -257,10 +257,12 @@ void waitPadReady(int port, int slot);
 void waitAnyPadReady(void);
 
 /* config.c */
-#define TV_mode_AUTO 0
-#define TV_mode_NTSC 1
-#define TV_mode_PAL 2
-#define TV_mode_VGA 3
+enum TV_mode {
+    TV_mode_AUTO = 0,
+    TV_mode_NTSC,
+    TV_mode_PAL,
+    TV_mode_VGA,
+};
 
 extern char PathPad[30][MAX_PATH];
 extern SETTING *setting;

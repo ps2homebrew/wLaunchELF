@@ -1497,7 +1497,7 @@ static int reloadConfig(void)
 
     CNF_error = loadConfig(mainMsg, CNF);
     Validate_CNF_Path();
-    updateScreenMode(0);
+    updateScreenMode();
     if (setting->GUI_skin[0])
         GUI_active = 1;
     else
@@ -2115,7 +2115,6 @@ int main(int argc, char *argv[])
     char RunPath[MAX_PATH];
     int RunELF_index, nElfs = 0;
     enum BOOT_DEVICE boot = BOOT_DEV_UNKNOWN;
-    int gs_vmode;
     int CNF_error = -1;  //assume error until CNF correctly loaded
     int i;
 
@@ -2166,40 +2165,12 @@ int main(int argc, char *argv[])
 
     LastDir[0] = 0;
 
-    TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
-    if (TV_mode == TV_mode_PAL) {      //Test console TV mode
-        gs_vmode = GS_MODE_PAL;
-        SCREEN_WIDTH = 640;
-        SCREEN_HEIGHT = 512;
-        SCREEN_X = 652;
-        SCREEN_Y = 72;
-        Menu_end_y = Menu_start_y + 26 * FONT_HEIGHT;
-    } else {  //else use NTSC mode (forced or auto)
-        gs_vmode = GS_MODE_NTSC;
-        SCREEN_WIDTH = 640;
-        SCREEN_HEIGHT = 448;
-        SCREEN_X = 632;
-        SCREEN_Y = 50;
-        Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
-    } /* end else */
+    TV_mode = uLE_InitializeRegion();  //Let console region decide default TV_mode
     Frame_end_y = Menu_end_y + 4;
     Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
     InitializeBootExecPath();
 
-    //RA NB: loadConfig needs  SCREEN_X and SCREEN_Y to be defaults matching TV mode
     CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-
-    if (TV_mode == TV_mode_VGA) {  //VGA mode (forced)
-        gs_vmode = GS_MODE_VGA_640_60;
-        SCREEN_WIDTH = 640;
-        SCREEN_HEIGHT = 448;
-        SCREEN_X = 270;
-        SCREEN_Y = 50;
-        Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
-        setting->screen_x = SCREEN_X;
-        setting->screen_y = SCREEN_Y;
-        setting->TV_mode = TV_mode_VGA;
-    }
 
     if (boot == BOOT_DEVICE_MASS)
         loadUsbModules();
@@ -2218,8 +2189,7 @@ int main(int argc, char *argv[])
 		}
 	}
 */
-    setupGS(gs_vmode);
-    updateScreenMode(0);  //resolves screen position issue with newer gsKit
+    setupGS();
     gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
 
     loadFont("");  //Some font must be loaded before loading some device modules
@@ -2378,7 +2348,7 @@ int main(int argc, char *argv[])
                 case BUTTON:
                     if ((new_pad & PAD_SELECT) && (new_pad & PAD_START)) {
                         initConfig();
-                        updateScreenMode(1);
+                        updateScreenMode();
                     } else if (new_pad & PAD_CIRCLE)
                         RunELF_index = 1;
                     else if (new_pad & PAD_CROSS)

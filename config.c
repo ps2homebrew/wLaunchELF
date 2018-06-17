@@ -177,8 +177,8 @@ size_t storeSkinCNF(char *cnf_buf)
             "SKIN_Brightness = %d\r\n"
             "TV_mode = %d\r\n"
             "Screen_Interlace = %d\r\n"
-            "Screen_X = %d\r\n"
-            "Screen_Y = %d\r\n"
+            "Screen_Offset_X = %d\r\n"
+            "Screen_Offset_Y = %d\r\n"
             "Popup_Opaque = %d\r\n"
             "Menu_Frame = %d\r\n"
             "Show_Menu = %d\r\n"
@@ -352,9 +352,9 @@ int scanSkinCNF(char *name, char *value)
         setting->TV_mode = atoi(value);
     else if (!strcmp(name, "Screen_Interlace"))
         setting->interlace = atoi(value);
-    else if (!strcmp(name, "Screen_X"))
+    else if (!strcmp(name, "Screen_Offset_X"))
         setting->screen_x = atoi(value);
-    else if (!strcmp(name, "Screen_Y"))
+    else if (!strcmp(name, "Screen_Offset_Y"))
         setting->screen_y = atoi(value);
     //----------
     else if (!strcmp(name, "Popup_Opaque"))
@@ -383,7 +383,7 @@ int loadSkinCNF(char *path)
     for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
         scanSkinCNF(name, value);
     free(RAM_p);
-    updateScreenMode(0);
+    updateScreenMode();
     if (setting->skin)
         loadSkin(BACKGROUND_PIC, 0, 0);
     return 0;
@@ -678,8 +678,8 @@ void initConfig(void)
     setting->color[5] = DEF_COLOR6;
     setting->color[6] = DEF_COLOR7;
     setting->color[7] = DEF_COLOR8;
-    setting->screen_x = SCREEN_X;
-    setting->screen_y = SCREEN_Y;
+    setting->screen_x = DEF_SCREEN_X;
+    setting->screen_y = DEF_SCREEN_Y;
     setting->interlace = DEF_INTERLACE;
     setting->Menu_Frame = DEF_MENU_FRAME;
     setting->Show_Menu = DEF_MENU;
@@ -687,7 +687,7 @@ void initConfig(void)
     setting->swapKeys = DEF_SWAPKEYS;
     setting->HOSTwrite = DEF_HOSTWRITE;
     setting->Brightness = DEF_BRIGHT;
-    setting->TV_mode = TV_mode_AUTO;  //0==Console_auto, 1==NTSC, 2==PAL, 3==VGA
+    setting->TV_mode = TV_mode_AUTO;
     setting->Popup_Opaque = DEF_POPUP_OPAQUE;
     setting->Init_Delay = DEF_INIT_DELAY;
     setting->usbkbd_used = DEF_USBKBD_USED;
@@ -1217,14 +1217,14 @@ void Config_Screen(void)
                             GS_SETREG_RGBA(rgb[s / 3][0], rgb[s / 3][1], rgb[s / 3][2], 0);
                     }
                 } else if (s == 25) {
-                    if (setting->screen_x > 0) {
+                    if (setting->screen_x > -gsGlobal->StartX) {
                         setting->screen_x--;
-                        updateScreenMode(0);
+                        updateScreenMode();
                     }
                 } else if (s == 26) {
-                    if (setting->screen_y > 0) {
+                    if (setting->screen_y > -gsGlobal->StartY) {
                         setting->screen_y--;
-                        updateScreenMode(0);
+                        updateScreenMode();
                     }
                 } else if (s == 31) {  //cursor is at Menu_Title
                     setting->Menu_Title[0] = '\0';
@@ -1239,16 +1239,20 @@ void Config_Screen(void)
                     }
                 } else if (s == 24) {
                     setting->TV_mode = (setting->TV_mode + 1) % 4;  //Change between 0,1,2,3
-                    updateScreenMode(1);
+                    updateScreenMode();
                 } else if (s == 25) {
-                    setting->screen_x++;
-                    updateScreenMode(0);
+                    if (setting->screen_x < gsGlobal->StartX) {
+                      setting->screen_x++;
+                      updateScreenMode();
+                    }
                 } else if (s == 26) {
-                    setting->screen_y++;
-                    updateScreenMode(0);
+                    if (setting->screen_y < gsGlobal->StartY) {
+                      setting->screen_y++;
+                      updateScreenMode();
+                    }
                 } else if (s == 27) {
                     setting->interlace = !setting->interlace;
-                    updateScreenMode(1);
+                    updateScreenMode();
                 } else if (s == 28) {
                     Config_Skin();
                 } else if (s == 29) {
@@ -1279,14 +1283,14 @@ void Config_Screen(void)
                     setting->color[6] = DEF_COLOR7;
                     setting->color[7] = DEF_COLOR8;
                     setting->TV_mode = TV_mode_AUTO;
-                    setting->screen_x = SCREEN_X;
-                    setting->screen_y = SCREEN_Y;
+                    setting->screen_x = DEF_SCREEN_X;
+                    setting->screen_y = DEF_SCREEN_Y;
                     setting->interlace = DEF_INTERLACE;
                     setting->Menu_Frame = DEF_MENU_FRAME;
                     setting->Show_Menu = DEF_MENU;
                     setting->Brightness = DEF_BRIGHT;
                     setting->Popup_Opaque = DEF_POPUP_OPAQUE;
-                    updateScreenMode(0);
+                    updateScreenMode();
 
                     for (i = 0; i < 8; i++) {
                         rgb[i][0] = setting->color[i] & 0xFF;
@@ -2151,7 +2155,7 @@ void config(char *mainMsg, char *CNF)
             cancel_exit:
                 free(setting);
                 setting = tmpsetting;
-                updateScreenMode(0);
+                updateScreenMode();
                 if (setting->GUI_skin[0])
                     GUI_active = 1;
                 loadSkin(BACKGROUND_PIC, 0, 0);
