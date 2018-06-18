@@ -260,6 +260,9 @@ enum TV_mode {
     TV_mode_NTSC,
     TV_mode_PAL,
     TV_mode_VGA,
+    TV_mode_480P,
+
+    TV_mode_COUNT
 };
 
 extern char PathPad[30][MAX_PATH];

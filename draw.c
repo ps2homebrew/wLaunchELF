@@ -14,7 +14,6 @@ u64 BrightColor;
 int updateScr_1;      //dlanor: flags screen updates for drawScr()
 int updateScr_2;      //dlanor: used for anti-flicker delay in drawScr()
 u64 updateScr_t = 0;  //dlanor: exit time of last drawScr()
-int Old_Interlace;
 
 char LastMessage[MAX_TEXT_LINE + 2];
 
@@ -455,10 +454,6 @@ void setScrTmp(const char *msg0, const char *msg1)
 //--------------------------------------------------------------
 void drawSprite(u64 color, int x1, int y1, int x2, int y2)
 {
-    int y_off = (setting->interlace) ? 0 : (y1 & 1);
-    y1 -= y_off;
-    y2 -= y_off;
-
     if (testskin == 1) {
         setBrightness(setting->Brightness);
         gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -470,10 +465,6 @@ void drawSprite(u64 color, int x1, int y1, int x2, int y2)
 //--------------------------------------------------------------
 void drawPopSprite(u64 color, int x1, int y1, int x2, int y2)
 {
-    int y_off = (setting->interlace) ? 0 : (y1 & 1);
-    y1 -= y_off;
-    y2 -= y_off;
-
     if (testskin == 1 && !setting->Popup_Opaque) {
         setBrightness(setting->Brightness);
         gsKit_prim_sprite_texture(gsGlobal, &TexSkin, x1, y1, x1, y1, x2, y2, x2, y2, 0, BrightColor);
@@ -491,10 +482,6 @@ void drawPopSprite(u64 color, int x1, int y1, int x2, int y2)
 //
 void drawOpSprite(u64 color, int x1, int y1, int x2, int y2)
 {
-    int y_off = (setting->interlace) ? 0 : (y1 & 1);
-    y1 -= y_off;
-    y2 -= y_off;
-
     gsKit_prim_sprite(gsGlobal, x1, y1, x2, y2, 0, color);
 }
 //--------------------------------------------------------------
@@ -520,42 +507,35 @@ static void applyGSParams(void)
 {
     switch(gsGlobal->Mode) {
        case GS_MODE_VGA_640_60:
+       case GS_MODE_DTV_480P:
             SCREEN_WIDTH = 640;
             SCREEN_HEIGHT = 448;
+            gsGlobal->Interlace = GS_NONINTERLACED;
+            gsGlobal->Field = GS_FRAME;
             Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
             break;
        case GS_MODE_PAL:
             SCREEN_WIDTH = 640;
             SCREEN_HEIGHT = 512;
+            gsGlobal->Interlace = GS_INTERLACED;
+            gsGlobal->Field = GS_FIELD;
             Menu_end_y = Menu_start_y + 26 * FONT_HEIGHT;
             break;
        default:
        case GS_MODE_NTSC:
             SCREEN_WIDTH = 640;
             SCREEN_HEIGHT = 448;
+            gsGlobal->Interlace = GS_INTERLACED;
+            gsGlobal->Field = GS_FIELD;
             Menu_end_y = Menu_start_y + 22 * FONT_HEIGHT;
     }  // end TV_Mode change
 
     Frame_end_y = Menu_end_y + 3;
     Menu_tooltip_y = Frame_end_y + LINE_THICKNESS + 2;
 
-    // Interlace Init
-    if (setting->interlace) {
-       gsGlobal->Interlace = GS_INTERLACED;
-       gsGlobal->Field = GS_FIELD;
-    } else {
-       gsGlobal->Interlace = GS_NONINTERLACED;
-       gsGlobal->Field = GS_FRAME;
-    }
-
     // Init screen size
     gsGlobal->Width = SCREEN_WIDTH;
-    if (gsGlobal->Mode == GS_MODE_VGA_640_60) {
-        gsGlobal->Height = SCREEN_HEIGHT;
-    } else {
-        //Interlaced video mode
-        gsGlobal->Height = setting->interlace ? SCREEN_HEIGHT : SCREEN_HEIGHT / 2;
-    }
+    gsGlobal->Height = SCREEN_HEIGHT;
 }
 
 void setupGS(void)
@@ -563,8 +543,7 @@ void setupGS(void)
     // GS Init
     gsGlobal = gsKit_init_global();
 
-    // Screen size and Interlace Init
-    Old_Interlace = setting->interlace;
+    // Screen size
     applyGSParams();
 
     // Clear Screen
@@ -617,6 +596,9 @@ void updateScreenMode(void)
             case TV_mode_PAL:
                 gsGlobal->Mode = GS_MODE_PAL;
                 break;
+            case TV_mode_480P:
+                gsGlobal->Mode = GS_MODE_DTV_480P;
+                break;
             case TV_mode_VGA:
                 gsGlobal->Mode = GS_MODE_VGA_640_60;
                 break;
@@ -626,11 +608,6 @@ void updateScreenMode(void)
                 break;
         }
     }  // end TV_Mode change
-
-    if (setting->interlace != Old_Interlace) {
-        setGS_flag = 1;
-        Old_Interlace = setting->interlace;
-    }  // end Interlace change
 
     // Init screen parameters
     applyGSParams();
@@ -721,9 +698,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                     } else if (Picture == JPG_PIC) {
                         PicW = Jpg->width;
                         PicH = Jpg->height;
-                        if ((TV_mode == TV_mode_NTSC) || (TV_mode == TV_mode_VGA))
+                        if (TV_mode != TV_mode_PAL)
                             PicCoeff = (PicW / PicH) + (1.0f / 10.5f);
-                        else if (TV_mode == TV_mode_PAL)
+                        else
                             PicCoeff = (PicW / PicH) - (1.0f / 12.0f);
                         if (FullScreen) {
                             if (Jpg->width > Jpg->height) {
@@ -750,9 +727,9 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                                     W = PicW;
                                     PicW = PicH;
                                     PicH = W;
-                                    if ((TV_mode == TV_mode_NTSC) || (TV_mode == TV_mode_VGA))
+                                    if (TV_mode != TV_mode_PAL)
                                         PicCoeff = (PicW / PicH) + (1.0f / 10.5f);
-                                    else if (TV_mode == TV_mode_PAL)
+                                    else
                                         PicCoeff = (PicW / PicH) - (1.0f / 12.0f);
                                     W = PicWidth;
                                     PicWidth = PicHeight;
@@ -928,10 +905,6 @@ void drawScr(void)
 //--------------------------------------------------------------
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
-    int y_off = (setting->interlace) ? 0 : (y1 & 1);
-    y1 -= y_off;
-    y2 -= y_off;
-
     updateScr_1 = 1;
 
     //Top horizontal edge
@@ -955,10 +928,6 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
     u8 *cm;
 
     updateScr_1 = 1;
-
-    if (!setting->interlace) {
-        y = y & -2;
-    }
 
     if (c >= FONT_COUNT)
         c = '_';
@@ -993,10 +962,6 @@ void drawChar2(int n, int x, int y, u64 colour)
     u8 b;
 
     updateScr_1 = 1;
-
-    if (!setting->interlace) {
-        y = y & -2;
-    }
 
     for (i = 0; i < 8; i++) {
         b = elisaFnt[n + i];
