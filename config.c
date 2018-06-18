@@ -678,8 +678,8 @@ void initConfig(void)
     setting->color[5] = DEF_COLOR6;
     setting->color[6] = DEF_COLOR7;
     setting->color[7] = DEF_COLOR8;
-    setting->screen_x = DEF_SCREEN_X;
-    setting->screen_y = DEF_SCREEN_Y;
+    setting->screen_x = 0;
+    setting->screen_y = 0;
     setting->interlace = DEF_INTERLACE;
     setting->Menu_Frame = DEF_MENU_FRAME;
     setting->Show_Menu = DEF_MENU;
@@ -1283,8 +1283,8 @@ void Config_Screen(void)
                     setting->color[6] = DEF_COLOR7;
                     setting->color[7] = DEF_COLOR8;
                     setting->TV_mode = TV_mode_AUTO;
-                    setting->screen_x = DEF_SCREEN_X;
-                    setting->screen_y = DEF_SCREEN_Y;
+                    setting->screen_x = 0;
+                    setting->screen_y = 0;
                     setting->interlace = DEF_INTERLACE;
                     setting->Menu_Frame = DEF_MENU_FRAME;
                     setting->Show_Menu = DEF_MENU;

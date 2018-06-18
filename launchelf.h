@@ -201,8 +201,6 @@ extern int testskin, testsetskin, testjpg, testthumb;
 extern float PicWidth, PicHeight, PicW, PicH, PicCoeff;
 extern int SCREEN_WIDTH;
 extern int SCREEN_HEIGHT;
-extern int DEF_SCREEN_X;
-extern int DEF_SCREEN_Y;
 extern int Menu_start_x;
 extern int Menu_title_y;
 extern int Menu_message_y;

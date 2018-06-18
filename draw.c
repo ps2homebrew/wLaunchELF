@@ -8,8 +8,6 @@ GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
 int testskin, testsetskin, testjpg, testthumb;
 int SCREEN_WIDTH = 640;
 int SCREEN_HEIGHT = 448;
-int DEF_SCREEN_X = 0;
-int DEF_SCREEN_Y = 0;
 //dlanor: values shown above are defaults for NTSC mode
 u64 BrightColor;
 
@@ -585,10 +583,17 @@ void setupGS(void)
     gsKit_init_screen(gsGlobal);
 
     // Screen Position Init
+    // Ensure that the offsets are within valid ranges.
     if (setting->screen_x < -gsGlobal->StartX)
       setting->screen_x = -gsGlobal->StartX;
+    else if (setting->screen_x > gsGlobal->StartX)
+      setting->screen_x = gsGlobal->StartX;
+
     if (setting->screen_y < -gsGlobal->StartY)
       setting->screen_y = -gsGlobal->StartY;
+    else if (setting->screen_y > gsGlobal->StartY)
+      setting->screen_y = gsGlobal->StartY;
+
     gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 
     // Screen render mode
@@ -630,15 +635,15 @@ void updateScreenMode(void)
     // Init screen parameters
     applyGSParams();
 
-    // Init screen position
-    gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
-
     if (setGS_flag) {
         // Clear screen before setting GS
         gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
         // Init screen modes
         gsKit_init_screen(gsGlobal);
     }
+
+    // Init screen position
+    gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 }
 //--------------------------------------------------------------
 void loadSkin(int Picture, char *Path, int ThumbNum)
