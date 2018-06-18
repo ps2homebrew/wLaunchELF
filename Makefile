@@ -7,7 +7,8 @@ EE_BIN = BOOT.ELF
 EE_BIN_PKD = ULE.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o\
-	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o usbhdfsd_irx.o mcman_irx.o mcserv_irx.o\
+	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o usbhdfsd_irx.o\
+        sio2man_irx.o padman_irx.o mcman_irx.o mcserv_irx.o\
 	cdvd_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
@@ -18,7 +19,7 @@ endif
 EE_INCS := -I$(PS2DEV)/gsKit/include -I$(PS2SDK)/ports/include -Ioldlibs/libcdvd/ee
 
 EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -Loldlibs/libcdvd/lib -s
-EE_LIBS = -lgskit -ldmakit -ljpeg -lpad -lmc -lhdd -lcdvdfs -lkbd -lmf \
+EE_LIBS = -lgskit -ldmakit -ljpeg -lpadx -lmc -lhdd -lcdvdfs -lkbd -lmf \
 	-lcdvd -lc -lfileXio -lpatches -lpoweroff -ldebug -lc -lsior
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
@@ -43,6 +44,12 @@ githash.h:
 	echo -n '#ifndef GIT_HASH\n#define GIT_HASH "' >> $@ && \
 	git rev-parse --short HEAD | tr -d "\n" >> $@ && \
 	echo '"\n#endif' >> $@
+
+sio2man_irx.s: $(PS2SDK)/iop/irx/sio2man.irx
+	bin2s $< $@ sio2man_irx
+
+padman_irx.s: $(PS2SDK)/iop/irx/padman.irx
+	bin2s $< $@ padman_irx
 
 mcman_irx.s: $(PS2SDK)/iop/irx/mcman.irx
 	bin2s $< $@ mcman_irx
