@@ -540,14 +540,34 @@ static void applyGSParams(void)
 
 void setupGS(void)
 {
+    int New_TV_mode = setting->TV_mode;
+
     // GS Init
     gsGlobal = gsKit_init_global();
 
+    if (New_TV_mode == TV_mode_AUTO) {           //If no forced request
+        New_TV_mode = uLE_InitializeRegion();    //Let console region decide TV_mode
+    }
+
+    // Screen display mode
+    switch (New_TV_mode) {
+        case TV_mode_PAL:
+            gsGlobal->Mode = GS_MODE_PAL;
+            break;
+        case TV_mode_480P:
+            gsGlobal->Mode = GS_MODE_DTV_480P;
+            break;
+        case TV_mode_VGA:
+            gsGlobal->Mode = GS_MODE_VGA_640_60;
+            break;
+        default:
+        case TV_mode_NTSC:
+            gsGlobal->Mode = GS_MODE_NTSC;
+            break;
+    }
+
     // Screen size
     applyGSParams();
-
-    // Clear Screen
-    gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
 
     // Buffer Init
     gsGlobal->PrimAAEnable = GS_SETTING_ON;
@@ -613,8 +633,6 @@ void updateScreenMode(void)
     applyGSParams();
 
     if (setGS_flag) {
-        // Clear screen before setting GS
-        gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
         // Init screen modes
         gsKit_init_screen(gsGlobal);
     }
