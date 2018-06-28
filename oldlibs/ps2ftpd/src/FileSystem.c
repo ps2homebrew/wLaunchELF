@@ -641,8 +641,8 @@ int FileSystem_Rename(FSContext *pContext, const char *oldName, const char *newN
 
     switch (pContext->m_eType) {
         case FS_IODEVICE: {
-            // rename only available to pfs
-            if (!pContext->m_kFile.device || strcmp(pContext->m_kFile.device->name, "pfs"))
+            // rename only available to FSEXT devices.
+            if (!pContext->m_kFile.device || ((pContext->m_kFile.device->type & 0xf0000000) != IOP_DT_FSEXT))
                 break;
             return pContext->m_kFile.device->ops->rename(&(pContext->m_kFile), oldName, newName);
         } break;
