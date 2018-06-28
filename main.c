@@ -51,10 +51,6 @@ extern u8 ps2kbd_irx[];
 extern int size_ps2kbd_irx;
 extern u8 hdl_info_irx[];
 extern int size_hdl_info_irx;
-extern u8 sio2man_irx[];
-extern int size_sio2man_irx;
-extern u8 padman_irx[];
-extern int size_padman_irx;
 extern u8 mcman_irx[];
 extern int size_mcman_irx;
 extern u8 mcserv_irx[];
@@ -900,7 +896,7 @@ static void loadBasicModules(void)
 
     SifExecModuleBuffer(allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  //unlocks cdvd for reading on psx dvr
 
-    SifExecModuleBuffer(sio2man_irx, size_sio2man_irx, 0, NULL, &ret);
+    SifLoadModule("rom0:SIO2MAN", 0, NULL);
 
 #ifdef SIO_DEBUG
     int id;
@@ -915,9 +911,11 @@ static void loadBasicModules(void)
     DPRINTF("sior id=%d _start ret=%d\n", id, ret);
 #endif
 
-    SifExecModuleBuffer(mcman_irx, size_mcman_irx, 0, NULL, &ret);
-    SifExecModuleBuffer(mcserv_irx, size_mcserv_irx, 0, NULL, &ret);
-    SifExecModuleBuffer(padman_irx, size_padman_irx, 0, NULL, &ret);
+    SifExecModuleBuffer(mcman_irx, size_mcman_irx, 0, NULL, &ret);  //Home
+    //SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
+    SifExecModuleBuffer(mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  //Home
+    //SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
+    SifLoadModule("rom0:PADMAN", 0, NULL);
 }
 //------------------------------
 //endfunc loadBasicModules
@@ -2005,7 +2003,7 @@ static void Reset()
     loadBasicModules();
     fileXioInit();
     mcReset();
-    mcInit(MC_TYPE_XMC);
+    mcInit(MC_TYPE_MC);
     //	padReset();
     //	setupPad();
 }
