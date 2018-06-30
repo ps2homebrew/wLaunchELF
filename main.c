@@ -1621,7 +1621,6 @@ static void CleanUp(void)
 //    padEnd();  //Required when a newer libpad library is used.
     if (ps2kbd_opened)
         PS2KbdClose();
-    TimerEnd();
 }
 //------------------------------
 //endfunc CleanUp
@@ -2230,11 +2229,9 @@ int main(int argc, char *argv[])
 
     loadCdModules();
 
-    TimerInit();
     WaitTime = Timer();
     setupPad();  //Comment out this line when using early setupPad above
     startKbd();
-    TimerInit();
     WaitTime = Timer();
 
     init_delay = setting->Init_Delay * 1000;

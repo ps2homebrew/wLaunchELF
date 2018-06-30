@@ -325,9 +325,7 @@ void TextEditor(void);
 extern u64 WaitTime;
 extern u64 CurrTime;
 
-void TimerInit(void);
 u64 Timer(void);
-void TimerEnd(void);
 
 /* jpgviewer.c */
 void JpgViewer(void);
