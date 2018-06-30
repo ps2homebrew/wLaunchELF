@@ -1629,16 +1629,19 @@ static void CleanUp(void)
 //------------------------------
 int IsSupportedFileType(char *path)
 {
-    if(genCmpFileExt(path, "ELF")) {
-        return(checkELFheader(path) >= 0);
-    }
-    else if(genCmpFileExt(path, "TXT")
-            || (genCmpFileExt(path, "JPG") || genCmpFileExt(path, "JPEG"))
-         ) {
+    if(strchr(path, ':') != NULL) {
+        if(genCmpFileExt(path, "ELF")) {
+            return(checkELFheader(path) >= 0);
+        }
+        else if(genCmpFileExt(path, "TXT")
+                || (genCmpFileExt(path, "JPG") || genCmpFileExt(path, "JPEG"))
+             ) {
+            return 1;
+        }
+        else
+          return 0;
+    } else //No ':', hence no device name in path, which means it is a special action (e.g. MISC/*).
         return 1;
-    }
-    else
-        return 0;
 }
 //------------------------------
 //endfunc IsSupportedFileType
@@ -1882,9 +1885,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         LastDir[0] = 0;
         getFilePath(tmp, FALSE);
         if (tmp[0]) {
-            if(genCmpFileExt(tmp, "ELF"))
-                Execute(tmp);
-            else if(genCmpFileExt(tmp, "TXT")) {
+            if(genCmpFileExt(tmp, "TXT")) {
                 if (setting->GUI_skin[0]) {
                     GUI_active = 0;
                     loadSkin(BACKGROUND_PIC, 0, 0);
@@ -1900,6 +1901,8 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 
                 JpgViewer(tmp);
             }
+            else
+                Execute(tmp);
         }
         return;
     } else if (!stricmp(path, setting->Misc_PS2Browser)) {
