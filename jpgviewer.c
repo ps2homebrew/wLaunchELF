@@ -539,12 +539,10 @@ void JpgViewer(char *file)
 
     event = 1;  //event = initial entry
 
-    if (file[0] != 0) {
+    if (file != NULL) {
         strncpy(jpgpath, file, MAX_PATH - 1);
         jpgpath[MAX_PATH - 1] = '\0';
 
-        SlideShowStart = 1;
-        SlideShowBegin = 0;
         goto single;
     }
     while (1) {
