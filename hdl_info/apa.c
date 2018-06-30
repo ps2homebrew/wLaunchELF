@@ -5,8 +5,8 @@
 #include <sysclib.h>
 #include <cdvdman.h>
 #include <iomanX.h>
-#include <sysmem.h>
 
+#include "main.h"
 #include "ps2_hdd.h"
 #include "hdd.h"
 #include "hdl.h"
@@ -40,7 +40,7 @@ u_long apa_partition_checksum(const ps2_partition_header_t *part)
 //--------------------------------------------------------------
 static apa_partition_table_t *apa_ptable_alloc(void)
 {
-    apa_partition_table_t *table = AllocSysMemory(0, sizeof(apa_partition_table_t), NULL);
+    apa_partition_table_t *table = malloc(sizeof(apa_partition_table_t));
     if (table != NULL)
         memset(table, 0, sizeof(apa_partition_table_t));
     return table;
@@ -52,10 +52,10 @@ void apa_ptable_free(apa_partition_table_t *table)
 {
     if (table != NULL) {
         if (table->chunks_map != NULL)
-            FreeSysMemory(table->chunks_map);
+            free(table->chunks_map);
         if (table->parts != NULL)
-            FreeSysMemory(table->parts);
-        FreeSysMemory(table);
+            free(table->parts);
+        free(table);
     }
 }
 //------------------------------
@@ -65,12 +65,12 @@ static int apa_part_add(apa_partition_table_t *table, const ps2_partition_header
 {
     if (table->part_count == table->part_alloc_) { /* grow buffer */
         u_long bytes = (table->part_alloc_ + 16) * sizeof(apa_partition_t);
-        apa_partition_t *tmp = AllocSysMemory(0, bytes, NULL);
+        apa_partition_t *tmp = malloc(bytes);
         if (tmp != NULL) {
             memset(tmp, 0, bytes);
             if (table->parts != NULL) /* copy existing */
                 memcpy(tmp, table->parts, table->part_count * sizeof(apa_partition_t));
-            FreeSysMemory(table->parts);
+            free(table->parts);
             table->parts = tmp;
             table->part_alloc_ += 16;
         } else
@@ -95,7 +95,7 @@ static int apa_setup_statistics(apa_partition_table_t *table)
  char *map;
 
  table->total_chunks = table->device_size_in_mb / 128;
- map = AllocSysMemory(0, table->total_chunks * sizeof (char), NULL);
+ map = malloc(table->total_chunks * sizeof (char));
  if(map != NULL)
  {
   for(i=0; i<table->total_chunks; ++i)
@@ -125,7 +125,7 @@ static int apa_setup_statistics(apa_partition_table_t *table)
   }
 
   if(table->chunks_map != NULL)
-  FreeSysMemory(table->chunks_map);
+  free(table->chunks_map);
   table->chunks_map = map;
 
   return 0;

@@ -4,10 +4,11 @@
 #include <thbase.h>
 #include <sysclib.h>
 #include <stdio.h>
-#include <sysmem.h>
 #include <dev9.h>
 #include <atad.h>
+#include <poweroff.h>
 
+#include "main.h"
 #include "ps2_hdd.h"
 #include "hdd.h"
 #include "hdl.h"
@@ -63,20 +64,16 @@ static int iop_flush(hio_t *hio)
 //--------------------------------------------------------------
 static int iop_close(hio_t *hio)
 {
-    FreeSysMemory(hio);
+    free(hio);
     return 0;
 }
 //------------------------------
 //endfunc iop_close
 //--------------------------------------------------------------
 static int iop_poweroff(hio_t *hio)
-{
-    /* dev9 shutdown; borrowed from ps2link */
-    dev9IntrDisable(-1);
-    dev9Shutdown();
-
-    *((unsigned char *)0xbf402017) = 0x00;
-    *((unsigned char *)0xbf402016) = 0x0f;
+{   //Prerequisites: all files on the HDD must be saved & all partitions unmounted.
+    dev9Shutdown();        //Power off DEV9
+    PoweroffShutdown();    //Power off PlayStation 2
     return 0;
 }
 //------------------------------
@@ -84,7 +81,7 @@ static int iop_poweroff(hio_t *hio)
 //--------------------------------------------------------------
 static hio_t *iop_alloc(int unit, size_t size_in_sectors)
 {
-    hio_iop_t *iop = AllocSysMemory(0, sizeof(hio_iop_t), NULL);
+    hio_iop_t *iop = malloc(sizeof(hio_iop_t));
     if (iop != NULL) {
         hio_t *hio = &iop->hio;
         hio->stat = &iop_stat;

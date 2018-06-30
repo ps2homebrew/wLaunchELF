@@ -19,6 +19,8 @@
 /* Please keep these in alphabetical order!  */
 #include <atad.h>
 #include <dev9.h>
+#include <intrman.h>
+#include <poweroff.h>
 #include <sifcmd.h>
 #include <stdio.h>
 #include <sysclib.h>

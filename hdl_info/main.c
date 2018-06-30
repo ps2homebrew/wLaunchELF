@@ -7,7 +7,9 @@
 #include <sys/stat.h>
 #include <dev9.h>
 #include <sifrpc.h>
+#include <sysmem.h>
 
+#include "main.h"
 #include "ps2_hdd.h"
 #include "hdd.h"
 
@@ -70,3 +72,25 @@ void *rpcCommandHandler(int command, void *Data, int Size)
     }
     return Data;
 }
+
+void *malloc(int size)
+{
+    int OldState;
+    void *result;
+
+    CpuSuspendIntr(&OldState);
+    result = AllocSysMemory(ALLOC_FIRST, size, NULL);
+    CpuResumeIntr(OldState);
+
+    return result;
+}
+
+void free(void *ptr)
+{
+    int OldState;
+
+    CpuSuspendIntr(&OldState);
+    FreeSysMemory(ptr);
+    CpuResumeIntr(OldState);
+}
+

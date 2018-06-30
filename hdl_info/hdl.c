@@ -6,8 +6,8 @@
 #include <sysclib.h>
 #include <cdvdman.h>
 #include <iomanX.h>
-#include <sysmem.h>
 
+#include "main.h"
 #include "ps2_hdd.h"
 #include "hdd.h"
 #include "hdl.h"
@@ -17,8 +17,8 @@
 void hdl_glist_free(hdl_games_list_t *glist)
 {
     if (glist != NULL) {
-        FreeSysMemory(glist->games);
-        FreeSysMemory(glist);
+        free(glist->games);
+        free(glist);
     }
 }
 //------------------------------
@@ -72,10 +72,10 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
             count += (get_u16(&ptable->parts[i].header.flags) == 0x00 &&
                       get_u16(&ptable->parts[i].header.type) == 0x1337);
 
-        tmp = AllocSysMemory(0, (sizeof(hdl_game_info_t) * count), NULL);
+        tmp = malloc(sizeof(hdl_game_info_t) * count);
         if (tmp != NULL) {
             memset(tmp, 0, sizeof(hdl_game_info_t) * count);
-            *glist = AllocSysMemory(0, sizeof(hdl_games_list_t), NULL);
+            *glist = malloc(sizeof(hdl_games_list_t));
             if (*glist != NULL) {
                 u_long index = 0;
                 memset(*glist, 0, sizeof(hdl_games_list_t));
@@ -89,11 +89,11 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
                         result = hdl_ginfo_read(hio, part, (*glist)->games + index++);
                 }
                 if (result != 0)
-                    FreeSysMemory(*glist);
+                    free(*glist);
             } else
                 result = -2;
             if (result != 0)
-                FreeSysMemory(tmp);
+                free(tmp);
         } else
             result = -2;
 
@@ -138,10 +138,10 @@ int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
             count += (get_u16(&ptable->parts[i].header.flags) == 0x00 &&
                       get_u16(&ptable->parts[i].header.type) == 0x1337);
 
-        tmp = AllocSysMemory(0, (sizeof(hdl_game_info_t) * count), NULL);
+        tmp = malloc(sizeof(hdl_game_info_t) * count);
         if (tmp != NULL) {
             memset(tmp, 0, sizeof(hdl_game_info_t) * count);
-            tmplist = AllocSysMemory(0, sizeof(hdl_games_list_t), NULL);
+            tmplist = malloc(sizeof(hdl_games_list_t));
             if (tmplist != NULL) {
                 u_long index = 0;
                 memset(tmplist, 0, sizeof(hdl_games_list_t));
@@ -159,11 +159,11 @@ int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
                         }
                     }
                 }
-                FreeSysMemory(tmplist);
+                free(tmplist);
             } else
                 result = -2;
             if (result != 0)
-                FreeSysMemory(tmp);
+                free(tmp);
         } else
             result = -2;
 
