@@ -177,6 +177,7 @@ int uLE_related(char *pathout, char *pathin);
 int uLE_InitializeRegion(void);
 int uLE_cdDiscValid(void);
 int uLE_cdStop(void);
+int IsSupportedFileType(char *path);
 
 /* elf.c */
 int checkELFheader(char *filename);
@@ -309,6 +310,7 @@ int genDopen(char *path);
 int genDclose(int fd);
 int genRemove(char *path);
 int genRmdir(char *path);
+int genCmpFileExt(const char *filename, const char *extension);
 int mountParty(const char *party);
 void unmountParty(int party_ix);
 void unmountAll(void);
@@ -319,7 +321,7 @@ void DebugDisp(char *Message);
 void hddManager(void);
 
 /* editor.c */
-void TextEditor(void);
+void TextEditor(char *path);
 
 /* timer.c */
 extern u64 WaitTime;
@@ -328,7 +330,7 @@ extern u64 CurrTime;
 u64 Timer(void);
 
 /* jpgviewer.c */
-void JpgViewer(void);
+void JpgViewer(char *file);
 
 /* lang.c */
 typedef struct Language

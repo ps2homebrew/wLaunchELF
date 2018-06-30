@@ -228,7 +228,7 @@ static void decConfig(void);
 static void incConfig(void);
 static int exists(char *path);
 static void CleanUp(void);
-static void RunElf(char *pathin);
+static void Execute(char *pathin);
 static void Reset(void);
 static void InitializeBootExecPath();
 //---------------------------------------------------------------------------
@@ -1625,9 +1625,27 @@ static void CleanUp(void)
 //------------------------------
 //endfunc CleanUp
 //---------------------------------------------------------------------------
-// Run ELF. The generic ELF launcher.
+//Indicates whether the file type is supported by LaunchELF (for any action)
 //------------------------------
-static void RunElf(char *pathin)
+int IsSupportedFileType(char *path)
+{
+    if(genCmpFileExt(path, "ELF")) {
+        return(checkELFheader(path) >= 0);
+    }
+    else if(genCmpFileExt(path, "TXT")
+            || (genCmpFileExt(path, "JPG") || genCmpFileExt(path, "JPEG"))
+         ) {
+        return 1;
+    }
+    else
+        return 0;
+}
+//------------------------------
+//endfunc IsSupportedFileType
+//---------------------------------------------------------------------------
+// Execute. Execute an action. May be called recursively.
+//------------------------------
+static void Execute(char *pathin)
 {
     char tmp[MAX_PATH];
     static char path[MAX_PATH];
@@ -1863,8 +1881,26 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         tmp[0] = 0;
         LastDir[0] = 0;
         getFilePath(tmp, FALSE);
-        if (tmp[0])
-            RunElf(tmp);
+        if (tmp[0]) {
+            if(genCmpFileExt(tmp, "ELF"))
+                Execute(tmp);
+            else if(genCmpFileExt(tmp, "TXT")) {
+                if (setting->GUI_skin[0]) {
+                    GUI_active = 0;
+                    loadSkin(BACKGROUND_PIC, 0, 0);
+                }
+
+                TextEditor(tmp);
+            }
+            else if(genCmpFileExt(tmp, "JPG") || genCmpFileExt(tmp, "JPEG")) {
+                if (setting->GUI_skin[0]) {
+                    GUI_active = 0;
+                    loadSkin(BACKGROUND_PIC, 0, 0);
+                }
+
+                JpgViewer(tmp);
+            }
+        }
         return;
     } else if (!stricmp(path, setting->Misc_PS2Browser)) {
         Exit(0);
@@ -1897,14 +1933,14 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
             GUI_active = 0;
             loadSkin(BACKGROUND_PIC, 0, 0);
         }
-        TextEditor();
+        TextEditor(NULL);
         return;
     } else if (!stricmp(path, setting->Misc_JpgViewer)) {
         if (setting->GUI_skin[0]) {
             GUI_active = 0;
             loadSkin(BACKGROUND_PIC, 0, 0);
         }
-        JpgViewer();
+        JpgViewer(NULL);
         return;
     } else if (!stricmp(path, setting->Misc_Configure)) {
         if (setting->GUI_skin[0]) {
@@ -1972,7 +2008,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
     }
 }
 //------------------------------
-//endfunc RunElf
+//endfunc Execute
 //---------------------------------------------------------------------------
 // reboot IOP (original source by Hermes in BOOT.c - cogswaploader)
 // dlanor: but changed now, as the original was badly bugged
@@ -2415,7 +2451,7 @@ int main(int argc, char *argv[])
         if (RunPath[0]) {
             user_acted = 1;
             mode = BUTTON;
-            RunElf(RunPath);
+            Execute(RunPath);
             RunPath[0] = 0;
             if (setting->GUI_skin[0]) {
                 GUI_active = 1;

@@ -480,7 +480,7 @@ void nonDialog(char *message)
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 {
-    char *p, ca, cb;
+    char ca, cb;
     int i, n, ret, aElf = FALSE, bElf = FALSE, t = (file_sort == 2);
 
     if (file_sort == 0)
@@ -488,11 +488,9 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  //Used for directory sort
 
     if ((a->stats.AttrFile & MC_ATTR_OBJECT) == (b->stats.AttrFile & MC_ATTR_OBJECT)) {
         if (a->stats.AttrFile & sceMcFileAttrFile) {
-            p = strrchr(a->name, '.');
-            if (p != NULL && !stricmp(p + 1, "ELF"))
+            if (genCmpFileExt(a->name, "ELF"))
                 aElf = TRUE;
-            p = strrchr(b->name, '.');
-            if (p != NULL && !stricmp(p + 1, "ELF"))
+            if (genCmpFileExt(b->name, "ELF"))
                 bElf = TRUE;
             if (aElf && !bElf)
                 return -1;
@@ -879,6 +877,16 @@ int genDclose(int fd)
 //------------------------------
 //endfunc genDclose
 //--------------------------------------------------------------
+int genCmpFileExt(const char *filename, const char *extension)
+{
+    const char *p;
+
+    p = strrchr(filename, '.');
+    return(p != NULL && !stricmp(p + 1, extension));
+}
+//------------------------------
+//endfunc genDclose
+//--------------------------------------------------------------
 int readVMC(const char *path, FILEINFO *info, int max)
 {
     iox_dirent_t dirbuf;
@@ -1240,7 +1248,6 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     int fd = -1, size, ret;
     psu_header PSU_head;
     int i, tst, PSU_content, psu_pad_pos;
-    char *cp;
 
     out[0] = '\0';  //Start by making an empty result string, for failures
 
@@ -1265,8 +1272,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     if ((file->stats.AttrFile & sceMcFileAttrSubdir) == 0) {
         //Here we know that the object needing a title is a file
         strcpy(tmpdir, dir);                      //Copy the pathname for file access
-        cp = strrchr(tmpdir, '.');                //Find the extension, if any
-        if ((cp == NULL) || stricmp(cp, ".psu"))  //If it's anything other than a PSU file
+        if(!genCmpFileExt(tmpdir, "psu"))          //Find the extension, if any. If it's anything other than a PSU file
             goto get_PS1_GameTitle;               //then it may be a PS1 save
         //Here we know that the object needing a title is a PSU file
         if ((fd = genOpen(tmpdir, O_RDONLY)) < 0)
@@ -2259,8 +2265,7 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
     //But in PSU Restore mode we must treat PSU files as special folders, at level 0.
     //and recursively call copy with higher recurse level to process the contents
     if (PasteMode == PM_PSU_RESTORE && recurses == 0) {
-        cp = strrchr(in, '.');
-        if ((cp == NULL) || stricmp(cp, ".psu"))
+        if (!genCmpFileExt(in, "psu"))
             goto non_PSU_RESTORE_init;  //if not a PSU file, go do normal pasting
 
         in_fd = genOpen(in, O_RDONLY);
@@ -2950,7 +2955,6 @@ int keyboard2(char *out, int max)
 //--------------------------------------------------------------
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 {
-    char *p;
     int nfiles, i, j, ret;
 
     size_valid = 0;
@@ -3064,8 +3068,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
                 if (files[i].stats.AttrFile & sceMcFileAttrSubdir)
                     files[j++] = files[i];
                 else {
-                    p = strrchr(files[i].name, '.');
-                    if (p != NULL && !stricmp(ext, p + 1))
+                    if (genCmpFileExt(files[i].name, ext))
                         files[j++] = files[i];
                 }
             }
@@ -3352,7 +3355,7 @@ int getFilePath(char *out, int cnfmode)
                     //pushed OK for a file
                     sprintf(out, "%s%s", path, files[browser_sel].name);
                     // Must to include a function for check IRX Header
-                    if (((cnfmode == LK_ELF_CNF) || (cnfmode == NON_CNF)) && (checkELFheader(out) < 0)) {
+                    if (((cnfmode == LK_ELF_CNF) || (cnfmode == NON_CNF)) && (!IsSupportedFileType(out))) {
                         browser_pushed = FALSE;
                         sprintf(msg0, "%s.", LNG(This_file_isnt_an_ELF));
                         out[0] = 0;
@@ -3821,8 +3824,7 @@ int getFilePath(char *out, int cnfmode)
                         iconcolr = 4;
                     } else {
                         iconbase = ICON_FILE;
-                        p = strrchr(files[top + i].name, '.');
-                        if (p != NULL && !stricmp(p + 1, "ELF"))
+                        if (genCmpFileExt(files[top + i].name, "ELF"))
                             iconcolr = 5;
                         else
                             iconcolr = 6;

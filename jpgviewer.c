@@ -479,7 +479,7 @@ static void loadPic(void)
 } /* end loadPic */
 
 //--------------------------------------------------------------
-void JpgViewer(void)
+void JpgViewer(char *file)
 {
     char path[MAX_PATH],
         cursorEntry[MAX_PATH], ext[8],
@@ -538,6 +538,15 @@ void JpgViewer(void)
     loadIcon();
 
     event = 1;  //event = initial entry
+
+    if (file[0] != 0) {
+        strncpy(jpgpath, file, MAX_PATH - 1);
+        jpgpath[MAX_PATH - 1] = '\0';
+
+        SlideShowStart = 1;
+        SlideShowBegin = 0;
+        goto single;
+    }
     while (1) {
 
         //Pad response section

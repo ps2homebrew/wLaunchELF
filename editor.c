@@ -94,8 +94,22 @@ static char *KEY = "  01ABCDEFGHIJKLM:; "
                    "  67nopqrstuvwxyz[] "
                    "  89+-=!#\\/ $%&@_^' ";  // Virtual KeyBoard Matrix.
 
+//Function Prototypes
+static int MenuEditor(void);
+static void Virt_KeyBoard_Entry(void);
+static int KeyBoard_Entry(void);
+static void Editor_Rules(void);
+static int Windows_Selector(void);
+static void Init(void);
+static int New(int Win);
+static int OpenFile(int Win);
+static int Open(int Win, char *path);
+static void Close(int Win);
+static void Save(int Win);
+static void Save_As(int Win);
+
 //--------------------------------------------------------------
-int MenuEditor(void)
+static int MenuEditor(void)
 {
     u64 color;
     char enable[NUM_MENU], tmp[64];
@@ -216,7 +230,7 @@ int MenuEditor(void)
     return Menu_Sel;
 }  //ends menu.
 //--------------------------------------------------------------
-void Virt_KeyBoard_Entry(void)
+static void Virt_KeyBoard_Entry(void)
 {
     int i, Operation;
 
@@ -488,7 +502,7 @@ void Virt_KeyBoard_Entry(void)
 //------------------------------
 //endfunc Virt_KeyBoard_Entry
 //--------------------------------------------------------------
-int KeyBoard_Entry(void)
+static int KeyBoard_Entry(void)
 {
     int i, ret = 0, Operation;
     unsigned char KeyPress;
@@ -756,7 +770,7 @@ int KeyBoard_Entry(void)
 //------------------------------
 //endfunc KeyBoard_Entry
 //--------------------------------------------------------------
-void Editor_Rules(void)
+static void Editor_Rules(void)
 {
     int i;
 
@@ -872,7 +886,7 @@ void Editor_Rules(void)
     }
 }
 //--------------------------------------------------------------
-int Windows_Selector(void)
+static int Windows_Selector(void)
 {
     u64 color;
     int x, y, i, Window_Sel = Active_Window;
@@ -954,7 +968,7 @@ int Windows_Selector(void)
     return Window_Sel;
 }  //ends Window_Selector.
 //--------------------------------------------------------------
-void Init(void)
+static void Init(void)
 {
     int i;
 
@@ -985,7 +999,7 @@ void Init(void)
     }
 }
 //--------------------------------------------------------------
-int New(int Win)
+static int New(int Win)
 {
     int ret = 0;
 
@@ -1014,17 +1028,22 @@ int New(int Win)
     return ret;
 }
 //--------------------------------------------------------------
-int Open(int Win)
+static int OpenFile(int Win)
+{
+    getFilePath(Path[Win], TEXT_CNF);  // No Filtering, Be Careful.
+
+    return Open(Win, Path[Win]);
+}
+
+static int Open(int Win, char *path)
 {
     int fd, i, ret = 0;
     char filePath[MAX_PATH];
 
-    getFilePath(Path[Win], TEXT_CNF);  // No Filtering, Be Careful.
-
-    if (Path[Win][0] == '\0')
+    if (path[0] == '\0')
         goto abort;
 
-    genFixPath(Path[Win], filePath);
+    genFixPath(path, filePath);
     fd = genOpen(filePath, O_RDONLY);
 
     if (fd >= 0) {
@@ -1076,7 +1095,7 @@ int Open(int Win)
     return ret;
 }
 //--------------------------------------------------------------
-void Close(int Win)
+static void Close(int Win)
 {
     char msg[MAX_PATH];
 
@@ -1101,7 +1120,7 @@ void Close(int Win)
         ;  // print operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
-void Save(int Win)
+static void Save(int Win)
 {
     int fd, ret = 0;
 
@@ -1138,7 +1157,7 @@ void Save(int Win)
         ;  // print operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
-void Save_As(int Win)
+static void Save_As(int Win)
 {
     int fd, ret = 0;
     char tmp[MAX_PATH], oldPath[MAX_PATH], filePath[MAX_PATH];
@@ -1203,7 +1222,7 @@ result_delay:
         ;  // display operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
-void TextEditor(void)
+void TextEditor(char *path)
 {
     char tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH];
     int ch;
@@ -1246,6 +1265,16 @@ void TextEditor(void)
 
     x = Menu_start_x;
     y = Menu_start_y;
+
+    if (path != NULL) {
+        Active_Window = 0;
+        ret = Open(Active_Window, path);
+        if (!ret)
+            goto fail;
+
+        Editor_Cur = 0, Editor_PushRows = 0;
+        Num_Window = 1;
+    }
 
     while (1) {
 
@@ -1337,7 +1366,6 @@ void TextEditor(void)
                     }
                 } else if (ret == OPEN) {
                     drawMsg(LNG(Select_A_File_For_Editing));
-                    drawMsg(LNG(Select_A_File_For_Editing));
                     Num_Window = 0;
                     for (i = 0; i < 10; i++) {
                         if (Window[i][OPENED])
@@ -1350,7 +1378,7 @@ void TextEditor(void)
                                 break;
                             }
                         }
-                        ret = Open(Active_Window);
+                        ret = OpenFile(Active_Window);
                         if (!ret)
                             goto fail;
                         Editor_Cur = 0, Editor_PushRows = 0;
