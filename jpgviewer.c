@@ -81,34 +81,34 @@ static void Command_List(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event.
 
             //Display section.
-            drawOpSprite(setting->color[0], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
-            drawFrame(cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2, setting->color[1]);
+            drawOpSprite(setting->color[COLOR_BACKGR], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
+            drawFrame(cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2, setting->color[COLOR_FRAME]);
 
             y = cSprite_Y1 + FONT_HEIGHT / 2;
             x = cSprite_X1 + 2 * FONT_WIDTH;
 
-            printXY(LNG(Start_StartStop_Slideshow), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(Start_StartStop_Slideshow), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(L1R1_Slideshow_Timer), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(L1R1_Slideshow_Timer), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(L2R2_Slideshow_Transition), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(L2R2_Slideshow_Transition), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(LeftRight_Pad_PrevNext_Picture), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(LeftRight_Pad_PrevNext_Picture), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(UpDown_Pad_Rotate_Picture), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(UpDown_Pad_Rotate_Picture), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(Left_Joystick_Panorama), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(Left_Joystick_Panorama), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            printXY(LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             if (swapKeys)
                 sprintf(tmp, "ÿ1: %s", LNG(FullScreen_Mode));
             else
                 sprintf(tmp, "ÿ0: %s", LNG(FullScreen_Mode));
-            printXY(tmp, x, y, setting->color[3], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(tmp, "ÿ3: %s", LNG(Exit_To_Jpg_Browser));
-            printXY(tmp, x, y, setting->color[3], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
         }  //ends if(event||post_event).
@@ -168,10 +168,10 @@ static void View_Render(void)
     }
 
     // Clear screen
-    clrScr(setting->color[0]);
+    clrScr(setting->color[COLOR_BACKGR]);
 
     // Draw color8 graph4
-    gsKit_prim_sprite(gsGlobal, ScreenPosX, ScreenPosY, ScreenPosX1, ScreenPosY1, 0, setting->color[7]);
+    gsKit_prim_sprite(gsGlobal, ScreenPosX, ScreenPosY, ScreenPosX1, ScreenPosY1, 0, setting->color[COLOR_GRAPH4]);
     // Draw picture
     if (PicRotate == 0 || PicRotate == 1 || PicRotate == 3) {  // No rotation, rotate +90°, -90°
         gsKit_prim_sprite_texture(gsGlobal,
@@ -752,7 +752,7 @@ void JpgViewer(char *file)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             if (jpg_browser_mode == LIST) {
                 x = Menu_start_x;
@@ -822,9 +822,9 @@ void JpgViewer(char *file)
                 if (top + i >= jpg_browser_nfiles)
                     break;
                 if (top + i == jpg_browser_sel)
-                    color = setting->color[2];  //Highlight cursor line
+                    color = setting->color[COLOR_SELECT];  //Highlight cursor line
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
 
                 if (!strcmp(files[top + i].name, ".."))
                     strcpy(tmp, "..");
@@ -923,10 +923,10 @@ void JpgViewer(char *file)
             thumb_load = FALSE;
             if (jpg_browser_nfiles > rows) {  //if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
-                          SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
+                          SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
                 y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / jpg_browser_nfiles);
                 y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / jpg_browser_nfiles);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
             }  //ends clause for scrollbar

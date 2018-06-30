@@ -179,10 +179,10 @@ static int MenuEditor(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event.
 
             //Display section.
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           mSprite_X1, mSprite_Y1,
                           mSprite_X2, mSprite_Y2);
-            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[COLOR_FRAME]);
 
             for (i = 0, y = mSprite_Y1 + FONT_HEIGHT / 2; i < NUM_MENU; i++) {
                 if (i == NEW)
@@ -201,27 +201,27 @@ static int MenuEditor(void)
                     strcpy(tmp, LNG(Exit));
 
                 if (enable[i])
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 else
-                    color = setting->color[1];
+                    color = setting->color[COLOR_FRAME];
 
                 printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 y += FONT_HEIGHT;
             }
             if (Menu_Sel < NUM_MENU)
-                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + Menu_Sel * FONT_HEIGHT), setting->color[3]);
+                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + Menu_Sel * FONT_HEIGHT), setting->color[COLOR_TEXT]);
 
             //Tooltip section.
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
                 sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             else
                 sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event).
         drawScr();
         post_event = event;
@@ -925,16 +925,16 @@ static int Windows_Selector(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event.
 
             //Display section.
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           wSprite_X1, wSprite_Y1,
                           wSprite_X2, wSprite_Y2);
-            drawFrame(wSprite_X1, wSprite_Y1, wSprite_X2, wSprite_Y2, setting->color[1]);
+            drawFrame(wSprite_X1, wSprite_Y1, wSprite_X2, wSprite_Y2, setting->color[COLOR_FRAME]);
 
             for (i = 0, y = wSprite_Y1 + FONT_HEIGHT / 2; i < 10; i++) {
                 if (Window_Sel == i)
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
 
                 if (!Window[i][OPENED])
                     printXY(LNG(Free_Window), wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
@@ -947,19 +947,19 @@ static int Windows_Selector(void)
             }
 
             if (Window_Sel <= 10)
-                drawChar(LEFT_CUR, wSprite_X1 + FONT_WIDTH, wSprite_Y1 + (FONT_HEIGHT / 2 + Window_Sel * FONT_HEIGHT), setting->color[3]);
+                drawChar(LEFT_CUR, wSprite_X1 + FONT_WIDTH, wSprite_Y1 + (FONT_HEIGHT / 2 + Window_Sel * FONT_HEIGHT), setting->color[COLOR_TEXT]);
 
             //Tooltip section.
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
                 sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             else
                 sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event).
         drawScr();
         post_event = event;
@@ -1452,7 +1452,7 @@ void TextEditor(char *path)
         if (event || post_event) {  //NB: We need to update two frame buffers per event.
 
             //Display section.
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             if (TextSize[Active_Window] == 0)
                 goto end;
@@ -1463,59 +1463,59 @@ void TextEditor(char *path)
 
             if (KeyBoard_Active) {  //Display Virtual KeyBoard Section.
 
-                drawPopSprite(setting->color[0],
+                drawPopSprite(setting->color[COLOR_BACKGR],
                               SCREEN_MARGIN, KEY_Y + 6,
                               SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_MARGIN, KEY_Y + 6,
                              SCREEN_WIDTH - SCREEN_MARGIN, KEY_Y + 6 + LINE_THICKNESS - 1);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              KEY_X - 48, KEY_Y + 6,
                              KEY_X - 48 + LINE_THICKNESS - 1, Frame_end_y);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              KEY_X + 32, KEY_Y + 6,
                              KEY_X + 32 + LINE_THICKNESS - 1, Frame_end_y);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              KEY_X + KEY_W + 32, KEY_Y + 6,
                              KEY_X + KEY_W + 32 + LINE_THICKNESS - 1, Frame_end_y);
 
                 if (Mark[MARK_ON])
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 printXY(LNG(MARK), KEY_X + 2 + 4 - 120, KEY_Y + 12,
                         color, TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
                 printXY(LNG(LINE_UP), KEY_X + 2 + 4 - 120 + 10 * FONT_WIDTH, KEY_Y + 12,
-                        setting->color[3], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
                 if (Mark[MARK_COPY])
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 printXY(LNG(COPY), KEY_X + 2 + 4 - 120, KEY_Y + 12 + FONT_HEIGHT + 2,
                         color, TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
                 printXY(LNG(LINE_DOWN), KEY_X + 2 + 4 - 120 + 10 * FONT_WIDTH, KEY_Y + 12 + FONT_HEIGHT + 2,
-                        setting->color[3], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
                 if (Mark[MARK_CUT])
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 printXY(LNG(CUT), KEY_X + 2 + 4 - 120, KEY_Y + 12 + FONT_HEIGHT * 2 + 4,
                         color, TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
                 printXY(LNG(PAGE_UP), KEY_X + 2 + 4 - 120 + 10 * FONT_WIDTH, KEY_Y + 12 + FONT_HEIGHT * 2 + 4,
-                        setting->color[3], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
                 printXY(LNG(PASTE), KEY_X + 2 + 4 - 120, KEY_Y + 12 + FONT_HEIGHT * 3 + 6,
-                        setting->color[3], TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
                 printXY(LNG(PAGE_DOWN), KEY_X + 2 + 4 - 120 + 10 * FONT_WIDTH, KEY_Y + 12 + FONT_HEIGHT * 3 + 6,
-                        setting->color[3], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
                 printXY(LNG(HOME), KEY_X + 2 + 4 - 120, KEY_Y + 12 + FONT_HEIGHT * 4 + 8,
-                        setting->color[3], TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X - 48) - SCREEN_MARGIN - 3 * FONT_WIDTH));
                 printXY(LNG(END), KEY_X + 2 + 4 - 120 + 10 * FONT_WIDTH, KEY_Y + 12 + FONT_HEIGHT * 4 + 8,
-                        setting->color[3], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((KEY_X + 32) - (KEY_X - 48) - 3 * FONT_WIDTH));
 
                 if (Editor_Insert)
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 printXY(LNG(INSERT), KEY_X + 2 + 4 + 392, KEY_Y + 12,
                         color, TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
                 tmp[0] = '\0';
@@ -1526,19 +1526,19 @@ void TextEditor(char *path)
                 else if (Editor_RetMode == MAC)
                     strcpy(tmp, LNG(RET_LF));
                 printXY(tmp, KEY_X + 2 + 4 + 392, KEY_Y + 12 + FONT_HEIGHT + 2,
-                        setting->color[3], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
                 printXY(LNG(TAB), KEY_X + 2 + 4 + 392, KEY_Y + 12 + FONT_HEIGHT * 2 + 4,
-                        setting->color[3], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
                 printXY(LNG(SPACE), KEY_X + 2 + 4 + 392, KEY_Y + 12 + FONT_HEIGHT * 3 + 6,
-                        setting->color[3], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
                 printXY(LNG(KB_RETURN), KEY_X + 2 + 4 + 392, KEY_Y + 12 + FONT_HEIGHT * 4 + 8,
-                        setting->color[3], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
+                        setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (KEY_X + KEY_W + 32) - 3 * FONT_WIDTH));
 
                 for (i = 0; i < KEY_LEN; i++) {
                     drawChar(KEY[i],
                              KEY_X + 2 + 4 + 14 + (i % WFONTS + 1) * 20 - 32,
                              KEY_Y + 12 + (i / WFONTS) * 18,
-                             setting->color[3]);
+                             setting->color[COLOR_TEXT]);
                 }
 
                 //Virtual KeyBoard Cursor positioning section.
@@ -1551,7 +1551,7 @@ void TextEditor(char *path)
                 else
                     x = KEY_X + 2 + 4 + 14 + (KeyBoard_Cur % WFONTS + 1) * 20 - 40;
                 y = KEY_Y + 12 + (KeyBoard_Cur / WFONTS) * 18;
-                drawChar(LEFT_CUR, x, y, setting->color[2]);
+                drawChar(LEFT_CUR, x, y, setting->color[COLOR_SELECT]);
 
             }  // end Display Virtual KeyBoard Section.
 
@@ -1631,18 +1631,18 @@ void TextEditor(char *path)
             if (Editor_nRowsNum > Rows_Num) {  //if more lines than available Rows_Num, use scrollbar.
                 if (KeyBoard_Active) {
                     drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
-                              SCREEN_WIDTH - SCREEN_MARGIN, KEY_Y + 6, setting->color[1]);
+                              SCREEN_WIDTH - SCREEN_MARGIN, KEY_Y + 6, setting->color[COLOR_FRAME]);
                     y0 = (KEY_Y + 6 - Menu_start_y + 8) * ((double)Top_Height / Editor_nRowsNum);
                     y1 = (KEY_Y + 6 - Menu_start_y + 8) * ((double)(Top_Height + Rows_Num) / Editor_nRowsNum);
-                    drawOpSprite(setting->color[1],
+                    drawOpSprite(setting->color[COLOR_FRAME],
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 2),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 10));
                 } else {
                     drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
-                              SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
+                              SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
                     y0 = (Menu_end_y - Menu_start_y + 8) * ((double)Top_Height / Editor_nRowsNum);
                     y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(Top_Height + Rows_Num) / Editor_nRowsNum);
-                    drawOpSprite(setting->color[1],
+                    drawOpSprite(setting->color[COLOR_FRAME],
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 2),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 6));
                 }  //ends clause for scrollbar with KeyBoard.

@@ -245,7 +245,7 @@ static int PrintRow(int row_f, char *text_p)
     if (row_f >= 0)
         row = row_f;
     y = (Menu_start_y + FONT_HEIGHT * row++);
-    printXY(text_p, x, y, setting->color[3], TRUE, 0);
+    printXY(text_p, x, y, setting->color[COLOR_TEXT], TRUE, 0);
     return row;
 }
 //------------------------------
@@ -262,7 +262,7 @@ static int PrintPos(int row_f, int column, char *text_p)
     if (row_f >= 0)
         row = row_f;
     y = (Menu_start_y + FONT_HEIGHT * row++);
-    printXY(text_p, x, y, setting->color[3], TRUE, 0);
+    printXY(text_p, x, y, setting->color[COLOR_TEXT], TRUE, 0);
     return row;
 }
 //------------------------------
@@ -292,7 +292,7 @@ static void Show_About_uLE(void)
 
         //Display section
         if (event || post_event) {  //NB: We need to update two frame buffers per event
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
             sprintf(TextRow, "About wLaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
             PrintPos(03, hpos, TextRow);
             sprintf(TextRow, "                         commit: %s", GIT_HASH);
@@ -397,7 +397,7 @@ static int drawMainScreen(void)
 
     setLaunchKeys();
 
-    clrScr(setting->color[0]);
+    clrScr(setting->color[COLOR_BACKGR]);
 
     x = Menu_start_x;
     y = Menu_start_y;
@@ -411,7 +411,7 @@ static int drawMainScreen(void)
             sprintf(c, "%s: %s", LNG(TIMEOUT), LNG(Halted));
     }
     if (c[0]) {
-        printXY(c, x, y, setting->color[3], TRUE, 0);
+        printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
         y += FONT_HEIGHT * 2;
     }
     for (i = 0; i < 15; i++) {
@@ -481,9 +481,9 @@ static int drawMainScreen(void)
                 }
             }  //ends clause for No title
             if (nElfs++ == selected && mode == DPAD)
-                color = setting->color[2];
+                color = setting->color[COLOR_SELECT];
             else
-                color = setting->color[3];
+                color = setting->color[COLOR_TEXT];
             int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
                           strlen(LNG(LEFT)) + 2 :
                           strlen(LNG(RIGHT)) + 2;
@@ -535,7 +535,7 @@ static int drawMainScreen2(int TV_mode)
 
     setLaunchKeys();
 
-    clrScr(setting->color[0]);
+    clrScr(setting->color[COLOR_BACKGR]);
 
     x = Menu_start_x;
     y = Menu_start_y;
@@ -550,21 +550,21 @@ static int drawMainScreen2(int TV_mode)
     }
 
     if (TV_mode == TV_mode_PAL) {
-        printXY(c, x + 448, y + FONT_HEIGHT + 6, setting->color[3], TRUE, 0);
+        printXY(c, x + 448, y + FONT_HEIGHT + 6, setting->color[COLOR_TEXT], TRUE, 0);
         y += FONT_HEIGHT + 5;
         yo_first = 5;
         yo_step = FONT_HEIGHT * 2;
         yo_config = -92;
         xo_config = 370;
     } else if (TV_mode == TV_mode_NTSC) {
-        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
+        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[COLOR_TEXT], TRUE, 0);
         y += FONT_HEIGHT - 3;
         yo_first = 3;
         yo_step = FONT_HEIGHT * 2 - 4;
         yo_config = -80;
         xo_config = 360;
     } else {  // TV_mode == TV_mode_VGA
-        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[3], TRUE, 0);
+        printXY(c, x + 448, y + FONT_HEIGHT - 5, setting->color[COLOR_TEXT], TRUE, 0);
         y += FONT_HEIGHT - 3;
         yo_first = 3;
         yo_step = FONT_HEIGHT * 2 - 4;
@@ -592,9 +592,9 @@ static int drawMainScreen2(int TV_mode)
                 }
             }  //ends clause for No title
             if (setting->LK_Path[i][0] && nElfs++ == selected && mode == DPAD)
-                color = setting->color[2];
+                color = setting->color[COLOR_SELECT];
             else
-                color = setting->color[3];
+                color = setting->color[COLOR_TEXT];
             int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
                           strlen(LNG(LEFT)) + 2 :
                           strlen(LNG(RIGHT)) + 2;
@@ -795,7 +795,7 @@ static void ShowDebugInfo(void)
 
         //Display section
         if (event || post_event) {  //NB: We need to update two frame buffers per event
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
             PrintRow(0, "Debug Info Screen:");
             sprintf(TextRow, "rom0:ROMVER == \"%s\"", ROMVER_data);
             PrintRow(2, TextRow);
@@ -1341,7 +1341,7 @@ static void ShowFont(void)
     int ch_x = mat_x + LINE_THICKNESS + 1;
     //	int	ch_y  = mat_y+LINE_THICKNESS+2;
     int px, ly, cy;
-    u64 col_0 = setting->color[0], col_1 = setting->color[1], col_3 = setting->color[3];
+    u64 col_0 = setting->color[COLOR_BACKGR], col_1 = setting->color[COLOR_FRAME], col_3 = setting->color[COLOR_TEXT];
 
     //The next line is a patch to save font, if/when needed (needs patch in draw.c too)
     //	WriteFont_C("mc0:/SYS-CONF/font_uLE.c");
@@ -2367,7 +2367,7 @@ int main(int argc, char *argv[])
                 nElfs = drawMainScreen();    //Display pure text GUI on generic background
             else if (!setting->Show_Menu) {  //Display only GUI jpg
                 setLaunchKeys();
-                clrScr(setting->color[0]);
+                clrScr(setting->color[COLOR_BACKGR]);
             } else  //Display launch filenames/titles on GUI jpg
                 nElfs = drawMainScreen2(TV_mode);
         }

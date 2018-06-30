@@ -88,6 +88,20 @@ enum {
     MAX_TEXT_LINE = 80
 };
 
+enum COLOR
+{
+    COLOR_BACKGR = 0,
+    COLOR_FRAME,
+    COLOR_SELECT,
+    COLOR_TEXT,
+    COLOR_GRAPH1,
+    COLOR_GRAPH2,
+    COLOR_GRAPH3,
+    COLOR_GRAPH4,
+
+    COLOR_COUNT
+};
+
 typedef struct
 {
     char CNF_Path[MAX_PATH];

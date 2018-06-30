@@ -181,14 +181,14 @@ size_t storeSkinCNF(char *cnf_buf)
             "Menu_Frame = %d\r\n"
             "Show_Menu = %d\r\n"
             "%n",                    // %n causes NO output, but only a measurement
-            (u32)setting->color[0],  //Col_1
-            (u32)setting->color[1],  //Col_2
-            (u32)setting->color[2],  //Col_3
-            (u32)setting->color[3],  //Col_4
-            (u32)setting->color[4],  //Col_5
-            (u32)setting->color[5],  //Col_6
-            (u32)setting->color[6],  //Col_7
-            (u32)setting->color[7],  //Col_8
+            (u32)setting->color[COLOR_BACKGR],  //Col_1
+            (u32)setting->color[COLOR_FRAME],   //Col_2
+            (u32)setting->color[COLOR_SELECT],  //Col_3
+            (u32)setting->color[COLOR_TEXT],    //Col_4
+            (u32)setting->color[COLOR_GRAPH1],  //Col_5
+            (u32)setting->color[COLOR_GRAPH2],  //Col_6
+            (u32)setting->color[COLOR_GRAPH3],  //Col_7
+            (u32)setting->color[COLOR_GRAPH4],  //Col_8
             setting->skin,           //SKIN_FILE
             setting->GUI_skin,       //GUI_SKIN_FILE
             setting->Brightness,     //SKIN_Brightness
@@ -322,21 +322,21 @@ char *preloadCNF(char *path)
 int scanSkinCNF(char *name, char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
-        setting->color[0] = hextoul(value);
+        setting->color[COLOR_BACKGR] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_2_ABGR"))
-        setting->color[1] = hextoul(value);
+        setting->color[COLOR_FRAME] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_3_ABGR"))
-        setting->color[2] = hextoul(value);
+        setting->color[COLOR_SELECT] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_4_ABGR"))
-        setting->color[3] = hextoul(value);
+        setting->color[COLOR_TEXT] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_5_ABGR"))
-        setting->color[4] = hextoul(value);
+        setting->color[COLOR_GRAPH1] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_6_ABGR"))
-        setting->color[5] = hextoul(value);
+        setting->color[COLOR_GRAPH2] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_7_ABGR"))
-        setting->color[6] = hextoul(value);
+        setting->color[COLOR_GRAPH3] = hextoul(value);
     else if (!strcmp(name, "GUI_Col_8_ABGR"))
-        setting->color[7] = hextoul(value);
+        setting->color[COLOR_GRAPH4] = hextoul(value);
     //----------
     else if (!strcmp(name, "SKIN_FILE"))
         strcpy(setting->skin, value);
@@ -665,14 +665,14 @@ void initConfig(void)
     setting->font_file[0] = '\0';
     setting->timeout = DEF_TIMEOUT;
     setting->Hide_Paths = DEF_HIDE_PATHS;
-    setting->color[0] = DEF_COLOR1;
-    setting->color[1] = DEF_COLOR2;
-    setting->color[2] = DEF_COLOR3;
-    setting->color[3] = DEF_COLOR4;
-    setting->color[4] = DEF_COLOR5;
-    setting->color[5] = DEF_COLOR6;
-    setting->color[6] = DEF_COLOR7;
-    setting->color[7] = DEF_COLOR8;
+    setting->color[COLOR_BACKGR] = DEF_COLOR1;
+    setting->color[COLOR_FRAME] = DEF_COLOR2;
+    setting->color[COLOR_SELECT] = DEF_COLOR3;
+    setting->color[COLOR_TEXT] = DEF_COLOR4;
+    setting->color[COLOR_GRAPH1] = DEF_COLOR5;
+    setting->color[COLOR_GRAPH2] = DEF_COLOR6;
+    setting->color[COLOR_GRAPH3] = DEF_COLOR7;
+    setting->color[COLOR_GRAPH4] = DEF_COLOR8;
     setting->screen_x = 0;
     setting->screen_y = 0;
     setting->Menu_Frame = DEF_MENU_FRAME;
@@ -1022,7 +1022,7 @@ void Config_Skin(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             if (testsetskin == 1) {
                 setBrightness(Brightness);
@@ -1034,53 +1034,53 @@ void Config_Skin(void)
             } else {
                 gsKit_prim_sprite(gsGlobal,
                                   SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 4) + 60, (SCREEN_WIDTH / 4) * 3, ((SCREEN_HEIGHT / 4) * 3) + 60,
-                                  0, setting->color[0]);
+                                  0, setting->color[COLOR_BACKGR]);
             }
             drawFrame((SCREEN_WIDTH / 4) - 2, ((SCREEN_HEIGHT / 4) + 60) - 1,
                       ((SCREEN_WIDTH / 4) * 3) + 1, ((SCREEN_HEIGHT / 4) * 3) + 60,
-                      setting->color[1]);
+                      setting->color[COLOR_FRAME]);
 
             x = Menu_start_x;
             y = Menu_start_y;
 
-            printXY(LNG(SKIN_SETTINGS), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(SKIN_SETTINGS), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->skin) == 0)
                 sprintf(c, "  %s: %s", LNG(Skin_Path), LNG(NULL));
             else
                 sprintf(c, "  %s: %s", LNG(Skin_Path), setting->skin);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(Apply_New_Skin));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Brightness), Brightness);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->GUI_skin) == 0)
                 sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), LNG(NULL));
             else
                 sprintf(c, "  %s %s: %s", LNG(GUI), LNG(Skin_Path), setting->GUI_skin);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(Apply_GUI_Skin));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Show_Menu)
                 sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Show_Menu), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (current_preview == PREVIEW_PIC)
@@ -1088,11 +1088,11 @@ void Config_Skin(void)
             else
                 sprintf(c, "%s ", LNG(GUI));
             strcat(c, LNG(Skin_Preview));
-            printXY(c, SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 4) + 78 - FONT_HEIGHT, setting->color[3], TRUE, 0);
+            printXY(c, SCREEN_WIDTH / 4, (SCREEN_HEIGHT / 4) + 78 - FONT_HEIGHT, setting->color[COLOR_TEXT], TRUE, 0);
 
             //Cursor positioning section
             y = Menu_start_y + s * (FONT_HEIGHT);
-            drawChar(LEFT_CUR, x, y, setting->color[3]);
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);
 
             //Tooltip section
             if ((s == 1) || (s == 4)) {
@@ -1133,13 +1133,13 @@ void Config_Screen(void)
     int s, max_s = 35;  //define cursor index and its max value
     int x, y;
     int event, post_event = 0;
-    u8 rgb[8][3];
+    u8 rgb[COLOR_COUNT][3];
     char c[MAX_PATH];
     int space = ((SCREEN_WIDTH - SCREEN_MARGIN - 4 * FONT_WIDTH) - (Menu_start_x + 2 * FONT_WIDTH)) / 8;
 
     event = 1;  //event = initial entry
 
-    for (i = 0; i < 8; i++) {
+    for (i = 0; i < COLOR_COUNT; i++) {
         rgb[i][0] = setting->color[i] & 0xFF;
         rgb[i][1] = setting->color[i] >> 8 & 0xFF;
         rgb[i][2] = setting->color[i] >> 16 & 0xFF;
@@ -1268,14 +1268,14 @@ void Config_Screen(void)
                     setting->skin[0] = '\0';
                     setting->GUI_skin[0] = '\0';
                     loadSkin(BACKGROUND_PIC, 0, 0);
-                    setting->color[0] = DEF_COLOR1;
-                    setting->color[1] = DEF_COLOR2;
-                    setting->color[2] = DEF_COLOR3;
-                    setting->color[3] = DEF_COLOR4;
-                    setting->color[4] = DEF_COLOR5;
-                    setting->color[5] = DEF_COLOR6;
-                    setting->color[6] = DEF_COLOR7;
-                    setting->color[7] = DEF_COLOR8;
+                    setting->color[COLOR_BACKGR] = DEF_COLOR1;
+                    setting->color[COLOR_FRAME] = DEF_COLOR2;
+                    setting->color[COLOR_SELECT] = DEF_COLOR3;
+                    setting->color[COLOR_TEXT] = DEF_COLOR4;
+                    setting->color[COLOR_GRAPH1] = DEF_COLOR5;
+                    setting->color[COLOR_GRAPH2] = DEF_COLOR6;
+                    setting->color[COLOR_GRAPH3] = DEF_COLOR7;
+                    setting->color[COLOR_GRAPH4] = DEF_COLOR8;
                     setting->TV_mode = TV_mode_AUTO;
                     setting->screen_x = 0;
                     setting->screen_y = 0;
@@ -1285,7 +1285,7 @@ void Config_Screen(void)
                     setting->Popup_Opaque = DEF_POPUP_OPAQUE;
                     updateScreenMode();
 
-                    for (i = 0; i < 8; i++) {
+                    for (i = 0; i < COLOR_COUNT; i++) {
                         rgb[i][0] = setting->color[i] & 0xFF;
                         rgb[i][1] = setting->color[i] >> 8 & 0xFF;
                         rgb[i][2] = setting->color[i] >> 16 & 0xFF;
@@ -1298,7 +1298,7 @@ void Config_Screen(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             x = Menu_start_x;
 
@@ -1306,7 +1306,7 @@ void Config_Screen(void)
                 y = Menu_start_y;
                 sprintf(c, "%s%d", LNG(Color), i + 1);
                 printXY(c, x + (space * (i + 1)) - (printXY(c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y,
-                        setting->color[3], TRUE, space - FONT_WIDTH / 2);
+                        setting->color[COLOR_TEXT], TRUE, space - FONT_WIDTH / 2);
                 if (i == 0)
                     sprintf(c, "%s", LNG(Backgr));
                 else if (i == 1)
@@ -1318,19 +1318,19 @@ void Config_Screen(void)
                 else if (i >= 4)
                     sprintf(c, "%s%d", LNG(Graph), i - 3);
                 printXY(c, x + (space * (i + 1)) - (printXY(c, 0, 0, 0, FALSE, space - FONT_WIDTH / 2) / 2), y + FONT_HEIGHT,
-                        setting->color[3], TRUE, space - FONT_WIDTH / 2);
+                        setting->color[COLOR_TEXT], TRUE, space - FONT_WIDTH / 2);
                 y += FONT_HEIGHT * 2;
-                printXY("R:", x, y, setting->color[3], TRUE, 0);
+                printXY("R:", x, y, setting->color[COLOR_TEXT], TRUE, 0);
                 sprintf(c, "%02X", rgb[i][0]);
-                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
+                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
                 y += FONT_HEIGHT;
-                printXY("G:", x, y, setting->color[3], TRUE, 0);
+                printXY("G:", x, y, setting->color[COLOR_TEXT], TRUE, 0);
                 sprintf(c, "%02X", rgb[i][1]);
-                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
+                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
                 y += FONT_HEIGHT;
-                printXY("B:", x, y, setting->color[3], TRUE, 0);
+                printXY("B:", x, y, setting->color[COLOR_TEXT], TRUE, 0);
                 sprintf(c, "%02X", rgb[i][2]);
-                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[3], TRUE, 0);
+                printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
                 y += FONT_HEIGHT;
                 sprintf(c, "ÿ4");
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[i], TRUE, 0);
@@ -1347,15 +1347,15 @@ void Config_Screen(void)
                 strcat(c, "Progressive");
             else
                 strcat(c, "AUTO");
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s: %d", LNG(Screen_X_offset), setting->screen_x);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s: %d", LNG(Screen_Y_offset), setting->screen_y);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1363,18 +1363,18 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Interlace), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Interlace), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s...", LNG(Skin_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Load_Skin_CNF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Save_Skin_CNF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1382,7 +1382,7 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Menu_Title), LNG(NULL));
             else
                 sprintf(c, "  %s: %s", LNG(Menu_Title), setting->Menu_Title);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
@@ -1390,22 +1390,22 @@ void Config_Screen(void)
                 sprintf(c, "  %s: %s", LNG(Menu_Frame), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Menu_Frame), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Popup_Opaque)
                 sprintf(c, "  %s: %s", LNG(Popups_Opaque), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Popups_Opaque), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Use_Default_Screen_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -1435,7 +1435,7 @@ void Config_Screen(void)
                 if (s >= max_s - 1)        //if cursor at or beyond 'RETURN'
                     y += FONT_HEIGHT / 2;  //adjust for half-row space below 'Popups Opaque'
             }
-            drawChar(LEFT_CUR, x, y, setting->color[3]);  //draw cursor
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);  //draw cursor
 
             //Tooltip section
             if (s < 24 || s == 25 || s == 26) {  //if cursor at a colour component or a screen offset
@@ -1608,107 +1608,107 @@ void Config_Startup(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             x = Menu_start_x;
             y = Menu_start_y;
 
-            printXY(LNG(STARTUP_SETTINGS), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(STARTUP_SETTINGS), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
             sprintf(c, "  %s: %d", LNG(Number_of_CNFs), setting->numCNF);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->swapKeys)
                 sprintf(c, "  %s: ÿ1:%s ÿ0:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
             else
                 sprintf(c, "  %s: ÿ0:%s ÿ1:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbd_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USBD_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USBD_IRX), setting->usbd_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Initial_Delay), setting->Init_Delay);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s: %d", LNG(Default_Timeout), setting->timeout);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->usbkbd_used)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Used), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Used), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbkbd_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_IRX), setting->usbkbd_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->kbdmap_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Map), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Keyboard_Map), setting->kbdmap_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->CNF_Path) == 0)
                 sprintf(c, "  %s: %s", LNG(CNF_Path_override), LNG(NONE));
             else
                 sprintf(c, "  %s: %s", LNG(CNF_Path_override), setting->CNF_Path);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->usbmass_file) == 0)
                 sprintf(c, "  %s: %s", LNG(USB_Mass_IRX), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(USB_Mass_IRX), setting->usbmass_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->lang_file) == 0)
                 sprintf(c, "  %s: %s", LNG(Language_File), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(Language_File), setting->lang_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->font_file) == 0)
                 sprintf(c, "  %s: %s", LNG(Font_File), LNG(DEFAULT));
             else
                 sprintf(c, "  %s: %s", LNG(Font_File), setting->font_file);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->LK_Path[15]) == 0)
                 sprintf(c, "  ESR elf: %s", LNG(DEFAULT));
             else
                 sprintf(c, "  ESR elf: %s", setting->LK_Path[15]);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (strlen(setting->LK_Path[16]) == 0)
                 sprintf(c, "  OSDSYS kelf: %s", LNG(DEFAULT));
             else
                 sprintf(c, "  OSDSYS kelf: %s", setting->LK_Path[16]);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -1716,7 +1716,7 @@ void Config_Startup(void)
 
             if (s >= max_s)
                 y += FONT_HEIGHT / 2;
-            drawChar(LEFT_CUR, x, y, setting->color[3]);
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);
 
             //Tooltip section
             if ((s == 2) || (s == 6)) {  //usbkbd_used
@@ -1974,12 +1974,12 @@ void Config_Network(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             x = Menu_start_x;
             y = Menu_start_y;
 
-            printXY(LNG(NETWORK_SETTINGS), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(NETWORK_SETTINGS), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
@@ -1989,21 +1989,21 @@ void Config_Network(void)
                           strlen(LNG(Netmask)) + 5;
             len = (len > strlen(LNG(Gateway)) + 5) ? len : strlen(LNG(Gateway)) + 5;
             sprintf(c, "%s:", LNG(IP_Address));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.ip[0], ipdata.ip[1], ipdata.ip[2], ipdata.ip[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + len * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "%s:", LNG(Netmask));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.nm[0], ipdata.nm[1], ipdata.nm[2], ipdata.nm[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + len * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "%s:", LNG(Gateway));
-            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + 2 * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             sprintf(c, "%.3i . %.3i . %.3i . %.3i", ipdata.gw[0], ipdata.gw[1], ipdata.gw[2], ipdata.gw[3]);
-            printXY(c, x + len * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+            printXY(c, x + len * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
@@ -2011,12 +2011,12 @@ void Config_Network(void)
             if (uLE_related(path, "uLE:/IPCONFIG.DAT") != 1)
                 strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
             sprintf(c, "  %s \"%s\"", LNG(Save_to), path);
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             //Cursor positioning section
@@ -2028,7 +2028,7 @@ void Config_Network(void)
                 y += FONT_HEIGHT / 2;
             if (l > 1)
                 x += (len - 1) * FONT_WIDTH - 1 + (l - 2) * 6 * FONT_WIDTH;
-            drawChar(LEFT_CUR, x, y, setting->color[3]);
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);
 
             //Tooltip section
             if ((s < 4) && (l == 1)) {
@@ -2164,7 +2164,7 @@ void config(char *mainMsg, char *CNF)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             if (s < SHOW_TITLES)
                 localMsg = setting->LK_Title[s];
@@ -2173,7 +2173,7 @@ void config(char *mainMsg, char *CNF)
 
             x = Menu_start_x;
             y = Menu_start_y;
-            printXY(LNG(Button_Settings), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(Button_Settings), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             for (i = 0; i < 12; i++) {
                 switch (i) {
@@ -2215,7 +2215,7 @@ void config(char *mainMsg, char *CNF)
                         break;
                 }
                 strcat(c, setting->LK_Path[i]);
-                printXY(c, x, y, setting->color[3], TRUE, 0);
+                printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
                 y += FONT_HEIGHT;
             }
 
@@ -2225,37 +2225,37 @@ void config(char *mainMsg, char *CNF)
                 sprintf(c, "  %s: %s", LNG(Show_launch_titles), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Show_launch_titles), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             if (setting->Hide_Paths)
                 sprintf(c, "  %s: %s", LNG(Hide_full_ELF_paths), LNG(ON));
             else
                 sprintf(c, "  %s: %s", LNG(Hide_full_ELF_paths), LNG(OFF));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s...", LNG(Screen_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Startup_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s...", LNG(Network_Settings));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
             sprintf(c, "  %s", LNG(OK));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Cancel));
-            printXY(c, x, y, setting->color[3], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
 
             //Cursor positioning section
             y = Menu_start_y + (s + 1) * FONT_HEIGHT;
             if (s >= SHOW_TITLES)
                 y += FONT_HEIGHT / 2;
-            drawChar(LEFT_CUR, x, y, setting->color[3]);
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);
 
             //Tooltip section
             if (s < SHOW_TITLES) {

@@ -389,34 +389,34 @@ int ynDialog(const char *message)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           dx, dy,
                           dx + dw, (dy + dh));
-            drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[1]);
+            drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[COLOR_FRAME]);
             for (i = len = 0; i < n; i++) {
-                printXY(&msg[len], dx + 2 + a, (dy + a + 2 + i * 16), setting->color[3], TRUE, 0);
+                printXY(&msg[len], dx + 2 + a, (dy + a + 2 + i * 16), setting->color[COLOR_TEXT], TRUE, 0);
                 len += strlen(&msg[len]) + 1;
             }
 
             //Cursor positioning section
             x = (tw - 96) / 4;
             printXY(LNG(OK), dx + a + x + FONT_WIDTH,
-                    (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3], TRUE, 0);
+                    (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[COLOR_TEXT], TRUE, 0);
             printXY(LNG(CANCEL), dx + dw - x - (strlen(LNG(CANCEL)) + 1) * FONT_WIDTH,
-                    (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3], TRUE, 0);
+                    (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[COLOR_TEXT], TRUE, 0);
             if (sel == 0)
-                drawChar(LEFT_CUR, dx + a + x, (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3]);
+                drawChar(LEFT_CUR, dx + a + x, (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[COLOR_TEXT]);
             else
                 drawChar(LEFT_CUR, dx + dw - x - (strlen(LNG(CANCEL)) + 2) * FONT_WIDTH - 1,
-                         (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[3]);
+                         (dy + a + b + 2 + n * FONT_HEIGHT), setting->color[COLOR_TEXT]);
         }  //ends if(event||post_event)
         drawLastMsg();
         post_event = event;
         event = 0;
     }  //ends while
-    drawSprite(setting->color[0], dx, dy, dx + dw + 1, (dy + dh) + 1);
+    drawSprite(setting->color[COLOR_BACKGR], dx, dy, dx + dw + 1, (dy + dh) + 1);
     drawScr();
-    drawSprite(setting->color[0], dx, dy, dx + dw + 1, (dy + dh) + 1);
+    drawSprite(setting->color[COLOR_BACKGR], dx, dy, dx + dw + 1, (dy + dh) + 1);
     drawScr();
     return ret;
 }
@@ -431,7 +431,7 @@ void nonDialog(char *message)
     int i, len, ret;
 
     if (message == NULL) {  //NULL message means cleanup for last nonDialog
-        drawSprite(setting->color[0],
+        drawSprite(setting->color[COLOR_BACKGR],
                    dx, dy,
                    dx + dw, (dy + dh));
         return;
@@ -460,12 +460,12 @@ void nonDialog(char *message)
     dy = (SCREEN_HEIGHT - dh) / 2;
     //printf("tw=%d\ndh=%d\ndw=%d\ndx=%d\ndy=%d\n", tw,dh,dw,dx,dy);
 
-    drawPopSprite(setting->color[0],
+    drawPopSprite(setting->color[COLOR_BACKGR],
                   dx, dy,
                   dx + dw, (dy + dh));
-    drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[1]);
+    drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[COLOR_FRAME]);
     for (i = len = 0; i < n; i++) {
-        printXY(&msg[len], dx + 2 + a, (dy + a + 2 + i * FONT_HEIGHT), setting->color[3], TRUE, 0);
+        printXY(&msg[len], dx + 2 + a, (dy + a + 2 + i * FONT_HEIGHT), setting->color[COLOR_TEXT], TRUE, 0);
         len += strlen(&msg[len]) + 1;
     }
 }
@@ -1471,10 +1471,10 @@ int menu(const char *path, FILEINFO *file)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           mSprite_X1, mSprite_Y1,
                           mSprite_X2, mSprite_Y2);
-            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[COLOR_FRAME]);
 
             for (i = 0, y = mSprite_Y1 + FONT_HEIGHT / 2; i < NUM_MENU; i++) {
                 if (i == COPY)
@@ -1503,20 +1503,20 @@ int menu(const char *path, FILEINFO *file)
                     strcpy(tmp, LNG(Get_Size));
 
                 if (enable[i])
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 else
-                    color = setting->color[1];
+                    color = setting->color[COLOR_FRAME];
 
                 printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 y += FONT_HEIGHT;
             }
             if (sel < NUM_MENU)
-                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + sel * FONT_HEIGHT), setting->color[3]);
+                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + sel * FONT_HEIGHT), setting->color[COLOR_TEXT]);
 
             //Tooltip section
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + FONT_HEIGHT);
             if (swapKeys)
@@ -1526,7 +1526,7 @@ int menu(const char *path, FILEINFO *file)
             if (sel == PASTE)
                 sprintf(tmp + strlen(tmp), " ÿ2:%s", LNG(PasteRename));
             sprintf(tmp + strlen(tmp), " ÿ3:%s", LNG(Back));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -1601,18 +1601,18 @@ char *PathPad_menu(const char *path)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, (Menu_message_y - 1),
                        SCREEN_WIDTH, (Frame_start_y));
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           dx, dy,
                           dx + dw, (dy + dh));
-            drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[1]);
+            drawFrame(dx, dy, dx + dw, (dy + dh), setting->color[COLOR_FRAME]);
             for (i = 0; i < 10; i++) {
                 if (i == sel_y)
-                    color = setting->color[2];
+                    color = setting->color[COLOR_SELECT];
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 sprintf(textrow, "%02d=", (sel_x * 10 + i));
                 strncat(textrow, PathPad[sel_x * 10 + i], 64);
                 textrow[67] = '\0';
@@ -1622,7 +1622,7 @@ char *PathPad_menu(const char *path)
             //Tooltip section
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
+            drawSprite(setting->color[COLOR_BACKGR], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
 
             if (swapKeys) {
                 sprintf(textrow, "ÿ1:%s ", LNG(Use));
@@ -1639,7 +1639,7 @@ char *PathPad_menu(const char *path)
             }
             sprintf(tmp, "ÿ3:%s L1/R1:%s", LNG(Back), LNG(Page_leftright));
             strcat(textrow, tmp);
-            printXY(textrow, x, y, setting->color[2], TRUE, 0);
+            printXY(textrow, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -2725,18 +2725,18 @@ int keyboard(char *out, int max)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           KEY_X, KEY_Y,
                           KEY_X + KEY_W - 1, KEY_Y + KEY_H - 1);
             drawFrame(
                 KEY_X, KEY_Y,
-                KEY_X + KEY_W - 1, KEY_Y + KEY_H - 1, setting->color[1]);
-            drawOpSprite(setting->color[1],
+                KEY_X + KEY_W - 1, KEY_Y + KEY_H - 1, setting->color[COLOR_FRAME]);
+            drawOpSprite(setting->color[COLOR_FRAME],
                          KEY_X, KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1,
                          KEY_X + KEY_W - 1, KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS - 1);
-            printXY(out, KEY_X + LINE_THICKNESS + 3, KEY_Y + LINE_THICKNESS + 1, setting->color[3], TRUE, 0);
+            printXY(out, KEY_X + LINE_THICKNESS + 3, KEY_Y + LINE_THICKNESS + 1, setting->color[COLOR_TEXT], TRUE, 0);
             if (((event | post_event) & 4) && (t & 0x10)) {
-                drawOpSprite(setting->color[2],
+                drawOpSprite(setting->color[COLOR_SELECT],
                              KEY_X + LINE_THICKNESS + 1 + cur * 8,
                              KEY_Y + LINE_THICKNESS + 2,
                              KEY_X + LINE_THICKNESS + 1 + cur * 8 + LINE_THICKNESS - 1,
@@ -2745,13 +2745,13 @@ int keyboard(char *out, int max)
             for (i = 0; i < KEY_LEN; i++)
                 drawChar(KEY[i],
                          KEY_X + LINE_THICKNESS + 12 + (i % WFONTS) * (FONT_WIDTH + 12),
-                         KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (i / WFONTS) * FONT_HEIGHT, setting->color[3]);
+                         KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (i / WFONTS) * FONT_HEIGHT, setting->color[COLOR_TEXT]);
             printXY(LNG(OK),
                     KEY_X + LINE_THICKNESS + 12,
-                    KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[3], TRUE, 0);
+                    KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[COLOR_TEXT], TRUE, 0);
             printXY(LNG(CANCEL),
                     KEY_X + KEY_W - 1 - (strlen(LNG(CANCEL)) + 2) * FONT_WIDTH,
-                    KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[3], TRUE, 0);
+                    KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + HFONTS * FONT_HEIGHT, setting->color[COLOR_TEXT], TRUE, 0);
 
             //Cursor positioning section
             if (sel <= WFONTS * HFONTS)
@@ -2759,12 +2759,12 @@ int keyboard(char *out, int max)
             else
                 x = KEY_X + KEY_W - 2 - (strlen(LNG(CANCEL)) + 3) * FONT_WIDTH;
             y = KEY_Y + LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (sel / WFONTS) * FONT_HEIGHT;
-            drawChar(LEFT_CUR, x, y, setting->color[2]);
+            drawChar(LEFT_CUR, x, y, setting->color[COLOR_SELECT]);
 
             //Tooltip section
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
+            drawSprite(setting->color[COLOR_BACKGR], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
 
             if (swapKeys) {
                 sprintf(tmp, "ÿ1:%s ÿ0", LNG(Use));
@@ -2773,7 +2773,7 @@ int keyboard(char *out, int max)
             }
             sprintf(tmp + strlen(tmp), ":%s ÿ2:%s L1:%s R1:%s START:%s ÿ3:%s",
                     LNG(BackSpace), LNG(SPACE), LNG(Left), LNG(Right), LNG(Enter), LNG(Exit));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -2901,27 +2901,27 @@ int keyboard2(char *out, int max)
 		if(event||post_event){ //NB: We need to update two frame buffers per event
 
 			//Display section
-			drawPopSprite(setting->color[0],
+			drawPopSprite(setting->color[COLOR_BACKGR],
 				KEY_X, KEY_Y,
 				KEY_X+KEY_W, KEY_Y+KEY_H);
 			drawFrame(
 				KEY_X, KEY_Y,
-				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[1]);
-			drawOpSprite(setting->color[1],
+				KEY_X+KEY_W, KEY_Y+KEY_H, setting->color[COLOR_FRAME]);
+			drawOpSprite(setting->color[COLOR_FRAME],
 				KEY_X, KEY_Y+20,
 				KEY_X+KEY_W, KEY_Y+20+LINE_THICKNESS);
-			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[3], TRUE, 0);
+			printXY(out, KEY_X+2+3, KEY_Y+3, setting->color[COLOR_TEXT], TRUE, 0);
 			if(((event|post_event)&4) && (t & 0x10)){
 				printXY("|",
-					KEY_X+cur*8+1, KEY_Y+3, setting->color[3], TRUE, 0);
+					KEY_X+cur*8+1, KEY_Y+3, setting->color[COLOR_TEXT], TRUE, 0);
 			}
 			for(i=0; i<KEY_LEN; i++)
 				drawChar(KEY[i],
 					KEY_X+2+4 + (i%WFONTS+1)*20 - 12,
 					KEY_Y+28 + (i/WFONTS)*16,
-					setting->color[3]);
+					setting->color[COLOR_TEXT]);
 			printXY("OK                       CANCEL",
-				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[3], TRUE, 0);
+				KEY_X+2+4 + 20 - 12, KEY_Y+28 + HFONTS*16, setting->color[COLOR_TEXT], TRUE, 0);
 
 			//Cursor positioning section
 			if(sel<=WFONTS*HFONTS)
@@ -2929,19 +2929,19 @@ int keyboard2(char *out, int max)
 			else
 				x = KEY_X+2+4 + 25*8;
 			y = KEY_Y+28 + (sel/WFONTS)*16;
-			drawChar(LEFT_CUR, x, y, setting->color[3]);
+			drawChar(LEFT_CUR, x, y, setting->color[COLOR_TEXT]);
 
 			//Tooltip section
 			x = SCREEN_MARGIN;
 			y = Menu_tooltip_y;
-			drawSprite(setting->color[0], 0, y-1, SCREEN_WIDTH, y+FONT_HEIGHT);
+			drawSprite(setting->color[COLOR_BACKGR], 0, y-1, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
 				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE, 0);
+					x, y, setting->color[COLOR_SELECT], TRUE, 0);
 			else
 				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
-					x, y, setting->color[2], TRUE, 0);
+					x, y, setting->color[COLOR_SELECT], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
 		post_event = event;
@@ -3197,10 +3197,10 @@ int BrowserModePopup(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           mSprite_X1, mSprite_Y1,
                           mSprite_X2, mSprite_Y2);
-            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[COLOR_FRAME]);
 
             for (i = 0, y = mSprite_Y1 + FONT_HEIGHT / 2; i < menu_ch_h; i++) {
                 if (i == 0)
@@ -3230,10 +3230,10 @@ int BrowserModePopup(void)
                 else
                     tmp[0] = 0;
 
-                printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, setting->color[3], TRUE, 0);
+                printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
                 //Display marker for current modes
                 if ((file_show == i - 2) || (file_sort == i - 8))
-                    drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH / 2, y, setting->color[2]);
+                    drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH / 2, y, setting->color[COLOR_SELECT]);
                 y += FONT_HEIGHT;
 
             }  //ends for loop handling one text row per loop
@@ -3241,7 +3241,7 @@ int BrowserModePopup(void)
             //Tooltip section
             // x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + FONT_HEIGHT);
         }  //ends if(event||post_event)
@@ -3725,7 +3725,7 @@ int getFilePath(char *out, int cnfmode)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             x = Menu_start_x;
             y = Menu_start_y;
@@ -3744,9 +3744,9 @@ int getFilePath(char *out, int cnfmode)
                 if (top + i >= browser_nfiles)
                     break;
                 if (top + i == browser_sel)
-                    color = setting->color[2];  //Highlight cursor line
+                    color = setting->color[COLOR_SELECT];  //Highlight cursor line
                 else
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
 
                 if (!strcmp(files[top + i].name, ".."))
                     strcpy(tmp, "..");
@@ -3817,17 +3817,21 @@ int getFilePath(char *out, int cnfmode)
                 }
                 if (setting->FB_NoIcons) {  //if FileBrowser should not use icons
                     if (marks[top + i])
-                        drawChar('*', x - 6, y, setting->color[3]);
+                        drawChar('*', x - 6, y, setting->color[COLOR_TEXT]);
                 } else {  //if Icons must be used in front of file/folder names
                     if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir) {
                         iconbase = ICON_FOLDER;
-                        iconcolr = 4;
+                        iconcolr = COLOR_GRAPH1;
                     } else {
                         iconbase = ICON_FILE;
                         if (genCmpFileExt(files[top + i].name, "ELF"))
-                            iconcolr = 5;
+                            iconcolr = COLOR_GRAPH2;
+                        else if (genCmpFileExt(files[top + i].name, "TXT")
+                                || genCmpFileExt(files[top + i].name, "JPG")
+                                || genCmpFileExt(files[top + i].name, "JPEG"))
+                            iconcolr = COLOR_GRAPH4;
                         else
-                            iconcolr = 6;
+                            iconcolr = COLOR_GRAPH3;
                     }
                     if (marks[top + i])
                         iconbase += 2;
@@ -3838,10 +3842,10 @@ int getFilePath(char *out, int cnfmode)
             }                             //ends for, so all browser rows were fixed above
             if (browser_nfiles > rows) {  //if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
-                          SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
+                          SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
                 y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
                 y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
             }                  //ends clause for scrollbar
@@ -3897,13 +3901,13 @@ int getFilePath(char *out, int cnfmode)
                 else
                     sprintf(tmp, "[%dB %s]", (int)freeSpace, LNG(free));
                 ret = strlen(tmp);
-                drawSprite(setting->color[0],
+                drawSprite(setting->color[COLOR_BACKGR],
                            SCREEN_WIDTH - SCREEN_MARGIN - (ret + 1) * FONT_WIDTH, (Menu_message_y - 1),
                            SCREEN_WIDTH - SCREEN_MARGIN, (Menu_message_y + FONT_HEIGHT));
                 printXY(tmp,
                         SCREEN_WIDTH - SCREEN_MARGIN - ret * FONT_WIDTH,
                         (Menu_message_y),
-                        setting->color[2], TRUE, 0);
+                        setting->color[COLOR_SELECT], TRUE, 0);
             }
         }  //ends if(event||post_event)
         drawScr();

@@ -436,20 +436,20 @@ void setScrTmp(const char *msg0, const char *msg1)
 
     x = SCREEN_MARGIN;
     y = Menu_title_y;
-    printXY(setting->Menu_Title, x, y, setting->color[3], TRUE, 0);
+    printXY(setting->Menu_Title, x, y, setting->color[COLOR_TEXT], TRUE, 0);
     sprintf(temp_txt, " ÿ4 LaunchELF %s ÿ4", ULE_VERSION);
     printXY(temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
-            setting->color[1], TRUE, 0);
+            setting->color[COLOR_FRAME], TRUE, 0);
 
     strncpy(LastMessage, msg0, MAX_TEXT_LINE);
     LastMessage[MAX_TEXT_LINE] = '\0';
-    printXY(msg0, x, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY(msg0, x, Menu_message_y, setting->color[COLOR_SELECT], TRUE, 0);
 
     if (setting->Menu_Frame)
         drawFrame(SCREEN_MARGIN, Frame_start_y,
-                  SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
+                  SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
 
-    printXY(msg1, x, Menu_tooltip_y, setting->color[2], TRUE, 0);
+    printXY(msg1, x, Menu_tooltip_y, setting->color[COLOR_SELECT], TRUE, 0);
 }
 //--------------------------------------------------------------
 void drawSprite(u64 color, int x1, int y1, int x2, int y2)
@@ -489,17 +489,17 @@ void drawMsg(const char *msg)
 {
     strncpy(LastMessage, msg, MAX_TEXT_LINE);
     LastMessage[MAX_TEXT_LINE] = '\0';
-    drawSprite(setting->color[0], 0, Menu_message_y - 1,
+    drawSprite(setting->color[COLOR_BACKGR], 0, Menu_message_y - 1,
                SCREEN_WIDTH, Frame_start_y);
-    printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY(msg, SCREEN_MARGIN, Menu_message_y, setting->color[COLOR_SELECT], TRUE, 0);
     drawScr();
 }
 //--------------------------------------------------------------
 void drawLastMsg(void)
 {
-    drawSprite(setting->color[0], 0, Menu_message_y - 1,
+    drawSprite(setting->color[COLOR_BACKGR], 0, Menu_message_y - 1,
                SCREEN_WIDTH, Frame_start_y);
-    printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[2], TRUE, 0);
+    printXY(LastMessage, SCREEN_MARGIN, Menu_message_y, setting->color[COLOR_SELECT], TRUE, 0);
     drawScr();
 }
 //--------------------------------------------------------------

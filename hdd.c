@@ -273,22 +273,22 @@ int sizeSelector(int size)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           mSprite_X1, mSprite_Y1,
                           mSprite_X2, mSprite_Y2);
-            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[COLOR_FRAME]);
 
             sprintf(c, "%d %s", size, LNG(MB));
             printXY(c, mSprite_X1 + 12 * FONT_WIDTH - (strlen(c) * FONT_WIDTH) / 2,
-                    mSprite_Y1 + FONT_HEIGHT, setting->color[3], TRUE, 0);
+                    mSprite_Y1 + FONT_HEIGHT, setting->color[COLOR_TEXT], TRUE, 0);
             drawFrame(mSprite_X1 + 7 * FONT_WIDTH, mSprite_Y1 + FONT_HEIGHT / 2,
-                      mSprite_X2 - 7 * FONT_WIDTH, mSprite_Y1 + FONT_HEIGHT * 2 + FONT_HEIGHT / 2, setting->color[1]);
+                      mSprite_X2 - 7 * FONT_WIDTH, mSprite_Y1 + FONT_HEIGHT * 2 + FONT_HEIGHT / 2, setting->color[COLOR_FRAME]);
 
             //RA NB: Next line assumes a scrollbar 19 characters wide (see below)
             sprintf(c, "128%s            %3d%s", LNG(MB), MAX_PARTGB, LNG(GB));
-            printXY(c, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + FONT_HEIGHT * 3, setting->color[3], TRUE, 0);
+            printXY(c, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + FONT_HEIGHT * 3, setting->color[COLOR_TEXT], TRUE, 0);
 
-            drawOpSprite(setting->color[1],
+            drawOpSprite(setting->color[COLOR_FRAME],
                          mSprite_X1 + 2 * FONT_WIDTH + FONT_WIDTH / 2, mSprite_Y1 + FONT_HEIGHT * 5 - LINE_THICKNESS + 1,
                          mSprite_X2 - 2 * FONT_WIDTH - FONT_WIDTH / 2, mSprite_Y1 + FONT_HEIGHT * 5);
 
@@ -296,7 +296,7 @@ int sizeSelector(int size)
             //RA NB: Next line sets scroll position on a bar 19 chars wide (see above)
             scrollBar = (size * (19 * FONT_WIDTH) / (MAX_PARTMB - 128));
 
-            drawOpSprite(setting->color[1],
+            drawOpSprite(setting->color[COLOR_FRAME],
                          mSprite_X1 + 2 * FONT_WIDTH + FONT_WIDTH / 2 + (int)scrollBar - LINE_THICKNESS + 1,
                          mSprite_Y1 + FONT_HEIGHT * 5 - FONT_HEIGHT / 2,
                          mSprite_X1 + 2 * FONT_WIDTH + FONT_WIDTH / 2 + (int)scrollBar,
@@ -305,7 +305,7 @@ int sizeSelector(int size)
             //Tooltip section
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
@@ -314,7 +314,7 @@ int sizeSelector(int size)
             else
                 sprintf(c, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ</ÿ::-/+128%s L1/R1:-/+1%s L2/R2:-/+10%s",
                         LNG(OK), LNG(Cancel), LNG(Back), LNG(MB), LNG(GB), LNG(GB));
-            printXY(c, x, y, setting->color[2], TRUE, 0);
+            printXY(c, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -404,10 +404,10 @@ int MenuParty(PARTYINFO Info)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            drawPopSprite(setting->color[0],
+            drawPopSprite(setting->color[COLOR_BACKGR],
                           mSprite_X1, mSprite_Y1,
                           mSprite_X2, mSprite_Y2);
-            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[1]);
+            drawFrame(mSprite_X1, mSprite_Y1, mSprite_X2, mSprite_Y2, setting->color[COLOR_FRAME]);
 
             for (i = 0, y = mSprite_Y1 + FONT_HEIGHT / 2; i < NUM_MENU; i++) {
                 if (i == CREATE)
@@ -422,27 +422,27 @@ int MenuParty(PARTYINFO Info)
                     strcpy(tmp, LNG(Format));
 
                 if (enable[i])
-                    color = setting->color[3];
+                    color = setting->color[COLOR_TEXT];
                 else
-                    color = setting->color[1];
+                    color = setting->color[COLOR_FRAME];
 
                 printXY(tmp, mSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 y += FONT_HEIGHT;
             }
             if (sel < NUM_MENU)
-                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + sel * FONT_HEIGHT), setting->color[3]);
+                drawChar(LEFT_CUR, mSprite_X1 + FONT_WIDTH, mSprite_Y1 + (FONT_HEIGHT / 2 + sel * FONT_HEIGHT), setting->color[COLOR_TEXT]);
 
             //Tooltip section
             x = SCREEN_MARGIN;
             y = Menu_tooltip_y;
-            drawSprite(setting->color[0],
+            drawSprite(setting->color[COLOR_BACKGR],
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
                 sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             else
                 sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
-            printXY(tmp, x, y, setting->color[2], TRUE, 0);
+            printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
         post_event = event;
@@ -846,7 +846,7 @@ void hddManager(void)
         if (event || post_event) {  //NB: We need to update two frame buffers per event
 
             //Display section
-            clrScr(setting->color[0]);
+            clrScr(setting->color[COLOR_BACKGR]);
 
             browser_nfiles = numParty;
             //printf("Number Of Partition: %d\n", numParty);
@@ -867,14 +867,14 @@ void hddManager(void)
             y = Menu_start_y;
 
             x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(LNG(HDD_STATUS)) * FONT_WIDTH) / 2;
-            printXY(LNG(HDD_STATUS), x, y, setting->color[3], TRUE, 0);
+            printXY(LNG(HDD_STATUS), x, y, setting->color[COLOR_TEXT], TRUE, 0);
 
             if (TV_mode != TV_mode_PAL)
                 y += FONT_HEIGHT + 10;
             else
                 y += FONT_HEIGHT + 11;
 
-            drawOpSprite(setting->color[1],
+            drawOpSprite(setting->color[COLOR_FRAME],
                          SCREEN_MARGIN, y - 6,
                          SCREEN_WIDTH / 2 - 20, y - 4);
 
@@ -889,9 +889,9 @@ void hddManager(void)
                         LNG(CONNECTED), LNG(YES), LNG(FORMATED), LNG(YES));
 
             x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-            printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
-            drawOpSprite(setting->color[1],
+            drawOpSprite(setting->color[COLOR_FRAME],
                          SCREEN_WIDTH / 2 - 21, Frame_start_y,
                          SCREEN_WIDTH / 2 - 19, Frame_end_y);
 
@@ -900,7 +900,7 @@ void hddManager(void)
             else
                 y += FONT_HEIGHT + 12;
 
-            drawOpSprite(setting->color[1],
+            drawOpSprite(setting->color[COLOR_FRAME],
                          SCREEN_MARGIN, y - 6,
                          SCREEN_WIDTH / 2 - 20, y - 4);
 
@@ -908,13 +908,13 @@ void hddManager(void)
 
                 sprintf(c, "%s: %u %s", LNG(HDD_SIZE), hddSize, LNG(MB));
                 x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                 y += FONT_HEIGHT;
                 sprintf(c, "%s: %u %s", LNG(HDD_USED), hddUsed, LNG(MB));
-                printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                 y += FONT_HEIGHT;
                 sprintf(c, "%s: %u %s", LNG(HDD_FREE), hddFreeSpace, LNG(MB));
-                printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
                 if (TV_mode != TV_mode_PAL)
                     ray = 45;
@@ -933,9 +933,9 @@ void hddManager(void)
                     if ((Angle = i - 90) >= 360)
                         Angle = i + 270;
                     if (((i * 100) / 360) >= hddFree)
-                        Color = setting->color[5];
+                        Color = setting->color[COLOR_GRAPH2];
                     else
-                        Color = setting->color[4];
+                        Color = setting->color[COLOR_GRAPH1];
                     x3 = ray * cosdgf(Angle);
                     if (TV_mode != TV_mode_PAL)
                         y3 = (ray - 5) * sindgf(Angle);
@@ -949,14 +949,14 @@ void hddManager(void)
                 }
 
                 sprintf(c, "%d%% %s", hddFree, LNG(FREE));
-                printXY(c, x - FONT_WIDTH * 4, y - FONT_HEIGHT / 4, setting->color[3], TRUE, 0);
+                printXY(c, x - FONT_WIDTH * 4, y - FONT_HEIGHT / 4, setting->color[COLOR_TEXT], TRUE, 0);
 
                 if (TV_mode != TV_mode_PAL)
                     y += ray + 15;
                 else
                     y += ray + 20;
 
-                drawOpSprite(setting->color[1],
+                drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_MARGIN, y - 6,
                              SCREEN_WIDTH / 2 - 20, y - 4);
 
@@ -964,21 +964,21 @@ void hddManager(void)
                 if (Treat == TREAT_SYSTEM) {
                     sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     strcpy(c, LNG(Reserved_for_system));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     pfsFree = 0;
                 } else if (Treat == TREAT_NOACCESS) {
                     sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     strcpy(c, LNG(Inaccessible));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     pfsFree = 0;
                 } else if (Treat == TREAT_HDL_RAW) {  //starts clause for HDL without GameInfo
@@ -986,11 +986,11 @@ void hddManager(void)
                     //dlanor NB: Not properly implemented yet
                     sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT * 4;
                     strcpy(c, LNG(Info_not_loaded));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     pfsFree = -1;                      //Disable lower pie chart display
                 } else if (Treat == TREAT_HDL_GAME) {  //starts clause for HDL with GameInfo
                     y += FONT_HEIGHT / 4;
@@ -998,30 +998,30 @@ void hddManager(void)
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) -
                         (strlen(LNG(GAME_INFORMATION)) * FONT_WIDTH) / 2;
                     printXY(LNG(GAME_INFORMATION), x, y,
-                            setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                            setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(PartyInfo[browser_sel].Game.Name) * FONT_WIDTH) / 2;
                     y += FONT_HEIGHT * 2;
                     printXY(PartyInfo[browser_sel].Game.Name, x, y,
-                            setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                            setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
                     y += FONT_HEIGHT + FONT_HEIGHT / 2 + FONT_HEIGHT / 4;
                     sprintf(c, "%s: %s", LNG(STARTUP), PartyInfo[browser_sel].Game.Startup);
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT + FONT_HEIGHT / 2;
                     sprintf(c, "%s: %d %s", LNG(SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT + FONT_HEIGHT / 2;
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) -
                         (strlen(LNG(TYPE_DVD_GAME)) * FONT_WIDTH) / 2;
                     if (PartyInfo[browser_sel].Game.Is_Dvd == 1)
                         printXY(LNG(TYPE_DVD_GAME), x, y,
-                                setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                                setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     else
                         printXY(LNG(TYPE_CD_GAME), x, y,
-                                setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                                setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     pfsFree = -1;  //Disable lower pie chart display
                     //---------- End of clause for HDL game partitions ----------
                 } else {  //ends clause for HDL, starts clause for normal partitions
@@ -1029,13 +1029,13 @@ void hddManager(void)
 
                     sprintf(c, "%s: %d %s", LNG(PFS_SIZE), (int)PartyInfo[browser_sel].TotalSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     sprintf(c, "%s: %d %s", LNG(PFS_USED), (int)PartyInfo[browser_sel].UsedSize, LNG(MB));
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
                     sprintf(c, "%s: %d %s", LNG(PFS_FREE), (int)PartyInfo[browser_sel].FreeSize, LNG(MB));
-                    printXY(c, x, y, setting->color[3], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
+                    printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
                     pfsFree = (PartyInfo[browser_sel].FreeSize * 100) / PartyInfo[browser_sel].TotalSize;
 
@@ -1055,9 +1055,9 @@ void hddManager(void)
                         if ((Angle = i - 90) >= 360)
                             Angle = i + 270;
                         if (((i * 100) / 360) >= pfsFree)
-                            Color = setting->color[5];
+                            Color = setting->color[COLOR_GRAPH2];
                         else
-                            Color = setting->color[4];
+                            Color = setting->color[COLOR_GRAPH1];
                         x3 = ray * cosdgf(Angle);
                         if (TV_mode != TV_mode_PAL)
                             y3 = (ray - 5) * sindgf(Angle);
@@ -1071,7 +1071,7 @@ void hddManager(void)
                     }
 
                     sprintf(c, "%d%% %s", pfsFree, LNG(FREE));
-                    printXY(c, x - FONT_WIDTH * 4, y - FONT_HEIGHT / 2, setting->color[3], TRUE, 0);
+                    printXY(c, x - FONT_WIDTH * 4, y - FONT_HEIGHT / 2, setting->color[COLOR_TEXT], TRUE, 0);
                 }
 
                 rows = (Menu_end_y - Menu_start_y) / FONT_HEIGHT;
@@ -1083,9 +1083,9 @@ void hddManager(void)
                     if (top + i >= browser_nfiles)
                         break;
                     if (top + i == browser_sel)
-                        Color = setting->color[2];  //Highlight cursor line
+                        Color = setting->color[COLOR_SELECT];  //Highlight cursor line
                     else
-                        Color = setting->color[3];
+                        Color = setting->color[COLOR_TEXT];
 
                     strcpy(tmp, PartyInfo[top + i].Name);
                     printXY(tmp, x + 4, y, Color, TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (SCREEN_WIDTH / 2 - FONT_WIDTH)));
@@ -1093,10 +1093,10 @@ void hddManager(void)
                 }                             //ends for, so all browser rows were fixed above
                 if (browser_nfiles > rows) {  //if more files than available rows, use scrollbar
                     drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
-                              SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[1]);
+                              SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
                     y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
                     y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
-                    drawOpSprite(setting->color[1],
+                    drawOpSprite(setting->color[COLOR_FRAME],
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
                 }  //ends clause for scrollbar
