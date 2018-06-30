@@ -50,10 +50,6 @@ I_memcpy
 I_memcmp
 sysclib_IMPORTS_end
 
-sysmem_IMPORTS_start
-I_AllocSysMemory
-sysmem_IMPORTS_end
-
 thbase_IMPORTS_start
 I_GetThreadId
 I_CreateThread

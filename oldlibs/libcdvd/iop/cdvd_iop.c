@@ -10,7 +10,6 @@
 #include <cdvdman.h>
 #include <sysclib.h>
 #include <stdio.h>
-#include <sysmem.h>
 
 #include "cdvd_iop.h"
 
@@ -162,10 +161,11 @@ enum Cache_getMode {
 
 static struct cdVolDesc CDVolDesc;
 
-static unsigned int *buffer;  // RPC send/receive buffer
 struct t_SifRpcDataQueue qd;
 struct t_SifRpcServerData sd0;
-
+    // 0x4800 bytes for TocEntry structures (can fit 128 of them)
+    // 0x400 bytes for the filename string
+static u8 CDVD_rpc_server_buffer[0x4C00];  // RPC send/receive buffer
 
 static struct fdtable fd_table[16];
 static int fd_used[16];
@@ -587,6 +587,8 @@ static iop_device_ops_t filedriver_ops = {
     (void *)&dummy,
     (void *)&dummy};
 
+static u8 CachedDirInfoCache[MAX_DIR_CACHE_SECTORS * 2048];
+
 int _start(int argc, char **argv)
 {
     int i;
@@ -603,7 +605,7 @@ int _start(int argc, char **argv)
     CachedDirInfo.cache_size = 0;        // The size of the cached directory area (in sectors)
 
     if (CachedDirInfo.cache == NULL)
-        CachedDirInfo.cache = (char *)AllocSysMemory(0, MAX_DIR_CACHE_SECTORS * 2048, NULL);
+        CachedDirInfo.cache = CachedDirInfoCache;
 
 
     // setup the cdReadMode structure
@@ -1653,19 +1655,8 @@ void CDVD_Thread(void *param)
 
     sceSifInitRpc(0);
 
-    // 0x4800 bytes for TocEntry structures (can fit 128 of them)
-    // 0x400 bytes for the filename string
-    buffer = AllocSysMemory(0, 0x4C00, NULL);
-    if (buffer == NULL) {
-#ifdef DEBUG
-        printf("Failed to allocate memory for RPC buffer!\n");
-#endif
-
-        SleepThread();
-    }
-
     sceSifSetRpcQueue(&qd, GetThreadId());
-    sceSifRegisterRpc(&sd0, CDVD_IRX, CDVD_rpc_server, (void *)buffer, 0, 0, &qd);
+    sceSifRegisterRpc(&sd0, CDVD_IRX, CDVD_rpc_server, (void *)CDVD_rpc_server_buffer, 0, 0, &qd);
     sceSifRpcLoop(&qd);
 }
 
