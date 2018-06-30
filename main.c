@@ -1618,7 +1618,7 @@ static void CleanUp(void)
     free(External_Lang_Buffer);
     padPortClose(1, 0);
     padPortClose(0, 0);
-    padEnd();
+//    padEnd();  //Required when a newer libpad library is used.
     if (ps2kbd_opened)
         PS2KbdClose();
     TimerEnd();
