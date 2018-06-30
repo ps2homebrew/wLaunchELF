@@ -188,3 +188,25 @@ int eraseBlock(int fd, unsigned int block)
 
     return 0;
 }
+
+void *malloc(int size)
+{
+    int OldState;
+    void *result;
+
+    CpuSuspendIntr(&OldState);
+    result = AllocSysMemory(ALLOC_FIRST, size, NULL);
+    CpuResumeIntr(OldState);
+
+    return result;
+}
+
+void free(void *ptr)
+{
+    int OldState;
+
+    CpuSuspendIntr(&OldState);
+    FreeSysMemory(ptr);
+    CpuResumeIntr(OldState);
+}
+

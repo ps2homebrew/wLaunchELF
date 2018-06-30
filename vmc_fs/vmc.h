@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <sysclib.h>
 #include <sysmem.h>
+#include <intrman.h>
 #include <iomanX.h>
 #include <sys/fcntl.h>
 #include <cdvdman.h>
@@ -17,9 +18,9 @@
 //  #define PROFILING
 
 
-//  Misc defintions
-#define malloc(a) AllocSysMemory(0, (a), NULL)
-#define free(a) FreeSysMemory((a))
+//  Memory allocation helpers.
+void *malloc(int size);
+void free(void *ptr);
 
 #define TRUE 1
 #define FALSE 0
