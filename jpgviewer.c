@@ -499,6 +499,7 @@ void JpgViewer(char *file)
     int event, post_event = 0;
     int i, t = 0;
     int CountJpg = 0;
+    int StartShowSingle = FALSE;
 
     jpg_browser_cd = TRUE;
     jpg_browser_up = FALSE;
@@ -542,150 +543,23 @@ void JpgViewer(char *file)
     if (file != NULL) {
         strncpy(jpgpath, file, MAX_PATH - 1);
         jpgpath[MAX_PATH - 1] = '\0';
+        strncpy(path, file, MAX_PATH - 1);
+        path[MAX_PATH - 1] = '\0';
 
-        goto single;
+        //Separate the path and filename. path must have a trailing slash.
+        if((p = strrchr(path, '/')) != NULL)
+        {
+            strcpy(cursorEntry, p + 1);
+            *(p + 1) = '\0';
+        } else {
+            //Should not happen.
+            strncpy(cursorEntry, path, MAX_PATH - 1);
+            cursorEntry[MAX_PATH - 1] = '\0';
+        }
+
+        StartShowSingle = TRUE;
     }
     while (1) {
-
-        //Pad response section
-        waitPadReady(0, 0);
-        if (readpad()) {
-            if (new_pad) {
-                jpg_browser_pushed = TRUE;
-                print_name = 0;
-                event |= 2;  //event |= pad command
-                tmp[0] = 0;
-                tmp1[0] = 0;
-                t = 0;
-            }
-            if (new_pad & PAD_UP)
-                jpg_browser_sel--;
-            else if (new_pad & PAD_DOWN)
-                jpg_browser_sel++;
-            else if (new_pad & PAD_LEFT)
-                jpg_browser_sel -= rows - 1;
-            else if (new_pad & PAD_RIGHT) {
-                rows_down = 1;
-                old_jpg_browser_sel = jpg_browser_sel + rows - 1;
-                jpg_browser_sel++;
-            } else if (new_pad & PAD_TRIANGLE) {
-                jpg_browser_up = TRUE;
-                thumb_load = TRUE;
-            } else if (new_pad & PAD_SQUARE) {
-                if (jpg_browser_mode == LIST) {
-                    jpg_browser_mode = THUMBNAIL;
-                    jpg_browser_sel = 0;
-                    thumb_load = TRUE;
-                } else
-                    jpg_browser_mode = LIST;
-            } else if (new_pad & PAD_R1) {
-                if (++SlideShowTime >= 300)
-                    SlideShowTime = 300;
-            } else if (new_pad & PAD_L1) {
-                if (--SlideShowTime <= 1)
-                    SlideShowTime = 1;
-            } else if (new_pad & PAD_R2) {
-                char *temp = PathPad_menu(path);
-
-                if (temp != NULL) {
-                    strcpy(path, temp);
-                    jpg_browser_cd = TRUE;
-                    thumb_load = TRUE;
-                }
-            } else if (new_pad & PAD_L2) {
-                if (--SlideShowTrans < 1)
-                    SlideShowTrans = 4;
-            } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {  //Pushed OK
-                if (files[jpg_browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
-                    //pushed OK for a folder
-                    thumb_load = TRUE;
-                    if (!strcmp(files[jpg_browser_sel].name, "..")) {
-                        jpg_browser_up = TRUE;
-                    } else {
-                        strcat(path, files[jpg_browser_sel].name);
-                        strcat(path, "/");
-                        jpg_browser_cd = TRUE;
-                    }
-                } else {
-                //pushed OK for a file
-                restart:
-                    sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
-
-                    SlideShowBegin = 1;
-
-                    if (!SlideShowStart)
-                        goto single;
-                repeat:
-                    for (i = 0; i < jpg_browser_nfiles; ++i) {
-                        if (SlideShowBegin) {
-                            i = jpg_browser_sel + 1;
-                            SlideShowBegin = 0;
-                        }
-                        sprintf(jpgpath, "%s%s", path, files[i].name);
-                        loadPic();
-                        PicRotate = 0;
-                        if (testjpg)
-                            ++CountJpg;
-                        if (SlideShowSkip == 1)
-                            SlideShowSkip = 0;
-                        else if (SlideShowSkip == -1) {
-                            i -= 2;  //Loop index back to JPG before previous
-                            if (i <= 0)
-                                i += jpg_browser_nfiles - 1;  //Loop index back to JPG before final
-                            SlideShowSkip = 0;
-                        }
-                        if (SlideShowStop)
-                            goto end;
-                    } /* end for */
-                    goto end;
-                single:
-                    loadPic();
-                    PicRotate = 0;
-                    if (testjpg)
-                        ++CountJpg;
-                    if (SlideShowSkip == 1 || !testjpg) {
-                        if (++jpg_browser_sel > jpg_browser_nfiles)
-                            jpg_browser_sel = 0;
-                        SlideShowSkip = 0;
-                        goto restart;
-                    } else if (SlideShowSkip == -1) {
-                        jpg_browser_sel -= 1;
-                        if (jpg_browser_sel <= 0)
-                            jpg_browser_sel += jpg_browser_nfiles - 1;  //Go back to final JPG
-                        SlideShowSkip = 0;
-                        goto restart;
-                    }
-                end:
-                    if (SlideShowStart && !SlideShowStop && CountJpg > 0)
-                        goto repeat;
-                    if (FullScreen) {
-                        loadSkin(BACKGROUND_PIC, 0, 0);
-                        loadIcon();
-                    }
-                    SlideShowStart = SlideShowStop = CountJpg = PicRotate = 0;
-                    thumb_load = TRUE;
-                } /* end else file */
-            } else if (new_pad & PAD_SELECT) {
-                if (mountedParty[0][0] != 0) {
-                    fileXioUmount("pfs0:");
-                    mountedParty[0][0] = 0;
-                }
-                if (mountedParty[1][0] != 0) {
-                    fileXioUmount("pfs1:");
-                    mountedParty[1][0] = 0;
-                }
-                setting->JpgView_Timer = SlideShowTime;
-                setting->JpgView_Trans = SlideShowTrans;
-                setting->JpgView_Full = FullScreen;
-                return;
-            } else if (new_pad & PAD_START) {
-                if (path[0] != 0) {
-                    SlideShowStart = 1;
-                    SlideShowBegin = 0;
-                    goto repeat;
-                }
-            }
-        }  //ends pad response section
 
         //Thumb init
         if (thumb_load) {
@@ -960,6 +834,152 @@ void JpgViewer(char *file)
             strcat(msg1, tmp);
             setScrTmp(msg0, msg1);
         }  //ends if(event||post_event)
+
+        if (StartShowSingle) {
+            StartShowSingle = FALSE;
+            goto single;
+        }
+
+        //Pad response section
+        waitPadReady(0, 0);
+        if (readpad()) {
+            if (new_pad) {
+                jpg_browser_pushed = TRUE;
+                print_name = 0;
+                event |= 2;  //event |= pad command
+                tmp[0] = 0;
+                tmp1[0] = 0;
+                t = 0;
+            }
+            if (new_pad & PAD_UP)
+                jpg_browser_sel--;
+            else if (new_pad & PAD_DOWN)
+                jpg_browser_sel++;
+            else if (new_pad & PAD_LEFT)
+                jpg_browser_sel -= rows - 1;
+            else if (new_pad & PAD_RIGHT) {
+                rows_down = 1;
+                old_jpg_browser_sel = jpg_browser_sel + rows - 1;
+                jpg_browser_sel++;
+            } else if (new_pad & PAD_TRIANGLE) {
+                jpg_browser_up = TRUE;
+                thumb_load = TRUE;
+            } else if (new_pad & PAD_SQUARE) {
+                if (jpg_browser_mode == LIST) {
+                    jpg_browser_mode = THUMBNAIL;
+                    jpg_browser_sel = 0;
+                    thumb_load = TRUE;
+                } else
+                    jpg_browser_mode = LIST;
+            } else if (new_pad & PAD_R1) {
+                if (++SlideShowTime >= 300)
+                    SlideShowTime = 300;
+            } else if (new_pad & PAD_L1) {
+                if (--SlideShowTime <= 1)
+                    SlideShowTime = 1;
+            } else if (new_pad & PAD_R2) {
+                char *temp = PathPad_menu(path);
+
+                if (temp != NULL) {
+                    strcpy(path, temp);
+                    jpg_browser_cd = TRUE;
+                    thumb_load = TRUE;
+                }
+            } else if (new_pad & PAD_L2) {
+                if (--SlideShowTrans < 1)
+                    SlideShowTrans = 4;
+            } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {  //Pushed OK
+                if (files[jpg_browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
+                    //pushed OK for a folder
+                    thumb_load = TRUE;
+                    if (!strcmp(files[jpg_browser_sel].name, "..")) {
+                        jpg_browser_up = TRUE;
+                    } else {
+                        strcat(path, files[jpg_browser_sel].name);
+                        strcat(path, "/");
+                        jpg_browser_cd = TRUE;
+                    }
+                } else {
+                //pushed OK for a file
+                restart:
+                    sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
+
+                    SlideShowBegin = 1;
+
+                    if (!SlideShowStart)
+                        goto single;
+                repeat:
+                    for (i = 0; i < jpg_browser_nfiles; ++i) {
+                        if (SlideShowBegin) {
+                            i = jpg_browser_sel + 1;
+                            SlideShowBegin = 0;
+                        }
+                        sprintf(jpgpath, "%s%s", path, files[i].name);
+                        loadPic();
+                        PicRotate = 0;
+                        if (testjpg)
+                            ++CountJpg;
+                        if (SlideShowSkip == 1)
+                            SlideShowSkip = 0;
+                        else if (SlideShowSkip == -1) {
+                            i -= 2;  //Loop index back to JPG before previous
+                            if (i <= 0)
+                                i += jpg_browser_nfiles - 1;  //Loop index back to JPG before final
+                            SlideShowSkip = 0;
+                        }
+                        if (SlideShowStop)
+                            goto end;
+                    } /* end for */
+                    goto end;
+                single:
+                    loadPic();
+                    PicRotate = 0;
+                    if (testjpg)
+                        ++CountJpg;
+                    if (SlideShowSkip == 1 || !testjpg) {
+                        if (++jpg_browser_sel > jpg_browser_nfiles)
+                            jpg_browser_sel = 0;
+                        SlideShowSkip = 0;
+                        goto restart;
+                    } else if (SlideShowSkip == -1) {
+                        jpg_browser_sel -= 1;
+                        if (jpg_browser_sel <= 0)
+                            jpg_browser_sel += jpg_browser_nfiles - 1;  //Go back to final JPG
+                        SlideShowSkip = 0;
+                        goto restart;
+                    }
+                end:
+                    if (SlideShowStart && !SlideShowStop && CountJpg > 0)
+                        goto repeat;
+                    if (FullScreen) {
+                        loadSkin(BACKGROUND_PIC, 0, 0);
+                        loadIcon();
+                    }
+                    SlideShowStart = SlideShowStop = CountJpg = PicRotate = 0;
+                    thumb_load = TRUE;
+                } /* end else file */
+            } else if (new_pad & PAD_SELECT) {
+                if (mountedParty[0][0] != 0) {
+                    fileXioUmount("pfs0:");
+                    mountedParty[0][0] = 0;
+                }
+                if (mountedParty[1][0] != 0) {
+                    fileXioUmount("pfs1:");
+                    mountedParty[1][0] = 0;
+                }
+                setting->JpgView_Timer = SlideShowTime;
+                setting->JpgView_Trans = SlideShowTrans;
+                setting->JpgView_Full = FullScreen;
+                return;
+            } else if (new_pad & PAD_START) {
+                if (path[0] != 0) {
+                    SlideShowStart = 1;
+                    SlideShowBegin = 0;
+                    goto repeat;
+                }
+            }
+        }  //ends pad response section
+
         drawScr();
         post_event = event;
         event = 0;
