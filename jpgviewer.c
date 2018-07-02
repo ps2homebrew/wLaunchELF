@@ -558,6 +558,8 @@ void JpgViewer(char *file)
         }
 
         StartShowSingle = TRUE;
+        jpg_browser_cd = TRUE;    //Initial entry into the directory.
+        jpg_browser_repos = TRUE; //Track the displayed file.
     }
     while (1) {
 
