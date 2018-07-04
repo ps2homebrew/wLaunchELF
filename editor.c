@@ -1268,7 +1268,10 @@ void TextEditor(char *path)
 
     if (path != NULL) {
         Active_Window = 0;
-        ret = Open(Active_Window, path);
+
+        strncpy(Path[Active_Window], path, MAX_PATH - 1);
+        Path[Active_Window][MAX_PATH - 1] = '\0';
+        ret = Open(Active_Window, Path[Active_Window]);
         if (!ret)
             goto fail;
 
