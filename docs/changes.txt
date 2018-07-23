@@ -464,12 +464,12 @@ LaunchELF v3.98 (2006.08.29)
 
 LaunchELF v3.97 (2006.08.28)
 -Increased font resolution from 8x8 to 8x16 (replaced font5200.c with font_uLE.c)
--Used the new font resolution to improve the symmetry of some characters. As yet this includes "ABEFHPRSUƒ≈÷"
+-Used the new font resolution to improve the symmetry of some characters. As yet this includes "ABEFHPRSU√Ñ√Ö√ñ"
 -Fixed the inclusion of the new FTP server improved by EP, which I botched in v3.96
 
 LaunchELF v3.96 (2006.08.27)
 -Increased font size to 256 characters, but still with '_' appearanc for many of them
--Implemented 'extra' vowels of german and swedish for font. This covers "Â‰ˆ¸≈ƒ÷‹". Note that this implementation is still rather ugly, due to the low resolution of our font.
+-Implemented 'extra' vowels of german and swedish for font. This covers "√•√§√∂√º√Ö√Ñ√ñ√ú". Note that this implementation is still rather ugly, due to the low resolution of our font.
 -Corrected an old bug made visible by the new characters, using top pixel row of font
 -Added error diagnostic dialog box for LNG loader, to help in debugging LNG files
 -Merged improved FTP server by EP, for better handling of mountpoints and MCs

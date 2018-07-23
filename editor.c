@@ -218,9 +218,9 @@ static int MenuEditor(void)
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
-                sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+                sprintf(tmp, "\xFF""1:%s \xFF""0:%s \xFF""3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             else
-                sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+                sprintf(tmp, "\xFF""0:%s \xFF""1:%s \xFF""3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event).
         drawScr();
@@ -956,9 +956,9 @@ static int Windows_Selector(void)
                        0, y - 1,
                        SCREEN_WIDTH, y + 16);
             if (swapKeys)
-                sprintf(tmp, "ÿ1:%s ÿ0:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+                sprintf(tmp, "\xFF""1:%s \xFF""0:%s \xFF""3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             else
-                sprintf(tmp, "ÿ0:%s ÿ1:%s ÿ3:%s", LNG(OK), LNG(Cancel), LNG(Back));
+                sprintf(tmp, "\xFF""0:%s \xFF""1:%s \xFF""3:%s", LNG(OK), LNG(Cancel), LNG(Back));
             printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event).
         drawScr();
@@ -1655,20 +1655,20 @@ void TextEditor(char *path)
             tmp[0] = '\0', tmp1[0] = '\0', tmp2[0] = '\0';
             if (KeyBoard_Active) {  //Display Virtual KeyBoard Tooltip.
                 if (swapKeys)
-                    sprintf(tmp1, "R1:%s ÿ3:%s ÿ1:%s ÿ0:%s L2:%s R2:%s Sel:%s",
+                    sprintf(tmp1, "R1:%s \xFF""3:%s \xFF""1:%s \xFF""0:%s L2:%s R2:%s Sel:%s",
                             LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
                             LNG(Left), LNG(Right), LNG(Close_KB));
                 else
-                    sprintf(tmp1, "R1:%s ÿ3:%s ÿ0:%s ÿ1:%s L2:%s R2:%s Sel:%s",
+                    sprintf(tmp1, "R1:%s \xFF""3:%s \xFF""0:%s \xFF""1:%s L2:%s R2:%s Sel:%s",
                             LNG(Menu), LNG(Exit), LNG(Sel), LNG(BackSpace),
                             LNG(Left), LNG(Right), LNG(Close_KB));
             } else if (setting->usbkbd_used) {  //Display KeyBoard Tooltip.
                 if (Window[Active_Window][OPENED]) {
                     if (Mark[MARK_ON])
-                        sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s Ctrl+ b:%s: %s ",
+                        sprintf(tmp1, "F1/R1:%s Esc/\xFF""3:%s Ctrl+ b:%s: %s ",
                                 LNG(Menu), LNG(Exit), LNG(Mark), LNG(On));
                     else
-                        sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s Ctrl+ b:%s: %s ",
+                        sprintf(tmp1, "F1/R1:%s Esc/\xFF""3:%s Ctrl+ b:%s: %s ",
                                 LNG(Menu), LNG(Exit), LNG(Mark), LNG(Off));
                     sprintf(tmp2, "x:%s c:%s v:%s ", LNG(Cut), LNG(Copy), LNG(Paste));
                     strcat(tmp1, tmp2);
@@ -1685,12 +1685,12 @@ void TextEditor(char *path)
                         sprintf(tmp2, "%s:%s", LNG(Ins), LNG(Off));
                     strcat(tmp1, tmp2);
                 } else
-                    sprintf(tmp1, "F1/R1:%s Esc/ÿ3:%s", LNG(Menu), LNG(Exit));
+                    sprintf(tmp1, "F1/R1:%s Esc/\xFF""3:%s", LNG(Menu), LNG(Exit));
             } else {  //Display Basic Tooltip.
                 if (Window[Active_Window][OPENED])
-                    sprintf(tmp1, "R1:%s ÿ3:%s Select:%s", LNG(Menu), LNG(Exit), LNG(Open_KeyBoard));
+                    sprintf(tmp1, "R1:%s \xFF""3:%s Select:%s", LNG(Menu), LNG(Exit), LNG(Open_KeyBoard));
                 else
-                    sprintf(tmp1, "R1:%s ÿ3:%s", LNG(Menu), LNG(Exit));
+                    sprintf(tmp1, "R1:%s \xFF""3:%s", LNG(Menu), LNG(Exit));
             }
             if (Window[Active_Window][CREATED])
                 sprintf(tmp, "%s : %s", LNG(PS2_TEXT_EDITOR), LNG(File_Not_Yet_Saved));

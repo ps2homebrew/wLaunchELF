@@ -374,7 +374,7 @@ void Load_External_Language(void);
 extern unsigned char font_uLE[];
 enum {
     //0x100-0x109 are 5 double width characters for D-Pad buttons, which are accessed as:
-    //"ÿ0"==Circle  "ÿ1"==Cross  "ÿ2"==Square  "ÿ3"==Triangle  "ÿ4"==filled Square
+    //"Ã¿0"==Circle  "Ã¿1"==Cross  "Ã¿2"==Square  "Ã¿3"==Triangle  "Ã¿4"==filled Square
     RIGHT_CUR = 0x10A,  //Triangle pointing left, for use to the right of an item
     LEFT_CUR = 0x10B,   //Triangle pointing right, for use to the left of an item
     UP_ARROW = 0x10C,   //Arrow pointing up
@@ -386,7 +386,7 @@ enum {
     BR_SPLIT = 0x112,   //Splits rectangle from BL to TR with BR portion filled
     BL_SPLIT = 0x113,   //Splits rectangle from TL to BR with BL portion filled
                         //0x114-0x11B are 4 double width characters for D-Pad buttons, which are accessed as:
-                        //"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
+                        //"Ã¿:"==Right  "Ã¿;"==Down  "Ã¿<"==Left  "Ã¿="==Up
                         //0x11C-0x123 are 4 doubled characters used as normal/marked folder/file icons
     ICON_FOLDER = 0x11C,
     ICON_M_FOLDER = 0x11E,

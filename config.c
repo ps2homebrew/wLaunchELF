@@ -1097,26 +1097,26 @@ void Config_Skin(void)
             //Tooltip section
             if ((s == 1) || (s == 4)) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Edit), LNG(Clear));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Edit), LNG(Clear));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
             } else if (s == 3) {  //if cursor at a colour component or a screen offset
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == 6) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(Change));
+                    sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(Change));
+                    sprintf(c, "\xFF""0:%s", LNG(Change));
             } else {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " ÿ3:%s", LNG(Return));
+            sprintf(tmp, " \xFF""3:%s", LNG(Return));
             strcat(c, tmp);
             setScrTmp("", c);
         }  //ends if(event||post_event)
@@ -1332,7 +1332,7 @@ void Config_Screen(void)
                 sprintf(c, "%02X", rgb[i][2]);
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[COLOR_TEXT], TRUE, 0);
                 y += FONT_HEIGHT;
-                sprintf(c, "ÿ4");
+                sprintf(c, "\xFF""4");
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[i], TRUE, 0);
             }  //ends loop for colour RGB values
             y += FONT_HEIGHT * 2;
@@ -1440,32 +1440,32 @@ void Config_Screen(void)
             //Tooltip section
             if (s < 24 || s == 25 || s == 26) {  //if cursor at a colour component or a screen offset
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == 24 || s == 27 || s == 32 || s == 33) {
                 //if cursor at 'TV mode', 'INTERLACE', 'Menu Frame' or 'Popups Opaque'
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(Change));
+                    sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(Change));
+                    sprintf(c, "\xFF""0:%s", LNG(Change));
             } else if (s == 28 || s == 29 || s == 30) {  //if cursor at 'SKIN SETTINGS'
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             } else if (s == 31) {  //if cursor at Menu_Title
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Edit), LNG(Clear));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Edit), LNG(Clear));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
             } else {  //if cursor at 'RETURN' or 'DEFAULT' options
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " ÿ3:%s", LNG(Return));
+            sprintf(tmp, " \xFF""3:%s", LNG(Return));
             strcat(c, tmp);
             setScrTmp("", c);
         }  //ends if(event||post_event)
@@ -1622,9 +1622,9 @@ void Config_Startup(void)
             y += FONT_HEIGHT;
 
             if (setting->swapKeys)
-                sprintf(c, "  %s: ÿ1:%s ÿ0:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
+                sprintf(c, "  %s: \xFF""1:%s \xFF""0:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
             else
-                sprintf(c, "  %s: ÿ0:%s ÿ1:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
+                sprintf(c, "  %s: \xFF""0:%s \xFF""1:%s", LNG(Pad_mapping), LNG(OK), LNG(CANCEL));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
@@ -1721,29 +1721,29 @@ void Config_Startup(void)
             //Tooltip section
             if ((s == 2) || (s == 6)) {  //usbkbd_used
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(Change));
+                    sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(Change));
+                    sprintf(c, "\xFF""0:%s", LNG(Change));
             } else if ((s == 1) || (s == 4) || (s == 5)) {  //numCNF || Init_Delay || timeout
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if ((s == 3) || (s == 7) || (s == 8) || (s == 9) || (s == 10)
                        //usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
                        //Language||Fontfile||ESR_elf||OSDSYS_kelf
                        || (s == 11) || (s == 12) || (s == 13) || (s == 14)) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Browse), LNG(Clear));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Browse), LNG(Clear));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Browse), LNG(Clear));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Browse), LNG(Clear));
             } else {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " ÿ3:%s", LNG(Return));
+            sprintf(tmp, " \xFF""3:%s", LNG(Return));
             strcat(c, tmp);
             setScrTmp("", c);
         }  //ends if(event||post_event)
@@ -2035,21 +2035,21 @@ void Config_Network(void)
                 sprintf(c, "%s", LNG(Right_DPad_to_Edit));
             } else if (s < 4) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == 4) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(Save));
+                    sprintf(c, "\xFF""1:%s", LNG(Save));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(Save));
+                    sprintf(c, "\xFF""0:%s", LNG(Save));
             } else {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " ÿ3:%s", LNG(Return));
+            sprintf(tmp, " \xFF""3:%s", LNG(Return));
             strcat(c, tmp);
             setScrTmp(NetMsg, c);
         }  //ends if(event||post_event)
@@ -2181,16 +2181,16 @@ void config(char *mainMsg, char *CNF)
                         strcpy(c, "  Default: ");
                         break;
                     case 1:
-                        strcpy(c, "  ÿ0     : ");
+                        strcpy(c, "  \xFF""0     : ");
                         break;
                     case 2:
-                        strcpy(c, "  ÿ1     : ");
+                        strcpy(c, "  \xFF""1     : ");
                         break;
                     case 3:
-                        strcpy(c, "  ÿ2     : ");
+                        strcpy(c, "  \xFF""2     : ");
                         break;
                     case 4:
-                        strcpy(c, "  ÿ3     : ");
+                        strcpy(c, "  \xFF""3     : ");
                         break;
                     case 5:
                         strcpy(c, "  L1     : ");
@@ -2260,21 +2260,21 @@ void config(char *mainMsg, char *CNF)
             //Tooltip section
             if (s < SHOW_TITLES) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s ÿ0:%s ÿ2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
+                    sprintf(c, "\xFF""1:%s \xFF""0:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
                 else
-                    sprintf(c, "ÿ0:%s ÿ1:%s ÿ2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
+                    sprintf(c, "\xFF""0:%s \xFF""1:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
             } else if ((s == SHOW_TITLES) || (s == FILENAME)) {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(Change));
+                    sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(Change));
+                    sprintf(c, "\xFF""0:%s", LNG(Change));
             } else {
                 if (swapKeys)
-                    sprintf(c, "ÿ1:%s", LNG(OK));
+                    sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "ÿ0:%s", LNG(OK));
+                    sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " ÿ3:%s", LNG(Return));
+            sprintf(tmp, " \xFF""3:%s", LNG(Return));
             strcat(c, tmp);
             setScrTmp(localMsg, c);
         }  //ends if(event||post_event)

@@ -422,16 +422,16 @@ static int drawMainScreen(void)
                     strcpy(c, "Default: ");
                     break;
                 case 1:
-                    strcpy(c, "     ÿ0: ");
+                    strcpy(c, "     \xFF""0: ");
                     break;
                 case 2:
-                    strcpy(c, "     ÿ1: ");
+                    strcpy(c, "     \xFF""1: ");
                     break;
                 case 3:
-                    strcpy(c, "     ÿ2: ");
+                    strcpy(c, "     \xFF""2: ");
                     break;
                 case 4:
-                    strcpy(c, "     ÿ3: ");
+                    strcpy(c, "     \xFF""3: ");
                     break;
                 case 5:
                     strcpy(c, "     L1: ");
@@ -512,9 +512,9 @@ static int drawMainScreen(void)
         sprintf(c, "%s!", LNG(PUSH_ANY_BUTTON_or_DPAD));
     else {
         if (swapKeys)
-            sprintf(c, "ÿ1:%s ÿ0:%s", LNG(OK), LNG(Cancel));
+            sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(OK), LNG(Cancel));
         else
-            sprintf(c, "ÿ0:%s ÿ1:%s", LNG(OK), LNG(Cancel));
+            sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(OK), LNG(Cancel));
     }
 
     setScrTmp(mainMsg, c);
@@ -831,7 +831,7 @@ static void ShowDebugInfo(void)
             PrintRow(-1, TextRow);
             sprintf(TextRow, "Server_FBID = %s", smbServerList[si].Server_FBID);
             PrintRow(-1, TextRow);
-            sprintf(TextRow, "ÿ0 Index++  ÿ1 Index--  ÿ2 Logon  ÿ3 Forget Logon");
+            sprintf(TextRow, "\xFF""0 Index++  \xFF""1 Index--  \xFF""2 Logon  \xFF""3 Forget Logon");
             PrintRow(-1, TextRow);
 #endif
         }  //ends if(event||post_event)

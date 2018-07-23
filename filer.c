@@ -1520,12 +1520,12 @@ int menu(const char *path, FILEINFO *file)
                        0, y - 1,
                        SCREEN_WIDTH, y + FONT_HEIGHT);
             if (swapKeys)
-                sprintf(tmp, "ÿ1:%s ÿ0:%s", LNG(OK), LNG(Cancel));
+                sprintf(tmp, "\xFF""1:%s \xFF""0:%s", LNG(OK), LNG(Cancel));
             else
-                sprintf(tmp, "ÿ0:%s ÿ1:%s", LNG(OK), LNG(Cancel));
+                sprintf(tmp, "\xFF""0:%s \xFF""1:%s", LNG(OK), LNG(Cancel));
             if (sel == PASTE)
-                sprintf(tmp + strlen(tmp), " ÿ2:%s", LNG(PasteRename));
-            sprintf(tmp + strlen(tmp), " ÿ3:%s", LNG(Back));
+                sprintf(tmp + strlen(tmp), " \xFF""2:%s", LNG(PasteRename));
+            sprintf(tmp + strlen(tmp), " \xFF""3:%s", LNG(Back));
             printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
         drawScr();
@@ -1625,19 +1625,19 @@ char *PathPad_menu(const char *path)
             drawSprite(setting->color[COLOR_BACKGR], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
 
             if (swapKeys) {
-                sprintf(textrow, "ÿ1:%s ", LNG(Use));
+                sprintf(textrow, "\xFF""1:%s ", LNG(Use));
                 if (!setting->PathPad_Lock) {
-                    sprintf(tmp, "ÿ0:%s ÿ2:%s ", LNG(Clear), LNG(Set));
+                    sprintf(tmp, "\xFF""0:%s \xFF""2:%s ", LNG(Clear), LNG(Set));
                     strcat(textrow, tmp);
                 }
             } else {
-                sprintf(textrow, "ÿ0:%s ", LNG(Use));
+                sprintf(textrow, "\xFF""0:%s ", LNG(Use));
                 if (!setting->PathPad_Lock) {
-                    sprintf(tmp, "ÿ1:%s ÿ2:%s ", LNG(Clear), LNG(Set));
+                    sprintf(tmp, "\xFF""1:%s \xFF""2:%s ", LNG(Clear), LNG(Set));
                     strcat(textrow, tmp);
                 }
             }
-            sprintf(tmp, "ÿ3:%s L1/R1:%s", LNG(Back), LNG(Page_leftright));
+            sprintf(tmp, "\xFF""3:%s L1/R1:%s", LNG(Back), LNG(Page_leftright));
             strcat(textrow, tmp);
             printXY(textrow, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
@@ -2767,11 +2767,11 @@ int keyboard(char *out, int max)
             drawSprite(setting->color[COLOR_BACKGR], 0, y - 1, SCREEN_WIDTH, y + FONT_HEIGHT);
 
             if (swapKeys) {
-                sprintf(tmp, "ÿ1:%s ÿ0", LNG(Use));
+                sprintf(tmp, "\xFF""1:%s \xFF""0", LNG(Use));
             } else {
-                sprintf(tmp, "ÿ0:%s ÿ1", LNG(Use));
+                sprintf(tmp, "\xFF""0:%s \xFF""1", LNG(Use));
             }
-            sprintf(tmp + strlen(tmp), ":%s ÿ2:%s L1:%s R1:%s START:%s ÿ3:%s",
+            sprintf(tmp + strlen(tmp), ":%s \xFF""2:%s L1:%s R1:%s START:%s \xFF""3:%s",
                     LNG(BackSpace), LNG(SPACE), LNG(Left), LNG(Right), LNG(Enter), LNG(Exit));
             printXY(tmp, x, y, setting->color[COLOR_SELECT], TRUE, 0);
         }  //ends if(event||post_event)
@@ -2937,10 +2937,10 @@ int keyboard2(char *out, int max)
 			drawSprite(setting->color[COLOR_BACKGR], 0, y-1, SCREEN_WIDTH, y+FONT_HEIGHT);
 
 			if (swapKeys) 
-				printXY("ÿ1:OK ÿ0:Back L1:Left R1:Right START:Enter",
+				printXY("\xFF""1:OK \xFF""0:Back L1:Left R1:Right START:Enter",
 					x, y, setting->color[COLOR_SELECT], TRUE, 0);
 			else
-				printXY("ÿ0:OK ÿ1:Back L1:Left R1:Right START:Enter",
+				printXY("\xFF""0:OK \xFF""1:Back L1:Left R1:Right START:Enter",
 					x, y, setting->color[COLOR_SELECT], TRUE, 0);
 		}//ends if(event||post_event)
 		drawScr();
@@ -3208,25 +3208,25 @@ int BrowserModePopup(void)
                 else if (i == 1)
                     sprintf(tmp, "   %s", &minuses_s[80 - Show_len]);
                 else if (i == 2)
-                    sprintf(tmp, "ÿ0 %s", LNG(Filename));
+                    sprintf(tmp, "\xFF""0 %s", LNG(Filename));
                 else if (i == 3)
-                    sprintf(tmp, "ÿ1 %s%s", LNG(Filename), LNG(_plus_Details));
+                    sprintf(tmp, "\xFF""1 %s%s", LNG(Filename), LNG(_plus_Details));
                 else if (i == 4)
-                    sprintf(tmp, "ÿ2 %s%s", LNG(Game_Title), LNG(_plus_Details));
+                    sprintf(tmp, "\xFF""2 %s%s", LNG(Game_Title), LNG(_plus_Details));
                 else if (i == 6)
                     sprintf(tmp, "   %s:", LNG(Sort_Content_by));
                 else if (i == 7)
                     sprintf(tmp, "   %s", &minuses_s[80 - Sort_len]);
                 else if (i == 8)
-                    sprintf(tmp, "ÿ: %s", LNG(No_Sort));
+                    sprintf(tmp, "\xFF"": %s", LNG(No_Sort));
                 else if (i == 9)
-                    sprintf(tmp, "ÿ; %s", LNG(Filename));
+                    sprintf(tmp, "\xFF""; %s", LNG(Filename));
                 else if (i == 10)
-                    sprintf(tmp, "ÿ< %s", LNG(Game_Title));
+                    sprintf(tmp, "\xFF""< %s", LNG(Game_Title));
                 else if (i == 11)
-                    sprintf(tmp, "ÿ= %s", LNG(Timestamp));
+                    sprintf(tmp, "\xFF""= %s", LNG(Timestamp));
                 else if (i == 13)
-                    sprintf(tmp, "ÿ3 %s", LNG(Back_to_Browser));
+                    sprintf(tmp, "\xFF""3 %s", LNG(Back_to_Browser));
                 else
                     tmp[0] = 0;
 
@@ -3868,9 +3868,9 @@ int getFilePath(char *out, int cnfmode)
             //Tooltip section
             if (cnfmode) {  //cnfmode indicates configurable file selection
                 if (swapKeys)
-                    sprintf(msg1, "ÿ1:%s ÿ0:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
+                    sprintf(msg1, "\xFF""1:%s \xFF""0:%s \xFF""3:%s \xFF""2:", LNG(OK), LNG(Cancel), LNG(Up));
                 else
-                    sprintf(msg1, "ÿ0:%s ÿ1:%s ÿ3:%s ÿ2:", LNG(OK), LNG(Cancel), LNG(Up));
+                    sprintf(msg1, "\xFF""0:%s \xFF""1:%s \xFF""3:%s \xFF""2:", LNG(OK), LNG(Cancel), LNG(Up));
                 if (ext[0] == '*')
                     strcat(msg1, "*->");
                 strcat(msg1, cnfmode_extU[cnfmode]);
@@ -3884,11 +3884,11 @@ int getFilePath(char *out, int cnfmode)
                 }
             } else {  // cnfmode == FALSE
                 if (swapKeys)
-                    sprintf(msg1, "ÿ1:%s ÿ3:%s ÿ0:%s ÿ2:%s L1:%s R1:%s R2:%s Sel:%s",
+                    sprintf(msg1, "\xFF""1:%s \xFF""3:%s \xFF""0:%s \xFF""2:%s L1:%s R1:%s R2:%s Sel:%s",
                             LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
                             LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Exit));
                 else
-                    sprintf(msg1, "ÿ0:%s ÿ3:%s ÿ1:%s ÿ2:%s L1:%s R1:%s R2:%s Sel:%s",
+                    sprintf(msg1, "\xFF""0:%s \xFF""3:%s \xFF""1:%s \xFF""2:%s L1:%s R1:%s R2:%s Sel:%s",
                             LNG(OK), LNG(Up), LNG(Mark), LNG(RevMark),
                             LNG(Mode), LNG(Menu), LNG(PathPad), LNG(Exit));
             }
