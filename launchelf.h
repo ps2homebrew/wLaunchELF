@@ -206,8 +206,8 @@ void RunLoaderElf(char *filename, char *);
 #define FOLDER 0
 #define WARNING 1
 
-unsigned char icon_folder[1024];
-unsigned char icon_warning[1024];
+extern unsigned char icon_folder[];
+extern unsigned char icon_warning[];
 
 extern GSGLOBAL *gsGlobal;
 extern GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];

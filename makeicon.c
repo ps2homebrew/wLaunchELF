@@ -6,7 +6,7 @@
 #include "math.h"
 extern u8 font_uLE[];
 
-u16 *tex_buffer;
+static u16 *tex_buffer;
 
 #define ICON_WIDTH 128
 #define ICON_HEIGHT 128

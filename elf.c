@@ -5,7 +5,7 @@
 
 #define MAX_PATH 1025
 
-extern u8 *loader_elf;
+extern u8 loader_elf[];
 extern int size_loader_elf;
 
 // ELF-loading stuff
@@ -142,7 +142,7 @@ void RunLoaderElf(char *filename, char *party)
     }
 
     /* NB: LOADER.ELF is embedded  */
-    boot_elf = (u8 *)&loader_elf;
+    boot_elf = (u8 *)loader_elf;
     eh = (elf_header_t *)boot_elf;
     if (_lw((u32)&eh->ident) != ELF_MAGIC)
         asm volatile("break\n");
