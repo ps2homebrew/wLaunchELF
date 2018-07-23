@@ -1167,7 +1167,6 @@ enum CONFIG_SCREEN {
     CONFIG_SCREEN_TV_MODE = CONFIG_SCREEN_AFT_COLORS,
     CONFIG_SCREEN_TV_STARTX,
     CONFIG_SCREEN_TV_STARTY,
-    CONFIG_SCREEN_TV_INTERLACE,
 
     CONFIG_SCREEN_SKIN,
     CONFIG_SCREEN_LOAD_SKIN_BROWSER,
@@ -1232,8 +1231,6 @@ void Config_Screen(void)
                 else if (s >= CONFIG_SCREEN_MENU_TITLE)
                     s = CONFIG_SCREEN_SKIN;
                 else if (s >= CONFIG_SCREEN_SKIN)
-                    s = CONFIG_SCREEN_TV_INTERLACE;
-                else if (s >= CONFIG_SCREEN_TV_INTERLACE)
                     s = CONFIG_SCREEN_TV_MODE;
                 else if (s >= CONFIG_SCREEN_TV_STARTX)
                     s = CONFIG_SCREEN_TV_MODE;  //at or
@@ -1249,10 +1246,8 @@ void Config_Screen(void)
                     s = CONFIG_SCREEN_MENU_FRAME;
                 else if (s >= CONFIG_SCREEN_SKIN)
                     s = CONFIG_SCREEN_MENU_TITLE;
-                else if (s >= CONFIG_SCREEN_TV_INTERLACE)
-                    s = CONFIG_SCREEN_SKIN;
                 else if (s >= CONFIG_SCREEN_TV_STARTX)
-                    s = CONFIG_SCREEN_TV_INTERLACE;
+                    s = CONFIG_SCREEN_SKIN;
                 else if (s >= CONFIG_SCREEN_TV_MODE)
                     s = CONFIG_SCREEN_TV_STARTX;
                 else if (s >= CONFIG_SCREEN_COL_LAST)
@@ -1301,9 +1296,6 @@ void Config_Screen(void)
                       setting->screen_y++;
                       updateScreenMode();
                     }
-                } else if (s == CONFIG_SCREEN_TV_INTERLACE) {
-                    setting->interlace = !setting->interlace;
-                    updateScreenMode();
                 } else if (s == CONFIG_SCREEN_SKIN) {
                     Config_Skin();
                 } else if (s == CONFIG_SCREEN_LOAD_SKIN_BROWSER) {
@@ -1416,14 +1408,6 @@ void Config_Screen(void)
             y += FONT_HEIGHT;
             y += FONT_HEIGHT / 2;
 
-            if (setting->interlace)
-                sprintf(c, "  %s: %s", LNG(Interlace), LNG(ON));
-            else
-                sprintf(c, "  %s: %s", LNG(Interlace), LNG(OFF));
-            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
-            y += FONT_HEIGHT / 2;
-
             sprintf(c, "  %s...", LNG(Skin_Settings));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
@@ -1481,10 +1465,8 @@ void Config_Screen(void)
                     y += FONT_HEIGHT / 2;             //adjust for half-row space below colours
                 if (s >= CONFIG_SCREEN_TV_STARTX)     //if cursor at or beyond screen offsets
                     y += FONT_HEIGHT / 2;             //adjust for half-row space below TV mode choice
-                if (s >= CONFIG_SCREEN_TV_INTERLACE)  //if cursor at or beyond interlace choice
-                    y += FONT_HEIGHT / 2;             //adjust for half-row space below screen offsets
                 if (s >= CONFIG_SCREEN_SKIN)          //if cursor at or beyond 'SKIN SETTINGS'
-                    y += FONT_HEIGHT / 2;             //adjust for half-row space below interlace choice
+                    y += FONT_HEIGHT / 2;             //adjust for half-row space below screen offsets
                 if (s >= CONFIG_SCREEN_MENU_TITLE)    //if cursor at or beyond 'Menu Title'
                     y += FONT_HEIGHT / 2;             //adjust for half-row space below 'SKIN SETTINGS'
                 if (s >= CONFIG_SCREEN_MENU_FRAME)    //if cursor at or beyond 'Menu Frame'
@@ -1500,8 +1482,8 @@ void Config_Screen(void)
                     sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
                     sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
-            } else if (s == CONFIG_SCREEN_TV_MODE || s == CONFIG_SCREEN_TV_INTERLACE || s == CONFIG_SCREEN_MENU_FRAME || s == CONFIG_SCREEN_POPUP_OPAQUE) {
-                //if cursor at 'TV mode', 'INTERLACE', 'Menu Frame' or 'Popups Opaque'
+            } else if (s == CONFIG_SCREEN_TV_MODE || s == CONFIG_SCREEN_MENU_FRAME || s == CONFIG_SCREEN_POPUP_OPAQUE) {
+                //if cursor at 'TV mode', 'Menu Frame' or 'Popups Opaque'
                 if (swapKeys)
                     sprintf(c, "\xFF""1:%s", LNG(Change));
                 else

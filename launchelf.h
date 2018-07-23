@@ -146,7 +146,6 @@ typedef struct
     u64 color[8];
     int screen_x;
     int screen_y;
-    int interlace;
     int numCNF;
     int swapKeys;
     int HOSTwrite;
