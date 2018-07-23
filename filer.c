@@ -2361,10 +2361,10 @@ non_PSU_RESTORE_init:
     if (size < buffSize)
         buffSize = size;
 
-    buff = (char *)malloc(buffSize);      //Attempt buffer allocation
+    buff = (char *)memalign(64, buffSize);      //Attempt buffer allocation
     if (buff == NULL) {                   //if allocation fails
         buffSize = 32768;                 //Set buffsize to 32KB
-        buff = (char *)malloc(buffSize);  //Allocate 32KB buffer
+        buff = (char *)memalign(64, buffSize);  //Allocate 32KB buffer
     }
 
     old_size = written_size;  //Note initial progress data pos
