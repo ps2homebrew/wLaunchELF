@@ -39,12 +39,12 @@ reset: clean
 	ps2client -h 192.168.0.10 reset
 
 githash.h:
-	echo -n '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
+	printf '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
 	git show -s --format=%cd --date=local | tr -d "\n" >> $@ && \
-	echo '"\n#endif' >> $@
-	echo -n '#ifndef GIT_HASH\n#define GIT_HASH "' >> $@ && \
+	printf '"\n#endif\n' >> $@
+	printf '#ifndef GIT_HASH\n#define GIT_HASH "' >> $@ && \
 	git rev-parse --short HEAD | tr -d "\n" >> $@ && \
-	echo '"\n#endif' >> $@
+	printf '"\n#endif\n' >> $@
 
 mcman_irx.s: $(PS2SDK)/iop/irx/mcman.irx
 	bin2s $< $@ mcman_irx
