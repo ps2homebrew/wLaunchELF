@@ -133,7 +133,7 @@ static u8 have_vmc_fs = 0;
 //State of whether DEV9 was successfully loaded or not.
 static u8 ps2dev9_loaded = 0;
 
-int menu_LK[15];  //holds RunElf index for each valid main menu entry
+static int menu_LK[SETTING_LK_BTN_COUNT];  //holds RunElf index for each valid main menu entry
 
 static u8 done_setupPowerOff = 0;
 static u8 ps2kbd_opened = 0;
@@ -376,12 +376,12 @@ static void getIpConfig(void)
 //---------------------------------------------------------------------------
 static void setLaunchKeys(void)
 {
-    if (!setting->LK_Flag[12])
-        strcpy(setting->LK_Path[12], setting->Misc_Configure);
-    if ((maxCNF > 1) && !setting->LK_Flag[13])
-        strcpy(setting->LK_Path[13], setting->Misc_Load_CNFprev);
-    if ((maxCNF > 1) && !setting->LK_Flag[14])
-        strcpy(setting->LK_Path[14], setting->Misc_Load_CNFnext);
+    if (!setting->LK_Flag[SETTING_LK_SELECT])
+        strcpy(setting->LK_Path[SETTING_LK_SELECT], setting->Misc_Configure);
+    if ((maxCNF > 1) && !setting->LK_Flag[SETTING_LK_LEFT])
+        strcpy(setting->LK_Path[SETTING_LK_LEFT], setting->Misc_Load_CNFprev);
+    if ((maxCNF > 1) && !setting->LK_Flag[SETTING_LK_RIGHT])
+        strcpy(setting->LK_Path[SETTING_LK_RIGHT], setting->Misc_Load_CNFnext);
 }
 //------------------------------
 //endfunc setLaunchKeys()
@@ -404,7 +404,7 @@ static int drawMainScreen(void)
     c[0] = 0;
     if (init_delay)
         sprintf(c, "%s: %d", LNG(Init_Delay), init_delay / 1000);
-    else if (setting->LK_Path[0][0]) {
+    else if (setting->LK_Path[SETTING_LK_AUTO][0]) {
         if (!user_acted)
             sprintf(c, "%s: %d", LNG(TIMEOUT), timeout / 1000);
         else
@@ -414,53 +414,53 @@ static int drawMainScreen(void)
         printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
         y += FONT_HEIGHT * 2;
     }
-    for (i = 0; i < 15; i++) {
-        if ((setting->LK_Path[i][0]) && ((i < 13) || (maxCNF > 1) || setting->LK_Flag[i])) {
+    for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {
+        if ((setting->LK_Path[i][0]) && ((i <= SETTING_LK_SELECT) || (maxCNF > 1) || setting->LK_Flag[i])) {
             menu_LK[nElfs] = i;  //memorize RunElf index for this menu entry
             switch (i) {
-                case 0:
+                case SETTING_LK_AUTO:
                     strcpy(c, "Default: ");
                     break;
-                case 1:
+                case SETTING_LK_CIRCLE:
                     strcpy(c, "     \xFF""0: ");
                     break;
-                case 2:
+                case SETTING_LK_CROSS:
                     strcpy(c, "     \xFF""1: ");
                     break;
-                case 3:
+                case SETTING_LK_SQUARE:
                     strcpy(c, "     \xFF""2: ");
                     break;
-                case 4:
+                case SETTING_LK_TRIANGLE:
                     strcpy(c, "     \xFF""3: ");
                     break;
-                case 5:
+                case SETTING_LK_L1:
                     strcpy(c, "     L1: ");
                     break;
-                case 6:
+                case SETTING_LK_R1:
                     strcpy(c, "     R1: ");
                     break;
-                case 7:
+                case SETTING_LK_L2:
                     strcpy(c, "     L2: ");
                     break;
-                case 8:
+                case SETTING_LK_R2:
                     strcpy(c, "     R2: ");
                     break;
-                case 9:
+                case SETTING_LK_L3:
                     strcpy(c, "     L3: ");
                     break;
-                case 10:
+                case SETTING_LK_R3:
                     strcpy(c, "     R3: ");
                     break;
-                case 11:
+                case SETTING_LK_START:
                     strcpy(c, "  START: ");
                     break;
-                case 12:
+                case SETTING_LK_SELECT:
                     strcpy(c, " SELECT: ");
                     break;
-                case 13:
+                case SETTING_LK_LEFT:
                     sprintf(c, "%s: ", LNG(LEFT));
                     break;
-                case 14:
+                case SETTING_LK_RIGHT:
                     sprintf(c, "%s: ", LNG(RIGHT));
                     break;
             }                          //ends switch
@@ -487,14 +487,14 @@ static int drawMainScreen(void)
             int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
                           strlen(LNG(LEFT)) + 2 :
                           strlen(LNG(RIGHT)) + 2;
-            if (i == 13) {  // LEFT
+            if (i == SETTING_LK_LEFT) {  // LEFT
                 if (strlen(LNG(RIGHT)) + 2 > strlen(LNG(LEFT)) + 2)
                     printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ? ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH : (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
                 else
                     printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ? 0 : (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
-            } else if (i == 14) {  // RIGHT
+            } else if (i == SETTING_LK_RIGHT) {  // RIGHT
                 if (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2)
                     printXY(c, x + (strlen(LNG(LEFT)) + 2 > 9 ? ((strlen(LNG(LEFT)) + 2) - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH : (9 - (strlen(LNG(RIGHT)) + 2)) * FONT_WIDTH),
                             y, color, TRUE, 0);
@@ -542,7 +542,7 @@ static int drawMainScreen2(int TV_mode)
 
     if (init_delay)
         sprintf(c, "%s:       %d", LNG(Delay), init_delay / 1000);
-    else if (setting->LK_Path[0][0]) {
+    else if (setting->LK_Path[SETTING_LK_AUTO][0]) {
         if (!user_acted)
             sprintf(c, "%s:     %d", LNG(TIMEOUT), timeout / 1000);
         else
@@ -572,8 +572,8 @@ static int drawMainScreen2(int TV_mode)
         xo_config = 360;
     }
 
-    for (i = 0; i < 15; i++) {
-        if ((setting->LK_Path[i][0]) && ((i < 13) || (maxCNF > 1) || setting->LK_Flag[i])) {
+    for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {
+        if ((setting->LK_Path[i][0]) && ((i <= SETTING_LK_SELECT) || (maxCNF > 1) || setting->LK_Flag[i])) {
             menu_LK[nElfs] = i;        //memorize RunElf index for this menu entry
             if (setting->Show_Titles)  //Show Launch Titles ?
                 strcpy(f, setting->LK_Title[i]);
@@ -598,21 +598,21 @@ static int drawMainScreen2(int TV_mode)
             int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
                           strlen(LNG(LEFT)) + 2 :
                           strlen(LNG(RIGHT)) + 2;
-            if (i == 0)
+            if (i == SETTING_LK_AUTO)
                 printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 20, y, color, TRUE, 0);
-            else if (i == 12)
+            else if (i == SETTING_LK_SELECT)
                 printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
-            else if (i == 13)
+            else if (i == SETTING_LK_LEFT)
                 printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
-            else if (i == 14)
+            else if (i == SETTING_LK_RIGHT)
                 printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + xo_config, y, color, TRUE, 0);
             else
                 printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 10, y, color, TRUE, 0);
         }  //ends clause for defined LK_Path[i] valid for menu
         y += yo_step;
-        if (i == 0)
+        if (i == SETTING_LK_AUTO)
             y += yo_first;
-        else if (i == 11)
+        else if (i == SETTING_LK_START)
             y += yo_config;
     }  //ends for
 
@@ -1726,8 +1726,8 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         char kelf_loader[40];
         int fd, argc;
 
-        if (setting->LK_Flag[16] && setting->LK_Path[16][0])
-            strcpy(path, setting->LK_Path[16]);
+        if (setting->LK_Flag[SETTING_LK_OSDSYS] && setting->LK_Path[SETTING_LK_OSDSYS][0])
+            strcpy(path, setting->LK_Path[SETTING_LK_OSDSYS]);
         else
             strcpy(path, default_OSDSYS_path);
 
@@ -1795,8 +1795,8 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
                 x = Check_ESR_Disc();
                 printf("Check_ESR_Disc => %d\n", x);
                 if (x > 0) {  //ESR Disc, so launch ESR
-                    if (setting->LK_Flag[15] && setting->LK_Path[15][0])
-                        strcpy(path, setting->LK_Path[15]);
+                    if (setting->LK_Flag[SETTING_LK_ESR] && setting->LK_Path[SETTING_LK_ESR][0])
+                        strcpy(path, setting->LK_Path[SETTING_LK_ESR]);
                     else
                         strcpy(path, default_ESR_path);
 
@@ -2387,33 +2387,33 @@ int main(int argc, char *argv[])
                         initConfig();
                         updateScreenMode();
                     } else if (new_pad & PAD_CIRCLE)
-                        RunELF_index = 1;
+                        RunELF_index = SETTING_LK_CIRCLE;
                     else if (new_pad & PAD_CROSS)
-                        RunELF_index = 2;
+                        RunELF_index = SETTING_LK_CROSS;
                     else if (new_pad & PAD_SQUARE)
-                        RunELF_index = 3;
+                        RunELF_index = SETTING_LK_SQUARE;
                     else if (new_pad & PAD_TRIANGLE)
-                        RunELF_index = 4;
+                        RunELF_index = SETTING_LK_TRIANGLE;
                     else if (new_pad & PAD_L1)
-                        RunELF_index = 5;
+                        RunELF_index = SETTING_LK_L1;
                     else if (new_pad & PAD_R1)
-                        RunELF_index = 6;
+                        RunELF_index = SETTING_LK_R1;
                     else if (new_pad & PAD_L2)
-                        RunELF_index = 7;
+                        RunELF_index = SETTING_LK_L2;
                     else if (new_pad & PAD_R2)
-                        RunELF_index = 8;
+                        RunELF_index = SETTING_LK_R2;
                     else if (new_pad & PAD_L3)
-                        RunELF_index = 9;
+                        RunELF_index = SETTING_LK_L3;
                     else if (new_pad & PAD_R3)
-                        RunELF_index = 10;
+                        RunELF_index = SETTING_LK_R3;
                     else if (new_pad & PAD_START)
-                        RunELF_index = 11;
+                        RunELF_index = SETTING_LK_START;
                     else if (new_pad & PAD_SELECT)
-                        RunELF_index = 12;
-                    else if ((new_pad & PAD_LEFT) && (maxCNF > 1 || setting->LK_Flag[13]))
-                        RunELF_index = 13;
-                    else if ((new_pad & PAD_RIGHT) && (maxCNF > 1 || setting->LK_Flag[14]))
-                        RunELF_index = 14;
+                        RunELF_index = SETTING_LK_SELECT;
+                    else if ((new_pad & PAD_LEFT) && (maxCNF > 1 || setting->LK_Flag[SETTING_LK_LEFT]))
+                        RunELF_index = SETTING_LK_LEFT;
+                    else if ((new_pad & PAD_RIGHT) && (maxCNF > 1 || setting->LK_Flag[SETTING_LK_RIGHT]))
+                        RunELF_index = SETTING_LK_RIGHT;
                     else if (new_pad & PAD_UP || new_pad & PAD_DOWN) {
                         user_acted = 1;
                         if (!setting->Show_Menu && setting->GUI_skin[0]) {
@@ -2446,9 +2446,9 @@ int main(int argc, char *argv[])
             }  //ends switch(mode)
         }      //ends Pad response section
 
-        if (!user_acted && ((timeout / 1000) == 0) && setting->LK_Path[0][0] && mode == BUTTON) {
+        if (!user_acted && ((timeout / 1000) == 0) && setting->LK_Path[SETTING_LK_AUTO][0] && mode == BUTTON) {
             event |= 8;  //event |= visible timeout change
-            strcpy(RunPath, setting->LK_Path[0]);
+            strcpy(RunPath, setting->LK_Path[SETTING_LK_AUTO]);
         }
 
         if (RunPath[0]) {

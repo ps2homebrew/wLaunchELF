@@ -35,7 +35,7 @@ enum {
     DEF_FB_NOICONS = 0,
 };
 
-char LK_ID[17][10] = {
+static const char LK_ID[SETTING_LK_COUNT][10] = {
     "auto",
     "Circle",
     "Cross",
@@ -54,7 +54,7 @@ char LK_ID[17][10] = {
     "ESR",
     "OSDSYS"};
 
-char PathPad[30][MAX_PATH];
+char PathPad[MAX_PATH_PAD][MAX_PATH];
 char tmp[MAX_PATH];
 SETTING *setting = NULL;
 SETTING *tmpsetting;
@@ -411,8 +411,8 @@ void saveConfig(char *mainMsg, char *CNF)
 
     sprintf(tmp, "CNF_version = 3\r\n%n", &CNF_size);  //Start CNF with version header
 
-    for (i = 0; i < 17; i++) {  //Loop to save the ELF paths for launch keys
-        if ((i < 12) || (setting->LK_Flag[i] != 0)) {
+    for (i = 0; i < SETTING_LK_COUNT; i++) {  //Loop to save the ELF paths for launch keys
+        if ((i <= SETTING_LK_SELECT) || (setting->LK_Flag[i] != 0)) {
             sprintf(tmp + CNF_size,
                     "LK_%s_E1 = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -523,7 +523,7 @@ void saveConfig(char *mainMsg, char *CNF)
             );
     CNF_size += CNF_step;
 
-    for (i = 0; i < 16; i++) {          //Loop to save user defined launch key titles
+    for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {          //Loop to save user defined launch key titles
         if (setting->LK_Title[i][0]) {  //Only save non-empty strings
             sprintf(tmp + CNF_size,
                     "LK_%s_Title = %s\r\n"
@@ -544,7 +544,7 @@ void saveConfig(char *mainMsg, char *CNF)
             );
     CNF_size += CNF_step;
 
-    for (i = 0; i < 30; i++) {  //Loop to save non-empty PathPad entries
+    for (i = 0; i < MAX_PATH_PAD; i++) {  //Loop to save non-empty PathPad entries
         if (PathPad[i][0]) {    //Only save non-empty strings
             sprintf(tmp + CNF_size,
                     "PathPad[%02d] = %s\r\n"
@@ -632,18 +632,18 @@ void initConfig(void)
     sprintf(setting->Misc_About_uLE, "%s/%s", LNG_DEF(MISC), LNG_DEF(About_uLE));
     sprintf(setting->Misc_OSDSYS, "%s/%s", LNG_DEF(MISC), LNG_DEF(OSDSYS));
 
-    for (i = 0; i < 17; i++) {
+    for (i = 0; i < SETTING_LK_COUNT; i++) {
         setting->LK_Path[i][0] = 0;
         setting->LK_Title[i][0] = 0;
         setting->LK_Flag[i] = 0;
     }
-    for (i = 0; i < 30; i++)
+    for (i = 0; i < MAX_PATH_PAD; i++)
         PathPad[i][0] = 0;
 
-    strcpy(setting->LK_Path[1], setting->Misc_FileBrowser);
-    setting->LK_Flag[1] = 1;
-    strcpy(setting->LK_Path[4], setting->Misc_About_uLE);
-    setting->LK_Flag[4] = 1;
+    strcpy(setting->LK_Path[SETTING_LK_CIRCLE], setting->Misc_FileBrowser);
+    setting->LK_Flag[SETTING_LK_CIRCLE] = 1;
+    strcpy(setting->LK_Path[SETTING_LK_TRIANGLE], setting->Misc_About_uLE);
+    setting->LK_Flag[SETTING_LK_TRIANGLE] = 1;
     setting->usbd_file[0] = '\0';
     setting->usbmass_file[0] = '\0';
     setting->usbkbd_file[0] = '\0';
@@ -768,7 +768,7 @@ int loadConfig(char *mainMsg, char *CNF)
         if (scanSkinCNF(name, value))
             continue;
 
-        for (i = 0; i < 17; i++) {
+        for (i = 0; i < SETTING_LK_COUNT; i++) {
             sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
             if (!strncmp(name, tsts, len)) {
                 strcpy(setting->LK_Path[i], value);
@@ -776,7 +776,7 @@ int loadConfig(char *mainMsg, char *CNF)
                 break;
             }
         }
-        if (i < 17)
+        if (i < SETTING_LK_COUNT)
             continue;
         //----------
         //In the next group, the Misc device must be defined before its subprograms
@@ -872,25 +872,25 @@ int loadConfig(char *mainMsg, char *CNF)
             setting->FB_NoIcons = atoi(value);
         //----------
         else {
-            for (i = 0; i < 16; i++) {
+            for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {
                 sprintf(tsts, "LK_%s_Title", LK_ID[i]);
                 if (!strcmp(name, tsts)) {
                     strncpy(setting->LK_Title[i], value, MAX_ELF_TITLE - 1);
                     break;
                 }
             }
-            if (i < 16)
+            if (i < SETTING_LK_BTN_COUNT)
                 continue;
             else if (!strncmp(name, "PathPad[", 8)) {
                 i = atoi(name + 8);
-                if (i < 30) {
+                if (i < MAX_PATH_PAD) {
                     strncpy(PathPad[i], value, MAX_PATH - 1);
                     PathPad[i][MAX_PATH - 1] = '\0';
                 }
             }
         }
     }  //ends for
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < SETTING_LK_BTN_COUNT; i++)
         setting->LK_Title[i][MAX_ELF_TITLE - 1] = 0;
     free(RAM_p);
     if (setting->JpgView_Timer < 0)
@@ -1604,11 +1604,11 @@ void Config_Startup(void)
                     setting->font_file[0] = '\0';
                     loadFont("");
                 } else if (s == CONFIG_STARTUP_ESR) {  //clear ESR file choice
-                    setting->LK_Path[15][0] = 0;
-                    setting->LK_Flag[15] = 0;
+                    setting->LK_Path[SETTING_LK_ESR][0] = 0;
+                    setting->LK_Flag[SETTING_LK_ESR] = 0;
                 } else if (s == CONFIG_STARTUP_OSDSYS) {  //clear OSDSYS file choice
-                    setting->LK_Path[16][0] = 0;
-                    setting->LK_Flag[16] = 0;
+                    setting->LK_Path[SETTING_LK_OSDSYS][0] = 0;
+                    setting->LK_Flag[SETTING_LK_OSDSYS] = 0;
                 }
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
                 event |= 2;  //event |= valid pad command
@@ -1644,23 +1644,23 @@ void Config_Startup(void)
                     if (loadFont(setting->font_file) == 0)
                         setting->font_file[0] = '\0';
                 } else if (s == CONFIG_STARTUP_CNF) {  //Make ESR file choice
-                    getFilePath(setting->LK_Path[15], LK_ELF_CNF);
-                    if (!strncmp(setting->LK_Path[15], "mc0", 3) ||
-                        !strncmp(setting->LK_Path[15], "mc1", 3)) {
-                        sprintf(c, "mc%s", &setting->LK_Path[15][3]);
-                        strcpy(setting->LK_Path[15], c);
+                    getFilePath(setting->LK_Path[SETTING_LK_ESR], LK_ELF_CNF);
+                    if (!strncmp(setting->LK_Path[SETTING_LK_ESR], "mc0", 3) ||
+                        !strncmp(setting->LK_Path[SETTING_LK_ESR], "mc1", 3)) {
+                        sprintf(c, "mc%s", &setting->LK_Path[SETTING_LK_ESR][3]);
+                        strcpy(setting->LK_Path[SETTING_LK_ESR], c);
                     }
-                    if (setting->LK_Path[15][0])
-                        setting->LK_Flag[15] = 1;
+                    if (setting->LK_Path[SETTING_LK_ESR][0])
+                        setting->LK_Flag[SETTING_LK_ESR] = 1;
                 } else if (s == CONFIG_STARTUP_OSDSYS) {  //Make OSDSYS file choice
-                    getFilePath(setting->LK_Path[16], TEXT_CNF);
-                    if (!strncmp(setting->LK_Path[16], "mc0", 3) ||
-                        !strncmp(setting->LK_Path[16], "mc1", 3)) {
-                        sprintf(c, "mc%s", &setting->LK_Path[16][3]);
-                        strcpy(setting->LK_Path[16], c);
+                    getFilePath(setting->LK_Path[SETTING_LK_OSDSYS], TEXT_CNF);
+                    if (!strncmp(setting->LK_Path[SETTING_LK_OSDSYS], "mc0", 3) ||
+                        !strncmp(setting->LK_Path[SETTING_LK_OSDSYS], "mc1", 3)) {
+                        sprintf(c, "mc%s", &setting->LK_Path[SETTING_LK_OSDSYS][3]);
+                        strcpy(setting->LK_Path[SETTING_LK_OSDSYS], c);
                     }
-                    if (setting->LK_Path[16][0])
-                        setting->LK_Flag[16] = 1;
+                    if (setting->LK_Path[SETTING_LK_OSDSYS][0])
+                        setting->LK_Flag[SETTING_LK_OSDSYS] = 1;
                 } else if (s == CONFIG_STARTUP_RETURN)
                     return;
             } else if (new_pad & PAD_TRIANGLE)
@@ -1754,17 +1754,17 @@ void Config_Startup(void)
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
-            if (strlen(setting->LK_Path[15]) == 0)
+            if (strlen(setting->LK_Path[SETTING_LK_ESR]) == 0)
                 sprintf(c, "  ESR elf: %s", LNG(DEFAULT));
             else
-                sprintf(c, "  ESR elf: %s", setting->LK_Path[15]);
+                sprintf(c, "  ESR elf: %s", setting->LK_Path[SETTING_LK_ESR]);
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
-            if (strlen(setting->LK_Path[16]) == 0)
+            if (strlen(setting->LK_Path[SETTING_LK_OSDSYS]) == 0)
                 sprintf(c, "  OSDSYS kelf: %s", LNG(DEFAULT));
             else
-                sprintf(c, "  OSDSYS kelf: %s", setting->LK_Path[16]);
+                sprintf(c, "  OSDSYS kelf: %s", setting->LK_Path[SETTING_LK_OSDSYS]);
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 

@@ -80,6 +80,7 @@ enum {
     LINE_THICKNESS = 3,
 
     MAX_NAME = 256,
+    MAX_PATH_PAD = 30,
     MAX_PATH = 1025,
     MAX_ENTRY = 2048,
     MAX_PARTITIONS = 500,
@@ -102,16 +103,38 @@ enum COLOR
     COLOR_COUNT
 };
 
+enum SETTING_LK {
+    SETTING_LK_AUTO = 0,
+    SETTING_LK_CIRCLE,
+    SETTING_LK_CROSS,
+    SETTING_LK_SQUARE,
+    SETTING_LK_TRIANGLE,
+    SETTING_LK_L1,
+    SETTING_LK_R1,
+    SETTING_LK_L2,
+    SETTING_LK_R2,
+    SETTING_LK_L3,
+    SETTING_LK_R3,
+    SETTING_LK_START,
+    SETTING_LK_SELECT,
+    SETTING_LK_LEFT,
+    SETTING_LK_RIGHT,
+
+    SETTING_LK_BTN_COUNT,
+
+    //Special paths
+    SETTING_LK_ESR = SETTING_LK_BTN_COUNT,
+    SETTING_LK_OSDSYS,
+
+    SETTING_LK_COUNT
+};
+
 typedef struct
 {
     char CNF_Path[MAX_PATH];
-    char LK_Path[17][MAX_PATH];
-    // 0 == Auto,    1 == Circle,    2 == Cross,     3 == Square,    4 == Triangle
-    // 5 == L1,      6 == R1,        7 == L2,        8 == R2,        9 == L3
-    //10 == R3,     11 == Start,    12 == Select,   13 == DP_Left,  14 == DP_Right
-    //15 == ESR,    16 == OSDSYS
-    char LK_Title[17][MAX_ELF_TITLE];
-    int LK_Flag[17];
+    char LK_Path[SETTING_LK_COUNT][MAX_PATH];
+    char LK_Title[SETTING_LK_COUNT][MAX_ELF_TITLE];
+    int LK_Flag[SETTING_LK_COUNT];
     char Misc[64];
     char Misc_PS2Disc[64];
     char Misc_FileBrowser[64];
