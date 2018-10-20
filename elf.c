@@ -128,6 +128,8 @@ void RunLoaderElf(char *filename, char *party)
                 return;  //If it still fails, we have to give up...
         }
 
+        //If a path to a file on PFS is specified, change it to the standard format.
+        //hdd0:partition:pfs:path/to/file
         if(strncmp(filename, "pfs0:", 5) == 0) {
             sprintf(bootpath, "%s:pfs:%s", party, &filename[5]);
         } else {

@@ -765,18 +765,25 @@ int genFixPath(char *inp_path, char *gen_path)
         //end of clause for using a USB mass: path
 
     } else if (!strncmp(uLE_path, "hdd0:/", 6)) {  //If using HDD path
+        //Get path on HDD unit, LaunchELF's format (e.g. hdd0:/partition/path/to/file)
         strcpy(loc_path, uLE_path + 6);
         if ((p = strchr(loc_path, '/')) != NULL) {
+            //Extract path to file within partition. Make a new path, relative to the filesystem root.
+            //hdd0:/partition/path/to/file becomes pfs0:/path/to/file.
             sprintf(gen_path, "pfs0:%s", p);
-            *p = 0;
+            *p = 0; //null-terminate the block device path (hdd0:/partition).
         } else {
+            //Otherwise, default to /
             strcpy(gen_path, "pfs0:/");
         }
+        //Generate standard path to the block device (i.e. hdd0:/partition results in hdd0:partition)
         sprintf(party, "hdd0:%s", loc_path);
         if (nparties == 0) {
+            //No partitions recognized? Load modules & populate partition list.
             loadHddModules();
             setPartyList();
         }
+        //Mount the partition.
         if ((part_ix = mountParty(party)) >= 0)
             gen_path[3] = part_ix + '0';
         //end of clause for using an HDD path

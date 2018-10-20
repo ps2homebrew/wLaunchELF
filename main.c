@@ -132,6 +132,9 @@ static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
 //State of whether DEV9 was successfully loaded or not.
 static u8 ps2dev9_loaded = 0;
+//State of whether the UI has been initialized.
+//Use this to determine whether code that loads a device's driver(s) can print onto the screen.
+static u8 is_early_init = 1;
 
 static int menu_LK[SETTING_LK_BTN_COUNT];  //holds RunElf index for each valid main menu entry
 
@@ -1194,7 +1197,8 @@ static void setupPowerOff(void)
 void loadHddModules(void)
 {
     if (!have_HDD_modules) {
-        drawMsg(LNG(Loading_HDD_Modules));
+        if (!is_early_init) //Do not draw any text before the UI is initialized.
+            drawMsg(LNG(Loading_HDD_Modules));
         setupPowerOff();
         load_ps2atad();  //also loads ps2hdd & ps2fs
         have_HDD_modules = TRUE;
@@ -2149,7 +2153,7 @@ enum BOOT_DEVICE {
 
 int main(int argc, char *argv[])
 {
-    char *p, CNF_pathname[MAX_PATH];
+    char *p;
     int event, post_event = 0;
     char RunPath[MAX_PATH];
     int RunELF_index, nElfs = 0;
@@ -2165,8 +2169,10 @@ int main(int argc, char *argv[])
     Init_Default_Language();
 
     LaunchElfDir[0] = 0;
+    boot_path[0] = 0;
     if ((argc > 0) && argv[0]) {
-        strcpy(LaunchElfDir, argv[0]);
+        strcpy(LaunchElfDir, argv[0]); //Default LaunchElfDir to the boot path.
+        strcpy(boot_path, argv[0]);
         if (!strncmp(argv[0], "mass", 4)) {
             if (!strncmp(argv[0], "mass0:\\", 7)) {  //SwapMagic boot path for usb_mass
                 //Transform the boot path to homebrew standards
@@ -2183,14 +2189,34 @@ int main(int argc, char *argv[])
             boot = BOOT_DEVICE_MC;
         else if (!strncmp(argv[0], "cd", 2))
             boot = BOOT_DEVICE_CDVD;
-        else if ((!strncmp(argv[0], "hdd", 3)) || (!strncmp(argv[0], "pfs", 3)))
-            boot = BOOT_DEVICE_HDD;              //Modify this section later to cover Dev2 needs !!!
-        else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
+        else if (!strncmp(argv[0], "hdd", 3)) {
+            //Booting from the HDD requires special handling for HDD-based paths.
+            char temp[MAX_PATH];
+            char *t, *p;
+             /* Change boot_path to contain a path to the block device.
+                Standard HDD path format: hdd0:partition:pfs:path/to/file
+                However, (older) homebrew may not use this format. */
+            strcpy(temp, boot_path + 5); //Skip "hdd0:" when copying.
+            t = strchr(temp, ':'); //Check if the separator between the block device & the path exists.
+            if (t != NULL) {
+                 *(t) = 0; //If it does, get the block device name.
+                p = strchr(t + 1, ':'); //Get the path to the file
+                if (p != NULL) {
+                    if (p[1] == '/')
+                         sprintf(LaunchElfDir, "hdd0:/%s", temp);
+                    else
+                        sprintf(LaunchElfDir, "hdd0:/%s/", temp);
+
+                    strcat(LaunchElfDir, p + 1);
+                }
+            }
+
+            boot = BOOT_DEVICE_HDD;
+        } else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
             boot = BOOT_DEVICE_HDD;
             strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
         }
     }
-    strcpy(boot_path, LaunchElfDir);
 
     if (!strncmp(LaunchElfDir, "host", 4)) {
         boot = BOOT_DEVICE_HOST;
@@ -2231,39 +2257,13 @@ int main(int argc, char *argv[])
     setupGS();
     gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
 
-    loadFont("");  //Some font must be loaded before loading some device modules
-    if ((boot == BOOT_DEVICE_HDD) && !strncmp(LaunchElfDir, "hdd", 3)) {
-        //Patch DMS4 Dev2 booting here, when we learn more about how it works
-        //Trying to mount that partition for loading CNF simply crashes.
-        //We may need a new IOP reset method for this.
-        char temp[MAX_PATH];
-        char *t;
-        int fd;
-        sprintf(temp, "%s", boot_path + 5);
-        t = strchr(temp, ':');
-        if (t != NULL)
-            *(t) = 0;
-        sprintf(boot_path, "hdd0:%s", temp);
-        sprintf(LaunchElfDir, "pfs0:%s", LaunchElfDir + strlen(boot_path) + 5);
-        if (LaunchElfDir[5] != '/')
-            strcpy(LaunchElfDir, "pfs0:/");
-        //hdd0:HDDPATH:pfs:PFSPATH
-        //we have to load HDD modules after setupGS() to avoid crashing
-        loadHddModules();
-        fileXioUmount("pfs0");
-        fd = fileXioMount("pfs0:", boot_path, FIO_MT_RDWR);
-        if (fd < 0) {
-            strcpy(boot_path, "hdd0:__sysconf");
-            strcpy(LaunchElfDir, "pfs0:/FMCB/");
-            fileXioMount("pfs0:", boot_path, FIO_MT_RDWR);
-        }
-        strcpy(CNF_pathname, LaunchElfDir);
-        CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
-    }
+    loadFont("");
+    is_early_init = 0;
+
     maxCNF = setting->numCNF;
     swapKeys = setting->swapKeys;
 
-    //Here IOP reset (if done) has been completed, so it's time to load and init drivers
+    //It's time to load and init drivers
     getIpConfig();
 
     loadCdModules();
@@ -2287,9 +2287,9 @@ int main(int argc, char *argv[])
 
     gsKit_clear(gsGlobal, GS_SETREG_RGBAQ(0x00, 0x00, 0x00, 0x00, 0x00));
     if (CNF_error < 0)
-        sprintf(mainMsg, "%s %s", LNG(Failed_To_Load), CNF_pathname);
+        sprintf(mainMsg, "%s", LNG(Failed_To_Load));
     else
-        sprintf(mainMsg, "%s %s", LNG(Loaded_Config), CNF_pathname);
+        sprintf(mainMsg, "%s", LNG(Loaded_Config));
 
     //Here nearly everything is ready for the main menu event loop
     //But before we start that, we need to validate CNF_Path
