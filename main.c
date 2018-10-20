@@ -648,10 +648,11 @@ static void initsbv_patches(void)
 //---------------------------------------------------------------------------
 static void load_ps2dev9(void)
 {
-    int ret;
+    int ret, rcode;
 
     if (!have_ps2dev9) {
-        ps2dev9_loaded = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &ret) >= 0;
+        ret = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &rcode);
+        ps2dev9_loaded = (ret >= 0 && rcode == 0); //DEV9.IRX must have successfully loaded and returned RESIDENT END.
         have_ps2dev9 = 1;
     }
 }
