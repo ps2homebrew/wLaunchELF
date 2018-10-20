@@ -82,7 +82,6 @@ int TV_mode;
 int selected = 0;
 int timeout = 0, prev_timeout = 1;
 int init_delay = 0, prev_init_delay = 1;
-int poweroff_delay = 0;  //Set only when calling hddPowerOff
 int mode = BUTTON;
 int user_acted = 0; /* Set when commands given, to break timeout */
 char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
@@ -96,7 +95,6 @@ u64 WaitTime;
 u64 CurrTime;
 u64 init_delay_start;
 u64 timeout_start;
-u64 poweroff_start;
 
 #define IPCONF_MAX_LEN (3 * 16)
 char if_conf[IPCONF_MAX_LEN];
@@ -223,7 +221,6 @@ static void startKbd(void);
 static int scanSystemCnf(char *name, char *value);
 static int readSystemCnf(void);
 static void ShowFont(void);
-static void triggerPowerOff(void);
 static void Validate_CNF_Path(void);
 static void Set_CNF_Path(void);
 static int reloadConfig(void);
@@ -1443,21 +1440,6 @@ done_test:
 //------------------------------
 //endfunc ShowFont
 //---------------------------------------------------------------------------
-static void triggerPowerOff(void)
-{
-    char filepath[MAX_PATH] = "xyz:/imaginary/hypothetical/doesn't.exist";
-    FILE *File;
-
-    File = fopen(filepath, "r");
-    //	sprintf(mainMsg, "%s => %08X.", filepath, File);
-    //	drawMsg(mainMsg);
-    if (File != NULL) {
-        fclose(File);
-    }  // end if( File != NULL )
-}
-//------------------------------
-//endfunc triggerPowerOff
-//---------------------------------------------------------------------------
 static void Validate_CNF_Path(void)
 {
     char cnf_path[MAX_PATH];
@@ -1925,8 +1907,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         drawMsg(LNG(Powering_Off_Console));
         setupPowerOff();
         closeAllAndPoweroff();
-        poweroff_delay = 250;  //trigger delay for those without net adapter
-        poweroff_start = Timer();
         return;
     } else if (!stricmp(path, setting->Misc_HddManager)) {
         if (setting->GUI_skin[0]) {
@@ -2328,14 +2308,6 @@ int main(int argc, char *argv[])
 			cdmode, uLE_cdmode, DiscType_ix);
 		//*/
     done_discControl:
-        if (poweroff_delay) {
-            CurrTime = Timer();
-            if (CurrTime > (poweroff_start + poweroff_delay)) {
-                poweroff_delay = 0;
-                triggerPowerOff();
-            }
-        }
-
         if (init_delay) {
             prev_init_delay = init_delay;
             CurrTime = Timer();
