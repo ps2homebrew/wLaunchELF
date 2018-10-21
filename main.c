@@ -1563,7 +1563,7 @@ static int exists(char *path)
 // 3. If not, check if the file exists in the same memory card as LaunchElfDir.
 //    If LaunchElfDir does not point to a memory card, start with mc0:
 // 4. If not, check if the file exists in the other memory card.
-// 5. If the file cannot be found, return 0 (file missing). Otherwise, generate a path to the file.
+// 5. If the file cannot be found, return 0 (file missing) and default to a path under LaunchElfDir. Otherwise, generate a path to the file.
 //
 // Returns:
 //  1 == uLE related path with file present
@@ -1586,7 +1586,10 @@ int uLE_related(char *pathout, const char *pathin)
         pathout[2] ^= 1;  //switch between mc0 and mc1
         if (exists(pathout))
             return 1;
-        ret = 0;
+
+        //Default to LaunchELFDir
+        sprintf(pathout, "%s%s", LaunchElfDir, pathin + 5);
+        return 0;
     } else
         ret = -1;
     strcpy(pathout, pathin);
@@ -2156,9 +2159,10 @@ int main(int argc, char *argv[])
             boot = BOOT_DEVICE_MASS;
         } else if (!strncmp(argv[0], "mc", 2))
             boot = BOOT_DEVICE_MC;
-        else if (!strncmp(argv[0], "cd", 2))
+        else if (!strncmp(argv[0], "cd", 2)) {
             boot = BOOT_DEVICE_CDVD;
-        else if (!strncmp(argv[0], "hdd", 3)) {
+            strcpy(LaunchElfDir, "mc0:/SYS-CONF/"); //Default to mc0 as a writable location.
+        } else if (!strncmp(argv[0], "hdd", 3)) {
             //Booting from the HDD requires special handling for HDD-based paths.
             char temp[MAX_PATH];
             char *t, *p;
@@ -2181,9 +2185,6 @@ int main(int argc, char *argv[])
             }
 
             boot = BOOT_DEVICE_HDD;
-        } else if (!strncmp(argv[0], "rom", 3)) {  //argv[0] = "rom0:HDDBOOT" (boot from MBR)
-            boot = BOOT_DEVICE_HDD;
-            strcpy(LaunchElfDir, "hdd0:__sysconf:pfs:/FMCB/");
         }
     }
 

@@ -1826,7 +1826,7 @@ void saveNetworkSettings(char *Message)
     extern char netmask[16];
     extern char gw[16];
     int out_fd, in_fd;
-    int ret = 0, i = 0;
+    int ret = 0, i = 0, port;
     int size, sizeleft = 0;
     char *ipconfigfile = 0;
     char path[MAX_PATH];
@@ -1873,8 +1873,12 @@ void saveNetworkSettings(char *Message)
         sizeleft = size - i;
 
         genClose(in_fd);
-    } else
-        strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
+    } else {
+        port = CheckMC();
+        if (port < 0)
+            port = 0; //Default to mc0, if it fails.
+        sprintf(path, "mc%d:/SYS-CONF/IPCONFIG.DAT", port);
+    }
 
     // Writing the data out
 
@@ -2085,8 +2089,7 @@ void Config_Network(void)
 
             y += FONT_HEIGHT / 2;
 
-            if (genFixPath("uLE:/IPCONFIG.DAT", path) < 0)
-                strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
+            uLE_related(path, "uLE:/IPCONFIG.DAT"); //Get save target.
             sprintf(c, "  %s \"%s\"", LNG(Save_to), path);
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
