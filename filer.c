@@ -739,7 +739,7 @@ limited:
 //------------------------------
 //endfunc genLimObjName
 //--------------------------------------------------------------
-int genFixPath(char *inp_path, char *gen_path)
+int genFixPath(const char *inp_path, char *gen_path)
 {
     char uLE_path[MAX_PATH], loc_path[MAX_PATH], party[MAX_NAME], *p;
     char *pathSep;
@@ -3152,25 +3152,26 @@ int BrowserModePopup(void)
                     file_show = 2;
                     event |= 2;  //event |= valid pad command
                     if ((file_show == 2) && (elisaFnt == NULL) && (elisa_failed == FALSE)) {
-                        int fd;
+                        int fd, res;
+                        elisa_failed = TRUE; //Default to FAILED. If it succeeds, then this status will be cleared.
 
-                        fd = uLE_related(tmp, "uLE:/ELISA100.FNT");
+                        res = genFixPath("uLE:/ELISA100.FNT", tmp);
                         if (!strncmp(tmp, "cdrom", 5))
                             strcat(tmp, ";1");
-                        if (fd == 1)
+                        if (res >= 0) {
                             fd = genOpen(tmp, O_RDONLY);
-                        else
-                            fd = -1;
-                        if (fd >= 0) {
-                            test = genLseek(fd, 0, SEEK_END);
-                            if (test == 55016) {
-                                elisaFnt = (unsigned char *)malloc(test);
-                                genLseek(fd, 0, SEEK_SET);
-                                genRead(fd, elisaFnt, test);
+                            if (fd >= 0) {
+                                test = genLseek(fd, 0, SEEK_END);
+                                if (test == 55016) {
+                                    elisaFnt = (unsigned char *)malloc(test);
+                                    genLseek(fd, 0, SEEK_SET);
+                                    genRead(fd, elisaFnt, test);
+
+                                    elisa_failed = FALSE;
+                                }
+                                genClose(fd);
                             }
-                            genClose(fd);
-                        } else
-                            elisa_failed = TRUE;
+                        }
                     }
                     break;
                 case PAD_TRIANGLE:

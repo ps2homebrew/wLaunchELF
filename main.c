@@ -338,7 +338,7 @@ static void getIpConfig(void)
     char buf[IPCONF_MAX_LEN];
     char path[MAX_PATH];
 
-    if (uLE_related(path, "uLE:/IPCONFIG.DAT") == 1)
+    if (genFixPath("uLE:/IPCONFIG.DAT", path) >= 0)
         fd = genOpen(path, O_RDONLY);
     else
         fd = -1;
@@ -1041,7 +1041,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
         CDVD_FlushCache();
         CDVD_DiskReady(0);
     } else {
-        (void)uLE_related(filePath, argPath);
+        genFixPath(argPath, filePath);
     }
     //Here 'filePath' is a valid path for file I/O operations
     //Which means we can now use generic file I/O
@@ -1210,8 +1210,6 @@ void loadHddModules(void)
 static void loadNetModules(void)
 {
     if (!have_NetModules) {
-        loadHddModules();
-        loadUsbModules();
         drawMsg(LNG(Loading_NetFS_and_FTP_Server_Modules));
 
         getIpConfig();  //RA NB: I always get that info, early in init
@@ -1554,13 +1552,25 @@ static int exists(char *path)
 //------------------------------
 //endfunc exists
 //---------------------------------------------------------------------------
-//uLE_related.  Tests if an uLE_related file exists or not
+//uLE_related.  Tests if an uLE_related file exists or not.
+//
+// Note: please use genFixPath() for config files instead because this will not
+//       load other device modules, even if LaunchELF actually supports the device.
+//
+// Steps:
+// 1. Check if the path begins with "uLE:/". If not, return -1 and copy pathin as pathout.
+// 2. Check if the file exists in LaunchElfDir
+// 3. If not, check if the file exists in the same memory card as LaunchElfDir.
+//    If LaunchElfDir does not point to a memory card, start with mc0:
+// 4. If not, check if the file exists in the other memory card.
+// 5. If the file cannot be found, return 0 (file missing). Otherwise, generate a path to the file.
+//
 // Returns:
 //  1 == uLE related path with file present
 //  0 == uLE related path with file missing
 // -1 == Not uLE related path
 //------------------------------
-int uLE_related(char *pathout, char *pathin)
+int uLE_related(char *pathout, const char *pathin)
 {
     int ret;
 
@@ -1568,13 +1578,6 @@ int uLE_related(char *pathout, char *pathin)
         sprintf(pathout, "%s%s", LaunchElfDir, pathin + 5);
         if (exists(pathout))
             return 1;
-        loadHddModules();
-        ret = fileXioMount("pfs0:", "hdd0:__sysconf", FIO_MT_RDWR);
-        if (ret > 0) {
-            sprintf(pathout, "%s%s", "pfs0:/FMCB/", pathin + 5);
-            if (exists(pathout))
-                return 1;
-        }
         sprintf(pathout, "%s%s", "mc0:/SYS-CONF/", pathin + 5);
         if (!strncmp(LaunchElfDir, "mc1", 3))
             pathout[2] = '1';
@@ -1634,6 +1637,7 @@ int IsSupportedFileType(char *path)
 //endfunc IsSupportedFileType
 //---------------------------------------------------------------------------
 // Execute. Execute an action. May be called recursively.
+// For any path specified, its device must be accessible.
 //------------------------------
 static void Execute(char *pathin)
 {

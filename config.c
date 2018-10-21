@@ -1842,7 +1842,7 @@ void saveNetworkSettings(char *Message)
     // already any data beyond the first line. If there is it will get appended to the output
     // to new file later.
 
-    if (uLE_related(path, "uLE:/IPCONFIG.DAT") == 1)
+    if (genFixPath("uLE:/IPCONFIG.DAT", path) >= 0)
         in_fd = genOpen(path, O_RDONLY);
     else
         in_fd = -1;
@@ -2085,7 +2085,7 @@ void Config_Network(void)
 
             y += FONT_HEIGHT / 2;
 
-            if (uLE_related(path, "uLE:/IPCONFIG.DAT") != 1)
+            if (genFixPath("uLE:/IPCONFIG.DAT", path) < 0)
                 strcpy(path, "mc0:/SYS-CONF/IPCONFIG.DAT");
             sprintf(c, "  %s \"%s\"", LNG(Save_to), path);
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
