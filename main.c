@@ -1033,7 +1033,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
         p = strchr(party, '/');
         sprintf(filePath, "pfs0:%s", p);
         *p = 0;
-        fileXioMount("pfs0:", party, FIO_MT_RDONLY);
+        mountParty(party);
 
     } else if (!strncmp(argPath, "cdfs", 4)) {
         loadCdModules();
@@ -1722,10 +1722,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         else
             strcpy(path, default_OSDSYS_path);
 
-        loadHddModules();
-        fileXioUmount("pfs0");
-        fileXioMount("pfs0:", "hdd0:__system", FIO_MT_RDONLY);
-
         fd = genOpen(path, O_RDONLY);
         if (fd >= 0)
             goto close_fd_and_launch_OSDSYS;
@@ -1741,18 +1737,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         fd = genOpen(path, O_RDONLY);
         if (fd >= 0)
             goto close_fd_and_launch_OSDSYS;
-        /*		strcpy(path,"pfs0:/osd/osdmain.elf");
-		fd =genOpen(path, O_RDONLY);
-		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		strcpy(path,"pfs0:/osd100/hosdsys.elf");
-		fd =genOpen(path, O_RDONLY);
-		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		strcpy(path,"pfs0:/p2lboot/osdboot.elf");
-		fd =genOpen(path, O_RDONLY);
-		if(fd >= 0) goto close_fd_and_launch_OSDSYS;
-		strcpy(path,"pfs0:/osd/hosdsys.elf");
-		fd =genOpen(path, O_RDONLY);
-		if(fd >= 0) goto close_fd_and_launch_OSDSYS;*/
         if (fd < 0)
             goto ELFnotFound;
     close_fd_and_launch_OSDSYS:
