@@ -2329,26 +2329,34 @@ non_PSU_RESTORE_init:
 
     //Here the output file has been opened, indicated by 'out_fd'
 
+    /* Determine the block size. Since LaunchELF is single-threaded,
+       using a large block size with a slow device will result in an unresponsive UI.
+       To prevent a loss in performance, these values must each be in a multiple of the device's sector/page size.
+       They must also be in multiples of 64, to prevent FILEIO from doing alignment correction in software. */
     buffSize = 0x100000;  //First assume buffer size = 1MB (good for HDD)
     if (!strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3))
-        buffSize = 50000;  //Use  50000 if writing to USB (Flash RAM writes)
+        buffSize = 65536;  //Use  64KB if writing to USB (Flash RAM writes)
                            //VMC contents should use the same size, as VMCs will often be stored on USB
     else if (!strncmp(out, "mc", 2))
-        buffSize = 125000;  //Use 125000 if writing to MC (pretty slow too)
+        buffSize = 131072;  //Use 128KB if writing to MC (pretty slow too)
     else if (!strncmp(in, "mc", 2))
-        buffSize = 200000;  //Use 200000 if reading from MC (still pretty slow)
+        buffSize = 262144;  //Use 256KB if reading from MC (still pretty slow)
     else if (!strncmp(out, "host", 4))
-        buffSize = 350000;  //Use 350000 if writing to HOST (acceptable)
+        buffSize = 393216;  //Use 384KB if writing to HOST (acceptable)
     else if ((!strncmp(in, "mass", 4)) || (!strncmp(in, "host", 4)))
-        buffSize = 500000;  //Use 500000 reading from USB or HOST (acceptable)
+        buffSize = 524288;  //Use 512KB reading from USB or HOST (acceptable)
 
     if (size < buffSize)
         buffSize = size;
 
     buff = (char *)memalign(64, buffSize);      //Attempt buffer allocation
     if (buff == NULL) {                   //if allocation fails
-        buffSize = 32768;                 //Set buffsize to 32KB
-        buff = (char *)memalign(64, buffSize);  //Allocate 32KB buffer
+        ret = -ENOMEM;
+        genClose(out_fd);
+        out_fd = -1;
+        if (PM_flag[recurses] != PM_PSU_BACKUP)
+            genRemove(out);
+        goto copy_file_exit_mem_err;
     }
 
     old_size = written_size;  //Note initial progress data pos
@@ -2520,6 +2528,7 @@ non_PSU_RESTORE_init:
 //but those cases are distinguished by a negative value in 'ret'
 copy_file_exit:
     free(buff);
+copy_file_exit_mem_err:
     if (PM_flag[recurses] != PM_PSU_RESTORE) {  //Avoid closing PSU file here for PSU Restore
         if (in_fd >= 0) {
             genClose(in_fd);

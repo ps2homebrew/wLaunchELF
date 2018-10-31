@@ -2016,6 +2016,8 @@ static void Reset()
 
     loadBasicModules();
     fileXioInit();
+    //Increase the FILEIO R/W buffer size to reduce overhead.
+    fileXioSetRWBufferSize(128*1024);
     mcReset();
     mcInit(MC_TYPE_MC);
     //	padReset();
