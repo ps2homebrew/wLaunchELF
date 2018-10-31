@@ -1896,8 +1896,8 @@ int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
         progress[MAX_PATH * 4],
         *buff = NULL, inParty[MAX_NAME], outParty[MAX_NAME];
     int nfiles, i;
-    size_t size;  //, outsize;
-    int ret = -1, pfsout = -1, pfsin = -1, in_fd = -1, out_fd = -1, buffSize;
+    size_t size;
+    int ret = -1, pfsout = -1, pfsin = -1, in_fd = -1, out_fd = -1, buffSize, bytesRead, bytesWritten;
     int dummy;
     sceMcTblGetDir stats;
     int speed = 0;
@@ -2448,19 +2448,14 @@ non_PSU_RESTORE_init:
                 goto copy_file_exit;  // go deal with it
             }
         }
-        //buffSize = genRead(in_fd, buff, buffSize);
-        genRead(in_fd, buff, buffSize);
-        if (buffSize > 0) {
-            //outsize = genWrite(out_fd, buff, buffSize);
-            genWrite(out_fd, buff, buffSize);
-        }
-        //		if((buffSize <= 0) || (buffSize!=outsize)){
-        if (buffSize <= 0) {
+        bytesRead = genRead(in_fd, buff, buffSize);
+        bytesWritten = (bytesRead == buffSize) ? genWrite(out_fd, buff, buffSize) : 0;
+        if((bytesRead != buffSize) || (bytesWritten != buffSize)){
             genClose(out_fd);
             out_fd = -1;
             if (PM_flag[recurses] != PM_PSU_BACKUP)
                 genRemove(out);
-            ret = -1;  // flag generic error
+            ret = -EIO;  // flag generic I/O error
             goto copy_file_exit;
         }
         size -= buffSize;
