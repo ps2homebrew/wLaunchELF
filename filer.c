@@ -608,7 +608,6 @@ int readCD(const char *path, FILEINFO *info, int max)
     int i, j, n;
     u64 wait_start;
 
-    loadCdModules();
     if (sceCdGetDiskType() <= SCECdUNKNOWN) {
         wait_start = Timer();
         while ((Timer() < wait_start + 500) && !uLE_cdDiscValid()) {
@@ -752,14 +751,11 @@ int genFixPath(const char *inp_path, char *gen_path)
     pathSep = strchr(uLE_path, '/');
 
     if (!strncmp(uLE_path, "cdfs", 4)) {  //if using CD or DVD disc path
-        loadCdModules();
         CDVD_FlushCache();
         CDVD_DiskReady(0);
         //end of clause for using a CD or DVD path
 
     } else if (!strncmp(uLE_path, "mass", 4)) {  //if using USB mass: path
-        loadUsbModules();
-
         if (pathSep && (pathSep - uLE_path < 7) && pathSep[-1] == ':')
             strcpy(gen_path + (pathSep - uLE_path), pathSep + 1);
         //end of clause for using a USB mass: path
@@ -1036,8 +1032,6 @@ int readMASS(const char *path, FILEINFO *info, int max)
 {
     iox_dirent_t record;
     int n = 0, dd = -1;
-
-    loadUsbModules();
 
     if (!USB_mass_scanned)
         scan_USB_mass();

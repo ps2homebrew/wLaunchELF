@@ -209,9 +209,11 @@ static void ShowDebugInfo(void);
 static void load_ps2ftpd(void);
 static void load_ps2netfs(void);
 static void loadBasicModules(void);
+static void loadCdModules(void);
 static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
 static int loadExternalModule(char *modPath, void *defBase, int defSize);
 static void loadUsbDModule(void);
+static void loadUsbModules(void);
 static void loadKbdModules(void);
 static void closeAllAndPoweroff(void);
 static void poweroffHandler(int i);
@@ -921,7 +923,7 @@ static void loadBasicModules(void)
 //------------------------------
 //endfunc loadBasicModules
 //---------------------------------------------------------------------------
-void loadCdModules(void)
+static void loadCdModules(void)
 {
     int ret;
 
@@ -937,10 +939,6 @@ void loadCdModules(void)
 //---------------------------------------------------------------------------
 int uLE_cdDiscValid(void)  //returns 1 if disc valid, else returns 0
 {
-    if (!have_cdvd) {
-        loadCdModules();
-    }
-
     cdmode = sceCdGetDiskType();
 
     switch (cdmode) {
@@ -1017,8 +1015,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 
     if (!strncmp(argPath, "mass", 4)) {
         //Loading some module from USB mass:
-        //NB: This won't be for USB drivers, due to protection elsewhere
-        loadUsbModules();
+        //This won't be for USB drivers, as mass: must first be accessible.
         strcpy(filePath, argPath);
         if (pathSep && (pathSep - argPath < 7) && pathSep[-1] == ':')
             strcpy(filePath + (pathSep - argPath), pathSep + 1);
@@ -1036,7 +1033,6 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
         mountParty(party);
 
     } else if (!strncmp(argPath, "cdfs", 4)) {
-        loadCdModules();
         strcpy(filePath, argPath);
         CDVD_FlushCache();
         CDVD_DiskReady(0);
@@ -1110,14 +1106,11 @@ static void loadUsbDModule(void)
 //------------------------------
 //endfunc loadUsbDModule
 //---------------------------------------------------------------------------
-void loadUsbModules(void)
+static void loadUsbModules(void)
 {
-    //int ret;
-
     loadUsbDModule();
     if (have_usbd && !have_usb_mass && (USB_mass_loaded = loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx))) {
         delay(3);
-        //ret = usb_mass_bindRpc(); //dlanor: disused in switching to usbhdfsd
         have_usb_mass = 1;
     }
     if (USB_mass_loaded == 1)                       //if using the internal mass driver
@@ -1504,7 +1497,6 @@ static int reloadConfig(void)
 
     timeout = (setting->timeout + 1) * 1000;
     timeout_start = Timer();
-    loadCdModules();
 
     return CNF_error;
 }
@@ -1692,7 +1684,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         goto ELFchecked;
 
     } else if (!strncmp(path, "mass", 4)) {
-        loadUsbModules();
         if ((t = checkELFheader(path)) <= 0)
             goto ELFnotFound;
         //coming here means the ELF is fine
@@ -1961,7 +1952,6 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
         Show_About_uLE();
         return;
     } else if (!strncmp(path, "cdfs", 4)) {
-        loadCdModules();
         CDVD_FlushCache();
         CDVD_DiskReady(0);
         party[0] = 0;
@@ -2015,12 +2005,12 @@ static void Reset()
     have_HDD_modules = 0;
 
     loadBasicModules();
+    loadCdModules();
+
     fileXioInit();
     //Increase the FILEIO R/W buffer size to reduce overhead.
     fileXioSetRWBufferSize(128*1024);
-    mcReset();
     mcInit(MC_TYPE_MC);
-    //	padReset();
     //	setupPad();
 }
 //------------------------------
@@ -2209,9 +2199,8 @@ int main(int argc, char *argv[])
 
     CNF_error = loadConfig(mainMsg, strcpy(CNF, "LAUNCHELF.CNF"));
 
-    if (boot == BOOT_DEVICE_MASS)
-        loadUsbModules();
-    else if (boot == BOOT_DEVICE_HOST) {
+    if (boot == BOOT_DEVICE_HOST) {
+        //If booted from the host: device, bring up the host device at this point.
         getIpConfig();
         initHOST();
     }
@@ -2237,8 +2226,7 @@ int main(int argc, char *argv[])
 
     //It's time to load and init drivers
     getIpConfig();
-
-    loadCdModules();
+    loadUsbModules();
 
     WaitTime = Timer();
     setupPad();  //Comment out this line when using early setupPad above

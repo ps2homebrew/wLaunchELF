@@ -2392,7 +2392,6 @@ void config(char *mainMsg, char *CNF)
         event = 0;
 
     }  //ends while
-    loadCdModules();
 }  //ends config
 //---------------------------------------------------------------------------
 // End of file: config.c
