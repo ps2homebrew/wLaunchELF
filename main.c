@@ -990,26 +990,9 @@ int uLE_cdStop(void)
 //------------------------------
 //endfunc uLE_cdStop
 //---------------------------------------------------------------------------
-// loadExternalFile below will use the given path, and read the
-// indicated file into a buffer it allocates for that purpose.
-// The buffer address and size are returned via pointer variables,
-// and the size is also returned as function value. Both those
-// instances of size will be forced to Zero if any error occurs,
-// and in such cases the buffer pointer returned will be NULL.
-// NB: Release of the allocated memory block, if/when it is not
-// needed anymore, is entirely the responsibility of the caller,
-// though, of course, none is allocated if the file is not found.
-//---------------------------------------------------------------------------
-static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
-{  //The first three variables are local variants similar to the arguments
-    char filePath[MAX_PATH];
+static void getExternalFilePath(const char *argPath, char *filePath)
+{
     char *pathSep;
-    void *fileBase;
-    int fileSize;
-    FILE *File;
-
-    fileBase = NULL;
-    fileSize = 0;
 
     pathSep = strchr(argPath, '/');
 
@@ -1039,6 +1022,32 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
     } else {
         genFixPath(argPath, filePath);
     }
+}
+//------------------------------
+//endfunc getExternalFilePath
+//---------------------------------------------------------------------------
+// loadExternalFile below will use the given path, and read the
+// indicated file into a buffer it allocates for that purpose.
+// The buffer address and size are returned via pointer variables,
+// and the size is also returned as function value. Both those
+// instances of size will be forced to Zero if any error occurs,
+// and in such cases the buffer pointer returned will be NULL.
+// NB: Release of the allocated memory block, if/when it is not
+// needed anymore, is entirely the responsibility of the caller,
+// though, of course, none is allocated if the file is not found.
+//---------------------------------------------------------------------------
+static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
+{  //The first three variables are local variants similar to the arguments
+    char filePath[MAX_PATH];
+    void *fileBase;
+    int fileSize;
+    FILE *File;
+
+    fileBase = NULL;
+    fileSize = 0;
+
+    getExternalFilePath(argPath, filePath);
+
     //Here 'filePath' is a valid path for file I/O operations
     //Which means we can now use generic file I/O
     File = fopen(filePath, "r");
@@ -1047,7 +1056,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
         fileSize = ftell(File);
         fseek(File, 0, SEEK_SET);
         if (fileSize) {
-            if ((fileBase = malloc(fileSize)) > 0) {
+            if ((fileBase = memalign(64, fileSize)) > 0) {
                 fread(fileBase, 1, fileSize, File);
             } else
                 fileSize = 0;
@@ -1062,10 +1071,8 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 //endfunc loadExternalFile
 //---------------------------------------------------------------------------
 // loadExternalModule below will use the given path and attempt
-// to load the indicated file into a temporary buffer, and from
-// that buffer send it on to the IOP as a driver module, after
-// which the temporary buffer will be freed. If the file is not
-// found, or some error occurs in its reading or buffer allocation
+// to load the indicated module. If the file is not
+// found, or some error occurs in its reading,
 // then the default internal module specified by the 2nd and 3rd
 // arguments will be used, except if the base is NULL or the size
 // is zero, in which case a value of 0 is returned. A value of
@@ -1075,20 +1082,20 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 //---------------------------------------------------------------------------
 static int loadExternalModule(char *modPath, void *defBase, int defSize)
 {
-    void *extBase;
-    int extSize;
-    int external;        //Flags loading of external file into buffer
+    char filePath[MAX_PATH];
     int ext_OK, def_OK;  //Flags success for external and default module
     int dummy;
 
-    ext_OK = (def_OK = 0);
-    if ((!(external = loadExternalFile(modPath, &extBase, &extSize))) || ((ext_OK = SifExecModuleBuffer(extBase, extSize, 0, NULL, &dummy)) < 0)) {
+    ext_OK = 0;
+    def_OK = 0;
+    getExternalFilePath(modPath, filePath);
+
+    ext_OK = (SifLoadModule(filePath, 0, NULL) >= 0);
+    if (!ext_OK) {
         if (defBase && defSize) {
             def_OK = SifExecModuleBuffer(defBase, defSize, 0, NULL, &dummy);
         }
     }
-    if (external)
-        free(extBase);
     if (ext_OK)
         return 2;
     if (def_OK)
