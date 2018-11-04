@@ -2328,11 +2328,9 @@ non_PSU_RESTORE_init:
        To prevent a loss in performance, these values must each be in a multiple of the device's sector/page size.
        They must also be in multiples of 64, to prevent FILEIO from doing alignment correction in software. */
     buffSize = 0x100000;  //First assume buffer size = 1MB (good for HDD)
-    if (!strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3))
-        buffSize = 65536;  //Use  64KB if writing to USB (Flash RAM writes)
+    if (!strncmp(out, "mc", 2) || !strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3))
+        buffSize = 131072; //Use  128KB if writing to USB (Flash RAM writes) or MC (pretty slow).
                            //VMC contents should use the same size, as VMCs will often be stored on USB
-    else if (!strncmp(out, "mc", 2))
-        buffSize = 131072;  //Use 128KB if writing to MC (pretty slow too)
     else if (!strncmp(in, "mc", 2))
         buffSize = 262144;  //Use 256KB if reading from MC (still pretty slow)
     else if (!strncmp(out, "host", 4))
