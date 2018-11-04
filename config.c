@@ -1493,7 +1493,6 @@ void Config_Screen(void)
                     sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
                     sprintf(c, "\xFF""0:%s", LNG(OK));
-                    sprintf(c, "ÿ0:%s", LNG(OK));
             } else if (s == CONFIG_SCREEN_MENU_TITLE) {  //if cursor at Menu_Title
                 if (swapKeys)
                     sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
@@ -1791,7 +1790,6 @@ void Config_Startup(void)
                     sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
                     sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
-                    sprintf(c, "ÿ0:%s ÿ1:%s", LNG(Add), LNG(Subtract));
             } else if ((s == CONFIG_STARTUP_USBD) || (s == CONFIG_STARTUP_USBKBD) || (s == CONFIG_STARTUP_KBDMAP) || (s == CONFIG_STARTUP_CNF) || (s == CONFIG_STARTUP_USBHDFSD)
                        //usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
                        //Language||Fontfile||ESR_elf||OSDSYS_kelf
