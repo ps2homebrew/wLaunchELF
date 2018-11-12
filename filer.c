@@ -1145,7 +1145,7 @@ int readHOST(const char *path, FILEINFO *info, int max)
             fileXioClose(hfd);
             return 0;
         }
-        elflisttxt = (char *)malloc(size);
+        elflisttxt = (char *)memalign(64, size);
         fileXioLseek(hfd, 0, SEEK_SET);
         fileXioRead(hfd, elflisttxt, size);
         fileXioClose(hfd);
@@ -3159,7 +3159,7 @@ int BrowserModePopup(void)
                             if (fd >= 0) {
                                 test = genLseek(fd, 0, SEEK_END);
                                 if (test == 55016) {
-                                    elisaFnt = (unsigned char *)malloc(test);
+                                    elisaFnt = (unsigned char *)memalign(64, test);
                                     genLseek(fd, 0, SEEK_SET);
                                     genRead(fd, elisaFnt, test);
 

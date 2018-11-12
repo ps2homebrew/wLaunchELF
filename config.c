@@ -55,9 +55,8 @@ static const char LK_ID[SETTING_LK_COUNT][10] = {
     "OSDSYS"};
 
 char PathPad[MAX_PATH_PAD][MAX_PATH];
-char tmp[MAX_PATH];
 SETTING *setting = NULL;
-SETTING *tmpsetting;
+static SETTING *tmpsetting;
 //---------------------------------------------------------------------------
 // End of declarations
 // Start of functions
@@ -149,7 +148,7 @@ unsigned long hextoul(char *string)
 //---------------------------------------------------------------------------
 //storeSkinCNF will save most cosmetic settings to a RAM area
 //------------------------------
-size_t storeSkinCNF(char *cnf_buf)
+static size_t storeSkinCNF(char *cnf_buf)
 {
     size_t CNF_size;
 
@@ -198,7 +197,7 @@ size_t storeSkinCNF(char *cnf_buf)
 //---------------------------------------------------------------------------
 //saveSkinCNF will save most cosmetic settings to a skin CNF file
 //------------------------------
-int saveSkinCNF(char *CNF)
+static int saveSkinCNF(char *CNF)
 {
     int ret, fd;
     char tmp[26 * MAX_PATH + 30 * MAX_PATH];
@@ -223,11 +222,11 @@ int saveSkinCNF(char *CNF)
 //---------------------------------------------------------------------------
 //saveSkinBrowser will save most cosmetic settings to browsed skin CNF file
 //------------------------------
-void saveSkinBrowser(void)
+static void saveSkinBrowser(void)
 {
     int tst;
     char path[MAX_PATH];
-    char mess[MAX_PATH];
+    char tmp[MAX_PATH];
     char *p;
 
     tst = getFilePath(path, SAVE_CNF);
@@ -260,18 +259,18 @@ void saveSkinBrowser(void)
 test:
     switch (tst) {
         case -1:
-            sprintf(mess, "%s \"%s\".", LNG(Failed_To_Save), path);
+            sprintf(tmp, "%s \"%s\".", LNG(Failed_To_Save), path);
             break;
         case -2:
-            sprintf(mess, "%s \"%s\".", LNG(Failed_writing), path);
+            sprintf(tmp, "%s \"%s\".", LNG(Failed_writing), path);
             break;
         case -3:
-            sprintf(mess, "%s \"%s\".", LNG(Failed_Saving_File), path);
+            sprintf(tmp, "%s \"%s\".", LNG(Failed_Saving_File), path);
             break;
         default:
-            sprintf(mess, "%s \"%s\".", LNG(Saved), path);
+            sprintf(tmp, "%s \"%s\".", LNG(Saved), path);
     }
-    drawMsg(mess);
+    drawMsg(tmp);
 }
 //-----------------------------
 //endfunc saveSkinBrowser
@@ -295,7 +294,7 @@ char *preloadCNF(char *path)
     CNF_size = genLseek(fd, 0, SEEK_END);
     printf("CNF_size=%d\n", CNF_size);
     genLseek(fd, 0, SEEK_SET);
-    RAM_p = (char *)malloc(CNF_size);
+    RAM_p = (char *)memalign(64, CNF_size);
     if (RAM_p == NULL) {
         genClose(fd);
         goto failed_load;
@@ -920,10 +919,11 @@ enum CONFIG_SKIN {
     CONFIG_SKIN_COUNT,
 };
 
-void Config_Skin(void)
+static void Config_Skin(void)
 {
     int s, max_s = CONFIG_SKIN_COUNT - 1;
     int x, y;
+    int len;
     int event, post_event = 0;
     char c[MAX_PATH];
     char skinSave[MAX_PATH], GUI_Save[MAX_PATH];
@@ -1102,27 +1102,26 @@ void Config_Skin(void)
             //Tooltip section
             if ((s == 1) || (s == 4)) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
             } else if (s == 3) {  //if cursor at a colour component or a screen offset
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == 6) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""0:%s", LNG(Change));
             } else {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " \xFF""3:%s", LNG(Return));
-            strcat(c, tmp);
+            sprintf(&c[len], " \xFF""3:%s", LNG(Return));
             setScrTmp("", c);
         }  //ends if(event||post_event)
         drawScr();
@@ -1182,11 +1181,12 @@ enum CONFIG_SCREEN {
     CONFIG_SCREEN_COUNT,
 };
 
-void Config_Screen(void)
+static void Config_Screen(void)
 {
     int i;
     int s, max_s = CONFIG_SCREEN_COUNT - 1;  //define cursor index and its max value
     int x, y;
+    int len;
     int event, post_event = 0;
     u8 rgb[COLOR_COUNT][3];
     char c[MAX_PATH];
@@ -1479,33 +1479,32 @@ void Config_Screen(void)
             //Tooltip section
             if (s < CONFIG_SCREEN_AFT_COLORS || s == CONFIG_SCREEN_TV_STARTX || s == CONFIG_SCREEN_TV_STARTY) {  //if cursor at a colour component or a screen offset
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == CONFIG_SCREEN_TV_MODE || s == CONFIG_SCREEN_MENU_FRAME || s == CONFIG_SCREEN_POPUP_OPAQUE) {
                 //if cursor at 'TV mode', 'Menu Frame' or 'Popups Opaque'
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""0:%s", LNG(Change));
             } else if (s == CONFIG_SCREEN_SKIN || s == CONFIG_SCREEN_LOAD_SKIN_BROWSER || s == CONFIG_SCREEN_SAVE_SKIN_BROWSER) {  //if cursor at 'SKIN SETTINGS'
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             } else if (s == CONFIG_SCREEN_MENU_TITLE) {  //if cursor at Menu_Title
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Edit), LNG(Clear));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Edit), LNG(Clear));
             } else {  //if cursor at 'RETURN' or 'DEFAULT' options
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " \xFF""3:%s", LNG(Return));
-            strcat(c, tmp);
+            sprintf(&c[len], " \xFF""3:%s", LNG(Return));
             setScrTmp("", c);
         }  //ends if(event||post_event)
         drawScr();
@@ -1541,10 +1540,11 @@ enum CONFIG_STARTUP {
     CONFIG_STARTUP_COUNT
 };
 
-void Config_Startup(void)
+static void Config_Startup(void)
 {
     int s, max_s = CONFIG_STARTUP_COUNT - 1;  //define cursor index and its max value
     int x, y;
+    int len;
     int event, post_event = 0;
     char c[MAX_PATH];
 
@@ -1782,30 +1782,29 @@ void Config_Startup(void)
             //Tooltip section
             if ((s == CONFIG_STARTUP_SELECT_BTN) || (s == CONFIG_STARTUP_KEYBOARD)) {  //usbkbd_used
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""0:%s", LNG(Change));
             } else if ((s == CONFIG_STARTUP_CNF_COUNT) || (s == CONFIG_STARTUP_INIT_DELAY) || (s == CONFIG_STARTUP_TIMEOUT)) {  //numCNF || Init_Delay || timeout
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if ((s == CONFIG_STARTUP_USBD) || (s == CONFIG_STARTUP_USBKBD) || (s == CONFIG_STARTUP_KBDMAP) || (s == CONFIG_STARTUP_CNF) || (s == CONFIG_STARTUP_USBHDFSD)
                        //usbd_file||usbkbd_file||kbdmap_file||CNF_Path||usbmass_file
                        //Language||Fontfile||ESR_elf||OSDSYS_kelf
                        || (s == CONFIG_STARTUP_LANG) || (s == CONFIG_STARTUP_FONT) || (s == CONFIG_STARTUP_ESR) || (s == CONFIG_STARTUP_OSDSYS)) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Browse), LNG(Clear));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Browse), LNG(Clear));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Browse), LNG(Clear));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Browse), LNG(Clear));
             } else {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " \xFF""3:%s", LNG(Return));
-            strcat(c, tmp);
+            sprintf(&c[len], " \xFF""3:%s", LNG(Return));
             setScrTmp("", c);
         }  //ends if(event||post_event)
         drawScr();
@@ -1817,7 +1816,7 @@ void Config_Startup(void)
 //---------------------------------------------------------------------------
 // Network settings GUI by Slam-Tilt
 //---------------------------------------------------------------------------
-void saveNetworkSettings(char *Message)
+static void saveNetworkSettings(char *Message)
 {
     char firstline[50];
     extern char ip[16];
@@ -1856,7 +1855,7 @@ void saveNetworkSettings(char *Message)
         size = genLseek(in_fd, 0, SEEK_END);
         printf("size of existing file is %ibytes\n\r", size);
 
-        ipconfigfile = (char *)malloc(size);
+        ipconfigfile = (char *)memalign(64, size);
 
         genLseek(in_fd, 0, SEEK_SET);
         genRead(in_fd, ipconfigfile, size);
@@ -1901,7 +1900,7 @@ void saveNetworkSettings(char *Message)
 //---------------------------------------------------------------------------
 // Convert IP string to numbers
 //---------------------------------------------------------------------------
-void ipStringToOctet(char *ip, int ip_octet[4])
+static void ipStringToOctet(char *ip, int ip_octet[4])
 {
 
     // This takes a string (ip) representing an IP address and converts it
@@ -1924,7 +1923,7 @@ void ipStringToOctet(char *ip, int ip_octet[4])
     }
 }
 //---------------------------------------------------------------------------
-data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
+static data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
 {
 
     // Populate 3 arrays with the ip address (as ints)
@@ -1952,13 +1951,14 @@ enum CONFIG_NET {
     CONFIG_NET_COUNT
 };
 
-void Config_Network(void)
+static void Config_Network(void)
 {
     // Menu System for Network Settings Page.
 
     int s, l;
     int x, y;
     int event, post_event = 0;
+    int len;
     char c[MAX_PATH];
     extern char ip[16];
     extern char netmask[16];
@@ -2063,7 +2063,7 @@ void Config_Network(void)
 
             y += FONT_HEIGHT / 2;
 
-            int len = (strlen(LNG(IP_Address)) + 5 > strlen(LNG(Netmask)) + 5) ?
+            len = (strlen(LNG(IP_Address)) + 5 > strlen(LNG(Netmask)) + 5) ?
                           strlen(LNG(IP_Address)) + 5 :
                           strlen(LNG(Netmask)) + 5;
             len = (len > strlen(LNG(Gateway)) + 5) ? len : strlen(LNG(Gateway)) + 5;
@@ -2110,25 +2110,24 @@ void Config_Network(void)
 
             //Tooltip section
             if ((s < CONFIG_NET_AFT_IP) && (l == 1)) {
-                sprintf(c, "%s", LNG(Right_DPad_to_Edit));
+                len = sprintf(c, "%s", LNG(Right_DPad_to_Edit));
             } else if (s < CONFIG_NET_AFT_IP) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s", LNG(Add), LNG(Subtract));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s", LNG(Add), LNG(Subtract));
             } else if (s == CONFIG_NET_SAVE) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(Save));
+                    len = sprintf(c, "\xFF""1:%s", LNG(Save));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(Save));
+                    len = sprintf(c, "\xFF""0:%s", LNG(Save));
             } else {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " \xFF""3:%s", LNG(Return));
-            strcat(c, tmp);
+            sprintf(&c[len], " \xFF""3:%s", LNG(Return));
             setScrTmp(NetMsg, c);
         }  //ends if(event||post_event)
         drawScr();
@@ -2179,6 +2178,7 @@ void config(char *mainMsg, char *CNF)
     int i;
     int s;
     int x, y;
+    int len;
     int event, post_event = 0;
 
     tmpsetting = setting;
@@ -2369,22 +2369,21 @@ void config(char *mainMsg, char *CNF)
             //Tooltip section
             if (s < CONFIG_MAIN_AFT_BTNS) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s \xFF""0:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
+                    len = sprintf(c, "\xFF""1:%s \xFF""0:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
                 else
-                    sprintf(c, "\xFF""0:%s \xFF""1:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
+                    len = sprintf(c, "\xFF""0:%s \xFF""1:%s \xFF""2:%s", LNG(Browse), LNG(Clear), LNG(Edit_Title));
             } else if ((s == CONFIG_MAIN_SHOW_TITLES) || (s == CONFIG_MAIN_FILENAME)) {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""1:%s", LNG(Change));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(Change));
+                    len = sprintf(c, "\xFF""0:%s", LNG(Change));
             } else {
                 if (swapKeys)
-                    sprintf(c, "\xFF""1:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""1:%s", LNG(OK));
                 else
-                    sprintf(c, "\xFF""0:%s", LNG(OK));
+                    len = sprintf(c, "\xFF""0:%s", LNG(OK));
             }
-            sprintf(tmp, " \xFF""3:%s", LNG(Return));
-            strcat(c, tmp);
+            sprintf(&c[len], " \xFF""3:%s", LNG(Return));
             setScrTmp(localMsg, c);
         }  //ends if(event||post_event)
         drawScr();

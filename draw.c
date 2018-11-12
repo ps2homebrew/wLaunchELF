@@ -90,7 +90,7 @@ static const u8 sjis_lookup_82[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xF0
 };
 //--------------------------------------------------------------
-int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
+static int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
 {
 
     int nSum = 0;
@@ -134,7 +134,7 @@ int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
 } /* CreateCoeffInt */
 
 //--------------------------------------------------------------
-int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
+static int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
 {
 
     u8 *pLine = pInBuff, *pPix;
@@ -250,7 +250,7 @@ int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth
 } /* end ShrinkData */
 
 //--------------------------------------------------------------
-int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
+static int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
 {
 
     u8 *pLine = pInBuff,
@@ -363,7 +363,7 @@ int ScaleBitmap(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 **pOutBuff, u16 wNewWid
         return 0;
 
     // allocate memory
-    *pOutBuff = (u8 *)memalign(128, ((3 * wNewWidth + 3) & ~3) * wNewHeight);
+    *pOutBuff = (u8 *)memalign(64, ((3 * wNewWidth + 3) & ~3) * wNewHeight);
 
     if (!*pOutBuff)
         return 0;
@@ -538,6 +538,20 @@ static void applyGSParams(void)
     gsGlobal->Height = SCREEN_HEIGHT;
 }
 
+static void initScreenParams(void)
+{
+    // Ensure that the offsets are within valid ranges.
+    if (setting->screen_x < -gsGlobal->StartX)
+      setting->screen_x = -gsGlobal->StartX;
+    else if (setting->screen_x > gsGlobal->StartX)
+      setting->screen_x = gsGlobal->StartX;
+
+    if (setting->screen_y < -gsGlobal->StartY)
+      setting->screen_y = -gsGlobal->StartY;
+    else if (setting->screen_y > gsGlobal->StartY)
+      setting->screen_y = gsGlobal->StartY;
+}
+
 void setupGS(void)
 {
     int New_TV_mode = setting->TV_mode;
@@ -550,6 +564,7 @@ void setupGS(void)
     }
 
     // Screen display mode
+    TV_mode = New_TV_mode;
     switch (New_TV_mode) {
         case TV_mode_PAL:
             gsGlobal->Mode = GS_MODE_PAL;
@@ -582,16 +597,7 @@ void setupGS(void)
     gsKit_init_screen(gsGlobal);
 
     // Screen Position Init
-    // Ensure that the offsets are within valid ranges.
-    if (setting->screen_x < -gsGlobal->StartX)
-      setting->screen_x = -gsGlobal->StartX;
-    else if (setting->screen_x > gsGlobal->StartX)
-      setting->screen_x = gsGlobal->StartX;
-
-    if (setting->screen_y < -gsGlobal->StartY)
-      setting->screen_y = -gsGlobal->StartY;
-    else if (setting->screen_y > gsGlobal->StartY)
-      setting->screen_y = gsGlobal->StartY;
+    initScreenParams();
 
     gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 
@@ -637,6 +643,9 @@ void updateScreenMode(void)
         gsKit_init_screen(gsGlobal);
     }
 
+    // Screen Position Init
+    initScreenParams();
+
     // Init screen position
     gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 }
@@ -679,7 +688,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
         int W = 0;
 
         if ((Jpg = jpgOpenFILE(File, JPG_WIDTH_FIX)) > 0) {
-            if ((ImgData = malloc(Jpg->width * Jpg->height * (Jpg->bpp / 8))) > 0) {
+            if ((ImgData = memalign(64, Jpg->width * Jpg->height * (Jpg->bpp / 8))) > 0) {
                 if ((jpgReadImage(Jpg, ImgData)) != -1) {
                     if (Picture == BACKGROUND_PIC) {
                         if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, (void *)&TexSkin.Mem, SCREEN_WIDTH, SCREEN_HEIGHT)) != 0) {
@@ -740,7 +749,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                         if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
                             if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
                                 if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
-                                    TexPicture.Mem = (u32 *)malloc(((int)PicWidth * (int)PicHeight * 3) + 1);
+                                    TexPicture.Mem = (u32 *)memalign(64, ((int)PicWidth * (int)PicHeight * 3) + 1);
                                     RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
                                     W = PicW;
                                     PicW = PicH;
@@ -795,7 +804,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
                 free(ImgData);
                 free(ImgData1);
                 free(ImgData2);
-            } /* end if( (ImgData = malloc(...)) > 0 ) */
+            } /* end if( (ImgData = memalign(...)) > 0 ) */
         }     /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
         fclose(File);
     } /* end if( File != NULL ) */
