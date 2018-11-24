@@ -904,9 +904,6 @@ int Vmc_Remove(iop_file_t *f, const char *path)
         return -1;
     }
 
-    //  ioman Bug Fix. mkdir is call after remove fonction
-    g_Vmc_Remove_Flag = TRUE;
-
     PROF_END(vmc_removeProf)
 
     return 0;
@@ -921,14 +918,6 @@ int Vmc_Mkdir(iop_file_t *f, const char *path1, int mode)
 
     if (!g_Vmc_Initialized)
         return VMCFS_ERR_INITIALIZED;
-
-    //  ioman bug fix. mkdir is call after remove fonction
-    if (g_Vmc_Remove_Flag == TRUE) {
-
-        g_Vmc_Remove_Flag = FALSE;
-        printf("vmc_fs: mkdir stopped. Ioman bug fix.\n");
-        return 0;
-    }
 
     DEBUGPRINT(1, "vmc_fs: mkdir %s\n", path1);
 
@@ -1254,9 +1243,6 @@ int Vmc_Rmdir(iop_file_t *f, const char *path1)
     }
 
     DEBUGPRINT(3, "vmc_fs: Directory %s removed.\n", path1);
-
-    //  ioman Bug Fix. mkdir is call after remove fonction
-    g_Vmc_Remove_Flag = TRUE;
 
     PROF_END(vmc_removeProf)
 

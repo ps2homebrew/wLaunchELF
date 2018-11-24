@@ -232,7 +232,6 @@ struct global_vmc
 
 extern struct global_vmc g_Vmc_Image[2];
 extern int g_Vmc_Format_Mode;
-extern int g_Vmc_Remove_Flag;
 extern int g_Vmc_Initialized;
 
 
