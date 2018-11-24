@@ -1626,7 +1626,7 @@ int Vmc_Rename(iop_file_t *f, const char *path, const char *new_name)
     getPs2Time(&dirent.modified);
 
     //  Write this change
-    writePage(gendata.fd, (unsigned char *)&dirent, (dirent_cluster * g_Vmc_Image[f->unit].header.pages_per_cluster) + gendata.dirent_page);
+    writePage(gendata.fd, (unsigned char *)&dirent, (dirent_cluster + gendata.first_allocatable) * g_Vmc_Image[f->unit].header.pages_per_cluster + gendata.dirent_page);
 
     DEBUGPRINT(2, "vmc_fs: Object %s renamed to %s\n", path, new_name);
 
