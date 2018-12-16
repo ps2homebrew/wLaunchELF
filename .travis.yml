@@ -63,5 +63,5 @@ before_script:
 script:
 - cd $TRAVIS_BUILD_DIR
 - make
-- zip uLaunchelf_$TRAVIS_COMMIT.zip ULE.ELF
+- zip uLaunchelf_$TRAVIS_COMMIT.zip BOOT.ELF
 - curl --upload-file uLaunchelf_$TRAVIS_COMMIT.zip https://transfer.sh/uLaunchelf.zip | grep transfer
