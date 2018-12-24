@@ -24,17 +24,7 @@ before_script:
 # installing ps2toolchain (without ps2sdk and ps2link)
 - git clone https://github.com/ps2dev/ps2toolchain.git
 - cd ps2toolchain/
-# checkout at specific commit with mutli-core support
-- git checkout 03e6562
-# scripts are silenced cause log will be enormous if we will see all output from toolchain setup
-- bash ./toolchain.sh 1 > /tmp/PS2TOOLCHAIN1.log 2>&1
-- bash ./toolchain.sh 2 > /tmp/PS2TOOLCHAIN2.log 2>&1
-- bash ./toolchain.sh 3 > /tmp/PS2TOOLCHAIN3.log 2>&1
-- bash ./toolchain.sh 4 > /tmp/PS2TOOLCHAIN4.log 2>&1
-- bash ./toolchain.sh 5
-
-
-#- git checkout 9d1d184
+- bash ./toolchain.sh
 
 - cd $TRAVIS_BUILD_DIR
 # installing ps2eth
@@ -46,8 +36,8 @@ before_script:
 - cd $TRAVIS_BUILD_DIR
 # installing libjpeg
 - git clone https://github.com/ps2dev/ps2sdk-ports.git
-- cd ps2sdk-ports/libjpeg
-- make install
+- cd ps2sdk-ports
+- make libjpeg
 - cd $TRAVIS_BUILD_DIR
 # installing gsKit
 - export GSKIT=${PS2DEV}/gsKit
