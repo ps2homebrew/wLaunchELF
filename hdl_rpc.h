@@ -8,10 +8,10 @@
 
 typedef struct
 {
-    char Partition_Name[32 + 1];
-    char Name[64 + 1];
-    char Startup[8 + 1 + 3 + 1];
-    int Is_Dvd;
+	char Partition_Name[32 + 1];
+	char Name[64 + 1];
+	char Startup[8 + 1 + 3 + 1];
+	int Is_Dvd;
 } GameInfo;
 
 #ifdef __cplusplus

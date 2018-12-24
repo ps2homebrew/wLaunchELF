@@ -30,55 +30,55 @@ extern "C" {
 
 typedef struct
 {
-    char password[256];
+	char password[256];
 } smbGetPasswordHashes_in_t;
 
 typedef struct
 {  // size = 32
-    u8 LMhash[16];
-    u8 NTLMhash[16];
+	u8 LMhash[16];
+	u8 NTLMhash[16];
 } smbGetPasswordHashes_out_t;
 
 typedef struct
 {  // size = 536
-    char serverIP[16];
-    int serverPort;
-    char User[256];
-    char Password[256];
-    int PasswordType;  // PLAINTEXT_PASSWORD or HASHED_PASSWORD
+	char serverIP[16];
+	int serverPort;
+	char User[256];
+	char Password[256];
+	int PasswordType;  // PLAINTEXT_PASSWORD or HASHED_PASSWORD
 } smbLogOn_in_t;
 
 typedef struct
 {  // size = 8
-    void *EE_addr;
-    int maxent;
+	void *EE_addr;
+	int maxent;
 } smbGetShareList_in_t;
 
 typedef struct
 {  // size = 520
-    char ShareName[256];
-    char Password[256];
-    int PasswordType;  // PLAINTEXT_PASSWORD or HASHED_PASSWORD
+	char ShareName[256];
+	char Password[256];
+	int PasswordType;  // PLAINTEXT_PASSWORD or HASHED_PASSWORD
 } smbOpenShare_in_t;
 
 typedef struct
 {  // size = 260
-    char echo[256];
-    int len;
+	char echo[256];
+	int len;
 } smbEcho_in_t;
 
 typedef struct
 {  // size = 16
-    int TotalUnits;
-    int BlocksPerUnit;
-    int BlockSize;
-    int FreeUnits;
+	int TotalUnits;
+	int BlocksPerUnit;
+	int BlockSize;
+	int FreeUnits;
 } smbQueryDiskInfo_out_t;
 
 typedef struct
 {  // size = 512
-    char ShareName[256];
-    char ShareComment[256];
+	char ShareName[256];
+	char ShareComment[256];
 } ShareEntry_t;
 
 #ifdef __cplusplus

@@ -16,19 +16,19 @@
 
 struct TocEntry
 {
-    u32 fileLBA;
-    u32 fileSize;
-    u8 fileProperties;
-    u8 padding1[3];
-    char filename[128 + 1];
-    u8 padding2[3];
+	u32 fileLBA;
+	u32 fileSize;
+	u8 fileProperties;
+	u8 padding1[3];
+	char filename[128 + 1];
+	u8 padding2[3];
 } __attribute__((packed));
 
 
 enum CDVD_getMode {
-    CDVD_GET_FILES_ONLY = 1,
-    CDVD_GET_DIRS_ONLY = 2,
-    CDVD_GET_FILES_AND_DIRS = 3
+	CDVD_GET_FILES_ONLY = 1,
+	CDVD_GET_DIRS_ONLY = 2,
+	CDVD_GET_FILES_AND_DIRS = 3
 };
 
 // Macros for TrayReq

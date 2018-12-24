@@ -40,41 +40,41 @@ static u8 CT[16] __attribute((aligned(16))) = {
 
 int _start()
 {
-    register int file;
+	register int file;
 
-    memset(buf, 0, 137);
+	memset(buf, 0, 137);
 
-    memcpy(buf, Header, 32);
-    memcpy(buf + 48, psxver, 11);
+	memcpy(buf, Header, 32);
+	memcpy(buf + 48, psxver, 11);
 
-    if ((file = open((char *)buf + 48, O_RDONLY)) <= 0) {
-        buf[16] = 0xC0;
-        buf[17] = 0xF9;
+	if ((file = open((char *)buf + 48, O_RDONLY)) <= 0) {
+		buf[16] = 0xC0;
+		buf[17] = 0xF9;
 
-        memcpy(buf + 32, ps2Part1, 8);
-        memcpy(buf + 88, ps2Part2, 49);
-    } else {
-        close(file);
-        buf[16] = 0x90;
-        buf[17] = 0xCC;
-        buf[18] = 0x01;
-        buf[22] = 0x01;
-        memcpy(buf + 32, psxPart1, 8);
-        memcpy(buf + 88, psxPart2, 49);
-    }
-    memcpy(buf + 72, CT, 16);
+		memcpy(buf + 32, ps2Part1, 8);
+		memcpy(buf + 88, ps2Part2, 49);
+	} else {
+		close(file);
+		buf[16] = 0x90;
+		buf[17] = 0xCC;
+		buf[18] = 0x01;
+		buf[22] = 0x01;
+		memcpy(buf + 32, psxPart1, 8);
+		memcpy(buf + 88, psxPart2, 49);
+	}
+	memcpy(buf + 72, CT, 16);
 
-    memset(ps2Part1, 0, 8);
-    memset(ps2Part2, 0, 49);
-    memset(psxPart1, 0, 8);
-    memset(psxPart2, 0, 49);
-    memset(CT, 0, 16);
+	memset(ps2Part1, 0, 8);
+	memset(ps2Part2, 0, 49);
+	memset(psxPart1, 0, 8);
+	memset(psxPart2, 0, 49);
+	memset(CT, 0, 16);
 
-    SecrDiskBootFile(buf);
+	SecrDiskBootFile(buf);
 
-    memset(buf, 0, 137);
+	memset(buf, 0, 137);
 
-    return 0;
+	return 0;
 }
 //-------------------------------------------------------------------------
 DECLARE_IMPORT_TABLE(secrman, 1, 0)

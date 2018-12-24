@@ -55,144 +55,143 @@
 #define FALSE 0
 
 enum {                // cnfmode values for getFilePath in browsing for configurable file paths
-    NON_CNF = 0,      // Normal browser mode, not configuration mode
-    LK_ELF_CNF,       // Normal ELF choice for launch keys
-    USBD_IRX_CNF,     // USBD.IRX choice for startup
-    SKIN_CNF,         // Skin JPG choice
-    GUI_SKIN_CNF,     // GUI Skin JPG choice
-    USBKBD_IRX_CNF,   // USB keyboard IRX choice (only PS2SDK)
-    KBDMAP_FILE_CNF,  // USB keyboard mapping table choice
-    CNF_PATH_CNF,     // CNF Path override choice
-    TEXT_CNF,         // No restriction choice
-    DIR_CNF,          // Directory choice
-    JPG_CNF,          // Jpg viewer choice
-    USBMASS_IRX_CNF,  // USB_MASS.IRX choice for startup
-    LANG_CNF,         // Language file choice
-    FONT_CNF,         // Font file choice ( .fnt )
-    SAVE_CNF,         // Generic Save choice (with or without selected file)
-    CNFMODE_CNT       // Total number of cnfmode values defined
+	NON_CNF = 0,      // Normal browser mode, not configuration mode
+	LK_ELF_CNF,       // Normal ELF choice for launch keys
+	USBD_IRX_CNF,     // USBD.IRX choice for startup
+	SKIN_CNF,         // Skin JPG choice
+	GUI_SKIN_CNF,     // GUI Skin JPG choice
+	USBKBD_IRX_CNF,   // USB keyboard IRX choice (only PS2SDK)
+	KBDMAP_FILE_CNF,  // USB keyboard mapping table choice
+	CNF_PATH_CNF,     // CNF Path override choice
+	TEXT_CNF,         // No restriction choice
+	DIR_CNF,          // Directory choice
+	JPG_CNF,          // Jpg viewer choice
+	USBMASS_IRX_CNF,  // USB_MASS.IRX choice for startup
+	LANG_CNF,         // Language file choice
+	FONT_CNF,         // Font file choice ( .fnt )
+	SAVE_CNF,         // Generic Save choice (with or without selected file)
+	CNFMODE_CNT       // Total number of cnfmode values defined
 };
 
 enum {
-    SCREEN_MARGIN = 16,
-    FONT_WIDTH = 8,
-    FONT_HEIGHT = 16,
-    LINE_THICKNESS = 3,
+	SCREEN_MARGIN = 16,
+	FONT_WIDTH = 8,
+	FONT_HEIGHT = 16,
+	LINE_THICKNESS = 3,
 
-    MAX_NAME = 256,
-    MAX_PATH_PAD = 30,
-    MAX_PATH = 1025,
-    MAX_ENTRY = 2048,
-    MAX_PARTITIONS = 500,
-    MAX_MENU_TITLE = 40,
-    MAX_ELF_TITLE = 72,
-    MAX_TEXT_LINE = 80
+	MAX_NAME = 256,
+	MAX_PATH_PAD = 30,
+	MAX_PATH = 1025,
+	MAX_ENTRY = 2048,
+	MAX_PARTITIONS = 500,
+	MAX_MENU_TITLE = 40,
+	MAX_ELF_TITLE = 72,
+	MAX_TEXT_LINE = 80
 };
 
-enum COLOR
-{
-    COLOR_BACKGR = 0,
-    COLOR_FRAME,
-    COLOR_SELECT,
-    COLOR_TEXT,
-    COLOR_GRAPH1,
-    COLOR_GRAPH2,
-    COLOR_GRAPH3,
-    COLOR_GRAPH4,
+enum COLOR {
+	COLOR_BACKGR = 0,
+	COLOR_FRAME,
+	COLOR_SELECT,
+	COLOR_TEXT,
+	COLOR_GRAPH1,
+	COLOR_GRAPH2,
+	COLOR_GRAPH3,
+	COLOR_GRAPH4,
 
-    COLOR_COUNT
+	COLOR_COUNT
 };
 
 enum SETTING_LK {
-    SETTING_LK_AUTO = 0,
-    SETTING_LK_CIRCLE,
-    SETTING_LK_CROSS,
-    SETTING_LK_SQUARE,
-    SETTING_LK_TRIANGLE,
-    SETTING_LK_L1,
-    SETTING_LK_R1,
-    SETTING_LK_L2,
-    SETTING_LK_R2,
-    SETTING_LK_L3,
-    SETTING_LK_R3,
-    SETTING_LK_START,
-    SETTING_LK_SELECT,
-    SETTING_LK_LEFT,
-    SETTING_LK_RIGHT,
+	SETTING_LK_AUTO = 0,
+	SETTING_LK_CIRCLE,
+	SETTING_LK_CROSS,
+	SETTING_LK_SQUARE,
+	SETTING_LK_TRIANGLE,
+	SETTING_LK_L1,
+	SETTING_LK_R1,
+	SETTING_LK_L2,
+	SETTING_LK_R2,
+	SETTING_LK_L3,
+	SETTING_LK_R3,
+	SETTING_LK_START,
+	SETTING_LK_SELECT,
+	SETTING_LK_LEFT,
+	SETTING_LK_RIGHT,
 
-    SETTING_LK_BTN_COUNT,
+	SETTING_LK_BTN_COUNT,
 
-    //Special paths
-    SETTING_LK_ESR = SETTING_LK_BTN_COUNT,
-    SETTING_LK_OSDSYS,
+	//Special paths
+	SETTING_LK_ESR = SETTING_LK_BTN_COUNT,
+	SETTING_LK_OSDSYS,
 
-    SETTING_LK_COUNT
+	SETTING_LK_COUNT
 };
 
 typedef struct
 {
-    char CNF_Path[MAX_PATH];
-    char LK_Path[SETTING_LK_COUNT][MAX_PATH];
-    char LK_Title[SETTING_LK_COUNT][MAX_ELF_TITLE];
-    int LK_Flag[SETTING_LK_COUNT];
-    char Misc[64];
-    char Misc_PS2Disc[64];
-    char Misc_FileBrowser[64];
-    char Misc_PS2Browser[64];
-    char Misc_PS2Net[64];
-    char Misc_PS2PowerOff[64];
-    char Misc_HddManager[64];
-    char Misc_TextEditor[64];
-    char Misc_JpgViewer[64];
-    char Misc_Configure[64];
-    char Misc_Load_CNFprev[64];
-    char Misc_Load_CNFnext[64];
-    char Misc_Set_CNF_Path[64];
-    char Misc_Load_CNF[64];
-    char Misc_ShowFont[64];
-    char Misc_Debug_Info[64];
-    char Misc_About_uLE[64];
-    char Misc_OSDSYS[64];
-    char usbd_file[MAX_PATH];
-    char usbkbd_file[MAX_PATH];
-    char usbmass_file[MAX_PATH];
-    char kbdmap_file[MAX_PATH];
-    char skin[MAX_PATH];
-    char GUI_skin[MAX_PATH];
-    char Menu_Title[MAX_MENU_TITLE + 1];
-    char lang_file[MAX_PATH];
-    char font_file[MAX_PATH];
-    int Menu_Frame;
-    int Show_Menu;
-    int timeout;
-    int Hide_Paths;
-    u64 color[8];
-    int screen_x;
-    int screen_y;
-    int numCNF;
-    int swapKeys;
-    int HOSTwrite;
-    int Brightness;
-    int TV_mode;
-    int Popup_Opaque;
-    int Init_Delay;
-    int usbkbd_used;
-    int Show_Titles;
-    int PathPad_Lock;
-    int JpgView_Timer;
-    int JpgView_Trans;
-    int JpgView_Full;
-    int PSU_HugeNames;
-    int PSU_DateNames;
-    int PSU_NoOverwrite;
-    int FB_NoIcons;
+	char CNF_Path[MAX_PATH];
+	char LK_Path[SETTING_LK_COUNT][MAX_PATH];
+	char LK_Title[SETTING_LK_COUNT][MAX_ELF_TITLE];
+	int LK_Flag[SETTING_LK_COUNT];
+	char Misc[64];
+	char Misc_PS2Disc[64];
+	char Misc_FileBrowser[64];
+	char Misc_PS2Browser[64];
+	char Misc_PS2Net[64];
+	char Misc_PS2PowerOff[64];
+	char Misc_HddManager[64];
+	char Misc_TextEditor[64];
+	char Misc_JpgViewer[64];
+	char Misc_Configure[64];
+	char Misc_Load_CNFprev[64];
+	char Misc_Load_CNFnext[64];
+	char Misc_Set_CNF_Path[64];
+	char Misc_Load_CNF[64];
+	char Misc_ShowFont[64];
+	char Misc_Debug_Info[64];
+	char Misc_About_uLE[64];
+	char Misc_OSDSYS[64];
+	char usbd_file[MAX_PATH];
+	char usbkbd_file[MAX_PATH];
+	char usbmass_file[MAX_PATH];
+	char kbdmap_file[MAX_PATH];
+	char skin[MAX_PATH];
+	char GUI_skin[MAX_PATH];
+	char Menu_Title[MAX_MENU_TITLE + 1];
+	char lang_file[MAX_PATH];
+	char font_file[MAX_PATH];
+	int Menu_Frame;
+	int Show_Menu;
+	int timeout;
+	int Hide_Paths;
+	u64 color[8];
+	int screen_x;
+	int screen_y;
+	int numCNF;
+	int swapKeys;
+	int HOSTwrite;
+	int Brightness;
+	int TV_mode;
+	int Popup_Opaque;
+	int Init_Delay;
+	int usbkbd_used;
+	int Show_Titles;
+	int PathPad_Lock;
+	int JpgView_Timer;
+	int JpgView_Trans;
+	int JpgView_Full;
+	int PSU_HugeNames;
+	int PSU_DateNames;
+	int PSU_NoOverwrite;
+	int FB_NoIcons;
 } SETTING;
 
 typedef struct
 {
-    int ip[4];
-    int nm[4];
-    int gw[4];
+	int ip[4];
+	int nm[4];
+	int gw[4];
 } data_ip_struct;
 
 extern char LaunchElfDir[MAX_PATH], LastDir[MAX_NAME];
@@ -291,13 +290,13 @@ void waitAnyPadReady(void);
 
 /* config.c */
 enum TV_mode {
-    TV_mode_AUTO = 0,
-    TV_mode_NTSC,
-    TV_mode_PAL,
-    TV_mode_VGA,
-    TV_mode_480P,
+	TV_mode_AUTO = 0,
+	TV_mode_NTSC,
+	TV_mode_PAL,
+	TV_mode_VGA,
+	TV_mode_480P,
 
-    TV_mode_COUNT
+	TV_mode_COUNT
 };
 
 extern char PathPad[30][MAX_PATH];
@@ -313,9 +312,9 @@ char *preloadCNF(char *path);          //loads file into RAM it allocates
 /* filer.c */
 typedef struct
 {
-    char name[MAX_NAME];
-    unsigned char title[32 * 2 + 1];
-    sceMcTblGetDir stats;
+	char name[MAX_NAME];
+	unsigned char title[32 * 2 + 1];
+	sceMcTblGetDir stats;
 } FILEINFO;
 
 #define MOUNT_LIMIT 4
@@ -369,14 +368,14 @@ void JpgViewer(char *file);
 /* lang.c */
 typedef struct Language
 {
-    char *String;
+	char *String;
 } Language;
 
 enum {
 #define lang(id, name, value) LANG_##name,
 #include "lang.h"
 #undef lang
-    LANG_COUNT
+	LANG_COUNT
 };
 
 #define LNG(name) Lang_String[LANG_##name].String
@@ -393,26 +392,26 @@ void Load_External_Language(void);
 
 extern unsigned char font_uLE[];
 enum {
-    //0x100-0x109 are 5 double width characters for D-Pad buttons, which are accessed as:
-    //"ÿ0"==Circle  "ÿ1"==Cross  "ÿ2"==Square  "ÿ3"==Triangle  "ÿ4"==filled Square
-    RIGHT_CUR = 0x10A,  //Triangle pointing left, for use to the right of an item
-    LEFT_CUR = 0x10B,   //Triangle pointing right, for use to the left of an item
-    UP_ARROW = 0x10C,   //Arrow pointing up
-    DN_ARROW = 0x10D,   //Arrow pointing up
-    LT_ARROW = 0x10E,   //Arrow pointing up
-    RT_ARROW = 0x10F,   //Arrow pointing up
-    TEXT_CUR = 0x110,   //Vertical bar, for use between two text characters
-    UL_ARROW = 0x111,   //Arrow pointing up and to the left, from a vertical start.
-    BR_SPLIT = 0x112,   //Splits rectangle from BL to TR with BR portion filled
-    BL_SPLIT = 0x113,   //Splits rectangle from TL to BR with BL portion filled
-                        //0x114-0x11B are 4 double width characters for D-Pad buttons, which are accessed as:
-                        //"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
-                        //0x11C-0x123 are 4 doubled characters used as normal/marked folder/file icons
-    ICON_FOLDER = 0x11C,
-    ICON_M_FOLDER = 0x11E,
-    ICON_FILE = 0x120,
-    ICON_M_FILE = 0x122,
-    FONT_COUNT = 0x124  //Total number of characters in font
+	//0x100-0x109 are 5 double width characters for D-Pad buttons, which are accessed as:
+	//"ÿ0"==Circle  "ÿ1"==Cross  "ÿ2"==Square  "ÿ3"==Triangle  "ÿ4"==filled Square
+	RIGHT_CUR = 0x10A,  //Triangle pointing left, for use to the right of an item
+	LEFT_CUR = 0x10B,   //Triangle pointing right, for use to the left of an item
+	UP_ARROW = 0x10C,   //Arrow pointing up
+	DN_ARROW = 0x10D,   //Arrow pointing up
+	LT_ARROW = 0x10E,   //Arrow pointing up
+	RT_ARROW = 0x10F,   //Arrow pointing up
+	TEXT_CUR = 0x110,   //Vertical bar, for use between two text characters
+	UL_ARROW = 0x111,   //Arrow pointing up and to the left, from a vertical start.
+	BR_SPLIT = 0x112,   //Splits rectangle from BL to TR with BR portion filled
+	BL_SPLIT = 0x113,   //Splits rectangle from TL to BR with BL portion filled
+	                    //0x114-0x11B are 4 double width characters for D-Pad buttons, which are accessed as:
+	                    //"ÿ:"==Right  "ÿ;"==Down  "ÿ<"==Left  "ÿ="==Up
+	                    //0x11C-0x123 are 4 doubled characters used as normal/marked folder/file icons
+	ICON_FOLDER = 0x11C,
+	ICON_M_FOLDER = 0x11E,
+	ICON_FILE = 0x120,
+	ICON_M_FILE = 0x122,
+	FONT_COUNT = 0x124  //Total number of characters in font
 };
 
 /* makeicon.c */
@@ -431,8 +430,8 @@ int make_iconsys(char *title, char *iconname, char *filename);
 
 //  Vmc format enum
 typedef enum {
-    FORMAT_FULL,
-    FORMAT_FAST
+	FORMAT_FULL,
+	FORMAT_FAST
 } Vmc_Format_Enum;
 
 

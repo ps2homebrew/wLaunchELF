@@ -52,8 +52,8 @@ void free(void *ptr);
 
 //  Vmc format enum
 typedef enum {
-    FORMAT_FULL,
-    FORMAT_FAST
+	FORMAT_FULL,
+	FORMAT_FAST
 } Vmc_Format_Enum;
 
 
@@ -95,8 +95,8 @@ typedef enum {
 // The debugging functions, very very handy
 #ifdef DEBUG
 #define DEBUGPRINT(level, args...) \
-    if (DEBUG >= level)            \
-    printf(args)
+	if (DEBUG >= level)            \
+	printf(args)
 #else
 #define DEBUGPRINT(args...)
 #endif
@@ -108,11 +108,11 @@ void profilerStart(iop_sys_clock_t *iopclock);
 void profilerEnd(const char *function, const char *name, iop_sys_clock_t *iopclock1);
 //This creates 2 variables with the names name1/name2, and starts the profiler
 #define PROF_START(name)  \
-    iop_sys_clock_t name; \
-    profilerStart(&name);
+	iop_sys_clock_t name; \
+	profilerStart(&name);
 //this takes the 2 variable names and ends the profiler, printing the time taken
 #define PROF_END(name) \
-    profilerEnd(__func__, #name, &name);
+	profilerEnd(__func__, #name, &name);
 #else
 //define away the profiler functions
 #define PROF_START(args) ;
@@ -125,108 +125,108 @@ void profilerEnd(const char *function, const char *name, iop_sys_clock_t *iopclo
 //  General data struct shared by both files  /  folders that we have opened
 struct gen_privdata
 {
-    int fd;
-    unsigned int indir_fat_clusters[32];
-    unsigned int first_allocatable;
-    unsigned int last_allocatable;
-    unsigned char dirent_page;
+	int fd;
+	unsigned int indir_fat_clusters[32];
+	unsigned int first_allocatable;
+	unsigned int last_allocatable;
+	unsigned char dirent_page;
 };
 
 //  the structure used by files that we have opened
 struct file_privdata
 {
-    struct gen_privdata gendata;
-    unsigned int file_startcluster;
-    unsigned int file_length;
-    unsigned int file_position;
-    unsigned int file_cluster;
-    unsigned int cluster_offset;
-    unsigned int file_dirpage;
+	struct gen_privdata gendata;
+	unsigned int file_startcluster;
+	unsigned int file_length;
+	unsigned int file_position;
+	unsigned int file_cluster;
+	unsigned int cluster_offset;
+	unsigned int file_dirpage;
 };
 
 //  the structure used by directories that we have opened
 struct dir_privdata
 {
-    struct gen_privdata gendata;
-    unsigned int dir_number;   //  first or second entry in the cluster?
-    unsigned int dir_cluster;  //  what cluster we are currently reading directory entries from
-    unsigned int dir_length;   //  the length of the directory
+	struct gen_privdata gendata;
+	unsigned int dir_number;   //  first or second entry in the cluster?
+	unsigned int dir_cluster;  //  what cluster we are currently reading directory entries from
+	unsigned int dir_length;   //  the length of the directory
 };
 
 //  date  /  time descriptor
 typedef struct
 {
-    unsigned char unused0;
-    unsigned char sec;
-    unsigned char min;
-    unsigned char hour;
-    unsigned char day;
-    unsigned char month;
-    unsigned short year;
+	unsigned char unused0;
+	unsigned char sec;
+	unsigned char min;
+	unsigned char hour;
+	unsigned char day;
+	unsigned char month;
+	unsigned short year;
 } vmc_datetime;
 
 //  the structure of a directory entry
 struct direntry
 {
-    unsigned short mode;         //  See directory mode definitions.
-    unsigned char unused0[2];    //  -
-    unsigned int length;         //  Length in bytes if a file, or entries if a directory.
-    vmc_datetime created;        //  created time.
-    unsigned int cluster;        //  First cluster of the file, or 0xFFFFFFFF for an empty file. In "." entries it's the first cluster of the parent directory relative to first_allocatable.
-    unsigned int dir_entry;      //  Only in "." entries. Entry of this directory in its parent's directory.
-    vmc_datetime modified;       //  Modification time.
-    unsigned int attr;           //  User defined attribute.
-    unsigned char unused1[28];   //  -
-    char name[32];               //  Zero terminated name for this directory entry.
-    unsigned char unused2[416];  //  -
+	unsigned short mode;         //  See directory mode definitions.
+	unsigned char unused0[2];    //  -
+	unsigned int length;         //  Length in bytes if a file, or entries if a directory.
+	vmc_datetime created;        //  created time.
+	unsigned int cluster;        //  First cluster of the file, or 0xFFFFFFFF for an empty file. In "." entries it's the first cluster of the parent directory relative to first_allocatable.
+	unsigned int dir_entry;      //  Only in "." entries. Entry of this directory in its parent's directory.
+	vmc_datetime modified;       //  Modification time.
+	unsigned int attr;           //  User defined attribute.
+	unsigned char unused1[28];   //  -
+	char name[32];               //  Zero terminated name for this directory entry.
+	unsigned char unused2[416];  //  -
 };
 
 //  A structure containing all of the information about the superblock on a memory card.
 struct superblock
 {
-    unsigned char magic[40];
-    unsigned short page_size;
-    unsigned short pages_per_cluster;
-    unsigned short pages_per_block;
-    unsigned short unused0;  //  always 0xFF00
-    unsigned int clusters_per_card;
-    unsigned int first_allocatable;
-    unsigned int last_allocatable;
-    unsigned int root_cluster;   //  must be 0
-    unsigned int backup_block1;  //  1023
-    unsigned int backup_block2;  //  1024
-    unsigned char unused1[8];    //  unused  /  who knows what it is
-    unsigned int indir_fat_clusters[32];
-    unsigned int bad_block_list[32];
-    unsigned char mc_type;
-    unsigned char mc_flag;
-    unsigned short unused2;     //  zero
-    unsigned int cluster_size;  //  1024 always, 0x400
-    unsigned int unused3;       //  0x100
-    unsigned int size_in_megs;  //  size in megabytes
-    unsigned int unused4;       //  0xffffffff
-    unsigned char unused5[12];  //  zero
-    unsigned int max_used;      //  97%of total clusters
-    unsigned char unused6[8];   //  zero
-    unsigned int unused7;       //  0xffffffff
+	unsigned char magic[40];
+	unsigned short page_size;
+	unsigned short pages_per_cluster;
+	unsigned short pages_per_block;
+	unsigned short unused0;  //  always 0xFF00
+	unsigned int clusters_per_card;
+	unsigned int first_allocatable;
+	unsigned int last_allocatable;
+	unsigned int root_cluster;   //  must be 0
+	unsigned int backup_block1;  //  1023
+	unsigned int backup_block2;  //  1024
+	unsigned char unused1[8];    //  unused  /  who knows what it is
+	unsigned int indir_fat_clusters[32];
+	unsigned int bad_block_list[32];
+	unsigned char mc_type;
+	unsigned char mc_flag;
+	unsigned short unused2;     //  zero
+	unsigned int cluster_size;  //  1024 always, 0x400
+	unsigned int unused3;       //  0x100
+	unsigned int size_in_megs;  //  size in megabytes
+	unsigned int unused4;       //  0xffffffff
+	unsigned char unused5[12];  //  zero
+	unsigned int max_used;      //  97%of total clusters
+	unsigned char unused6[8];   //  zero
+	unsigned int unused7;       //  0xffffffff
 };
 
 //  General vmc image structure
 struct global_vmc
 {
-    int fd;                                           //  global descriptor
-    struct superblock header;                         //  superblock header
-    int formated;                                     //  card is formated
-    int ecc_flag;                                     //  ecc data found in vmc file
-    unsigned int card_size;                           //  vmc file size
-    unsigned int total_pages;                         //  total number of pages in the vmc file
-    unsigned int cluster_size;                        //  size in byte of a cluster
-    unsigned short erase_byte;                        //  erased blocks have all bits set to 0x0 or 0xFF
-    unsigned int last_idc;                            //  last indirect cluster
-    unsigned int last_cluster;                        //  last cluster
-    unsigned int indirect_cluster[MAX_CLUSTER_SIZE];  //  indirect fat cluster
-    unsigned int fat_cluster[MAX_CLUSTER_SIZE];       //  fat cluster
-    unsigned int last_free_cluster;                   //  adress of the last free cluster found when getting free cluster
+	int fd;                                           //  global descriptor
+	struct superblock header;                         //  superblock header
+	int formated;                                     //  card is formated
+	int ecc_flag;                                     //  ecc data found in vmc file
+	unsigned int card_size;                           //  vmc file size
+	unsigned int total_pages;                         //  total number of pages in the vmc file
+	unsigned int cluster_size;                        //  size in byte of a cluster
+	unsigned short erase_byte;                        //  erased blocks have all bits set to 0x0 or 0xFF
+	unsigned int last_idc;                            //  last indirect cluster
+	unsigned int last_cluster;                        //  last cluster
+	unsigned int indirect_cluster[MAX_CLUSTER_SIZE];  //  indirect fat cluster
+	unsigned int fat_cluster[MAX_CLUSTER_SIZE];       //  fat cluster
+	unsigned int last_free_cluster;                   //  adress of the last free cluster found when getting free cluster
 };
 
 
@@ -271,13 +271,13 @@ int Vmc_Clean(int unit);
 
 //  mcfat.c
 typedef enum {
-    FAT_VALUE,
-    FAT_MASK
+	FAT_VALUE,
+	FAT_MASK
 } GetFat_Mode;
 
 typedef enum {
-    FAT_RESET,
-    FAT_SET
+	FAT_RESET,
+	FAT_SET
 } SetFat_Mode;
 
 unsigned int getFatEntry(int fd, unsigned int cluster, unsigned int *indir_fat_clusters, GetFat_Mode Mode);

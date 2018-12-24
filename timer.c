@@ -4,5 +4,5 @@
 // Timer Count
 u64 Timer(void)
 {
-    return(clock() / (CLOCKS_PER_SEC / 1000));
+	return (clock() / (CLOCKS_PER_SEC / 1000));
 }
