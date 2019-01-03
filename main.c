@@ -1167,12 +1167,21 @@ void loadHdlInfoModule(void)
 //---------------------------------------------------------------------------
 static void closeAllAndPoweroff(void)
 {
+	int i;
+
 	if (ps2dev9_loaded) {
 		/* Close all files */
 		fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
 		/* Switch off DEV9 */
 		while (fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0) {
 		};
+	}
+
+	// As required by some (typically 2.5") HDDs, issue the SCSI STOP UNIT command to avoid causing an emergency park.
+	for (i = 0; i < USB_mass_max_drives; i++) {
+		char device[7];
+		sprintf(device, "mass%d:", i);
+		fileXioDevctl(device, USBMASS_DEVCTL_STOP_UNIT, NULL, 0, NULL, 0);
 	}
 
 	/* Power-off the PlayStation 2 console. */
