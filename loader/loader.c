@@ -48,7 +48,7 @@
 static void wipeUserMem(void)
 {
 	int i;
-	for (i = 0x100000; i < 0x2000000; i += 64) {
+	for (i = 0x100000; i < GetMemorySize(); i += 64) {
 		asm volatile(
 		    "\tsq $0, 0(%0) \n"
 		    "\tsq $0, 16(%0) \n"
