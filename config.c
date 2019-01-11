@@ -1327,7 +1327,7 @@ static void Config_Screen(void)
 				} else if (s == CONFIG_SCREEN_MENU_TITLE) {  //cursor is at Menu_Title
 					char tmp[MAX_MENU_TITLE + 1];
 					strcpy(tmp, setting->Menu_Title);
-					if (keyboard(tmp, 36) >= 0)
+					if (keyboard(tmp, MAX_MENU_TITLE) >= 0)
 						strcpy(setting->Menu_Title, tmp);
 				} else if (s == CONFIG_SCREEN_MENU_FRAME) {
 					setting->Menu_Frame = !setting->Menu_Frame;

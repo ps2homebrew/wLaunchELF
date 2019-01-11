@@ -8,12 +8,11 @@
 
 typedef struct
 {
-	char Name[MAX_NAME];
+	char Name[MAX_PART_NAME + 1];
 	u64 RawSize;
 	u64 TotalSize;
 	u64 FreeSize;
 	u64 UsedSize;
-	//	int  FsGroup;
 	GameInfo Game;  //Intended for HDL game info, implemented through IRX module
 	int Count;
 	int Treatment;
@@ -39,12 +38,12 @@ enum {  //For menu commands
 #define SECTORS_PER_MB 2048  //Divide by this to convert from sector count to MB
 #define MB 1048576
 
-PARTYINFO PartyInfo[MAX_PARTITIONS];
-int numParty;
-u32 hddSize, hddFree, hddFreeSpace, hddUsed;
-int hddConnected, hddFormated;
+static PARTYINFO PartyInfo[MAX_PARTITIONS];
+static int numParty;
+static u32 hddSize, hddFree, hddFreeSpace, hddUsed;
+static int hddConnected, hddFormated;
 
-char DbgMsg[MAX_TEXT_LINE * 30];
+static char DbgMsg[MAX_TEXT_LINE * 30];
 
 //--------------------------------------------------------------
 ///*
@@ -94,7 +93,7 @@ void DebugDispStat(iox_dirent_t *p)
 void GetHddInfo(void)
 {
 	iox_dirent_t infoDirEnt;
-	int rv, hddFd = 0, partitionFd, i, Treat = TREAT_NOACCESS;
+	int rv, hddFd = 0, partitionFd, i, Treat = TREAT_NOACCESS, tooManyPartitions;
 	u32 size = 0, zoneFree, zoneSize;
 	char tmp[MAX_PATH];
 	char dbgtmp[MAX_PATH];
@@ -104,6 +103,7 @@ void GetHddInfo(void)
 	hddSize = 0, hddFree = 0, hddFreeSpace = 0, hddUsed = 0;
 	hddConnected = 0, hddFormated = 0;
 	numParty = 0;
+	tooManyPartitions = 0;
 
 	drawMsg(LNG(Reading_HDD_Information));
 
@@ -129,7 +129,7 @@ void GetHddInfo(void)
 
 		//DebugDispStat(&infoDirEnt);
 
-		if (infoDirEnt.stat.mode == FS_TYPE_EMPTY)
+		if (infoDirEnt.stat.mode == APA_TYPE_FREE)
 			continue;
 		hddUsed += found_size;
 		for (i = 0; i < numParty; i++)  //Check with previous partitions
@@ -138,11 +138,17 @@ void GetHddInfo(void)
 		if (i < numParty) {                      //found another reference to an old name
 			PartyInfo[i].RawSize += found_size;  //Add new segment to old size
 		} else {                                 //Starts clause for finding brand new name for PartyInfo[numParty]
+			if (numParty >= MAX_PARTITIONS) {
+				tooManyPartitions = 1;
+				break;
+			}
+
 			sprintf(dbgtmp, "%s \"%s\"", LNG(Found), infoDirEnt.name);
 			drawMsg(dbgtmp);
 
 			memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
-			strcpy(PartyInfo[numParty].Name, infoDirEnt.name);
+			strncpy(PartyInfo[numParty].Name, infoDirEnt.name, MAX_PART_NAME);
+			PartyInfo[numParty].Name[MAX_PART_NAME] = '\0';
 			PartyInfo[numParty].RawSize = found_size;  //Store found segment size
 			PartyInfo[numParty].Count = numParty;
 
@@ -155,13 +161,6 @@ void GetHddInfo(void)
 			else
 				Treat = TREAT_NOACCESS;
 			PartyInfo[numParty].Treatment = Treat;
-
-			/*	if((PartyInfo[numParty].Name[0] == '_') && (PartyInfo[numParty].Name[1] == '_'))
-				PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;
-			else if(PartyInfo[numParty].Name[0] == FS_COMMON_PREFIX)
-				PartyInfo[numParty].FsGroup = FS_GROUP_COMMON;
-			else
-				PartyInfo[numParty].FsGroup = FS_GROUP_APPLICATION;*/
 
 			if (Treat == TREAT_PFS) {  //Starts clause for TREAT_PFS
 				sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
@@ -203,7 +202,7 @@ void GetHddInfo(void)
 	hddFree = (hddFreeSpace * 100) / hddSize;         //free space percentage
 
 end:
-	drawMsg(LNG(HDD_Information_Read));
+	drawMsg(tooManyPartitions ? LNG(HDD_Information_Read_Overflow) : LNG(HDD_Information_Read));
 
 	WaitTime = Timer();
 	while (Timer() < WaitTime + 1500)
@@ -562,49 +561,37 @@ int RenameParty(PARTYINFO Info, char *newName)
 	int i, num = 1, ret = 0;
 	char in[MAX_ENTRY], out[MAX_ENTRY], tmpName[MAX_ENTRY];
 
-	//printf("Rename Partition: %d  group: %d\n", Info.Count, Info.FsGroup);
 	drawMsg(LNG(Renaming_Partition));
 
 	in[0] = 0;
 	out[0] = 0;
 	tmpName[0] = 0;
-	//	if(Info.FsGroup==FS_GROUP_APPLICATION){
 	sprintf(tmpName, "%s", newName);
-	if (!strcmp(Info.Name, tmpName))
+	if (!strcmp(Info.Name, tmpName)) //Exactly the same name entered.
 		goto end;
-	for (i = 0; i < MAX_PARTITIONS; i++) {
+	//If other partitions exist with the same name, append a number to keep the name unique.
+	for (i = 0; i < numParty; i++) {
 		if (!strcmp(PartyInfo[i].Name, tmpName)) {
 			sprintf(tmpName, "%s%d", newName, num);
 			num++;
 		}
 	}
 	strcpy(newName, tmpName);
+	if (strlen(newName) >= MAX_PART_NAME) {
+		ret = -ENAMETOOLONG;
+		goto end2;  //For this case HDL renaming can't be done
+	}
+
 	sprintf(in, "hdd0:%s", Info.Name);
 	sprintf(out, "hdd0:%s", newName);
-	/*	}else{ // FS_GROUP_COMMON
-		sprintf(tmpName, "+%s", newName);
-		if(!strcmp(Info.Name, tmpName))
-			goto end;
-		for(i=0; i<MAX_PARTITIONS; i++){
-			if(!strcmp(PartyInfo[i].Name, tmpName)){
-				sprintf(tmpName, "+%s%d", newName, num);
-				num++;
-			}
-		}
-		strcpy(newName, tmpName+1);
-		sprintf(in, "hdd0:%s", Info.Name);
-		sprintf(out, "hdd0:+%s", newName);
-	}
-*/
 	ret = fileXioRename(in, out);
 
 	if (ret == 0) {
-		//		if(Info.FsGroup==FS_GROUP_APPLICATION)
-		strcpy(PartyInfo[Info.Count].Name, newName);
-		//		else // FS_GROUP_COMMON
-		//			sprintf(PartyInfo[Info.Count].Name, "+%s", newName);
+		strncpy(PartyInfo[Info.Count].Name, newName, MAX_PART_NAME);
+		PartyInfo[Info.Count].Name[MAX_PART_NAME] = '\0';
 		drawMsg(LNG(Partition_Renamed));
 	} else {
+	end2:
 		drawMsg(LNG(Failed_Renaming_Partition));
 	}
 
@@ -634,13 +621,15 @@ int RenameGame(PARTYINFO Info, char *newName)
 	strcpy(tmpName, newName);
 	for (i = 0; i < MAX_PARTITIONS; i++) {
 		if (!strcmp(PartyInfo[i].Game.Name, tmpName)) {
-			if (strlen(tmpName) >= 32)
-				goto end2;  //For this case HDL renaming can't be done
 			sprintf(tmpName, "%s%d", newName, num);
 			num++;
 		}
 	}
 	strcpy(newName, tmpName);
+	if (strlen(newName) >= MAX_PART_NAME) {
+		ret = -ENAMETOOLONG;
+		goto end2;  //For this case HDL renaming can't be done
+	}
 
 	ret = HdlRenameGame(Info.Game.Name, newName);
 
@@ -807,7 +796,7 @@ void hddManager(void)
 				if (ret == CREATE) {
 					drawMsg(LNG(Enter_New_Partition_Name));
 					drawMsg(LNG(Enter_New_Partition_Name));
-					if (keyboard(tmp, 36) > 0) {
+					if (keyboard(tmp, MAX_PART_NAME) > 0) {
 						partySize = 128;
 						drawMsg(LNG(Select_New_Partition_Size_In_MB));
 						drawMsg(LNG(Select_New_Partition_Size_In_MB));
@@ -828,13 +817,13 @@ void hddManager(void)
 					drawMsg(LNG(Enter_New_Partition_Name));
 					if (PartyInfo[browser_sel].Treatment == TREAT_HDL_GAME) {  //Rename HDL Game
 						strcpy(tmp, PartyInfo[browser_sel].Game.Name);
-						if (keyboard(tmp, 32) > 0) {
+						if (keyboard(tmp, MAX_PART_NAME) > 0) {
 							if (ynDialog(LNG(Rename_Current_Game)) == 1)
 								RenameGame(PartyInfo[browser_sel], tmp);
 						}
 					} else {  //starts clause for normal partition RENAME
 						strcpy(tmp, PartyInfo[browser_sel].Name);
-						if (keyboard(tmp, 36) > 0) {
+						if (keyboard(tmp, MAX_PART_NAME) > 0) {
 							if (ynDialog(LNG(Rename_Current_Partition)) == 1) {
 								RenameParty(PartyInfo[browser_sel], tmp);
 								nparties = 0;  //Tell FileBrowser to refresh party list

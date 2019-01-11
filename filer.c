@@ -70,7 +70,7 @@ int file_show = 1;  //dlanor: 0==name_only, 1==name+size+time, 2==title+size+tim
 int file_sort = 1;  //dlanor: 0==none, 1==name, 2==title, 3==mtime
 int size_valid = 0;
 int time_valid = 0;
-char parties[MAX_PARTITIONS][MAX_NAME];
+char parties[MAX_PARTITIONS][MAX_PART_NAME+1];
 char clipPath[MAX_PATH], LastDir[MAX_NAME], marks[MAX_ENTRY];
 FILEINFO clipFiles[MAX_ENTRY];
 int fileMode = FIO_S_IRUSR | FIO_S_IWUSR | FIO_S_IXUSR | FIO_S_IRGRP | FIO_S_IWGRP | FIO_S_IXGRP | FIO_S_IROTH | FIO_S_IWOTH | FIO_S_IXOTH;
@@ -682,7 +682,8 @@ void setPartyList(void)
 			strcmp(dirEnt.name, "__common"))
 			continue;
 	*/
-		strcpy(parties[nparties++], dirEnt.name);
+		strncpy(parties[nparties], dirEnt.name, MAX_PART_NAME);
+		parties[nparties++][MAX_PART_NAME] = '\0';
 	}
 	fileXioDclose(hddFd);
 }
