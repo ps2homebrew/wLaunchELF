@@ -886,7 +886,7 @@ int genCmpFileExt(const char *filename, const char *extension)
 	const char *p;
 
 	p = strrchr(filename, '.');
-	return (p != NULL && !stricmp(p + 1, extension));
+	return (p != NULL && !strcasecmp(p + 1, extension));
 }
 //------------------------------
 //endfunc genDclose

@@ -1725,7 +1725,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		makeHostPath(fullpath, fullpath);
 		goto CheckELF_fullpath;
 
-	} else if (!stricmp(path, setting->Misc_OSDSYS)) {
+	} else if (!strcasecmp(path, setting->Misc_OSDSYS)) {
 		char arg0[20], arg1[20], arg2[20], arg3[40];
 		char *args[4] = {arg0, arg1, arg2, arg3};
 		char kelf_loader[40];
@@ -1764,7 +1764,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		CleanUp();
 		LoadExecPS2(kelf_loader, argc, args);
 
-	} else if (!stricmp(path, setting->Misc_PS2Disc)) {
+	} else if (!strcasecmp(path, setting->Misc_PS2Disc)) {
 		drawMsg(LNG(Reading_SYSTEMCNF));
 		party[0] = 0;
 		readSystemCnf();
@@ -1864,7 +1864,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		sprintf(mainMsg, "%s => %s CDVD 0x%02X", LNG(PS2Disc), LNG(Failed), cdmode);
 	Done_PS2Disc:
 		x = x;
-	} else if (!stricmp(path, setting->Misc_FileBrowser)) {
+	} else if (!strcasecmp(path, setting->Misc_FileBrowser)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
@@ -1892,45 +1892,45 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 				Execute(tmp);
 		}
 		return;
-	} else if (!stricmp(path, setting->Misc_PS2Browser)) {
+	} else if (!strcasecmp(path, setting->Misc_PS2Browser)) {
 		Exit(0);
 		//There has been a major change in the code for calling PS2Browser
 		//The method above is borrowed from PS2MP3. It's independent of ELF loader
 		//The method below was used earlier, but causes reset with new ELF loader
 		//party[0]=0;
 		//strcpy(fullpath,"rom0:OSDSYS");
-	} else if (!stricmp(path, setting->Misc_PS2Net)) {
+	} else if (!strcasecmp(path, setting->Misc_PS2Net)) {
 		mainMsg[0] = 0;
 		loadNetModules();
 		return;
-	} else if (!stricmp(path, setting->Misc_PS2PowerOff)) {
+	} else if (!strcasecmp(path, setting->Misc_PS2PowerOff)) {
 		mainMsg[0] = 0;
 		drawMsg(LNG(Powering_Off_Console));
 		setupPowerOff();
 		closeAllAndPoweroff();
 		return;
-	} else if (!stricmp(path, setting->Misc_HddManager)) {
+	} else if (!strcasecmp(path, setting->Misc_HddManager)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
 		}
 		hddManager();
 		return;
-	} else if (!stricmp(path, setting->Misc_TextEditor)) {
+	} else if (!strcasecmp(path, setting->Misc_TextEditor)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
 		}
 		TextEditor(NULL);
 		return;
-	} else if (!stricmp(path, setting->Misc_JpgViewer)) {
+	} else if (!strcasecmp(path, setting->Misc_JpgViewer)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
 		}
 		JpgViewer(NULL);
 		return;
-	} else if (!stricmp(path, setting->Misc_Configure)) {
+	} else if (!strcasecmp(path, setting->Misc_Configure)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
@@ -1939,30 +1939,30 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		}
 		config(mainMsg, CNF);
 		return;
-	} else if (!stricmp(path, setting->Misc_Load_CNFprev)) {
+	} else if (!strcasecmp(path, setting->Misc_Load_CNFprev)) {
 		decConfig();
 		return;
-	} else if (!stricmp(path, setting->Misc_Load_CNFnext)) {
+	} else if (!strcasecmp(path, setting->Misc_Load_CNFnext)) {
 		incConfig();
 		return;
-	} else if (!stricmp(path, setting->Misc_Set_CNF_Path)) {
+	} else if (!strcasecmp(path, setting->Misc_Set_CNF_Path)) {
 		Set_CNF_Path();
 		return;
-	} else if (!stricmp(path, setting->Misc_Load_CNF)) {
+	} else if (!strcasecmp(path, setting->Misc_Load_CNF)) {
 		reloadConfig();
 		return;
 		//Next clause is for an optional font test routine
-	} else if (!stricmp(path, setting->Misc_ShowFont)) {
+	} else if (!strcasecmp(path, setting->Misc_ShowFont)) {
 		ShowFont();
 		return;
-	} else if (!stricmp(path, setting->Misc_Debug_Info)) {
+	} else if (!strcasecmp(path, setting->Misc_Debug_Info)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
 		}
 		ShowDebugInfo();
 		return;
-	} else if (!stricmp(path, setting->Misc_About_uLE)) {
+	} else if (!strcasecmp(path, setting->Misc_About_uLE)) {
 		if (setting->GUI_skin[0]) {
 			GUI_active = 0;
 			loadSkin(BACKGROUND_PIC, 0, 0);
