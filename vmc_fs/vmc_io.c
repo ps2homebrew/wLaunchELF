@@ -149,7 +149,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
 
 //----------------------------------------------------------------------------
-// Open a file from vmc image. fileXioOpen("vmc...
+// Open a file from vmc image. open("vmc...
 //----------------------------------------------------------------------------
 int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
 {
@@ -347,7 +347,7 @@ int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
 
 
 //----------------------------------------------------------------------------
-// Close a file previously open with fileXioOpen("vmc...
+// Close a file previously open with open("vmc...
 //----------------------------------------------------------------------------
 int Vmc_Close(iop_file_t *f)
 {
@@ -376,7 +376,7 @@ int Vmc_Close(iop_file_t *f)
 
 
 //----------------------------------------------------------------------------
-// Read a file previously open with fileXioOpen("vmc...
+// Read a file previously open with open("vmc...
 //----------------------------------------------------------------------------
 int Vmc_Read(iop_file_t *f, void *buffer, int size)
 {
@@ -491,7 +491,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
 
 
 //----------------------------------------------------------------------------
-// Write a file previously open with fileXioOpen("vmc...
+// Write a file previously open with open("vmc...
 //----------------------------------------------------------------------------
 int Vmc_Write(iop_file_t *f, void *buffer, int size)
 {
@@ -755,7 +755,7 @@ int Vmc_Write(iop_file_t *f, void *buffer, int size)
 
 
 //----------------------------------------------------------------------------
-// Seek a file previously open with fileXioOpen("vmc...
+// Seek a file previously open with open("vmc...
 //----------------------------------------------------------------------------
 int Vmc_Lseek(iop_file_t *f, int offset, int whence)
 {

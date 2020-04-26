@@ -1257,19 +1257,19 @@ static void startKbd(void)
 		PS2KbdInit();
 		ps2kbd_opened = 1;
 		if (setting->kbdmap_file[0]) {
-			if ((kbd_fd = fileXioOpen(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
+			if ((kbd_fd = open(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
 				printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n", kbd_fd, setting->kbdmap_file);
 				if (loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
 					if (mapSize == 0x600) {
-						fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
-						fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase + 0x300);
-						fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase + 0x400);
-						fileXioIoctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase + 0x500);
+						_ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
+						_ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase + 0x300);
+						_ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase + 0x400);
+						_ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase + 0x500);
 					}
 					printf("Freeing buffer after setting Kbd maps\r\n");
 					free(mapBase);
 				}
-				fileXioClose(kbd_fd);
+				close(kbd_fd);
 			}
 		}
 	}

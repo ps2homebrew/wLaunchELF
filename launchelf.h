@@ -23,7 +23,9 @@
 #include <sys/stat.h>
 #include <iopheap.h>
 #include <errno.h>
-#include <fileXio_rpc.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <stdlib.h>
 #include <iopcontrol.h>
 #include <stdarg.h>
 #include <sbv_patches.h>
@@ -44,6 +46,10 @@
 
 #include <sio.h>
 #include <sior_rpc.h>
+
+#define NEWLIB_PORT_AWARE
+#include <fileXio_rpc.h>
+#include <io_common.h>
 
 #ifdef SIO_DEBUG
 #define DPRINTF(args...) sio_printf(args)
