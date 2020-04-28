@@ -46,6 +46,11 @@ static int hddConnected, hddFormated;
 static char DbgMsg[MAX_TEXT_LINE * 30];
 
 //--------------------------------------------------------------
+// radians to degrees helper functions
+float sindgf(float f) { return sinf(f) * M_PI / 180.0f; }
+float cosdgf(float f) { return cosf(f) * M_PI / 180.0f; }
+
+//--------------------------------------------------------------
 ///*
 void DebugDisp(char *Message)
 {
