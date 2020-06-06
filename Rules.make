@@ -9,7 +9,7 @@
 # $Id$
 
 
-IOP_CC_VERSION := $(shell $(IOP_CC) --version 2>&1 | sed -n 's/^.*(GCC) //p')
+IOP_CC_VERSION := $(shell $(IOP_CC) -dumpversion)
 
 ASFLAGS_TARGET = -mcpu=r3000
 
