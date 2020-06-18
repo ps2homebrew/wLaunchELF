@@ -36,7 +36,6 @@
 #include <debug.h>
 #include <gsKit.h>
 #include <dmaKit.h>
-#include <cdvd_rpc.h>
 #include <libcdvd.h>
 #include <libjpg.h>
 #include <libkbd.h>

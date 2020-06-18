@@ -603,9 +603,8 @@ int readMC(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readCD(const char *path, FILEINFO *info, int max)
 {
-	static struct TocEntry TocEntryList[MAX_ENTRY];
-	char dir[MAX_PATH];
-	int i, j, n;
+	iox_dirent_t record;
+	int n = 0, dd = -1;
 	u64 wait_start;
 
 	if (sceCdGetDiskType() <= SCECdUNKNOWN) {
@@ -622,30 +621,35 @@ int readCD(const char *path, FILEINFO *info, int max)
 		}
 	}
 
-	strcpy(dir, &path[5]);
-	CDVD_FlushCache();
-	n = CDVD_GetDir(dir, NULL, CDVD_GET_FILES_AND_DIRS, TocEntryList, MAX_ENTRY, dir);
+	if ((dd = fileXioDopen(path)) < 0)
+		goto exit;  //exit if error opening directory
+	while (fileXioDread(dd, &record) > 0) {
+		if ((FIO_S_ISDIR(record.stat.mode)) && (!strcmp(record.name, ".") || !strcmp(record.name, "..")))
+			continue;  //Skip entry if pseudo-folder "." or ".."
 
-	for (i = j = 0; i < n; i++) {
-		if (TocEntryList[i].fileProperties & 0x02 &&
-		    (!strcmp(TocEntryList[i].filename, ".") ||
-		     !strcmp(TocEntryList[i].filename, "..")))
-			continue;  //Skip pseudopaths "." and ".."
-		strcpy(info[j].name, TocEntryList[i].filename);
-		clear_mcTable(&info[j].stats);
-		if (TocEntryList[i].fileProperties & 0x02) {
-			info[j].stats.AttrFile = MC_ATTR_norm_folder;
-		} else {
-			info[j].stats.AttrFile = MC_ATTR_norm_file;
-			info[j].stats.FileSizeByte = TocEntryList[i].fileSize;
-			info[j].stats.Reserve2 = 0;  //Assuming a CD can't have a single 4GB file
-		}
-		j++;
-	}
-
+		strcpy(info[n].name, record.name);
+		clear_mcTable(&info[n].stats);
+		if (FIO_S_ISDIR(record.stat.mode)) {
+			info[n].stats.AttrFile = MC_ATTR_norm_folder;
+		} else if (FIO_S_ISREG(record.stat.mode)) {
+			info[n].stats.AttrFile = MC_ATTR_norm_file;
+			info[n].stats.FileSizeByte = record.stat.size;
+			info[n].stats.Reserve2 = 0;
+		} else
+			continue;  //Skip entry which is neither a file nor a folder
+		strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
+		memcpy((void *)&info[n].stats._Create, record.stat.ctime, 8);
+		memcpy((void *)&info[n].stats._Modify, record.stat.mtime, 8);
+		n++;
+		if (n == max)
+			break;
+	}  //ends while
 	size_valid = 1;
 
-	return j;
+exit:
+	if (dd >= 0)
+		fileXioDclose(dd);  //Close directory if opened above
+	return n;
 }
 //------------------------------
 //endfunc readCD
@@ -752,8 +756,8 @@ int genFixPath(const char *inp_path, char *gen_path)
 	pathSep = strchr(uLE_path, '/');
 
 	if (!strncmp(uLE_path, "cdfs", 4)) {  //if using CD or DVD disc path
-		CDVD_FlushCache();
-		CDVD_DiskReady(0);
+		// TODO: Flush CDFS cache
+		sceCdDiskReady(0);
 		//end of clause for using a CD or DVD path
 
 	} else if (!strncmp(uLE_path, "mass", 4)) {  //if using USB mass: path
