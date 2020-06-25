@@ -2345,6 +2345,7 @@ void config(char *mainMsg, char *CNF)
 						GUI_active = 1;
 						loadSkin(BACKGROUND_PIC, 0, 0);
 					}
+					swapKeys = setting->swapKeys;
 					break;
 				} else if (s == CONFIG_MAIN_CANCEL)
 					goto cancel_exit;

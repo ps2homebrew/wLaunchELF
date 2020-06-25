@@ -1504,6 +1504,7 @@ static int reloadConfig(void)
 	else
 		GUI_active = 0;
 	loadSkin(BACKGROUND_PIC, 0, 0);
+	swapKeys = setting->swapKeys;
 
 	if (CNF_error < 0)
 		strcpy(tmp, mainMsg + strlen(LNG(Failed_To_Load)));
