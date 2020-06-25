@@ -46,6 +46,11 @@ static int hddConnected, hddFormated;
 static char DbgMsg[MAX_TEXT_LINE * 30];
 
 //--------------------------------------------------------------
+// radians to degrees helper functions
+float sindgf(float f) { return sinf(f) * M_PI / 180.0f; }
+float cosdgf(float f) { return cosf(f) * M_PI / 180.0f; }
+
+//--------------------------------------------------------------
 ///*
 void DebugDisp(char *Message)
 {
@@ -164,7 +169,7 @@ void GetHddInfo(void)
 
 			if (Treat == TREAT_PFS) {  //Starts clause for TREAT_PFS
 				sprintf(tmp, "hdd0:%s", PartyInfo[numParty].Name);
-				partitionFd = fileXioOpen(tmp, O_RDONLY, 0);
+				partitionFd = open(tmp, O_RDONLY, 0);
 				if (partitionFd >= 0) {
 					for (i = 0, size = 0; i < infoDirEnt.stat.private_0 + 1; i++) {
 						rv = fileXioIoctl2(partitionFd, HIOCGETSIZE, &i, 4, NULL, 0);
@@ -172,7 +177,7 @@ void GetHddInfo(void)
 					}
 					PartyInfo[numParty].TotalSize = size;
 					//			PartyInfo[numParty].RawSize = size;
-					fileXioClose(partitionFd);
+					close(partitionFd);
 
 
 					//			mountParty(tmp);

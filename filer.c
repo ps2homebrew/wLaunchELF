@@ -603,9 +603,8 @@ int readMC(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readCD(const char *path, FILEINFO *info, int max)
 {
-	static struct TocEntry TocEntryList[MAX_ENTRY];
-	char dir[MAX_PATH];
-	int i, j, n;
+	iox_dirent_t record;
+	int n = 0, dd = -1;
 	u64 wait_start;
 
 	if (sceCdGetDiskType() <= SCECdUNKNOWN) {
@@ -622,30 +621,35 @@ int readCD(const char *path, FILEINFO *info, int max)
 		}
 	}
 
-	strcpy(dir, &path[5]);
-	CDVD_FlushCache();
-	n = CDVD_GetDir(dir, NULL, CDVD_GET_FILES_AND_DIRS, TocEntryList, MAX_ENTRY, dir);
+	if ((dd = fileXioDopen(path)) < 0)
+		goto exit;  //exit if error opening directory
+	while (fileXioDread(dd, &record) > 0) {
+		if ((FIO_S_ISDIR(record.stat.mode)) && (!strcmp(record.name, ".") || !strcmp(record.name, "..")))
+			continue;  //Skip entry if pseudo-folder "." or ".."
 
-	for (i = j = 0; i < n; i++) {
-		if (TocEntryList[i].fileProperties & 0x02 &&
-		    (!strcmp(TocEntryList[i].filename, ".") ||
-		     !strcmp(TocEntryList[i].filename, "..")))
-			continue;  //Skip pseudopaths "." and ".."
-		strcpy(info[j].name, TocEntryList[i].filename);
-		clear_mcTable(&info[j].stats);
-		if (TocEntryList[i].fileProperties & 0x02) {
-			info[j].stats.AttrFile = MC_ATTR_norm_folder;
-		} else {
-			info[j].stats.AttrFile = MC_ATTR_norm_file;
-			info[j].stats.FileSizeByte = TocEntryList[i].fileSize;
-			info[j].stats.Reserve2 = 0;  //Assuming a CD can't have a single 4GB file
-		}
-		j++;
-	}
-
+		strcpy(info[n].name, record.name);
+		clear_mcTable(&info[n].stats);
+		if (FIO_S_ISDIR(record.stat.mode)) {
+			info[n].stats.AttrFile = MC_ATTR_norm_folder;
+		} else if (FIO_S_ISREG(record.stat.mode)) {
+			info[n].stats.AttrFile = MC_ATTR_norm_file;
+			info[n].stats.FileSizeByte = record.stat.size;
+			info[n].stats.Reserve2 = 0;
+		} else
+			continue;  //Skip entry which is neither a file nor a folder
+		strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
+		memcpy((void *)&info[n].stats._Create, record.stat.ctime, 8);
+		memcpy((void *)&info[n].stats._Modify, record.stat.mtime, 8);
+		n++;
+		if (n == max)
+			break;
+	}  //ends while
 	size_valid = 1;
 
-	return j;
+exit:
+	if (dd >= 0)
+		fileXioDclose(dd);  //Close directory if opened above
+	return n;
 }
 //------------------------------
 //endfunc readCD
@@ -752,8 +756,8 @@ int genFixPath(const char *inp_path, char *gen_path)
 	pathSep = strchr(uLE_path, '/');
 
 	if (!strncmp(uLE_path, "cdfs", 4)) {  //if using CD or DVD disc path
-		CDVD_FlushCache();
-		CDVD_DiskReady(0);
+		// TODO: Flush CDFS cache
+		sceCdDiskReady(0);
 		//end of clause for using a CD or DVD path
 
 	} else if (!strncmp(uLE_path, "mass", 4)) {  //if using USB mass: path
@@ -821,7 +825,7 @@ int genRemove(char *path)
 int genOpen(char *path, int mode)
 {
 	genLimObjName(path, 0);
-	return fileXioOpen(path, mode, fileMode);
+	return open(path, mode, fileMode);
 }
 //------------------------------
 //endfunc genOpen
@@ -848,28 +852,28 @@ int genDopen(char *path)
 //--------------------------------------------------------------
 int genLseek(int fd, int where, int how)
 {
-	return fileXioLseek(fd, where, how);
+	return lseek(fd, where, how);
 }
 //------------------------------
 //endfunc genLseek
 //--------------------------------------------------------------
 int genRead(int fd, void *buf, int size)
 {
-	return fileXioRead(fd, buf, size);
+	return read(fd, buf, size);
 }
 //------------------------------
 //endfunc genRead
 //--------------------------------------------------------------
 int genWrite(int fd, void *buf, int size)
 {
-	return fileXioWrite(fd, buf, size);
+	return write(fd, buf, size);
 }
 //------------------------------
 //endfunc genWrite
 //--------------------------------------------------------------
 int genClose(int fd)
 {
-	return fileXioClose(fd);
+	return close(fd);
 }
 //------------------------------
 //endfunc genClose
@@ -886,7 +890,7 @@ int genCmpFileExt(const char *filename, const char *extension)
 	const char *p;
 
 	p = strrchr(filename, '.');
-	return (p != NULL && !stricmp(p + 1, extension));
+	return (p != NULL && !strcasecmp(p + 1, extension));
 }
 //------------------------------
 //endfunc genDclose
@@ -1114,8 +1118,8 @@ void initHOST(void)
 
 	load_ps2host();
 	host_error = 0;
-	if ((fd = fileXioOpen("host:elflist.txt", O_RDONLY)) >= 0) {
-		fileXioClose(fd);
+	if ((fd = open("host:elflist.txt", O_RDONLY)) >= 0) {
+		close(fd);
 		host_elflist = 1;
 	} else {
 		host_elflist = 0;
@@ -1140,16 +1144,16 @@ int readHOST(const char *path, FILEINFO *info, int max)
 	if (!strncmp(path, "host:/", 6))
 		strcpy(host_path + 5, path + 6);
 	if ((host_elflist) && !strcmp(host_path, "host:")) {
-		if ((hfd = fileXioOpen("host:elflist.txt", O_RDONLY, 0)) < 0)
+		if ((hfd = open("host:elflist.txt", O_RDONLY, 0)) < 0)
 			return 0;
-		if ((size = fileXioLseek(hfd, 0, SEEK_END)) <= 0) {
-			fileXioClose(hfd);
+		if ((size = lseek(hfd, 0, SEEK_END)) <= 0) {
+			close(hfd);
 			return 0;
 		}
 		elflisttxt = (char *)memalign(64, size);
-		fileXioLseek(hfd, 0, SEEK_SET);
-		fileXioRead(hfd, elflisttxt, size);
-		fileXioClose(hfd);
+		lseek(hfd, 0, SEEK_SET);
+		read(hfd, elflisttxt, size);
+		close(hfd);
 		contentptr = 0;
 		for (rv = 0; rv <= size; rv++) {
 			elflistchar = elflisttxt[rv];
@@ -1157,8 +1161,8 @@ int readHOST(const char *path, FILEINFO *info, int max)
 				host_next[contentptr] = 0;
 				snprintf(host_path, MAX_PATH - 1, "%s%s", "host:", host_next);
 				clear_mcTable(&info[hostcount].stats);
-				if ((hfd = fileXioOpen(makeHostPath(Win_path, host_path), O_RDONLY)) >= 0) {
-					fileXioClose(hfd);
+				if ((hfd = open(makeHostPath(Win_path, host_path), O_RDONLY)) >= 0) {
+					close(hfd);
 					info[hostcount].stats.AttrFile = MC_ATTR_norm_file;
 					makeFslPath(info[hostcount++].name, host_next);
 				} else if ((hfd = fileXioDopen(Win_path)) >= 0) {
@@ -1743,15 +1747,15 @@ int delete (const char *path, const FILEINFO *file)
 			mcSync(0, NULL, &ret);
 
 		} else if (!strncmp(path, "hdd", 3)) {
-			ret = fileXioRmdir(hdddir);
+			ret = rmdir(hdddir);
 
 		} else if (!strncmp(path, "vmc", 3)) {
-			ret = fileXioRmdir(dir);
+			ret = rmdir(dir);
 			fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 
 		} else {  //For all other devices
 			sprintf(dir, "%s%s", path, file->name);
-			ret = fileXioRmdir(dir);
+			ret = rmdir(dir);
 		}
 	} else {  //The object to delete is a file
 		if (!strncmp(path, "mc", 2)) {
@@ -1759,12 +1763,12 @@ int delete (const char *path, const FILEINFO *file)
 			mcDelete(dir[2] - '0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);
 		} else if (!strncmp(path, "hdd", 3)) {
-			ret = fileXioRemove(hdddir);
+			ret = unlink(hdddir);
 		} else if (!strncmp(path, "vmc", 3)) {
-			ret = fileXioRemove(dir);
+			ret = unlink(dir);
 			fileXioDevctl("vmc0:", DEVCTL_VMCFS_CLEAN, NULL, 0, NULL, 0);
 		} else {  //For all other devices
-			ret = fileXioRemove(dir);
+			ret = unlink(dir);
 		}
 	}
 	return ret;
@@ -1794,8 +1798,8 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		if ((test = fileXioDopen(newPath)) >= 0) {  //Does folder of same name exist ?
 			fileXioDclose(test);
 			ret = -EEXIST;
-		} else if ((test = fileXioOpen(newPath, O_RDONLY)) >= 0) {  //Does file of same name exist ?
-			fileXioClose(test);
+		} else if ((test = open(newPath, O_RDONLY)) >= 0) {  //Does file of same name exist ?
+			close(test);
 			ret = -EEXIST;
 		} else {  //No file/folder of the same name exists
 			mcGetInfo(path[2] - '0', 0, &mctype_PSx, NULL, NULL);
@@ -1830,10 +1834,10 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 				fileXioDclose(temp_fd);
 			}
 		} else if (file->stats.AttrFile & sceMcFileAttrFile) {  //Rename a file ?
-			ret = (temp_fd = fileXioOpen(oldPath, O_RDONLY));
+			ret = (temp_fd = open(oldPath, O_RDONLY));
 			if (temp_fd >= 0) {
-				ret = fileXioIoctl(temp_fd, IOCTL_RENAME, (void *)newPath);
-				fileXioClose(temp_fd);
+				ret = _ps2sdk_ioctl(temp_fd, IOCTL_RENAME, (void *)newPath);
+				close(temp_fd);
 			}
 		} else  //This was neither a folder nor a file !!!
 			return -1;

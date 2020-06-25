@@ -809,7 +809,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 		fclose(File);
 	} /* end if( File != NULL ) */
 	if (!strncmp(tmpPath, "cdfs", 4)) {
-		CDVD_Stop();
+		sceCdStop();
 		sceCdSync(0);
 	}
 	if (!strncmp(tmpPath, "hdd0:/", 6))

@@ -604,7 +604,7 @@ void JpgViewer(char *file)
 			jpg_browser_up = FALSE;
 		}  //ends if(jpg_browser_cd)
 		if (!strncmp(path, "cdfs", 4)) {
-			CDVD_Stop();
+			sceCdStop();
 		}
 		if (top > jpg_browser_nfiles - rows)
 			top = jpg_browser_nfiles - rows;

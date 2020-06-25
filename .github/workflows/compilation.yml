@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  repository_dispatch:
+    types: [run_build]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: ps2dev/ps2dev:latest
+    steps:
+    - name: Install dependencies
+      run: |
+        apk add build-base git zip
+
+    - uses: actions/checkout@v2
+    - run: |
+        git fetch --prune --unshallow
+
+    - name: Install ps2eth
+      run: |
+        git clone https://github.com/ps2dev/ps2eth.git
+        cd ps2eth && make clean all install
+
+    - name: Compile uLaunchELF
+      run: |
+        make
+    
+    - name: Get short SHA
+      id: slug
+      run: echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
+
+    - name: Upload artifacts
+      if: ${{ success() }}
+      uses: actions/upload-artifact@v2
+      with:
+        name: uLaunchELF-${{ steps.slug.outputs.sha8 }}
+        path: BOOT.ELF

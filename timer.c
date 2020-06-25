@@ -1,8 +1,8 @@
-#include <time.h>
+#include <ps2sdkapi.h>
 #include "launchelf.h"
 
 // Timer Count
 u64 Timer(void)
 {
-	return (clock() / (CLOCKS_PER_SEC / 1000));
+	return ps2_clock() / (PS2_CLOCKS_PER_SEC / CLOCKS_PER_SEC);
 }
