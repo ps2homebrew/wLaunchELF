@@ -2,7 +2,7 @@
 # File name:    SMB.CNF                            Revision Date: 2010.06.03
 # Created by:   Ronald Andersson                   Creation Date: 2010.05.29
 # ---------------------------------------------------------------------------
-# Purpose:      Define SMB servers for the SMB implementation of uLaunchELF
+# Purpose:      Define SMB servers for the SMB implementation of wLaunchELF
 # ---------------------------------------------------------------------------
 # NB: You need to edit these to suit your own network and your own servers.
 # You can use as many or as few of these entries as you please, as long as

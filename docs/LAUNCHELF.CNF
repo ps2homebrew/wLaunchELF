@@ -225,12 +225,12 @@ TV_mode = 0
 # ----------------------------------------------------------------------
 Popup_Opaque = 0
 # ----------------------------------------------------------------------
-# Init_Delay is used to delay the start of all uLaunchELF interactions,
+# Init_Delay is used to delay the start of all wLaunchELF interactions,
 # which also includes the possible timeout and startup of a default ELF.
 # The purpose of this delay is to allow the user to release any buttons
 # that may have been used in commanding a mod chip, or some program to
-# start uLaunchELF, to avoid having those buttons misinterpreted as new
-# commands intended for uLaunchELF. Its value specifies how many seconds
+# start wLaunchELF, to avoid having those buttons misinterpreted as new
+# commands intended for wLaunchELF. Its value specifies how many seconds
 # of extra delay to use, with the default value being zero.
 # ----------------------------------------------------------------------
 Init_Delay = 0
@@ -244,7 +244,7 @@ Init_Delay = 0
 USBKBD_USED = 1
 # ----------------------------------------------------------------------
 # USBKBD_FILE is a string used to specify an alternate IRX file for the
-# USB keyboard driver, which uLaunchELF will then use instead of the
+# USB keyboard driver, which wLaunchELF will then use instead of the
 # embedded one. You can set it in the 'STARTUP SETTINGS' screen.
 # Note that this is only compatible with PS2SDK drivers, not Sony stuff.
 # Just leave this string undefined (empty) to use the built-in driver.
@@ -275,13 +275,13 @@ Menu_Show_Titles = 1
 CNF_Path =
 # ----------------------------------------------------------------------
 # USBMASS_FILE is a string used to specify an alternate IRX file for the
-# USB mass storage driver, which uLaunchELF will then use instead of the
+# USB mass storage driver, which wLaunchELF will then use instead of the
 # embedded one. You can set it in the 'STARTUP SETTINGS' screen.
 # ----------------------------------------------------------------------
 USBMASS_FILE =
 # ----------------------------------------------------------------------
 # From v3.95 a language definition file may be used to set the strings
-# for most menus and dialogs in uLaunchELF, and that file choice is
+# for most menus and dialogs in wLaunchELF, and that file choice is
 # stored here. The default value is just an empty string, causing the
 # internal defaults to be used for everything. These defaults are also
 # identical to the contents of the file "English.lng" that we released.
@@ -359,7 +359,7 @@ FB_NoIcons = 0
 # By editing the CNF directly you can also edit titles for three more
 # commands, as shown by the examples below (NB: They are not defaults)
 # ----------------------------------------------------------------------
-LK_Select_Title = Configure uLaunchELF
+LK_Select_Title = Configure wLaunchELF
 LK_Left_Title = Load 'lower' CNF file
 LK_Right_Title = Load 'higher' CNF file
 # ----------------------------------------------------------------------

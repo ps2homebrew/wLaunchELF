@@ -2,7 +2,7 @@ Unofficial LaunchELF releases by EP + dlanor + various contributors
 
 LaunchELF wip7 (2014.04.06)
 -l_oliveira: Added message about HDL game unloading
--Rewritten tutorial for compiling uLaunchelf. You need to specify $PS2SDKSRC (which is actually git repository) and run prepare_main.sh or restore_ps2sdk.sh.
+-Rewritten tutorial for compiling wLaunchELF. You need to specify $PS2SDKSRC (which is actually git repository) and run prepare_main.sh or restore_ps2sdk.sh.
 -fixed one warning in the libcdvd library
 -now all libraries will install into $PS2DEV
 -partially reverted hdd_manager - now it loads hdl_game partitions much (i mean MUCH MORE) faster (thanks to l_oliveira)
@@ -198,7 +198,7 @@ LaunchELF v4.29 (2008.09.25)
 -Added DVD-Video launch capability for MISC/PS2Disc
 
 LaunchELF v4.28 (2008.09.07)
--Fixed a bug in the CNF parser, preventing variables from being accepted when not separated by any other character from the '=' character preceding its value string. This bug affected all CNF file parsing, including that used for the PS2Disc command, as well as that used for the CNF files of uLaunchELF.
+-Fixed a bug in the CNF parser, preventing variables from being accepted when not separated by any other character from the '=' character preceding its value string. This bug affected all CNF file parsing, including that used for the PS2Disc command, as well as that used for the CNF files of wLaunchELF.
 NB: Since uLE always uses a space separator in creating CNF files, this bug has never affected CNF files created by uLE, but only CNF files edited by 'hand' and the SYSTEM.CNF files of game discs, causing some of those not to work with the PS2Disc command of uLE. So try again now, with games that failed earlier.
 
 LaunchELF v4.27 (2008.09.04)
@@ -598,7 +598,7 @@ LaunchELF v3.78 (2006.06.12)
 LaunchELF v3.77 (2006.06.11)
 -Merged in the text editor contributed by Polo
 -Changed ELF file names from BOOTc.ELF + BOOT.ELF to BOOT.ELF + uncompressed_BOOT.ELF
--Added support for using uLaunchELF on such CDVD filesystems that are limited to 8+3 characters for filename+extension, by also allowing a CNF file to be loaded even when renamed LNCHELF.CNF (or LNCHELF1.CNF etc for multiple CNFs). This patch only applies to loading CNFs. CNF files saved will always use the longer form of the name (LAUNCHELF.CNF etc).
+-Added support for using wLaunchELF on such CDVD filesystems that are limited to 8+3 characters for filename+extension, by also allowing a CNF file to be loaded even when renamed LNCHELF.CNF (or LNCHELF1.CNF etc for multiple CNFs). This patch only applies to loading CNFs. CNF files saved will always use the longer form of the name (LAUNCHELF.CNF etc).
 
 LaunchELF v3.76 (2006.06.09)
 -Added ability to display HDL game info and to rename such games (for the gamelist). This feature is based on a modified version of an IRX module contributed by Polo.
@@ -675,7 +675,7 @@ LaunchELF v3.67 (2006.05.13)
 
 LaunchELF v3.66 (2006.05.11)
 -Added Triangle as quick exit button for all CONFIG menus, and at top level this acts the same way as the 'Cancel' command. The purpose of this is to allow you to exit and recover original settings, if you accidentally create settings that make the screen text invisible. All you need do in such a case is to press Triangle repeatedly. When you reach the main menu, all settings will have been restored.
--Added ability to complete boot without any gamepad connected. Note that you'll need a USB keyboard to use uLaunchELF without gamepad, and that this keyboard must be enabled in the CNF (also default). If you connect a gamepad after booting, then it needs to be a Sony original, or fully compatible, otherwise it may fail to work correctly.
+-Added ability to complete boot without any gamepad connected. Note that you'll need a USB keyboard to use wLaunchELF without gamepad, and that this keyboard must be enabled in the CNF (also default). If you connect a gamepad after booting, then it needs to be a Sony original, or fully compatible, otherwise it may fail to work correctly.
 -Added startup setting to enable (also default) or disable the USB keyboard driver. This setting uses the new CNF variable USBKBD_USED.
 -Added startup setting for external keyboard driver as alternative to that built in. Note however that this is not compatible to Sony drivers, but only to those from PS2SDK. This setting uses the new CNF variable USBKBD_FILE.
 -Modified browser for CNF paths, to block browsing USB to set USB drivers (can't work)
@@ -688,7 +688,7 @@ LaunchELF v3.66 (2006.05.11)
 LaunchELF v3.65 (2006.05.09)
 -Implemented 'Rename' for PS1 MC files (still not possible for PS2 MC)
 -Merged support for USB keyboard in filename entry, contributed by Polo
--Added support for USB keyboard as alternate gamepad in uLaunchELF.
+-Added support for USB keyboard as alternate gamepad in wLaunchELF.
 NB: See separate file "keyboard.txt" for additional details.
 
 LaunchELF v3.64 (2006.05.08)
@@ -696,8 +696,8 @@ LaunchELF v3.64 (2006.05.08)
 
 LaunchELF v3.63 (2006.05.07)
 -Implemented user defined launch key titles for use in the main menu, in place of the ELF names. Such titles can be edited in the main CONFIG menu, but doing so is completely optional. The file name will be used (as previously) if no title is defined for an entry. Titles will only be displayed if the option "HIDE FULL ELF PATHS" is set ON in the CONFIG menu. Otherwise the full ELF path is shown (that setting replaces the old entry "PRINT ONLY FILENAME"). Titles will be saved to the CNF file in the form "LK_xxxx_Title", where xxxx is some button designation (eg: "Circle", "Square", etc. By editing the CNF directly you can also define some titles that are not accessible in CONFIG. These are LK_Select_Title, LK_Left_Title, and LK_Right_Title, and those titles will then be used for the corresponding entries in the main menu, even though these are not really launch keys. Note that the current virtual keyboard places a 33 char limit on these titles. This limit will be extended later. All other parts of the implementation allows for 70 characters.
--Modified timeout halting, so that timeout will continue even if a button is pressed, if that button lacks any defined purpose in uLaunchELF. This is intended to allow button commands to mod chips without affecting the timeout of uLaunchELF.
--Added configurable init delay, so that button commands to mod chips can be used in the starting of uLaunchELF, and yet allow the user time to release those keys before uLaunchELF starts responding to any buttons. If a default program has been defined, its timeout delay will not start until the init delay has completed. You can control the new delay through the new CNF variable Init_Delay, which has a default value of zero. This new delay method also replaces the one used for emergency booting, as introduced in v3.62, but using a default delay of two seconds for that boot method (since no CNF is expected then).
+-Modified timeout halting, so that timeout will continue even if a button is pressed, if that button lacks any defined purpose in wLaunchELF. This is intended to allow button commands to mod chips without affecting the timeout of wLaunchELF.
+-Added configurable init delay, so that button commands to mod chips can be used in the starting of wLaunchELF, and yet allow the user time to release those keys before wLaunchELF starts responding to any buttons. If a default program has been defined, its timeout delay will not start until the init delay has completed. You can control the new delay through the new CNF variable Init_Delay, which has a default value of zero. This new delay method also replaces the one used for emergency booting, as introduced in v3.62, but using a default delay of two seconds for that boot method (since no CNF is expected then).
 -Dropped the 'emergency' CNF inhibit feature introduced in last version, as it interferes with compatibility to other launchers. (Partly some gamepad driver issue.)
 
 LaunchELF v3.62 (2006.05.06)
@@ -779,7 +779,7 @@ LaunchELF v3.49  (2006.02.26)
 -EP Fixed an issue where garbage could be displayed at startup when LaunchELF was booted by another program's generic launcher function. (Note: Issue only appeared to occur randomly with the packed ELF when using only one CNF).
 
 LaunchELF v3.48  (2006.02.25)
--EP corrected a bug in the reading of free size on MC. This bug could cause menu commands to fail with extremely slow MC. (Noted with 64MB MCs from Datel.) Thanks go to 'cmal1492' for bringing this bug to our attention. (It is older than the uLaunchELF project.)
+-EP corrected a bug in the reading of free size on MC. This bug could cause menu commands to fail with extremely slow MC. (Noted with 64MB MCs from Datel.) Thanks go to 'cmal1492' for bringing this bug to our attention. (It is older than the wLaunchELF project.)
 
 LaunchELF v3.47  (2006.02.22)
 -Corrected a serious bug in the IOP Reset routine (reverse logic for SifIopSync).
@@ -983,7 +983,7 @@ LaunchELF v3.41a (05/30/2005)
 
 Two binaries are included: BOOT.ELF - the normal binary and BOOTc.ELF - a compressed binary. The compressed binary, BOOT.ELF, was packed using pixel's ps2-packer 1.0.
 
-The source changes to all the files that have been modified are also included. This makes it possible for the author of LaunchELF to add any or all of the current changes to the official LaunchELF project. It also helps those who may want to contribute to the uLaunchELF project. All the files that have been modified from the LaunchELF v3.41 source package are in the src folder.
+The source changes to all the files that have been modified are also included. This makes it possible for the author of LaunchELF to add any or all of the current changes to the official LaunchELF project. It also helps those who may want to contribute to the wLaunchELF project. All the files that have been modified from the LaunchELF v3.41 source package are in the src folder.
 
 Code from others was used so if anyone should get credit they should. Ideas from other people were also used, which has been helpful.
 

@@ -24,7 +24,7 @@ jobs:
         git clone https://github.com/ps2dev/ps2eth.git
         cd ps2eth && make clean all install
 
-    - name: Compile uLaunchELF
+    - name: Compile wLaunchELF
       run: |
         make
     
@@ -36,5 +36,5 @@ jobs:
       if: ${{ success() }}
       uses: actions/upload-artifact@v2
       with:
-        name: uLaunchELF-${{ steps.slug.outputs.sha8 }}
+        name: wLaunchELF-${{ steps.slug.outputs.sha8 }}
         path: BOOT.ELF

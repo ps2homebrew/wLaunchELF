@@ -1,11 +1,11 @@
 //--------------------------------------------------------------
 // File name:   keyboard.txt
 //--------------------------------------------------------------
-From version v3.65 uLaunchELF supports use of USB keyboard, both for entry of
+From version v3.65 wLaunchELF supports use of USB keyboard, both for entry of
 file and folder names, and for general control and navigation, in which the
 keyboard can be used as a replacement for the gamepad. In fact you can use
 either gamepad in parallel with the keyboard too. That's entirely up to you,
-as all three controllers remain active at once in uLaunchELF.
+as all three controllers remain active at once in wLaunchELF.
 
 When used for entry of file/folder names, the following 'mapping' applies:
 
@@ -36,7 +36,7 @@ Down  == KB_Down  or 'z'      Cross   == KB_PgDn or 'm'
 Select== KB_Insert            Start   == KB_Delete
 
 In addition to the above, two keys are mapped differently depending on
-the button mapping you have chosen for Circle/Cross in uLaunchELF.
+the button mapping you have chosen for Circle/Cross in wLaunchELF.
 
 KB_Enter will mean OK/Activate
 KB_Space will mean Cancel/Mark

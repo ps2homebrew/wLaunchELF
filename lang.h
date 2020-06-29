@@ -1,7 +1,7 @@
 //---------------------------------------------------------------------------
 //File name:    lang.h                  Revision Date: 2007.05.10
 //---------------------------------------------------------------------------
-//This file is used both for compiling the uLaunchELF program,
+//This file is used both for compiling the wLaunchELF program,
 //with default language definitions, and when loading alternate
 //language definitions at runtime. For the latter case it is the
 //intention that an edited version of this file be used, where

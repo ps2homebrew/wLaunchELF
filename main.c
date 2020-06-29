@@ -313,7 +313,7 @@ static void Show_About_uLE(void)
 			PrintPos(-1, hpos, "  and others in the PS2Dev community");
 			PrintPos(-1, hpos, "");
 			PrintPos(-1, hpos, "Main release site:");
-			PrintPos(-1, hpos, "  \"https://github.com/AKuHAK/uLaunchELF/releases\"");
+			PrintPos(-1, hpos, "  \"https://github.com/ps2homebrew/wLaunchELF/releases\"");
 			PrintPos(-1, hpos, "");
 			PrintPos(-1, hpos, "Ancestral project: LaunchELF v3.41");
 			PrintPos(-1, hpos, "Created by:        Mirakichi");
