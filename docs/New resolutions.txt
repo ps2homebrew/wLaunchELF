@@ -16,7 +16,7 @@ Deprecating this option has allowed LaunchELF to use a vanilla copy of gsKit.
 -----------------------------------------------------------------------------
 The text below relates to an older version update, and is no longer valid.
 -----------------------------------------------------------------------------
-From version v3.81 and on wLaunchELF is using gsKit instead of libito to handle screen display, which has resulted in yet another increase of the screen resolution. As a result of this the old settings for screen offsets have yet again become invalid, but this time we have added a filter to the configuration loader, so that it can and will adapt old offset settings, when it recognizes that the configuration file was saved by an older version of the program. (When the CNF_version value in the file is less than 3.)
+From version v3.81 and on uLaunchELF is using gsKit instead of libito to handle screen display, which has resulted in yet another increase of the screen resolution. As a result of this the old settings for screen offsets have yet again become invalid, but this time we have added a filter to the configuration loader, so that it can and will adapt old offset settings, when it recognizes that the configuration file was saved by an older version of the program. (When the CNF_version value in the file is less than 3.)
 
 Another big change in this version is that interlace mode is now default, and even mandatory, so non-interlace modes can no longer be set. (Would halve resolution...)
 
@@ -46,7 +46,7 @@ Screen_Y = 37
 -----------------------------------------------------------------------------
 The text below relates to an older version update, and is no longer valid.
 -----------------------------------------------------------------------------
-From version v3.58 and on wLaunchELF uses screen display routines that have been heavily modified compared to all previous versions, and now use a much higher resolution than any of them. Because of this the old defaults for screen offsets are no longer valid, and will need to be changed if you want to keep using CNF files from those old versions. Just transfer them to your PC, and edit the values of Screen_X and Screen_Y to the new defaults, as follows:
+From version v3.58 and on uLaunchELF uses screen display routines that have been heavily modified compared to all previous versions, and now use a much higher resolution than any of them. Because of this the old defaults for screen offsets are no longer valid, and will need to be changed if you want to keep using CNF files from those old versions. Just transfer them to your PC, and edit the values of Screen_X and Screen_Y to the new defaults, as follows:
 
 NTSC with Interlace OFF:
 Screen_X = 158
