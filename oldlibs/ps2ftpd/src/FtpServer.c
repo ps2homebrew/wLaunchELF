@@ -248,7 +248,7 @@ int FtpServer_HandleEvents(FtpServer *pServer)
 
 					pClient->m_CommandBuffer[cmdlen] = '\0';
 
-// execute command
+					// execute command
 
 #ifdef DEBUG
 					printf("%08x << %s\r\n", (unsigned int)pClient, pClient->m_CommandBuffer);

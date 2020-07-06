@@ -322,7 +322,7 @@ static void Show_About_uLE(void)
 		post_event = event;
 		event = 0;
 	}  //ends while
-	   //----- End of event loop -----
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc Show_About_uLE
@@ -856,7 +856,7 @@ static void ShowDebugInfo(void)
 		post_event = event;
 		event = 0;
 	}  //ends while
-	   //----- End of event loop -----
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc ShowDebugInfo
@@ -1395,7 +1395,8 @@ static void ShowFont(void)
 			goto end_display;
 done_test:
 			//End of gsKit test section
-*/  //End of commented out section  //Move this line as needed for tests
+*/
+			//End of commented out section  //Move this line as needed for tests
 			//Start of font display section
 			//Now we start to draw all vertical frame lines
 			px = mat_x;
@@ -1428,9 +1429,9 @@ done_test:
 				drawOpSprite(col_1, mat_x, ly, mat_x + mat_w - 1, ly + LINE_THICKNESS - 1);
 				cy += ch_y_stp;
 			}  //ends for each font row
-			   //End of font display section
-		}      //ends if(event||post_event)
-		       //end_display:
+			//End of font display section
+		}  //ends if(event||post_event)
+		   //end_display:
 		drawScr();
 		post_event = event;
 		event = 0;
@@ -1450,7 +1451,7 @@ done_test:
 			break;
 		}
 	}  //ends while
-	   //----- End of event loop -----
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc ShowFont
@@ -2434,7 +2435,7 @@ int main(int argc, char *argv[])
 			}
 		}
 	}  //ends while(1)
-	   //----- End of main menu event loop -----
+	//----- End of main menu event loop -----
 }
 //------------------------------
 //endfunc main

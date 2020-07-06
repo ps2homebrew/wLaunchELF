@@ -132,7 +132,8 @@ static int apa_setup_statistics(apa_partition_table_t *table)
  }
  else return -2;
 }
-*/  //Remove this line and a similar one below to reactivate 'apa_setup_statistics'
+*/
+//Remove this line and a similar one below to reactivate 'apa_setup_statistics'
 //------------------------------
 //endfunc apa_setup_statistics
 //--------------------------------------------------------------
@@ -272,7 +273,8 @@ static int apa_check (const apa_partition_table_t *table) {
 
   return 0;
 }
-*/  //Remove this line and a similar one above to reactivate 'apa_check'
+*/
+//Remove this line and a similar one above to reactivate 'apa_check'
 //------------------------------
 //endfunc apa_check
 //--------------------------------------------------------------

@@ -286,7 +286,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 					FtpClient_OnCmdList(pClient, "", 1);
 			} break;
 
-			// these all share the same setup
+				// these all share the same setup
 
 			case FTPCMD_TYPE:
 			case FTPCMD_RETR:
@@ -358,7 +358,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 				} else
 					FtpClient_Send(pClient, 501, pClient->m_pMessages[FTPMSG_REQUIRES_PARAMETERS]);
 			} break;
-			// TYPE <type>
+				// TYPE <type>
 
 			case FTPCMD_PWD:
 			case FTPCMD_XPWD: {

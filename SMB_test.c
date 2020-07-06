@@ -94,7 +94,7 @@ size_t storeSMBCNF(char *cnf_buf)
 		        smbServerList[i].Server_ID,
 		        smbServerList[i].Server_FBID,
 		        &size_step  // This measures the size of sprintf data
-		        );
+		);
 		CNF_size += size_step;
 	}
 	return CNF_size;

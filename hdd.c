@@ -572,7 +572,7 @@ int RenameParty(PARTYINFO Info, char *newName)
 	out[0] = 0;
 	tmpName[0] = 0;
 	sprintf(tmpName, "%s", newName);
-	if (!strcmp(Info.Name, tmpName)) //Exactly the same name entered.
+	if (!strcmp(Info.Name, tmpName))  //Exactly the same name entered.
 		goto end;
 	//If other partitions exist with the same name, append a number to keep the name unique.
 	for (i = 0; i < numParty; i++) {
@@ -1035,8 +1035,8 @@ void hddManager(void)
 						printXY(LNG(TYPE_CD_GAME), x, y,
 						        setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 					pfsFree = -1;  //Disable lower pie chart display
-					//---------- End of clause for HDL game partitions ----------
-				} else {  //ends clause for HDL, starts clause for normal partitions
+					               //---------- End of clause for HDL game partitions ----------
+				} else {           //ends clause for HDL, starts clause for normal partitions
 					//---------- Start of clause for PFS partitions ----------
 
 					sprintf(c, "%s: %d %s", LNG(PFS_SIZE), (int)PartyInfo[browser_sel].TotalSize, LNG(MB));

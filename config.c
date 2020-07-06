@@ -189,7 +189,7 @@ static size_t storeSkinCNF(char *cnf_buf)
 	        setting->Menu_Frame,                //Menu_Frame
 	        setting->Show_Menu,                 //Show_Menu
 	        &CNF_size                           // This variable measures the size of sprintf data
-	        );
+	);
 	return CNF_size;
 }
 //------------------------------
@@ -418,7 +418,7 @@ void saveConfig(char *mainMsg, char *CNF)
 			        LK_ID[i],
 			        setting->LK_Path[i],
 			        &CNF_step  // This variable measures the size of sprintf data
-			        );
+			);
 			CNF_size += CNF_step;
 		}
 	}  //ends for
@@ -463,7 +463,7 @@ void saveConfig(char *mainMsg, char *CNF)
 	        setting->Misc_About_uLE + i,
 	        setting->Misc_OSDSYS + i,
 	        &CNF_step  // This variable measures the size of sprintf data
-	        );
+	);
 	CNF_size += CNF_step;
 
 	CNF_size += storeSkinCNF(tmp + CNF_size);
@@ -519,7 +519,7 @@ void saveConfig(char *mainMsg, char *CNF)
 	        setting->PSU_NoOverwrite,  //PSU_NoOverwrite
 	        setting->FB_NoIcons,       //FB_NoIcons
 	        &CNF_step                  // This variable measures the size of sprintf data
-	        );
+	);
 	CNF_size += CNF_step;
 
 	for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {  //Loop to save user defined launch key titles
@@ -530,7 +530,7 @@ void saveConfig(char *mainMsg, char *CNF)
 			        LK_ID[i],
 			        setting->LK_Title[i],
 			        &CNF_step  // This variable measures the size of sprintf data
-			        );
+			);
 			CNF_size += CNF_step;
 		}  //ends if
 	}      //ends for
@@ -540,7 +540,7 @@ void saveConfig(char *mainMsg, char *CNF)
 	        "%n",                   // %n causes NO output, but only a measurement
 	        setting->PathPad_Lock,  //PathPad_Lock
 	        &CNF_step               // This variable measures the size of sprintf data
-	        );
+	);
 	CNF_size += CNF_step;
 
 	for (i = 0; i < MAX_PATH_PAD; i++) {  //Loop to save non-empty PathPad entries
@@ -551,7 +551,7 @@ void saveConfig(char *mainMsg, char *CNF)
 			        i,
 			        PathPad[i],
 			        &CNF_step  // This variable measures the size of sprintf data
-			        );
+			);
 			CNF_size += CNF_step;
 		}  //ends if
 	}      //ends for
