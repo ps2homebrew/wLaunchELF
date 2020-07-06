@@ -321,8 +321,9 @@ static void Show_About_uLE(void)
 		drawScr();
 		post_event = event;
 		event = 0;
-	}  //ends while
-	   //----- End of event loop -----
+	}
+	//ends while
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc Show_About_uLE
@@ -855,8 +856,9 @@ static void ShowDebugInfo(void)
 		drawScr();
 		post_event = event;
 		event = 0;
-	}  //ends while
-	   //----- End of event loop -----
+	}
+	//ends while
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc ShowDebugInfo
@@ -1428,10 +1430,12 @@ done_test:
 				ly += ch_y_stp;
 				drawOpSprite(col_1, mat_x, ly, mat_x + mat_w - 1, ly + LINE_THICKNESS - 1);
 				cy += ch_y_stp;
-			}  //ends for each font row
-			   //End of font display section
-		}      //ends if(event||post_event)
-		       //end_display:
+			}
+			//ends for each font row
+			//End of font display section
+		}
+		//ends if(event||post_event)
+		//end_display:
 		drawScr();
 		post_event = event;
 		event = 0;
@@ -1450,8 +1454,9 @@ done_test:
 			}
 			break;
 		}
-	}  //ends while
-	   //----- End of event loop -----
+	}
+	//ends while
+	//----- End of event loop -----
 }
 //------------------------------
 //endfunc ShowFont
@@ -2434,8 +2439,9 @@ int main(int argc, char *argv[])
 				//loadFont(setting->font_file);
 			}
 		}
-	}  //ends while(1)
-	   //----- End of main menu event loop -----
+	}
+	//ends while(1)
+	//----- End of main menu event loop -----
 }
 //------------------------------
 //endfunc main
