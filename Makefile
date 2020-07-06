@@ -28,7 +28,7 @@ endif
 
 BIN2S = $(PS2SDK)/bin/bin2s
 
-.PHONY: all run reset clean rebuild format
+.PHONY: all run reset clean rebuild format format-check
 
 all: githash.h $(EE_BIN_PKD)
 
@@ -42,6 +42,9 @@ reset: clean
 
 format:
 	find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -i
+
+format-check:
+	@! find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -style=file -output-replacements-xml | grep "<replacement " >/dev/null
 
 githash.h:
 	printf '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
