@@ -3649,7 +3649,7 @@ int getFilePath(char *out, int cnfmode)
 					else if (ret == GETSIZE) {
 						submenu_func_GetSize(msg0, path, files);
 					}  //ends GETSIZE
-					//R1 menu handling is completed above
+					   //R1 menu handling is completed above
 				} else if ((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
 					if (browser_sel != 0 && path[0] != 0 && strcmp(path, "hdd0:/")) {
 						if (marks[browser_sel]) {
