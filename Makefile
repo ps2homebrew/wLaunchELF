@@ -28,7 +28,7 @@ endif
 
 BIN2S = $(PS2SDK)/bin/bin2s
 
-.PHONY: all run reset clean rebuild
+.PHONY: all run reset clean rebuild format
 
 all: githash.h $(EE_BIN_PKD)
 
@@ -39,6 +39,9 @@ run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:$(EE_BIN)
 reset: clean
 	ps2client -h 192.168.0.10 reset
+
+format:
+	find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -i
 
 githash.h:
 	printf '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
