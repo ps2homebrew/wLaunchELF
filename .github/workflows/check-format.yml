@@ -3,8 +3,6 @@ name: CI
 on:
   push:
   pull_request:
-  repository_dispatch:
-    types: [run_build]
 
 jobs:
   check-format:
