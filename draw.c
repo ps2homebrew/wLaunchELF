@@ -52,17 +52,17 @@ const u16 font404[] = {
     0xF4A5, 1030,
     0, 0};
 
-// ASCII‚ÆSJIS‚Ì•ÏŠ·—p”z—ñ
+// ASCIIï¿½ï¿½SJISï¿½Ì•ÏŠï¿½ï¿½pï¿½zï¿½ï¿½
 static const u8 sjis_lookup_81[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x00
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x10
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x20
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x30
-    ' ', ',', '.', ',', '.', 0xFF, ':', ';', '?', '!', 0xFF, 0xFF, '´', '`', 0xFF, '^',              // 0x40
+    ' ', ',', '.', ',', '.', 0xFF, ':', ';', '?', '!', 0xFF, 0xFF, 'ï¿½', '`', 0xFF, '^',              // 0x40
     0xFF, '_', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '0', 0xFF, '-', '-', 0xFF, 0xFF,      // 0x50
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '\'', '\'', '"', '"', '(', ')', 0xFF, 0xFF, '[', ']', '{',         // 0x60
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '+', '-', 0xFF, '*', 0xFF,     // 0x70
-    '/', '=', 0xFF, '<', '>', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '°', 0xFF, 0xFF, '°', 0xFF,        // 0x80
+    '/', '=', 0xFF, '<', '>', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 'ï¿½', 0xFF, 0xFF, 'ï¿½', 0xFF,        // 0x80
     '$', 0xFF, 0xFF, '%', '#', '&', '*', '@', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,        // 0x90
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xA0
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xB0
@@ -395,7 +395,7 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
 			Byte += 3;
 		}
 	}
-	if (Way == 1) {  // +90°
+	if (Way == 1) {  // +90ï¿½
 		for (i = 0, l = 0; i < Width; i++, l++) {
 			for (j = 0, k = Height - 1; j < Height; j++, k--) {
 				newpixels[j][i][0] = pixels[l][k][0];
@@ -403,7 +403,7 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
 				newpixels[j][i][2] = pixels[l][k][2];
 			}
 		}
-	} else if (Way == 3) {  // -90°
+	} else if (Way == 3) {  // -90ï¿½
 		for (i = 0, l = Width - 1; i < Width; i++, l--) {
 			for (j = 0, k = 0; j < Height; j++, k++) {
 				newpixels[j][i][0] = pixels[l][k][0];
@@ -437,7 +437,7 @@ void setScrTmp(const char *msg0, const char *msg1)
 	x = SCREEN_MARGIN;
 	y = Menu_title_y;
 	printXY(setting->Menu_Title, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-	sprintf(temp_txt, " ÿ4 LaunchELF %s ÿ4", ULE_VERSION);
+	sprintf(temp_txt, "  LaunchELF %s ", ULE_VERSION);
 	printXY(temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
 	        setting->color[COLOR_FRAME], TRUE, 0);
 
@@ -1030,15 +1030,15 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
 				break;
 			continue;
 		}  //End if for normal character
-		// Here we got a sequence starting with 0xFF ('ÿ')
+		// Here we got a sequence starting with 0xFF ('ï¿½')
 		if ((c2 = (unsigned char)s[i++]) == 0)
 			break;
 		if ((c2 < '0') || (c2 > '='))
 			continue;
 		c1 = (c2 - '0') * 2 + 0x100;
 		if (draw) {
-			//expand sequence ÿ0=Circle  ÿ1=Cross  ÿ2=Square  ÿ3=Triangle  ÿ4=FilledBox
-			//"ÿ:"=Pad_Right  "ÿ;"=Pad_Down  "ÿ<"=Pad_Left  "ÿ="=Pad_Up
+			//expand sequence ï¿½0=Circle  ï¿½1=Cross  ï¿½2=Square  ï¿½3=Triangle  ï¿½4=FilledBox
+			//"ï¿½:"=Pad_Right  "ï¿½;"=Pad_Down  "ï¿½<"=Pad_Left  "ï¿½="=Pad_Up
 			drawChar(c1, x, y, colour);
 			x += 8;
 			if (x > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH)
@@ -1070,7 +1070,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 			code = (code << 8) + s[i++];
 
 			switch (code) {
-				// Circle == "›"
+				// Circle == "ï¿½ï¿½"
 				case 0x819B:
 					if (draw) {
 						drawChar(0x100, x, y, colour);
@@ -1078,7 +1078,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 					}
 					x += 16;
 					break;
-				// Cross == "~"
+				// Cross == "ï¿½~"
 				case 0x817E:
 					if (draw) {
 						drawChar(0x102, x, y, colour);
@@ -1086,7 +1086,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 					}
 					x += 16;
 					break;
-				// Square == " "
+				// Square == "ï¿½ï¿½"
 				case 0x81A0:
 					if (draw) {
 						drawChar(0x104, x, y, colour);
@@ -1094,7 +1094,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 					}
 					x += 16;
 					break;
-				// Triangle == "¢"
+				// Triangle == "ï¿½ï¿½"
 				case 0x81A2:
 					if (draw) {
 						drawChar(0x106, x, y, colour);
@@ -1102,7 +1102,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 					}
 					x += 16;
 					break;
-				// FilledBox == "¡"
+				// FilledBox == "ï¿½ï¿½"
 				case 0x81A1:
 					if (draw) {
 						drawChar(0x108, x, y, colour);
@@ -1115,7 +1115,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 						tmp = y;
 						if (code <= 0x829A)
 							tmp++;
-						// SJIS‚©‚çEUC‚É•ÏŠ·
+						// SJISï¿½ï¿½ï¿½ï¿½EUCï¿½É•ÏŠï¿½
 						if (code >= 0xE000)
 							code -= 0x4000;
 						code = ((((code >> 8) & 0xFF) - 0x81) << 9) + (code & 0x00FF);
@@ -1127,7 +1127,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 							code -= 0x40;
 						code += 0x2121 + 0x8080;
 
-						// EUC‚©‚çŒb—œ¹ƒtƒHƒ“ƒg‚Ì”Ô†‚ð¶¬
+						// EUCï¿½ï¿½ï¿½ï¿½bï¿½ï¿½ï¿½ï¿½ï¿½tï¿½Hï¿½ï¿½ï¿½gï¿½Ì”Ôï¿½ï¿½ð¶ï¿½
 						n = (((code >> 8) & 0xFF) - 0xA1) * (0xFF - 0xA1) + (code & 0xFF) - 0xA1;
 						j = 0;
 						while (font404[j]) {

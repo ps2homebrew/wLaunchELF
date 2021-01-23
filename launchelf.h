@@ -1,10 +1,10 @@
 #ifndef LAUNCHELF_H
 #define LAUNCHELF_H
 
-#define ULE_VERSION "v4.43a"
-//#ifndef ULE_VERDATE
-//#define ULE_VERDATE __DATE__
-//#endif
+#define ULE_VERSION "v4.43a_ISR"
+#ifndef ULE_VERDATE
+#define ULE_VERDATE __DATE__
+#endif
 #include "githash.h"
 
 //#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch

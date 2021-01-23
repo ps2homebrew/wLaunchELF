@@ -37,6 +37,7 @@ enum {
 	MOUNTVMC0,
 	MOUNTVMC1,
 	GETSIZE,
+	TIMEMANIP,
 	NUM_MENU
 } R1_menu_enum;
 
@@ -1365,6 +1366,7 @@ int menu(const char *path, FILEINFO *file)
 	menu_len = strlen(LNG(Get_Size)) > menu_len ? strlen(LNG(Get_Size)) : menu_len;
 	menu_len = strlen(LNG(mcPaste)) > menu_len ? strlen(LNG(mcPaste)) : menu_len;
 	menu_len = strlen(LNG(psuPaste)) > menu_len ? strlen(LNG(psuPaste)) : menu_len;
+	menu_len = strlen(LNG(time_manip)) > menu_len ? strlen(LNG(time_manip)) : menu_len;
 	menu_len = (strlen(LNG(Mount)) + 6) > menu_len ? (strlen(LNG(Mount)) + 6) : menu_len;
 
 	int menu_ch_w = menu_len + 1;                                 //Total characters in longest menu string
@@ -1395,31 +1397,38 @@ int menu(const char *path, FILEINFO *file)
 	}
 
 	if (write_disabled || menu_disabled) {
-		enable[CUT] = FALSE;
-		enable[PASTE] = FALSE;
-		enable[MCPASTE] = FALSE;
-		enable[PSUPASTE] = FALSE;
-		enable[DELETE] = FALSE;
-		enable[RENAME] = FALSE;
-		enable[NEWDIR] = FALSE;
-		enable[NEWICON] = FALSE;
+		enable[CUT]             = FALSE;
+		enable[PASTE] 			= FALSE;
+		enable[MCPASTE] 		= FALSE;
+		enable[PSUPASTE] 		= FALSE;
+		enable[DELETE] 			= FALSE;
+		enable[RENAME] 			= FALSE;
+		enable[NEWDIR] 			= FALSE;
+		enable[NEWICON] 		= FALSE;
+		enable[TIMEMANIP] 		= FALSE;
 	}
+	
+	if (												//if
+		(file->stats.AttrFile & sceMcFileAttrSubdir) && //pointing to a folder
+		(strcmp(file->name, "..")) && 					//it isnt the "parent directory button"
+		( (!strcmp(path, "mc0:/")) || (!strcmp(path, "mc1:/")) ) //we're on Memory card roots
+		 ) {enable[TIMEMANIP] = TRUE;} else {enable[TIMEMANIP] = FALSE;} //enable time manip, otherwise disable it
 
 	if (nmarks == 0) {
 		if (!strcmp(file->name, "..")) {
-			enable[COPY] = FALSE;
-			enable[CUT] = FALSE;
-			enable[DELETE] = FALSE;
-			enable[RENAME] = FALSE;
-			enable[GETSIZE] = FALSE;
+			enable[COPY] 		= FALSE;
+			enable[CUT] 		= FALSE;
+			enable[DELETE] 		= FALSE;
+			enable[RENAME] 		= FALSE;
+			enable[GETSIZE] 	= FALSE;
 		}
 	} else {
-		enable[RENAME] = FALSE;
+		enable[RENAME] 			= FALSE;
 	}
 
 	if ((file->stats.AttrFile & sceMcFileAttrSubdir) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
-		enable[MOUNTVMC0] = FALSE;  //forbid insane VMC mounting
-		enable[MOUNTVMC1] = FALSE;  //forbid insane VMC mounting
+		enable[MOUNTVMC0] 		= FALSE;  //forbid insane VMC mounting
+		enable[MOUNTVMC1] 		= FALSE;  //forbid insane VMC mounting
 	}
 
 	if (nclipFiles == 0) {
@@ -1507,6 +1516,8 @@ int menu(const char *path, FILEINFO *file)
 					sprintf(tmp, "%s vmc1:", LNG(Mount));
 				else if (i == GETSIZE)
 					strcpy(tmp, LNG(Get_Size));
+				else if (i == TIMEMANIP)
+					strcpy(tmp, LNG(time_manip));
 
 				if (enable[i])
 					color = setting->color[COLOR_TEXT];
@@ -1677,6 +1688,7 @@ char *PathPad_menu(const char *path)
 //------------------------------
 //endfunc PathPad_menu
 //--------------------------------------------------------------
+
 u64 getFileSize(const char *path, const FILEINFO *file)
 {
 	iox_stat_t stat;
@@ -1715,6 +1727,43 @@ u64 getFileSize(const char *path, const FILEINFO *file)
 //------------------------------
 //endfunc getFileSize
 //--------------------------------------------------------------
+
+// time_manip
+// when called, this function will change the modification date of the selected folder to 31-12-2099 @ 23:59:59 PM
+// it's intended to only use this function to prepare (or fix) a folder to hold a fortuna icon file
+void time_manip(const char *path, const FILEINFO *file, char **_msg0)
+{
+int rett, slot;
+char *funcret;
+slot = path[2] - '0';
+//char *result,*end;
+/*=====================================================================================================*/
+#define ARRAY_ENTRIES	64
+	static sceMcTblGetDir mcDirAAA[ARRAY_ENTRIES] __attribute__((aligned(64)));
+	static sceMcStDateTime new_mtime; //Maxium Timestamp, for the ones who does not speak Spanish
+	new_mtime.Resv2		= 0;
+	new_mtime.Sec 		= 59;
+	new_mtime.Min 		= 59;
+	new_mtime.Hour 		= 23;
+	new_mtime.Day 		= 31;
+	new_mtime.Month 	= 12;
+	new_mtime.Year 		= 2099;
+	mcDirAAA->_Modify 	= new_mtime;
+	mcDirAAA->_Create 	= new_mtime;
+/*=====================================================================================================*/
+
+
+	 rett = mcSetFileInfo(slot, 0, file->name, mcDirAAA, 0x02);
+	if (rett == 0)
+	sprintf(_msg0,"success, folder [%s] Mc Slot [%d] .", file->name,slot);
+	if (rett < 0)
+	sprintf(_msg0,"error [%d], folder[%s] Mc Slot=[%d] .",rett , file->name, slot);
+	mcSync(0, NULL, &rett);
+}// TIMEMANIP
+//------------------------------
+//endfunc time_manip
+//--------------------------------------------------------------
+
 int delete (const char *path, const FILEINFO *file)
 {
 	FILEINFO files[MAX_ENTRY];
@@ -3470,7 +3519,8 @@ int getFilePath(char *out, int cnfmode)
 					return rv;
 				}
 			} else {  //cnfmode == FALSE
-				if (new_pad & PAD_R1) {
+				if (new_pad & PAD_R1) { // MENU R1 !!!
+				printf("DEBUG, PRESSED R1\n");
 					ret = menu(path, &files[browser_sel]);
 					if (ret == COPY || ret == CUT) {
 						strcpy(clipPath, path);
@@ -3648,9 +3698,14 @@ int getFilePath(char *out, int cnfmode)
 					}  //ends MOUNTVMCx
 					else if (ret == GETSIZE) {
 						submenu_func_GetSize(msg0, path, files);
-					}
-					//ends GETSIZE
+					}//ends GETSIZE
+					else if (ret == TIMEMANIP) {
+						time_manip(path, &files[browser_sel], &msg0);
+						browser_pushed = FALSE;
+						} 
+					//ends TIMEMANIP
 					//R1 menu handling is completed above
+//===========================================================================================================//
 				} else if ((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
 					if (browser_sel != 0 && path[0] != 0 && strcmp(path, "hdd0:/")) {
 						if (marks[browser_sel]) {
@@ -3857,9 +3912,19 @@ int getFilePath(char *out, int cnfmode)
 						iconcolr = COLOR_GRAPH1;
 					} else {
 						iconbase = ICON_FILE;
-						if (genCmpFileExt(files[top + i].name, "ELF"))
-							iconcolr = COLOR_GRAPH2;
-						else if (genCmpFileExt(files[top + i].name, "TXT") || genCmpFileExt(files[top + i].name, "CFG") || genCmpFileExt(files[top + i].name, "JPG") || genCmpFileExt(files[top + i].name, "JPEG"))
+						if (
+							genCmpFileExt(files[top + i].name, "ELF") ||
+							genCmpFileExt(files[top + i].name, "KELF")
+							) iconcolr = COLOR_GRAPH2;
+						else if ( 
+								  genCmpFileExt(files[top + i].name, "TXT") || 
+								  genCmpFileExt(files[top + i].name, "INI") || 
+								  genCmpFileExt(files[top + i].name, "CFG") || 
+								  genCmpFileExt(files[top + i].name, "JPG") || 
+								  genCmpFileExt(files[top + i].name, "JPEG")
+								) iconcolr = COLOR_GRAPH4;
+
+						else if (genCmpFileExt(files[top + i].name, "PSU")) //icon highlight for other important files
 							iconcolr = COLOR_GRAPH4;
 						else
 							iconcolr = COLOR_GRAPH3;
@@ -4065,6 +4130,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 			*(--sizeP) = '0' + (size % 10);
 		} while (size /= 10);
 		sprintf(mess + text_pos, " mcTsz=%s%n", sizeP, &text_inc);
+		printf("DEBUG GETSIZE\n");
 		text_pos += text_inc;
 	}
 	//----- End of sections that show attributes -----

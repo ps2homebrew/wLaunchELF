@@ -295,14 +295,13 @@ static void Show_About_uLE(void)
 		//Display section
 		if (event || post_event) {  //NB: We need to update two frame buffers per event
 			clrScr(setting->color[COLOR_BACKGR]);
-			sprintf(TextRow, "About wLaunchELF %s  %s", ULE_VERSION, ULE_VERDATE);
+			sprintf(TextRow, "About wLaunchELF %s  [%s]", ULE_VERSION, ULE_VERDATE);
 			PrintPos(03, hpos, TextRow);
-			sprintf(TextRow, "                         commit: %s", GIT_HASH);
+			sprintf(TextRow, " mod by El_isra          commit: %s", GIT_HASH);
 			PrintPos(04, hpos, TextRow);
 			PrintPos(05, hpos, "Project maintainers:");
 			PrintPos(-1, hpos, "  sp193");
 			PrintPos(-1, hpos, "  AKuHAK");
-			PrintPos(-1, hpos, "");
 			PrintPos(-1, hpos, "uLaunchELF Project maintainers:");
 			PrintPos(-1, hpos, "  Eric Price       (aka: 'E P')");
 			PrintPos(-1, hpos, "  Ronald Andersson (aka: 'dlanor')");
@@ -314,7 +313,8 @@ static void Show_About_uLE(void)
 			PrintPos(-1, hpos, "");
 			PrintPos(-1, hpos, "Main release site:");
 			PrintPos(-1, hpos, "  \"https://github.com/ps2homebrew/wLaunchELF/releases\"");
-			PrintPos(-1, hpos, "");
+			PrintPos(-1, hpos, "mod release site:");
+			PrintPos(-1, hpos, "  \"https://github.com/israpps/wLaunchELF_ISR\"");
 			PrintPos(-1, hpos, "Ancestral project: LaunchELF v3.41");
 			PrintPos(-1, hpos, "Created by:        Mirakichi");
 		}  //ends if(event||post_event)
@@ -1647,7 +1647,7 @@ int IsSupportedFileType(char *path)
 	if (strchr(path, ':') != NULL) {
 		if (genCmpFileExt(path, "ELF")) {
 			return (checkELFheader(path) >= 0);
-		} else if ((genCmpFileExt(path, "TXT") || genCmpFileExt(path, "CFG") ) || (genCmpFileExt(path, "JPG") || genCmpFileExt(path, "JPEG"))) {
+		} else if ((genCmpFileExt(path, "TXT") || genCmpFileExt(path, "CFG") || genCmpFileExt(path, "INI") ) || (genCmpFileExt(path, "JPG") || genCmpFileExt(path, "JPEG"))) {
 			return 1;
 		} else
 			return 0;
@@ -1880,7 +1880,7 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		LastDir[0] = 0;
 		getFilePath(tmp, FALSE);
 		if (tmp[0]) {
-			if (genCmpFileExt(tmp, "TXT") || genCmpFileExt(tmp, "CFG") ) {
+			if (genCmpFileExt(tmp, "TXT") || genCmpFileExt(tmp, "CFG") || genCmpFileExt(tmp, "INI") ) {
 				if (setting->GUI_skin[0]) {
 					GUI_active = 0;
 					loadSkin(BACKGROUND_PIC, 0, 0);
@@ -2148,6 +2148,8 @@ int main(int argc, char *argv[])
 	enum BOOT_DEVICE boot = BOOT_DEV_UNKNOWN;
 	int CNF_error = -1;  //assume error until CNF correctly loaded
 	int i;
+
+printf("ulaunchelf debug   \n");
 
 	boot_argc = argc;
 	for (i = 0; (i < argc) && (i < 8); i++)
