@@ -19,11 +19,6 @@ jobs:
     - run: |
         git fetch --prune --unshallow
 
-    - name: Install ps2eth
-      run: |
-        git clone https://github.com/ps2dev/ps2eth.git
-        cd ps2eth && make clean all install
-
     - name: Compile wLaunchELF
       run: |
         make
