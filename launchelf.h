@@ -37,7 +37,7 @@
 #include <gsKit.h>
 #include <dmaKit.h>
 #include <libcdvd.h>
-#include <libjpg.h>
+#include <libjpg_ps2_addons.h>
 #include <libkbd.h>
 #include <math.h>
 #include <usbhdfsd-common.h>

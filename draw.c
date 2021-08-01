@@ -677,137 +677,135 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 	}
 
 	genFixPath(tmpPath, skinpath);
-	FILE *File = fopen(skinpath, "r");
 
 	PicW = 0, PicH = 0, PicCoeff = 0;
 
-	if (File != NULL) {
+	jpgData *Jpg;
+	u8 *ImgData1, *ImgData2;
+	int W = 0;
 
-		jpgData *Jpg;
-		u8 *ImgData, *ImgData1, *ImgData2;
-		int W = 0;
-
-		if ((Jpg = jpgOpenFILE(File, JPG_WIDTH_FIX)) > 0) {
-			if ((ImgData = memalign(64, Jpg->width * Jpg->height * (Jpg->bpp / 8))) > 0) {
-				if ((jpgReadImage(Jpg, ImgData)) != -1) {
-					if (Picture == BACKGROUND_PIC) {
-						if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, (void *)&TexSkin.Mem, SCREEN_WIDTH, SCREEN_HEIGHT)) != 0) {
-							TexSkin.PSM = GS_PSM_CT24;
-							TexSkin.VramClut = 0;
-							TexSkin.Clut = NULL;
-							TexSkin.Width = SCREEN_WIDTH;
-							TexSkin.Height = SCREEN_HEIGHT;
-							TexSkin.Filter = GS_FILTER_NEAREST;
-							gsGlobal->CurrentPointer = 0x140000;
-							TexSkin.Vram = gsKit_vram_alloc(gsGlobal,
-							                                gsKit_texture_size(TexSkin.Width, TexSkin.Height, TexSkin.PSM),
-							                                GSKIT_ALLOC_USERBUFFER);
-							gsKit_texture_upload(gsGlobal, &TexSkin);
-							free(TexSkin.Mem);
-							testskin = 1;
-						} /* end if */
-					} else if ((Picture == PREVIEW_PIC) || (Picture == PREVIEW_GUI)) {
-						if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, (void *)&TexPreview.Mem, SCREEN_WIDTH, SCREEN_HEIGHT)) != 0) {
-							TexPreview.PSM = GS_PSM_CT24;
-							TexPreview.VramClut = 0;
-							TexPreview.Clut = NULL;
-							TexPreview.Width = SCREEN_WIDTH;
-							TexPreview.Height = SCREEN_HEIGHT;
-							TexPreview.Filter = GS_FILTER_NEAREST;
-							gsGlobal->CurrentPointer = 0x280000;
-							TexPreview.Vram = gsKit_vram_alloc(gsGlobal,
-							                                   gsKit_texture_size(TexPreview.Width, TexPreview.Height, TexPreview.PSM),
-							                                   GSKIT_ALLOC_USERBUFFER);
-							gsKit_texture_upload(gsGlobal, &TexPreview);
-							free(TexPreview.Mem);
-							testsetskin = 1;
-						} /* end if */
-					} else if (Picture == JPG_PIC) {
-						PicW = Jpg->width;
-						PicH = Jpg->height;
+	Jpg = jpgFromFilename(skinpath, JPG_WIDTH_FIX);
+	if (Jpg) {
+		if (Picture == BACKGROUND_PIC) {
+			if ((ScaleBitmap(Jpg->buffer, Jpg->width, Jpg->height, (void *)&TexSkin.Mem, SCREEN_WIDTH, SCREEN_HEIGHT)) != 0) {
+				TexSkin.PSM = GS_PSM_CT24;
+				TexSkin.VramClut = 0;
+				TexSkin.Clut = NULL;
+				TexSkin.Width = SCREEN_WIDTH;
+				TexSkin.Height = SCREEN_HEIGHT;
+				TexSkin.Filter = GS_FILTER_NEAREST;
+				gsGlobal->CurrentPointer = 0x140000;
+				TexSkin.Vram = gsKit_vram_alloc(gsGlobal,
+				                                gsKit_texture_size(TexSkin.Width, TexSkin.Height, TexSkin.PSM),
+				                                GSKIT_ALLOC_USERBUFFER);
+				gsKit_texture_upload(gsGlobal, &TexSkin);
+				free(TexSkin.Mem);
+				testskin = 1;
+			} /* end if */
+		} else if ((Picture == PREVIEW_PIC) || (Picture == PREVIEW_GUI)) {
+			if ((ScaleBitmap(Jpg->buffer, Jpg->width, Jpg->height, (void *)&TexPreview.Mem, SCREEN_WIDTH, SCREEN_HEIGHT)) != 0) {
+				TexPreview.PSM = GS_PSM_CT24;
+				TexPreview.VramClut = 0;
+				TexPreview.Clut = NULL;
+				TexPreview.Width = SCREEN_WIDTH;
+				TexPreview.Height = SCREEN_HEIGHT;
+				TexPreview.Filter = GS_FILTER_NEAREST;
+				gsGlobal->CurrentPointer = 0x280000;
+				TexPreview.Vram = gsKit_vram_alloc(gsGlobal,
+				                                   gsKit_texture_size(TexPreview.Width, TexPreview.Height, TexPreview.PSM),
+				                                   GSKIT_ALLOC_USERBUFFER);
+				gsKit_texture_upload(gsGlobal, &TexPreview);
+				free(TexPreview.Mem);
+				testsetskin = 1;
+			} /* end if */
+		} else if (Picture == JPG_PIC) {
+			PicW = Jpg->width;
+			PicH = Jpg->height;
+			if (TV_mode != TV_mode_PAL)
+				PicCoeff = (PicW / PicH) + (1.0f / 10.5f);
+			else
+				PicCoeff = (PicW / PicH) - (1.0f / 12.0f);
+			if (FullScreen) {
+				if (Jpg->width > Jpg->height) {
+					PicWidth = 928;
+					PicHeight = 696;
+				} else {
+					PicHeight = 928;
+					PicWidth = 696;
+				}
+			} else {
+				if (Jpg->width > Jpg->height) {
+					PicWidth = 640;
+					PicHeight = 512;
+				} else {
+					PicHeight = 640;
+					PicWidth = 512;
+				}
+			}
+			if ((ScaleBitmap(Jpg->buffer, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
+				if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
+					if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
+						TexPicture.Mem = (u32 *)memalign(64, ((int)PicWidth * (int)PicHeight * 3) + 1);
+						RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
+						W = PicW;
+						PicW = PicH;
+						PicH = W;
 						if (TV_mode != TV_mode_PAL)
 							PicCoeff = (PicW / PicH) + (1.0f / 10.5f);
 						else
 							PicCoeff = (PicW / PicH) - (1.0f / 12.0f);
-						if (FullScreen) {
-							if (Jpg->width > Jpg->height) {
-								PicWidth = 928;
-								PicHeight = 696;
-							} else {
-								PicHeight = 928;
-								PicWidth = 696;
-							}
-						} else {
-							if (Jpg->width > Jpg->height) {
-								PicWidth = 640;
-								PicHeight = 512;
-							} else {
-								PicHeight = 640;
-								PicWidth = 512;
-							}
-						}
-						if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
-							if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
-								if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
-									TexPicture.Mem = (u32 *)memalign(64, ((int)PicWidth * (int)PicHeight * 3) + 1);
-									RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
-									W = PicW;
-									PicW = PicH;
-									PicH = W;
-									if (TV_mode != TV_mode_PAL)
-										PicCoeff = (PicW / PicH) + (1.0f / 10.5f);
-									else
-										PicCoeff = (PicW / PicH) - (1.0f / 12.0f);
-									W = PicWidth;
-									PicWidth = PicHeight;
-									PicHeight = W;
-								} else {
-									memcpy((void *)&TexPicture.Mem, &ImgData2, sizeof(ImgData2));
-								}
-								TexPicture.PSM = GS_PSM_CT24;
-								TexPicture.VramClut = 0;
-								TexPicture.Clut = NULL;
-								TexPicture.Filter = GS_FILTER_NEAREST;
-								TexPicture.Width = PicWidth;
-								TexPicture.Height = PicHeight;
-								if (FullScreen)
-									gsGlobal->CurrentPointer = 0x140000;
-								else
-									gsGlobal->CurrentPointer = 0x288000;
-								TexPicture.Vram = gsKit_vram_alloc(gsGlobal,
-								                                   gsKit_texture_size(TexPicture.Width, TexPicture.Height, TexPicture.PSM),
-								                                   GSKIT_ALLOC_USERBUFFER);
-								gsKit_texture_upload(gsGlobal, &TexPicture);
-								free(TexPicture.Mem);
-								testjpg = 1;
-							} /* end if */
-						}     /* end if */
-					} else if (Picture == THUMB_PIC) {
-						if ((ScaleBitmap(ImgData, Jpg->width, Jpg->height, (void *)&TexThumb[ThumbNum].Mem, 64, 32)) != 0) {
-							TexThumb[ThumbNum].PSM = GS_PSM_CT24;
-							TexThumb[ThumbNum].VramClut = 0;
-							TexThumb[ThumbNum].Clut = NULL;
-							TexThumb[ThumbNum].Width = 64;
-							TexThumb[ThumbNum].Height = 32;
-							TexThumb[ThumbNum].Filter = GS_FILTER_NEAREST;
-							TexThumb[ThumbNum].Vram = gsKit_vram_alloc(gsGlobal,
-							                                           gsKit_texture_size(TexThumb[ThumbNum].Width,
-							                                                              TexThumb[ThumbNum].Height, TexThumb[ThumbNum].PSM),
-							                                           GSKIT_ALLOC_USERBUFFER);
-							gsKit_texture_upload(gsGlobal, &TexThumb[ThumbNum]);
-							free(TexThumb[ThumbNum].Mem);
-							testthumb = 1;
-						}           /* end if */
-					}               /* end else */
-					jpgClose(Jpg);  //This really should be moved, but jpg funcs may object
-				}                   /* end if((jpgReadImage(...)) != -1) */
-				free(ImgData);
-				free(ImgData1);
-				free(ImgData2);
-			} /* end if( (ImgData = memalign(...)) > 0 ) */
-		}     /* end if( (Jpg=jpgOpenRAW(...)) > 0 ) */
-		fclose(File);
-	} /* end if( File != NULL ) */
+						W = PicWidth;
+						PicWidth = PicHeight;
+						PicHeight = W;
+					} else {
+						memcpy((void *)&TexPicture.Mem, &ImgData2, sizeof(ImgData2));
+					}
+					TexPicture.PSM = GS_PSM_CT24;
+					TexPicture.VramClut = 0;
+					TexPicture.Clut = NULL;
+					TexPicture.Filter = GS_FILTER_NEAREST;
+					TexPicture.Width = PicWidth;
+					TexPicture.Height = PicHeight;
+					if (FullScreen)
+						gsGlobal->CurrentPointer = 0x140000;
+					else
+						gsGlobal->CurrentPointer = 0x288000;
+					TexPicture.Vram = gsKit_vram_alloc(gsGlobal,
+					                                   gsKit_texture_size(TexPicture.Width, TexPicture.Height, TexPicture.PSM),
+					                                   GSKIT_ALLOC_USERBUFFER);
+					gsKit_texture_upload(gsGlobal, &TexPicture);
+					free(TexPicture.Mem);
+					testjpg = 1;
+				} /* end if */
+			}     /* end if */
+		} else if (Picture == THUMB_PIC) {
+			if ((ScaleBitmap(Jpg->buffer, Jpg->width, Jpg->height, (void *)&TexThumb[ThumbNum].Mem, 64, 32)) != 0) {
+				TexThumb[ThumbNum].PSM = GS_PSM_CT24;
+				TexThumb[ThumbNum].VramClut = 0;
+				TexThumb[ThumbNum].Clut = NULL;
+				TexThumb[ThumbNum].Width = 64;
+				TexThumb[ThumbNum].Height = 32;
+				TexThumb[ThumbNum].Filter = GS_FILTER_NEAREST;
+				TexThumb[ThumbNum].Vram = gsKit_vram_alloc(gsGlobal,
+				                                           gsKit_texture_size(TexThumb[ThumbNum].Width,
+				                                                              TexThumb[ThumbNum].Height, TexThumb[ThumbNum].PSM),
+				                                           GSKIT_ALLOC_USERBUFFER);
+				gsKit_texture_upload(gsGlobal, &TexThumb[ThumbNum]);
+				free(TexThumb[ThumbNum].Mem);
+				testthumb = 1;
+			} /* end if */
+		}
+
+		if (ImgData1)
+			free(ImgData1);
+		if (ImgData2)
+			free(ImgData2);
+		if (Jpg->buffer)
+			free(Jpg->buffer);
+		if (Jpg)
+			free(Jpg);
+	}
+
 	if (!strncmp(tmpPath, "cdfs", 4)) {
 		sceCdStop();
 		sceCdSync(0);
