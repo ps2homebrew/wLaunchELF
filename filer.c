@@ -222,7 +222,10 @@ int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
 		sprintf(dir, "pfs0:%s", p);
 	*p = 0;
 	if (party != NULL)
-		sprintf(party, "hdd0:%s", &fullpath[6]);
+		if (strcmp(&fullpath[6], "__xcontents") == 0 || strcmp(&fullpath[6], "__extend") == 0 || strcmp(&fullpath[6], "__xdata") == 0)
+			sprintf(party, "bhdd0:%s", &fullpath[6]);
+		else
+			sprintf(party, "hdd0:%s", &fullpath[6]);
 
 	return 0;
 }
@@ -230,6 +233,7 @@ int getHddParty(const char *path, const FILEINFO *file, char *party, char *dir)
 int mountParty(const char *party)
 {
 	int i, j;
+	int mount_mode;
 	char pfs_str[6];
 
 	for (i = 0; i < MOUNT_LIMIT; i++) {  //Here we check already mounted PFS indexes
@@ -261,14 +265,18 @@ int mountParty(const char *party)
 
 	i = j;
 	strcpy(pfs_str, "pfs0:");
-
+	mount_mode = FIO_MT_RDWR;
+	if (strncmp(party, "bhdd", 4) == 0)
+	{
+		mount_mode = FIO_MT_RDONLY;
+	}
 	pfs_str[3] = '0' + i;
-	if (fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0) {          //if FTP stole it
+	if (fileXioMount(pfs_str, party, mount_mode) < 0) {          //if FTP stole it
 		for (i = 0; i <= 4; i++) {                                //for loop to kill FTP partition mountpoints
 			if ((i != latestMount) && (Party_vmcIndex[i] < 0)) {  //if unneeded by uLE
 				unmountParty(i);                                  //unmount partition mountpoint
 				pfs_str[3] = '0' + i;                             //prepare to reuse that mountpoint
-				if (fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
+				if (fileXioMount(pfs_str, party, mount_mode) >= 0)
 					break;  //break from the loop on successful mount
 			}               //ends if unneeded by uLE
 		}                   //ends for loop to kill FTP partition mountpoints
@@ -690,6 +698,35 @@ void setPartyList(void)
 		parties[nparties++][MAX_PART_NAME] = '\0';
 	}
 	fileXioDclose(hddFd);
+	if ((hddFd = fileXioDopen("bhdd0:")) < 0)
+		return;
+	while (fileXioDread(hddFd, &dirEnt) > 0) {
+		if (nparties >= MAX_PARTITIONS)
+			break;
+		if ((dirEnt.stat.attr != ATTR_MAIN_PARTITION) || (dirEnt.stat.mode != FS_TYPE_PFS))
+			continue;
+
+		//Patch this to see if new CB versions use valid PFS format
+		//NB: All CodeBreaker versions up to v9.3 use invalid formats
+		/*	if(!strncmp(dirEnt.name, "PP.",3)){
+			int len = strlen(dirEnt.name);
+			if(!strcmp(dirEnt.name+len-4, ".PCB"))
+				continue;
+		}
+
+		if(!strncmp(dirEnt.name, "__", 2) &&
+			strcmp(dirEnt.name, "__boot") &&
+			strcmp(dirEnt.name, "__net") &&
+			strcmp(dirEnt.name, "__system") &&
+			strcmp(dirEnt.name, "__sysconf") &&
+			strcmp(dirEnt.name, "__contents") &&   // this is where PSBBN used to store it's downloaded contents. Adding it is useful.
+			strcmp(dirEnt.name, "__common"))
+			continue;
+	*/
+		strncpy(parties[nparties], dirEnt.name, MAX_PART_NAME);
+		parties[nparties++][MAX_PART_NAME] = '\0';
+	}
+	fileXioDclose(hddFd);
 }
 //--------------------------------------------------------------
 // The following group of file handling functions are used to allow
@@ -779,6 +816,29 @@ int genFixPath(const char *inp_path, char *gen_path)
 		}
 		//Generate standard path to the block device (i.e. hdd0:/partition results in hdd0:partition)
 		sprintf(party, "hdd0:%s", loc_path);
+		if (nparties == 0) {
+			//No partitions recognized? Load modules & populate partition list.
+			loadHddModules();
+			setPartyList();
+		}
+		//Mount the partition.
+		if ((part_ix = mountParty(party)) >= 0)
+			gen_path[3] = part_ix + '0';
+		//end of clause for using an HDD path
+	} else if (!strncmp(uLE_path, "bhdd0:/", 7)) {  //If using HDD path
+		//Get path on HDD unit, LaunchELF's format (e.g. hdd0:/partition/path/to/file)
+		strcpy(loc_path, uLE_path + 7);
+		if ((p = strchr(loc_path, '/')) != NULL) {
+			//Extract path to file within partition. Make a new path, relative to the filesystem root.
+			//hdd0:/partition/path/to/file becomes pfs0:/path/to/file.
+			sprintf(gen_path, "pfs0:%s", p);
+			*p = 0;  //null-terminate the block device path (hdd0:/partition).
+		} else {
+			//Otherwise, default to /
+			strcpy(gen_path, "pfs0:/");
+		}
+		//Generate standard path to the block device (i.e. hdd0:/partition results in hdd0:partition)
+		sprintf(party, "bhdd0:%s", loc_path);
 		if (nparties == 0) {
 			//No partitions recognized? Load modules & populate partition list.
 			loadHddModules();
