@@ -810,7 +810,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
         sceCdStop();
         sceCdSync(0);
     }
-    if (!strncmp(tmpPath, "hdd0:/", 6) || !strncmp(tmpPath, "bhdd0:/", 7))
+    if (!strncmp(tmpPath, "hdd0:/", 6))
         unmountParty(0);
 }
 //--------------------------------------------------------------

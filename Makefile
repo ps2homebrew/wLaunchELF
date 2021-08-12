@@ -99,10 +99,10 @@ ps2ftpd_irx.s: oldlibs/ps2ftpd/bin/ps2ftpd.irx
 ps2atad_irx.s: $(PS2SDK)/iop/irx/ps2atad.irx
 	$(BIN2S) $< $@ ps2atad_irx
 
-ps2hdd_irx.s: $(PS2SDK)/iop/irx/ps2hdd-xosd.irx
+ps2hdd_irx.s: $(PS2SDK)/iop/irx/ps2hdd-osd.irx
 	$(BIN2S) $< $@ ps2hdd_irx
 
-ps2fs_irx.s: $(PS2SDK)/iop/irx/ps2fs-xosd.irx
+ps2fs_irx.s: $(PS2SDK)/iop/irx/ps2fs.irx
 	$(BIN2S) $< $@ ps2fs_irx
 
 ps2netfs_irx.s: $(PS2SDK)/iop/irx/ps2netfs.irx
