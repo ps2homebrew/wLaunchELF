@@ -61,6 +61,10 @@ extern u8 sior_irx[];
 extern int size_sior_irx;
 extern u8 allowdvdv_irx[];
 extern int size_allowdvdv_irx;
+extern u8 dvrdrv_irx[];
+extern int size_dvrdrv_irx;
+extern u8 dvrfile_irx[];
+extern int size_dvrfile_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -111,6 +115,7 @@ char netConfig[IPCONF_MAX_LEN + 64];  //Adjust size as needed
 //State of module collections
 static u8 have_NetModules = 0;
 static u8 have_HDD_modules = 0;
+static u8 have_DVRP_HDD_modules = 0;
 //State of Uncheckable Modules (invalid header)
 static u8 have_cdvd = 0;
 static u8 have_usbd = 0;
@@ -131,6 +136,8 @@ static u8 have_ps2fs = 0;
 static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
+static u8 have_dvrdrv = 0;
+static u8 have_dvrfile = 0;
 //State of whether DEV9 was successfully loaded or not.
 static u8 ps2dev9_loaded = 0;
 //State of whether the UI has been initialized.
@@ -495,8 +502,8 @@ static int drawMainScreen(void)
 			else
 				color = setting->color[COLOR_TEXT];
 			int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
-			              strlen(LNG(LEFT)) + 2 :
-			              strlen(LNG(RIGHT)) + 2;
+                          strlen(LNG(LEFT)) + 2 :
+                          strlen(LNG(RIGHT)) + 2;
 			if (i == SETTING_LK_LEFT) {  // LEFT
 				if (strlen(LNG(RIGHT)) + 2 > strlen(LNG(LEFT)) + 2)
 					printXY(c, x + (strlen(LNG(RIGHT)) + 2 > 9 ? ((strlen(LNG(RIGHT)) + 2) - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH : (9 - (strlen(LNG(LEFT)) + 2)) * FONT_WIDTH),
@@ -612,8 +619,8 @@ static int drawMainScreen2(int TV_mode)
 			else
 				color = setting->color[COLOR_TEXT];
 			int len = (strlen(LNG(LEFT)) + 2 > strlen(LNG(RIGHT)) + 2) ?
-			              strlen(LNG(LEFT)) + 2 :
-			              strlen(LNG(RIGHT)) + 2;
+                          strlen(LNG(LEFT)) + 2 :
+                          strlen(LNG(RIGHT)) + 2;
 			if (i == SETTING_LK_AUTO)
 				printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH) + 20, y, color, TRUE, 0);
 			else if (i == SETTING_LK_SELECT)
@@ -767,6 +774,27 @@ static void load_smbman(void)
 //---------------------------------------------------------------------------
 #include "SMB_test.c"
 #endif
+static void load_ps2dvr(void)
+{
+	int ret;
+
+	load_ps2atad();
+	if (!is_early_init)  //Do not draw any text before the UI is initialized.
+		drawMsg("Loading dvrdrv");
+	if (!have_dvrdrv) {
+		SifExecModuleBuffer(dvrdrv_irx, size_dvrdrv_irx, 0, NULL, &ret);
+		have_dvrdrv = 1;
+	}
+	if (!is_early_init)  //Do not draw any text before the UI is initialized.
+		drawMsg("Loading dvrfile");
+	if (!have_dvrfile) {
+		SifExecModuleBuffer(dvrfile_irx, size_dvrfile_irx, 0, NULL, &ret);
+		have_dvrfile = 1;
+	}
+}
+//------------------------------
+//endfunc load_ps2dvr
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 //Function to show a screen with debugging info
 //------------------------------
@@ -1037,6 +1065,18 @@ static void getExternalFilePath(const char *argPath, char *filePath)
 		*p = 0;
 		mountParty(party);
 
+	} else if (!strncmp(argPath, "dvr_hdd0:/", 10)) {
+		//Loading some module from HDD
+		char party[MAX_PATH];
+		char *p;
+
+		loadDVRPHddModules();
+		sprintf(party, "dvr_hdd0:%s", argPath + 10);
+		p = strchr(party, '/');
+		sprintf(filePath, "dvr_pfs0:%s", p);
+		*p = 0;
+		mountDVRPParty(party);
+
 	} else if (!strncmp(argPath, "cdfs", 4)) {
 		strcpy(filePath, argPath);
 		// TODO: Flush CDFS cache
@@ -1178,6 +1218,7 @@ static void closeAllAndPoweroff(void)
 	if (ps2dev9_loaded) {
 		/* Close all files */
 		fileXioDevctl("pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
+		fileXioDevctl("dvr_pfs:", PDIOC_CLOSEALL, NULL, 0, NULL, 0);
 		/* Switch off DEV9 */
 		while (fileXioDevctl("dev9x:", DDIOC_OFF, NULL, 0, NULL, 0) < 0) {
 		};
@@ -1229,6 +1270,20 @@ void loadHddModules(void)
 }
 //------------------------------
 //endfunc loadHddModules
+//---------------------------------------------------------------------------
+void loadDVRPHddModules(void)
+{
+	if (!have_DVRP_HDD_modules) {
+		if (!is_early_init)  //Do not draw any text before the UI is initialized.
+			drawMsg(LNG(Loading_HDD_Modules));
+		setupPowerOff();
+		load_ps2dvr();
+		sceCdNoticeGameStart(0, NULL);
+		have_DVRP_HDD_modules = TRUE;
+	}
+}
+//------------------------------
+//endfunc loadDVRPHddModules
 //---------------------------------------------------------------------------
 // Load Network modules by EP (modified by RA)
 //------------------------------
@@ -1716,6 +1771,17 @@ Recurse_for_ESR:  //Recurse here for PS2Disc command with ESR disc
 		*p = 0;
 		goto ELFchecked;
 
+	} else if (!strncmp(path, "dvr_hdd0:/", 10)) {
+		loadDVRPHddModules();
+		if ((t = checkELFheader(path)) <= 0)
+			goto ELFnotFound;
+		//coming here means the ELF is fine
+		sprintf(party, "dvr_hdd0:%s", path + 10);
+		p = strchr(party, '/');
+		sprintf(fullpath, "dvr_pfs0:%s", p);
+		*p = 0;
+		goto ELFchecked;
+
 	} else if (!strncmp(path, "mass", 4)) {
 		if ((t = checkELFheader(path)) <= 0)
 			goto ELFnotFound;
@@ -2033,8 +2099,11 @@ static void Reset()
 	have_smbman = 0;
 	have_ps2ftpd = 0;
 	have_ps2kbd = 0;
+	have_dvrdrv = 0;
+	have_dvrfile = 0;
 	have_NetModules = 0;
 	have_HDD_modules = 0;
+	have_DVRP_HDD_modules = 0;
 
 	loadBasicModules();
 	loadCdModules();
@@ -2203,6 +2272,29 @@ int main(int argc, char *argv[])
 						sprintf(LaunchElfDir, "hdd0:/%s", temp);
 					else
 						sprintf(LaunchElfDir, "hdd0:/%s/", temp);
+
+					strcat(LaunchElfDir, p + 1);
+				}
+			}
+
+			boot = BOOT_DEVICE_HDD;
+		} else if (!strncmp(argv[0], "dvr_hdd", 7)) {
+			//Booting from the HDD requires special handling for HDD-based paths.
+			char temp[MAX_PATH];
+			char *t, *p;
+			/* Change boot_path to contain a path to the block device.
+                Standard HDD path format: dvr_hdd0:partition:pfs:path/to/file
+                However, (older) homebrew may not use this format. */
+			strcpy(temp, boot_path + 9);  //Skip "dvr_hdd0:" when copying.
+			t = strchr(temp, ':');        //Check if the separator between the block device & the path exists.
+			if (t != NULL) {
+				*(t) = 0;                //If it does, get the block device name.
+				p = strchr(t + 1, ':');  //Get the path to the file
+				if (p != NULL) {
+					if (p[1] == '/')
+						sprintf(LaunchElfDir, "dvr_hdd0:/%s", temp);
+					else
+						sprintf(LaunchElfDir, "dvr_hdd0:/%s/", temp);
 
 					strcat(LaunchElfDir, p + 1);
 				}

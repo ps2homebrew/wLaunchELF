@@ -55,6 +55,8 @@ int PM_file[MAX_RECURSE];  //PasteMode attribute file descriptors
 
 char mountedParty[MOUNT_LIMIT][MAX_NAME];
 int latestMount = -1;
+char mountedDVRPParty[MOUNT_LIMIT][MAX_NAME];
+int latestDVRPMount = -1;
 int vmcMounted[2] = {0, 0};                          //flags true for mounted VMC false for unmounted
 int vmc_PartyIndex[2] = {-1, -1};                    //PFS index for each VMC, unless -1
 int Party_vmcIndex[MOUNT_LIMIT] = {-1, -1, -1, -1};  //VMC for each PFS, unless -1
@@ -65,7 +67,7 @@ int mcfreeSpace;
 int mctype_PSx;  //dlanor: Needed for proper scaling of mcfreespace
 int vfreeSpace;  //flags validity of freespace value
 int browser_cut;
-int nclipFiles, nmarks, nparties;
+int nclipFiles, nmarks, nparties, ndvrpparties;
 int file_show = 1;  //dlanor: 0==name_only, 1==name+size+time, 2==title+size+time
 int file_sort = 1;  //dlanor: 0==none, 1==name, 2==title, 3==mtime
 int size_valid = 0;
@@ -298,6 +300,69 @@ void unmountParty(int party_ix)
 		latestMount = -1;
 }
 //--------------------------------------------------------------
+// The above modified for the DVRP.
+//--------------------------------------------------------------
+int getHddDVRPParty(const char *path, const FILEINFO *file, char *party, char *dir)
+{
+	char fullpath[MAX_PATH], *p;
+
+	if (strncmp(path, "dvr_hdd", 7))
+		return -1;
+
+	strcpy(fullpath, path);
+	if (file != NULL) {
+		strcat(fullpath, file->name);
+		if (file->stats.AttrFile & sceMcFileAttrSubdir)
+			strcat(fullpath, "/");
+	}
+	if ((p = strchr(&fullpath[10], '/')) == NULL)
+		return -1;
+	if (dir != NULL)
+		sprintf(dir, "dvr_pfs0:%s", p);
+	*p = 0;
+	if (party != NULL)
+		sprintf(party, "dvr_hdd0:%s", &fullpath[10]);
+
+	return 0;
+}
+//--------------------------------------------------------------
+int mountDVRPParty(const char *party)
+{
+	int i, j;
+
+	for (i = 0; i < MOUNT_LIMIT; i++) {  //Here we check already mounted PFS indexes
+		if (!strcmp(party, mountedDVRPParty[i]))
+			goto return_i;
+	}
+
+	for (i = 0, j = -1; i < MOUNT_LIMIT; i++) {  //Here we search for a free PFS index
+		if (mountedDVRPParty[i][0] == 0) {
+			j = i;
+			break;
+		}
+	}
+	if (strcmp(party, "dvr_hdd0:__xdata") == 0) {
+		i = 1;
+	} else if (strcmp(party, "dvr_hdd0:__xcontents") == 0) {
+		i = 0;
+	} else {
+		return -1;
+	}
+	strcpy(mountedDVRPParty[i], party);
+return_i:
+	latestDVRPMount = i;
+	return i;
+}
+//--------------------------------------------------------------
+void unmountDVRPParty(int party_ix)
+{
+	if (party_ix < MOUNT_LIMIT) {
+		mountedDVRPParty[party_ix][0] = 0;
+	}
+	if (latestDVRPMount == party_ix)
+		latestDVRPMount = -1;
+}
+//--------------------------------------------------------------
 // unmountAll can unmount all mountpoints from 0 to MOUNT_LIMIT,
 // but unlike the individual unmountParty, it will only do so
 // for mountpoints indicated as used by the matching string in
@@ -307,6 +372,7 @@ void unmountParty(int party_ix)
 void unmountAll(void)
 {
 	char pfs_str[6];
+	char dvr_pfs_str[10];
 	char vmc_str[6];
 	int i;
 
@@ -330,6 +396,16 @@ void unmountAll(void)
 		}
 	}
 	latestMount = -1;
+
+	strcpy(dvr_pfs_str, "dvr_pfs0:");
+	for (i = 0; i < MOUNT_LIMIT; i++) {
+		if (mountedDVRPParty[i][0] != 0) {
+			dvr_pfs_str[7] = '0' + i;
+			fileXioUmount(dvr_pfs_str);
+			mountedDVRPParty[i][0] = 0;
+		}
+	}
+	latestDVRPMount = -1;
 }  //ends unmountAll
 //--------------------------------------------------------------
 int ynDialog(const char *message)
@@ -692,6 +768,44 @@ void setPartyList(void)
 	fileXioDclose(hddFd);
 }
 //--------------------------------------------------------------
+void setDVRPPartyList(void)
+{
+	iox_dirent_t dirEnt;
+	int hddFd;
+
+	ndvrpparties = 0;
+
+	if ((hddFd = fileXioDopen("dvr_hdd0:")) < 0)
+		return;
+	while (fileXioDread(hddFd, &dirEnt) > 0) {
+		if (ndvrpparties >= MAX_PARTITIONS)
+			break;
+		if ((dirEnt.stat.attr != ATTR_MAIN_PARTITION) || (dirEnt.stat.mode != FS_TYPE_PFS))
+			continue;
+
+		//Patch this to see if new CB versions use valid PFS format
+		//NB: All CodeBreaker versions up to v9.3 use invalid formats
+		/*	if(!strncmp(dirEnt.name, "PP.",3)){
+			int len = strlen(dirEnt.name);
+			if(!strcmp(dirEnt.name+len-4, ".PCB"))
+				continue;
+		}
+
+		if(!strncmp(dirEnt.name, "__", 2) &&
+			strcmp(dirEnt.name, "__boot") &&
+			strcmp(dirEnt.name, "__net") &&
+			strcmp(dirEnt.name, "__system") &&
+			strcmp(dirEnt.name, "__sysconf") &&
+			strcmp(dirEnt.name, "__contents") &&   // this is where PSBBN used to store it's downloaded contents. Adding it is useful.
+			strcmp(dirEnt.name, "__common"))
+			continue;
+	*/
+		strncpy(parties[ndvrpparties], dirEnt.name, MAX_PART_NAME);
+		parties[ndvrpparties++][MAX_PART_NAME] = '\0';
+	}
+	fileXioDclose(hddFd);
+}
+//--------------------------------------------------------------
 // The following group of file handling functions are used to allow
 // the main program to access files without having to deal with the
 // difference between device-specific needs directly in each call.
@@ -787,6 +901,29 @@ int genFixPath(const char *inp_path, char *gen_path)
 		//Mount the partition.
 		if ((part_ix = mountParty(party)) >= 0)
 			gen_path[3] = part_ix + '0';
+		//end of clause for using an HDD path
+	} else if (!strncmp(uLE_path, "dvr_hdd0:/", 10)) {  //If using DVRP HDD path
+		//Get path on DVR HDD unit, LaunchELF's format (e.g. dvr_hdd0:/partition/path/to/file)
+		strcpy(loc_path, uLE_path + 10);
+		if ((p = strchr(loc_path, '/')) != NULL) {
+			//Extract path to file within partition. Make a new path, relative to the filesystem root.
+			//dvr_hdd0:/partition/path/to/file becomes dvr_pfs0:/path/to/file.
+			sprintf(gen_path, "dvr_pfs0:%s", p);
+			*p = 0;  //null-terminate the block device path (dvr_hdd0:/partition).
+		} else {
+			//Otherwise, default to /
+			strcpy(gen_path, "dvr_pfs0:/");
+		}
+		//Generate standard path to the block device (i.e. dvr_hdd0:/partition results in hdd0:partition)
+		sprintf(party, "dvr_hdd0:%s", loc_path);
+		if (ndvrpparties == 0) {
+			//No partitions recognized? Load modules & populate partition list.
+			loadDVRPHddModules();
+			setDVRPPartyList();
+		}
+		//Mount the partition.
+		if ((part_ix = mountDVRPParty(party)) >= 0)
+			gen_path[7] = part_ix + '0';
 		//end of clause for using an HDD path
 	}
 	genLimObjName(gen_path, 0);
@@ -1009,6 +1146,67 @@ int readHDD(const char *path, FILEINFO *info, int max)
 //------------------------------
 //endfunc readHDD
 //--------------------------------------------------------------
+int readHDDDVRP(const char *path, FILEINFO *info, int max)
+{
+	iox_dirent_t dirbuf;
+	char party[MAX_PATH], dir[MAX_PATH];
+	int i = 0, fd, ret;
+
+	if (ndvrpparties == 0) {
+		loadDVRPHddModules();
+		setDVRPPartyList();
+	}
+
+	if (!strcmp(path, "dvr_hdd0:/")) {
+		for (i = 0; i < ndvrpparties; i++) {
+			strcpy(info[i].name, parties[i]);
+			info[i].stats.AttrFile = MC_ATTR_norm_folder;
+		}
+		return ndvrpparties;
+	}
+
+	getHddDVRPParty(path, NULL, party, dir);
+	ret = mountDVRPParty(party);
+	if (ret < 0)
+		return 0;
+	dir[7] = ret + '0';
+
+	if ((fd = fileXioDopen(dir)) < 0)
+		return 0;
+
+	while (fileXioDread(fd, &dirbuf) > 0) {
+		if (dirbuf.stat.mode & FIO_S_IFDIR &&
+		    (!strcmp(dirbuf.name, ".") || !strcmp(dirbuf.name, "..")))
+			continue;  //Skip pseudopaths "." and ".."
+
+		strcpy(info[i].name, dirbuf.name);
+		clear_mcTable(&info[i].stats);
+		if (dirbuf.stat.mode & FIO_S_IFDIR) {
+			info[i].stats.AttrFile = MC_ATTR_norm_folder;
+		} else if (dirbuf.stat.mode & FIO_S_IFREG) {
+			info[i].stats.AttrFile = MC_ATTR_norm_file;
+			info[i].stats.FileSizeByte = dirbuf.stat.size;
+			info[i].stats.Reserve2 = dirbuf.stat.hisize;
+		} else
+			continue;  //Skip entry which is neither a file nor a folder
+		strncpy((char *)info[i].stats.EntryName, info[i].name, 32);
+		memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
+		memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
+		i++;
+		if (i == max)
+			break;
+	}
+
+	fileXioDclose(fd);
+
+	size_valid = 1;
+	time_valid = 1;
+
+	return i;
+}
+//------------------------------
+//endfunc readHDDDVRP
+//--------------------------------------------------------------
 void scan_USB_mass(void)
 {
 	int i;
@@ -1226,6 +1424,8 @@ int getDir(const char *path, FILEINFO *info)
 		n = readMC(path, info, max);
 	else if (!strncmp(path, "hdd", 3))
 		n = readHDD(path, info, max);
+	else if (!strncmp(path, "dvr_hdd", 7))
+		n = readHDDDVRP(path, info, max);
 	else if (!strncmp(path, "mass", 4))
 		n = readMASS(path, info, max);
 	else if (!strncmp(path, "cdfs", 4))
@@ -1258,7 +1458,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
 	out[0] = '\0';  //Start by making an empty result string, for failures
 
 	//Avoid title usage in browser root or partition list
-	if (path[0] == 0 || !strcmp(path, "hdd0:/"))
+	if (path[0] == 0 || !strcmp(path, "hdd0:/") || !strcmp(path, "dvr_hdd0:/"))
 		return -1;
 
 	if (!strncmp(path, "hdd", 3)) {
@@ -1266,6 +1466,11 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
 		if ((ret = mountParty(party) < 0))
 			return -1;
 		dir[3] = ret + '0';
+	} else if (!strncmp(path, "dvr_hdd", 7)) {
+		ret = getHddDVRPParty(path, file, party, dir);
+		if ((ret = mountDVRPParty(party) < 0))
+			return -1;
+		dir[7] = ret + '0';
 	} else {
 		strcpy(dir, path);
 		strcat(dir, file->name);
@@ -1356,8 +1561,8 @@ int menu(const char *path, FILEINFO *file)
 	int write_disabled = 0;
 
 	int menu_len = strlen(LNG(Copy)) > strlen(LNG(Cut)) ?
-	                   strlen(LNG(Copy)) :
-	                   strlen(LNG(Cut));
+                       strlen(LNG(Copy)) :
+                       strlen(LNG(Cut));
 	menu_len = strlen(LNG(Paste)) > menu_len ? strlen(LNG(Paste)) : menu_len;
 	menu_len = strlen(LNG(Delete)) > menu_len ? strlen(LNG(Delete)) : menu_len;
 	menu_len = strlen(LNG(Rename)) > menu_len ? strlen(LNG(Rename)) : menu_len;
@@ -1384,7 +1589,7 @@ int menu(const char *path, FILEINFO *file)
 	            )))
 		write_disabled = 1;
 
-	if (!strcmp(path, "hdd0:/") || path[0] == 0)  //No menu cmds in partition/device lists
+	if ((!strcmp(path, "hdd0:/") || !strcmp(path, "dvr_hdd0:/")) || path[0] == 0)  //No menu cmds in partition/device lists
 		menu_disabled = 1;
 
 	if (menu_disabled) {
@@ -1702,6 +1907,13 @@ u64 getFileSize(const char *path, const FILEINFO *file)
 			if (ret < 0)
 				return 0;
 			dir[3] = ret + '0';
+		}
+		if (!strncmp(path, "dvr_hdd", 7)) {
+			getHddDVRPParty(path, file, party, dir);
+			ret = mountDVRPParty(party);
+			if (ret < 0)
+				return 0;
+			dir[7] = ret + '0';
 		} else
 			sprintf(dir, "%s%s", path, file->name);
 		if (!strncmp(dir, "host:/", 6))
@@ -1727,6 +1939,12 @@ int delete (const char *path, const FILEINFO *file)
 		if (ret < 0)
 			return 0;
 		hdddir[3] = ret + '0';
+	} else if (!strncmp(path, "dvr_hdd", 7)) {
+		getHddDVRPParty(path, file, party, hdddir);
+		ret = mountDVRPParty(party);
+		if (ret < 0)
+			return 0;
+		hdddir[7] = ret + '0';
 	}
 	sprintf(dir, "%s%s", path, file->name);
 	genLimObjName(dir, 0);
@@ -1746,7 +1964,7 @@ int delete (const char *path, const FILEINFO *file)
 			mcDelete(dir[2] - '0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);
 
-		} else if (!strncmp(path, "hdd", 3)) {
+		} else if (!strncmp(path, "hdd", 3) || !strncmp(path, "dvr_hdd", 7)) {
 			ret = rmdir(hdddir);
 
 		} else if (!strncmp(path, "vmc", 3)) {
@@ -1762,7 +1980,7 @@ int delete (const char *path, const FILEINFO *file)
 			mcSync(0, NULL, NULL);
 			mcDelete(dir[2] - '0', 0, &dir[4]);
 			mcSync(0, NULL, &ret);
-		} else if (!strncmp(path, "hdd", 3)) {
+		} else if (!strncmp(path, "hdd", 3) || !strncmp(path, "dvr_hdd", 7)) {
 			ret = unlink(hdddir);
 		} else if (!strncmp(path, "vmc", 3)) {
 			ret = unlink(dir);
@@ -1790,6 +2008,19 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
 		if (ret < 0)
 			return -1;
 		oldPath[3] = newPath[3] = ret + '0';
+
+		ret = fileXioRename(oldPath, newPath);
+	} else if (!strncmp(path, "dvr_hdd", 7)) {
+		sprintf(party, "dvr_hdd0:%s", &path[10]);
+		*strchr(party, '/') = 0;
+		sprintf(oldPath, "dvr_pfs0:%s", strchr(&path[10], '/') + 1);
+		sprintf(newPath, "%s%s", oldPath, name);
+		strcat(oldPath, file->name);
+
+		ret = mountDVRPParty(party);
+		if (ret < 0)
+			return -1;
+		oldPath[7] = newPath[7] = ret + '0';
 
 		ret = fileXioRename(oldPath, newPath);
 	} else if (!strncmp(path, "mc", 2)) {
@@ -1862,6 +2093,15 @@ int newdir(const char *path, const char *name)
 		if (ret < 0)
 			return -1;
 		dir[3] = ret + '0';
+		strcat(dir, name);
+		genLimObjName(dir, 0);
+		ret = fileXioMkdir(dir, fileMode);
+	} else if (!strncmp(path, "dvr_hdd", 7)) {
+		getHddDVRPParty(path, NULL, party, dir);
+		ret = mountDVRPParty(party);
+		if (ret < 0)
+			return -1;
+		dir[7] = ret + '0';
 		strcat(dir, name);
 		genLimObjName(dir, 0);
 		ret = fileXioMkdir(dir, fileMode);
@@ -1949,6 +2189,11 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 		getHddParty(inPath, &file, inParty, in);
 		pfsin = mountParty(inParty);
 		in[3] = pfsin + '0';
+	}
+	if (!strncmp(inPath, "dvr_hdd", 7)) {
+		getHddDVRPParty(inPath, &file, inParty, in);
+		pfsin = mountDVRPParty(inParty);
+		in[7] = pfsin + '0';
 	} else
 		sprintf(in, "%s%s", inPath, file.name);
 
@@ -1956,6 +2201,10 @@ restart_copy:  //restart point for PM_PSU_RESTORE to reprocess modified argument
 		getHddParty(outPath, &newfile, outParty, out);
 		pfsout = mountParty(outParty);
 		out[3] = pfsout + '0';
+	} else if (!strncmp(outPath, "dvr_hdd", 7)) {
+		getHddDVRPParty(outPath, &newfile, outParty, out);
+		pfsout = mountDVRPParty(outParty);
+		out[7] = pfsout + '0';
 	} else
 		sprintf(out, "%s%s", outPath, newfile.name);
 
@@ -2987,6 +3236,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 		files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 		strcpy(files[nfiles].name, "hdd0:");
 		files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
+		strcpy(files[nfiles].name, "dvr_hdd0:");
+		files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 		strcpy(files[nfiles].name, "cdfs:");
 		files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
 		if ((cnfmode != USBD_IRX_CNF) && (cnfmode != USBKBD_IRX_CNF) && (cnfmode != USBMASS_IRX_CNF)) {
@@ -3096,7 +3347,7 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 					files[i].title[0] = 0;
 			}
 		}
-		if (!strcmp(path, "hdd0:/"))
+		if (!strcmp(path, "hdd0:/") || !strcmp(path, "dvr_hdd0:/"))
 			vfreeSpace = FALSE;
 		else if (nfiles > 1)
 			sort(&files[1], 0, nfiles - 2);
@@ -3652,7 +3903,7 @@ int getFilePath(char *out, int cnfmode)
 					//ends GETSIZE
 					//R1 menu handling is completed above
 				} else if ((!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
-					if (browser_sel != 0 && path[0] != 0 && strcmp(path, "hdd0:/")) {
+					if (browser_sel != 0 && path[0] != 0 && (strcmp(path, "hdd0:/") && strcmp(path, "dvr_hdd0:/"))) {
 						if (marks[browser_sel]) {
 							marks[browser_sel] = FALSE;
 							nmarks--;
@@ -3663,7 +3914,7 @@ int getFilePath(char *out, int cnfmode)
 					}
 					browser_sel++;
 				} else if (new_pad & PAD_SQUARE) {
-					if (path[0] != 0 && strcmp(path, "hdd0:/")) {
+					if (path[0] != 0 && (strcmp(path, "hdd0:/") && strcmp(path, "dvr_hdd0:/"))) {
 						for (i = 1; i < browser_nfiles; i++) {
 							if (marks[i]) {
 								marks[i] = FALSE;
@@ -3716,6 +3967,17 @@ int getFilePath(char *out, int cnfmode)
 
 					strcpy(pfs_str, "pfs0:");
 					pfs_str[3] += latestMount;
+					ZoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
+					ZoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
+					//printf("ZoneFree==%d  ZoneSize==%d\r\n", ZoneFree, ZoneSize);
+					freeSpace = ZoneFree * ZoneSize;
+					vfreeSpace = TRUE;
+				} else if (!strncmp(path, "dvr_hdd", 7) && strcmp(path, "dvr_hdd0:/")) {
+					u64 ZoneFree, ZoneSize;
+					char pfs_str[10];
+
+					strcpy(pfs_str, "dvr_pfs0:");
+					pfs_str[7] += latestMount;
 					ZoneFree = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_FREE, NULL, 0, NULL, 0);
 					ZoneSize = fileXioDevctl(pfs_str, PFSCTL_GET_ZONE_SIZE, NULL, 0, NULL, 0);
 					//printf("ZoneFree==%d  ZoneSize==%d\r\n", ZoneFree, ZoneSize);

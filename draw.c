@@ -812,6 +812,8 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
     }
     if (!strncmp(tmpPath, "hdd0:/", 6))
         unmountParty(0);
+    if (!strncmp(tmpPath, "dvr_hdd0:/", 10))
+        unmountDVRPParty(0);
 }
 //--------------------------------------------------------------
 void loadIcon(void)
