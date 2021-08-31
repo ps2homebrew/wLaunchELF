@@ -1,0 +1,4 @@
+# ignore files with non-unicode symbols
+./jpgviewer.c
+./draw.c
+./makeicon.c
