@@ -9,9 +9,9 @@ I_dev9Shutdown
 dev9_IMPORTS_end
 
 sifcmd_IMPORTS_start
-I_sceSifInitRpc 
-I_sceSifSetRpcQueue 
-I_sceSifRegisterRpc 
+I_sceSifInitRpc
+I_sceSifSetRpcQueue
+I_sceSifRegisterRpc
 I_sceSifRpcLoop
 sifcmd_IMPORTS_end
 

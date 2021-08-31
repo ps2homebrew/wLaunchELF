@@ -9,7 +9,7 @@ reset: clean
 	ps2client -h 192.168.0.10 reset
 
 clean:
-	rm -f -r $(IOP_OBJS) $(IOP_BIN)
+	rm -f -r $(IOP_OBJS_DIR) $(IOP_BIN)
 
 include $(PS2SDK)/Defs.make
 include $(PS2SDK)/samples/Makefile.pref

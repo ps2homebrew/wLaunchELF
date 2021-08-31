@@ -86,7 +86,7 @@ ps2ftpd new additions and changes:
 
 LaunchELF v4.40h (2010.02.12)
 -Modified screen update delay methods, so as to avoid freezing in PCSX2 use due to their incomplete implementation of EE timers.
--Reverted to use MCMAN and MCSERV modules from bios, as required not only for compatibility to PCSX2, but also for compatibility to v0 PS2 consoles. 
+-Reverted to use MCMAN and MCSERV modules from bios, as required not only for compatibility to PCSX2, but also for compatibility to v0 PS2 consoles.
 
 LaunchELF v4.40g (2010.02.09)
 -Updated gsKit and existing source files to SVN rev 1664.
@@ -715,7 +715,7 @@ LaunchELF v3.61 (2006.04.18)
 -Slightly modified CD init for MISC/PS2Disc launching (eliminated a rare error case)
 
 LaunchELF v3.60  (2006.04.11)
--Split the background colour usage into one colour used by libito/GS for pixels outside of the normal screen area, and another used inside the normal screen area. The former will now always be max black (value 0) while the latter will remain as used previously. This change eliminates the inconsistent colouring of screen borders, making them consistently black from now on. 
+-Split the background colour usage into one colour used by libito/GS for pixels outside of the normal screen area, and another used inside the normal screen area. The former will now always be max black (value 0) while the latter will remain as used previously. This change eliminates the inconsistent colouring of screen borders, making them consistently black from now on.
 -Added configurable option for opaque popup menus to the 'SCREEN SETTINGS' submenu.
 -Fixed a bug in loadSkin function, that prevented skins from being loaded from HDD folders using long path strings (as for deeply nestled folders or very long names). That bug may have caused other errors too, depending on path strings used
 -Fixed a cosmetic bug that affected top right corner of menu frame in filebrowser, when using simple colour setup instead of JPG skin.
@@ -873,7 +873,7 @@ ps2ftpd new additions and changes: Included ps2ftpd.irx and source changes.
 -Altered files: iomanX.c=radad's changes, draw.c=version_id, FtpClient.c=ps2ftpd changes
 
 LaunchELF v3.41n (10/30/2005)
--Changed order of loading device drivers when starting ps2net. 
+-Changed order of loading device drivers when starting ps2net.
 -Updated Slam-Tilts "NETWORK SETTINGS" with dlanor's added change to hopefully fix an issue some were experiencing.
 -Updated ps2sdk's libmc.c, with dlanor's prior changes, to the source package.
 -Updated "Development related issues.txt" removing an issue that has now been resolved.

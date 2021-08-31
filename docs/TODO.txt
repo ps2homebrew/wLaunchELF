@@ -1,4 +1,4 @@
--bind button combination for interrupting HDD_manager (cause with 200 partition it takes 7 minutes and it will be useful to stop hdd manager at some point)
--rewrite ftp part to be more stable
--make SMB (samba share) working 
+-bind button combination for interrupting HDD_manager (cause with 200 partitions it takes 7 minutes and it will be useful to stop hdd manager at some point)
+-rewrite FTP part to be more stable
+-make SMB (samba share) working
 -cleanup code.
