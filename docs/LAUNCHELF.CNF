@@ -7,7 +7,7 @@
 # ----------------------------------------------------------------------
 # Note that LaunchELF v3.41t (or later) will accept this file as-is when
 # loading CNF, but if you modify any settings so that LaunchELF saves
-# the file again, then all comments will be removed. Also note that each
+# the file again, then all comments will be removed. Also, note that each
 # LaunchELF version can only recognize those variables that were defined
 # for that version. Using newer variables with older versions is futile.
 # It should not crash the program, but will not have meaningful effects.
@@ -21,7 +21,7 @@ CNF_version = 3
 # From LaunchELF v3.81 the CNF_version value will be 3 or higher, which
 # means that the Screen_X and Screen_Y offsets are valid for gsKit, as
 # used by that program version. Also, when that program version is used
-# with a CNF file having lower CNF_version value than 3, then the old
+# with a CNF file having a lower CNF_version value than 3, then the old
 # screen offsets will be converted to ones suitable for gsKit.
 # ----------------------------------------------------------------------
 # In v3.95 Multi-language support was added, which caused the built-in
@@ -56,9 +56,9 @@ Misc_About_uLE = About uLE
 # 12 variables the following name conventions apply:
 #
 # "LK_" is an abbreviation for "Launch Key" and is used as a prefix for
-# the key descriptor (eg: "Square"). That is then followed by the suffix
+# the key descriptor (e.g. "Square"). That is then followed by the suffix
 # "_E1" which is an abbreviation for "Execution Method 1". At present
-# that is the only method we have, but hopefully that will change...
+# that is the only method we have, but hopefully, that will change...
 #
 # The default value for most of these should be an empty string, except
 # that one link should start the file browser, so people can start to
@@ -131,7 +131,7 @@ GUI_Col_8_ABGR = 00000000
 # ----------------------------------------------------------------------
 # Screen_X and Screen_Y are offsets used to center the LaunchELF screen
 # on the physical TV screen. The values shown below are old defaults,
-# but nowdays it's better to leave them out completely, which is why
+# but nowadays it's better to leave them out completely, which is why
 # these lines were made into comments below. This way the program can
 # choose correct defaults for the TV_mode and Screen_Interlace settings
 # you've chosen further down in this file. And the values you use for
@@ -144,7 +144,7 @@ GUI_Col_8_ABGR = 00000000
 # Note that I have changed the default for IOP reset, as this has been
 # long-term tested now, and proven superior to starting without it.
 # I have also changed the default for CDVD checking, as the old default
-# could cause lockup on some PS2 models if started with empty tray.
+# could cause lockup on some PS2 models if started with an empty tray.
 # ----------------------------------------------------------------------
 Init_CDVD_Check  = 0
 Screen_Interlace = 1
@@ -164,7 +164,7 @@ USBD_FILE =
 # NET_HOSTwrite is valid in v3.44 and later versions. It can enable
 # the ability of the networked HOST interface to write on your PC HDDs!
 # Users who want to avoid risks for their PC should leave it as default,
-# which disables these new abilities. For safety reasons it can only be
+# which disables these new abilities. For safety reasons, it can only be
 # changed by direct user editing. Edit it to a non-zero value to enable
 # the new abilities. (You'll need a very new ps2client.exe as well.)
 # ----------------------------------------------------------------------
@@ -192,7 +192,7 @@ GUI_SKIN_FILE =
 Menu_Title =
 # ----------------------------------------------------------------------
 # Menu_Frame flags whether or not the big frame that encloses the menu
-# should be visible or not. By default it will be visible.
+# should be visible or not. By default, it will be visible.
 # ----------------------------------------------------------------------
 Menu_Frame = 1
 # ----------------------------------------------------------------------
@@ -204,7 +204,7 @@ Menu_Frame = 1
 SKIN_Brightness = 50
 # ----------------------------------------------------------------------
 # Show_Menu flags whether or not the main menu is visible when a GUI
-# skin is selected. By default it will be visible.
+# skin is selected. By default, it will be visible.
 # ----------------------------------------------------------------------
 Show_Menu = 1
 # ----------------------------------------------------------------------
@@ -235,7 +235,7 @@ Popup_Opaque = 0
 # ----------------------------------------------------------------------
 Init_Delay = 0
 # ----------------------------------------------------------------------
-# USBKBD_USED allows you to disable initialization of the USB keyboard
+# USBKBD_USED allows you to disable the initialization of the USB keyboard
 # driver. This is mainly useful when you need to test some specific
 # software without any USB drivers active. For example, when testing
 # software that should provide its own USB drivers. Such a test would
@@ -251,7 +251,7 @@ USBKBD_USED = 1
 # ----------------------------------------------------------------------
 USBKBD_FILE =
 # ----------------------------------------------------------------------
-# KBDMAP_FILE is a string used to specify an alternate key map KBD file
+# KBDMAP_FILE is a string used to specify an alternate keymap KBD file
 # for the USB keyboard driver, which will then be used instead of the
 # default map. You can set it in the 'STARTUP SETTINGS' screen.
 # ----------------------------------------------------------------------
@@ -259,7 +259,7 @@ KBDMAP_FILE =
 # ----------------------------------------------------------------------
 # Menu_Show_Titles is a flag that when set enables the use of Launch
 # key titles in the menu. Previously this was controlled by the variable
-# Menu_Hide_Paths, but that is no longer the case. By default the new
+# Menu_Hide_Paths, but that is no longer the case. By default, the new
 # variable is enabled, though this only affects launch keys that have
 # some title string defined.
 # ----------------------------------------------------------------------
@@ -299,9 +299,9 @@ FONT_FILE =
 # From v3.84 two settings of JpgViewer are also saved here. These are
 # the slideshow interval timer (in seconds), and the picture transition
 # choice, a value from 1-4, with 1==NONE, 2==ZOOM 3==FADE, 4==BOTH.
-# In v3.96 another setting was added, being a flag for fullscreen mode. 
-# To save latest slideshow settings, just enter the main configuration
-# menu and exit it again using the OK command. This resaves the file.
+# In v3.96 another setting was added, being a flag for fullscreen mode.
+# To save the latest slideshow settings, enter the main configuration
+# menu and exit it again using the OK command. This saves the file.
 # Viewer settings found in a CNF will be used instead of the original
 # defaults, which are the values shown below.
 # ----------------------------------------------------------------------

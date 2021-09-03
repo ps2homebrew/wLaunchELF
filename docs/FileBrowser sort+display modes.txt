@@ -22,7 +22,7 @@ This is the default mode, and works as the traditional main sort mode of older u
 1a: All folders, sorted by name
 1b: All ELF files, sorted by name
 1c: All non-ELF files, sorted by name
- 
+
 
 Sort mode 2 == Sort by Game Title
 This works as the alternate sort mode used by older uLE versions when displaying game titles, but in the new version it can also be used when displaying filenames. In addition to the title sorting, this mode also separates folders and ELFs in the same way as mode 1. Additionally, objects that have no title will be separated to follow those of the same object type that do have titles, and the internal sorting of title-less objects will be by name. This means that such a display can contain five object groups.
