@@ -11,7 +11,7 @@
  *
  */
 
-#define FS_IOMAN_DEVICES 16
+#define FS_IOMAN_DEVICES  16
 #define FS_IOMANX_DEVICES 32
 
 #ifdef LINUX
@@ -22,67 +22,67 @@
 #include <iopmgr.h>
 
 typedef enum {
-	FS_INVALID,
-	FS_DEVLIST,
-	FS_IODEVICE,  // ioman or iomanX
+    FS_INVALID,
+    FS_DEVLIST,
+    FS_IODEVICE,  // ioman or iomanX
 } FSType;
 
 #endif
 
 typedef enum {
-	FM_READ,
-	FM_WRITE,
+    FM_READ,
+    FM_WRITE,
 } FileMode;
 
 typedef struct FSContext
 {
-	char m_Path[256];
+    char m_Path[256];
 
 #ifndef LINUX
-	FSType m_eType;
-	iop_file_t m_kFile;
+    FSType m_eType;
+    iop_file_t m_kFile;
 #else
-	int m_iFile;
-	DIR *m_pDir;
-	char m_List[256];
+    int m_iFile;
+    DIR *m_pDir;
+    char m_List[256];
 #endif
 } FSContext;
 
 typedef enum {
-	FT_FILE,
-	FT_DIRECTORY,
-	FT_LINK,
+    FT_FILE,
+    FT_DIRECTORY,
+    FT_LINK,
 } FileType;
 
 typedef struct FSFileInfo
 {
-	struct
-	{
-		int m_iYear;
-		int m_iMonth;
-		int m_iDay;
-		int m_iHour;
-		int m_iMinute;
-		int m_iSecond;
-	} m_TS;  // timestamp
+    struct
+    {
+        int m_iYear;
+        int m_iMonth;
+        int m_iDay;
+        int m_iHour;
+        int m_iMinute;
+        int m_iSecond;
+    } m_TS;  // timestamp
 
-	FileType m_eType;
-	int m_iProtection;  // 3 bits protection per section: UrwxGrwxOrwx
+    FileType m_eType;
+    int m_iProtection;  // 3 bits protection per section: UrwxGrwxOrwx
 
-	u64 m_iSize;
-	char m_Name[256];
-	int m_iDaysBetween;
+    u64 m_iSize;
+    char m_Name[256];
+    int m_iDaysBetween;
 } FSFileInfo;
 
 typedef struct
 {
-	u8 unused;
-	u8 sec;
-	u8 min;
-	u8 hour;
-	u8 day;
-	u8 month;
-	u16 year;
+    u8 unused;
+    u8 sec;
+    u8 min;
+    u8 hour;
+    u8 day;
+    u8 month;
+    u16 year;
 } ps2time;
 
 //! Initialize context for use

@@ -25,8 +25,8 @@
 #include <ioman_mod.h>
 #include <iopmgr.h>
 
-#define getsockopt lwip_getsockopt
-#define setsockopt lwip_setsockopt
+#define getsockopt  lwip_getsockopt
+#define setsockopt  lwip_setsockopt
 #define getsockname lwip_getsockname
 
 #endif /* IOP_IRX_IMPORTS_H */

@@ -26,12 +26,12 @@ I_index
 sysclib_IMPORTS_end
 
 thbase_IMPORTS_start
-I_CreateThread 
-I_StartThread 
-I_SleepThread 
-I_GetThreadId 
+I_CreateThread
+I_StartThread
+I_SleepThread
+I_GetThreadId
 I_ExitDeleteThread
-I_DelayThread 
+I_DelayThread
 thbase_IMPORTS_end
 
 ps2ip_IMPORTS_start
