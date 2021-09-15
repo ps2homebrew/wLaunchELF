@@ -40,40 +40,40 @@ typedef void (*hio_dispose_error_t)(hio_t *hio,
 
 struct hio_type
 {
-	hio_stat_t stat;
-	hio_read_t read;
-	hio_write_t write;
-	hio_flush_t flush;
-	hio_close_t close;
-	hio_poweroff_t poweroff;
-	hio_last_error_t last_error;
-	hio_dispose_error_t dispose_error;
+    hio_stat_t stat;
+    hio_read_t read;
+    hio_write_t write;
+    hio_flush_t flush;
+    hio_close_t close;
+    hio_poweroff_t poweroff;
+    hio_last_error_t last_error;
+    hio_dispose_error_t dispose_error;
 };
 
 typedef struct hio_iop_type
 {
-	hio_t hio;
-	int unit;
-	size_t size_in_sectors;
+    hio_t hio;
+    int unit;
+    size_t size_in_sectors;
 } hio_iop_t;
 
 typedef struct
 {
-	char Partition_Name[32 + 1];
+    char Partition_Name[32 + 1];
 } Rpc_Packet_Send_GetInfo;
 
 typedef struct
 {
-	char OldName[64];
-	char NewName[64];
+    char OldName[64];
+    char NewName[64];
 } Rpc_Packet_Send_Rename;
 
 typedef struct
 {
-	char Partition_Name[32 + 1];
-	char Name[64 + 1];
-	char Startup[8 + 1 + 3 + 1];
-	int Is_Dvd;
+    char Partition_Name[32 + 1];
+    char Name[64 + 1];
+    char Startup[8 + 1 + 3 + 1];
+    int Is_Dvd;
 } GameInfo;
 
 int HdlGetGameInfo(char *PartName, GameInfo *GameInf);

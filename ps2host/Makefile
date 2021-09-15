@@ -10,7 +10,7 @@ IOP_CFLAGS += -Wall
 all: $(IOP_BIN)
 
 clean:
-	-rm -f $(IOP_OBJS_DIR) $(IOP_BIN)
+	-rm -f -r $(IOP_OBJS_DIR) $(IOP_BIN)
 
 include $(PS2SDK)/Defs.make
 include ../Rules.make
