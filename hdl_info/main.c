@@ -60,10 +60,10 @@ void rpcMainThread(void *param)
 void *rpcCommandHandler(int command, void *Data, int Size)
 {
     switch (command) {
-        case 4:  //HDL Get Game Info
+        case 4:  // HDL Get Game Info
             ((int *)Data)[0] = HdlGetGameInfo((char *)Data, (GameInfo *)(Data + 4));
             break;
-        case 5:  //HDL Rename Game
+        case 5:  // HDL Rename Game
             ((int *)Data)[0] = HdlRenameGame((char *)Data);
             break;
         default:

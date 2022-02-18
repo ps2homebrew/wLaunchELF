@@ -1,5 +1,5 @@
 //--------------------------------------------------------------
-//File name:   jpgviewer.c
+// File name:   jpgviewer.c
 //--------------------------------------------------------------
 #include "launchelf.h"
 
@@ -58,29 +58,29 @@ static void Command_List(void)
                       strlen(LNG(Exit_To_Jpg_Browser)) + 3 :
                       command_len;
 
-    int Command_ch_w = command_len + 1;                                           //Total characters in longest Command Name.
-    int Command_ch_h = 9;                                                         //Total Command lines number.
-    int cSprite_Y1 = SCREEN_HEIGHT / 2 - ((Command_ch_h + 1) * FONT_HEIGHT) / 2;  //Top edge
-    int cSprite_X2 = SCREEN_WIDTH / 2 + ((Command_ch_w + 3) * FONT_WIDTH) / 2;    //Right edge
-    int cSprite_X1 = cSprite_X2 - (Command_ch_w + 3) * FONT_WIDTH - 4;            //Left edge
-    int cSprite_Y2 = cSprite_Y1 + (Command_ch_h + 1) * FONT_HEIGHT;               //Bottom edge
+    int Command_ch_w = command_len + 1;                                           // Total characters in longest Command Name.
+    int Command_ch_h = 9;                                                         // Total Command lines number.
+    int cSprite_Y1 = SCREEN_HEIGHT / 2 - ((Command_ch_h + 1) * FONT_HEIGHT) / 2;  // Top edge
+    int cSprite_X2 = SCREEN_WIDTH / 2 + ((Command_ch_w + 3) * FONT_WIDTH) / 2;    // Right edge
+    int cSprite_X1 = cSprite_X2 - (Command_ch_w + 3) * FONT_WIDTH - 4;            // Left edge
+    int cSprite_Y2 = cSprite_Y1 + (Command_ch_h + 1) * FONT_HEIGHT;               // Bottom edge
 
     char tmp[MAX_PATH];
 
-    event = 1;  //event = initial entry.
+    event = 1;  // event = initial entry.
     while (1) {
-        //Pad response section.
+        // Pad response section.
         waitPadReady(0, 0);
         if (readpad()) {
             if (new_pad) {
-                event |= 2;  //event |= valid pad command.
+                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
 
-        if (event || post_event) {  //NB: We need to update two frame buffers per event.
+        if (event || post_event) {  // NB: We need to update two frame buffers per event.
 
-            //Display section.
+            // Display section.
             drawOpSprite(setting->color[COLOR_BACKGR], cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2);
             drawFrame(cSprite_X1, cSprite_Y1, cSprite_X2, cSprite_Y2, setting->color[COLOR_FRAME]);
 
@@ -111,12 +111,12 @@ static void Command_List(void)
             printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
-        }  //ends if(event||post_event).
+        }  // ends if(event||post_event).
         drawScr();
         post_event = event;
         event = 0;
-    }  //ends while.
-}  //ends Command_List.
+    }  // ends while.
+}  // ends Command_List.
 //--------------------------------------------------------------
 static void View_Render(void)
 {
@@ -189,7 +189,7 @@ static void View_Render(void)
     setBrightness(50);
 
     if (!FullScreen) {
-        //Tooltip section
+        // Tooltip section
         strcpy(tmp, jpgpath);
         name = strrchr(tmp, '/');
         strcpy(name, name + 1);
@@ -241,7 +241,7 @@ static void View_Input(void)
             }
         }
 
-        //Pad response section
+        // Pad response section
         waitPadReady(0, 0);
         if (readpad()) {
             if (new_pad & PAD_R3_V0) {  // PanZoom In
@@ -394,8 +394,8 @@ static void View_Input(void)
                     ;  // Wait To Ensure Switch
                 View_Render();
             } /* end else */
-        }     //ends pad response section
-    }         //ends while
+        }     // ends pad response section
+    }         // ends while
 } /* end View_Input */
 
 //--------------------------------------------------------------
@@ -538,7 +538,7 @@ void JpgViewer(char *file)
 
     loadIcon();
 
-    event = 1;  //event = initial entry
+    event = 1;  // event = initial entry
 
     if (file != NULL) {
         strncpy(jpgpath, file, MAX_PATH - 1);
@@ -546,23 +546,23 @@ void JpgViewer(char *file)
         strncpy(path, file, MAX_PATH - 1);
         path[MAX_PATH - 1] = '\0';
 
-        //Separate the path and filename. path must have a trailing slash.
+        // Separate the path and filename. path must have a trailing slash.
         if ((p = strrchr(path, '/')) != NULL) {
             strcpy(cursorEntry, p + 1);
             *(p + 1) = '\0';
         } else {
-            //Should not happen.
+            // Should not happen.
             strncpy(cursorEntry, path, MAX_PATH - 1);
             cursorEntry[MAX_PATH - 1] = '\0';
         }
 
         StartShowSingle = TRUE;
-        jpg_browser_cd = TRUE;     //Initial entry into the directory.
-        jpg_browser_repos = TRUE;  //Track the displayed file.
+        jpg_browser_cd = TRUE;     // Initial entry into the directory.
+        jpg_browser_repos = TRUE;  // Track the displayed file.
     }
     while (1) {
 
-        //Thumb init
+        // Thumb init
         if (thumb_load) {
             jpg_browser_sel = 0;
             gsGlobal->CurrentPointer = 0x288000;
@@ -570,7 +570,7 @@ void JpgViewer(char *file)
                 thumb_test[i] = NOTLOADED;
         }
 
-        //browser path adjustment section
+        // browser path adjustment section
         if (jpg_browser_up) {
             if ((p = strrchr(path, '/')) != NULL)
                 *p = 0;
@@ -584,7 +584,7 @@ void JpgViewer(char *file)
             }
             jpg_browser_cd = TRUE;
             jpg_browser_repos = TRUE;
-        }  //ends 'if(jpg_browser_up)'
+        }  // ends 'if(jpg_browser_up)'
         //----- Process newly entered directory here (incl initial entry)
         if (jpg_browser_cd) {
             jpg_browser_nfiles = setFileList(path, ext, files, JPG_CNF);
@@ -599,10 +599,10 @@ void JpgViewer(char *file)
                         break;
                     }
                 }
-            }  //ends if(jpg_browser_repos)
+            }  // ends if(jpg_browser_repos)
             jpg_browser_cd = FALSE;
             jpg_browser_up = FALSE;
-        }  //ends if(jpg_browser_cd)
+        }  // ends if(jpg_browser_cd)
         if (!strncmp(path, "cdfs", 4)) {
             sceCdStop();
         }
@@ -622,11 +622,11 @@ void JpgViewer(char *file)
         t++;
 
         if (t & 0x0F)
-            event |= 4;  //repetitive timer event
+            event |= 4;  // repetitive timer event
 
-        if (event || post_event) {  //NB: We need to update two frame buffers per event
+        if (event || post_event) {  // NB: We need to update two frame buffers per event
 
-            //Display section
+            // Display section
             clrScr(setting->color[COLOR_BACKGR]);
 
             if (jpg_browser_mode == LIST) {
@@ -692,12 +692,12 @@ void JpgViewer(char *file)
 
         list:
             for (i = 0; i < rows; i++) {
-                int name_limit = 0;  //Assume that no name length problems exist
+                int name_limit = 0;  // Assume that no name length problems exist
 
                 if (top + i >= jpg_browser_nfiles)
                     break;
                 if (top + i == jpg_browser_sel)
-                    color = setting->color[COLOR_SELECT];  //Highlight cursor line
+                    color = setting->color[COLOR_SELECT];  // Highlight cursor line
                 else
                     color = setting->color[COLOR_TEXT];
 
@@ -708,16 +708,16 @@ void JpgViewer(char *file)
                     name_limit = 71 * 8;
                 }
 
-                if (jpg_browser_mode == LIST) {  //List mode
+                if (jpg_browser_mode == LIST) {  // List mode
 
-                    if (name_limit) {                   //Do we need to check name length ?
-                        int name_end = name_limit / 7;  //Max string length for acceptable spacing
+                    if (name_limit) {                   // Do we need to check name length ?
+                        int name_end = name_limit / 7;  // Max string length for acceptable spacing
 
                         if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
-                            name_end -= 1;             //For folders, reserve one character for final '/'
-                        if (strlen(tmp) > name_end) {  //Is name too long for clean display ?
-                            tmp[name_end - 1] = '~';   //indicate filename abbreviation
-                            tmp[name_end] = 0;         //abbreviate name length to make room for details
+                            name_end -= 1;             // For folders, reserve one character for final '/'
+                        if (strlen(tmp) > name_end) {  // Is name too long for clean display ?
+                            tmp[name_end - 1] = '~';   // indicate filename abbreviation
+                            tmp[name_end] = 0;         // abbreviate name length to make room for details
                         }
                     }
                     if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir)
@@ -725,7 +725,7 @@ void JpgViewer(char *file)
                     printXY(tmp, x + 4, y, color, TRUE, name_limit);
                     y += FONT_HEIGHT;
 
-                } else {  //Thumbnail mode
+                } else {  // Thumbnail mode
 
                     if (files[top + i].stats.AttrFile & sceMcFileAttrSubdir) {
                         strcat(tmp, "/");
@@ -794,9 +794,9 @@ void JpgViewer(char *file)
 
                 } /* end else THUMBNAIL */
 
-            }  //ends for, so all browser rows were fixed above
+            }  // ends for, so all browser rows were fixed above
             thumb_load = FALSE;
-            if (jpg_browser_nfiles > rows) {  //if more files than available rows, use scrollbar
+            if (jpg_browser_nfiles > rows) {  // if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
                           SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
                 y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / jpg_browser_nfiles);
@@ -804,12 +804,12 @@ void JpgViewer(char *file)
                 drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
-            }  //ends clause for scrollbar
+            }  // ends clause for scrollbar
             msg0[0] = '\0';
             if (jpg_browser_pushed)
                 sprintf(msg0, "%s %s: %s", LNG(Jpg_Viewer), LNG(Path), path);
 
-            //Tooltip section
+            // Tooltip section
             msg1[0] = '\0';
             if (swapKeys)
                 sprintf(msg1, "�1:%s", LNG(View));
@@ -834,20 +834,20 @@ void JpgViewer(char *file)
             sprintf(tmp, " R2:%s", LNG(PathPad));
             strcat(msg1, tmp);
             setScrTmp(msg0, msg1);
-        }  //ends if(event||post_event)
+        }  // ends if(event||post_event)
 
         if (StartShowSingle) {
             StartShowSingle = FALSE;
             goto single;
         }
 
-        //Pad response section
+        // Pad response section
         waitPadReady(0, 0);
         if (readpad()) {
             if (new_pad) {
                 jpg_browser_pushed = TRUE;
                 print_name = 0;
-                event |= 2;  //event |= pad command
+                event |= 2;  // event |= pad command
                 tmp[0] = 0;
                 tmp1[0] = 0;
                 t = 0;
@@ -889,9 +889,9 @@ void JpgViewer(char *file)
             } else if (new_pad & PAD_L2) {
                 if (--SlideShowTrans < 1)
                     SlideShowTrans = 4;
-            } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {  //Pushed OK
+            } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {  // Pushed OK
                 if (files[jpg_browser_sel].stats.AttrFile & sceMcFileAttrSubdir) {
-                    //pushed OK for a folder
+                    // pushed OK for a folder
                     thumb_load = TRUE;
                     if (!strcmp(files[jpg_browser_sel].name, "..")) {
                         jpg_browser_up = TRUE;
@@ -901,7 +901,7 @@ void JpgViewer(char *file)
                         jpg_browser_cd = TRUE;
                     }
                 } else {
-                //pushed OK for a file
+                // pushed OK for a file
                 restart:
                     sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
 
@@ -923,9 +923,9 @@ void JpgViewer(char *file)
                         if (SlideShowSkip == 1)
                             SlideShowSkip = 0;
                         else if (SlideShowSkip == -1) {
-                            i -= 2;  //Loop index back to JPG before previous
+                            i -= 2;  // Loop index back to JPG before previous
                             if (i <= 0)
-                                i += jpg_browser_nfiles - 1;  //Loop index back to JPG before final
+                                i += jpg_browser_nfiles - 1;  // Loop index back to JPG before final
                             SlideShowSkip = 0;
                         }
                         if (SlideShowStop)
@@ -945,7 +945,7 @@ void JpgViewer(char *file)
                     } else if (SlideShowSkip == -1) {
                         jpg_browser_sel -= 1;
                         if (jpg_browser_sel <= 0)
-                            jpg_browser_sel += jpg_browser_nfiles - 1;  //Go back to final JPG
+                            jpg_browser_sel += jpg_browser_nfiles - 1;  // Go back to final JPG
                         SlideShowSkip = 0;
                         goto restart;
                     }
@@ -979,13 +979,13 @@ void JpgViewer(char *file)
                     goto repeat;
                 }
             }
-        }  //ends pad response section
+        }  // ends pad response section
 
         drawScr();
         post_event = event;
         event = 0;
-    }  //ends while
+    }  // ends while
 } /* end JpgViewer */
 //--------------------------------------------------------------
-//End of file: jpgviewer.c
+// End of file: jpgviewer.c
 //--------------------------------------------------------------

@@ -17,7 +17,7 @@
 
 #include "net_fio.h"
 
-#define IOCTL_RENAME 0xFEEDC0DE  //dlanor: Used for the Ioctl request code => Rename
+#define IOCTL_RENAME 0xFEEDC0DE  // dlanor: Used for the Ioctl request code => Rename
 
 #ifdef DEBUG
 #define dbgprintf(args...) printf(args)
@@ -41,11 +41,11 @@ struct filedesc_info
     int device_id;  // the X in hostX
     int own_fd;
 };
-//dlanor: In fact this struct is declared elsewhere as iop_file_t, with
-//dlanor: well known fields. The one declared as "int own_fd;" above is
-//dlanor: there declared as "void	*privdata;" but it doesn't matter, as
-//dlanor: it is up to each driver how to use that field. So using it as
-//dlanor: a simple "int" instead of a pointer will work fine.
+// dlanor: In fact this struct is declared elsewhere as iop_file_t, with
+// dlanor: well known fields. The one declared as "int own_fd;" above is
+// dlanor: there declared as "void	*privdata;" but it doesn't matter, as
+// dlanor: it is up to each driver how to use that field. So using it as
+// dlanor: a simple "int" instead of a pointer will work fine.
 
 
 //----------------------------------------------------------------------------
@@ -56,18 +56,18 @@ static int fsys_sema;
 static int fsys_pid = 0;
 
 //----------------------------------------------------------------------------
-//dlanor: We need variables to remember a file/folder descriptor used
-//dlanor: with the Ioctl Rename function, so that we can avoid passing
-//dlanor: the following fioClose call to PC, where it's already closed.
-//dlanor: We also need a flag to note when we must ignore an Mkdir call
-//dlanor: because it is caused by the bug IOMAN.IRX has for fioRemove.
+// dlanor: We need variables to remember a file/folder descriptor used
+// dlanor: with the Ioctl Rename function, so that we can avoid passing
+// dlanor: the following fioClose call to PC, where it's already closed.
+// dlanor: We also need a flag to note when we must ignore an Mkdir call
+// dlanor: because it is caused by the bug IOMAN.IRX has for fioRemove.
 //
-int lastopen_fd;      //descriptor of the most recently opened file/folder
-int renamed_fd;       //descriptor of renamed file/folder awaiting closure
-int remove_flag = 0;  //Set in fsysRemove, cleared by all other fsysXXXXX
-int remove_result;    //Set in fsysRemove, so fsysMkdir can use it for bug
+int lastopen_fd;      // descriptor of the most recently opened file/folder
+int renamed_fd;       // descriptor of renamed file/folder awaiting closure
+int remove_flag = 0;  // Set in fsysRemove, cleared by all other fsysXXXXX
+int remove_result;    // Set in fsysRemove, so fsysMkdir can use it for bug
 
-typedef void (*th_func_p)(void *);  //dlanor: added to suppress warnings
+typedef void (*th_func_p)(void *);  // dlanor: added to suppress warnings
 
 //----------------------------------------------------------------------------
 static void fsysInit(iop_device_t *driver)
@@ -392,21 +392,21 @@ static int dummyChstat()
 iop_device_ops_t fsys_functarray =
     {(void *)fsysInit,
      (void *)fsysDestroy,
-     (void *)dummyFormat,  //init, deinit, format
+     (void *)dummyFormat,  // init, deinit, format
      (void *)fsysOpen,
      (void *)fsysClose,
-     (void *)fsysRead,  //open, close, read,
+     (void *)fsysRead,  // open, close, read,
      (void *)fsysWrite,
      (void *)fsysLseek,
-     (void *)fsysIoctl,  //write, lseek, ioctl
+     (void *)fsysIoctl,  // write, lseek, ioctl
      (void *)fsysRemove,
      (void *)fsysMkdir,
-     (void *)fsysRmdir,  //remove, mkdir, rmdir
+     (void *)fsysRmdir,  // remove, mkdir, rmdir
      (void *)fsysDopen,
      (void *)fsysDclose,
-     (void *)fsysDread,  //dopen, dclose, dread
+     (void *)fsysDread,  // dopen, dclose, dread
      (void *)dummyGetstat,
-     (void *)dummyChstat};  //getstat, chstat
+     (void *)dummyChstat};  // getstat, chstat
 
 iop_device_t fsys_driver = {fsname, 16, 1, "fsys driver",
                             &fsys_functarray};
@@ -435,5 +435,5 @@ int fsysUnmount(void)
     return 0;
 }
 //----------------------------------------------------------------------------
-//End of file:  net_fsys.c
+// End of file:  net_fsys.c
 //----------------------------------------------------------------------------

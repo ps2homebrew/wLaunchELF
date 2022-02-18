@@ -1,5 +1,5 @@
 //--------------------------------------------------------------
-//File name:   apa.c
+// File name:   apa.c
 //--------------------------------------------------------------
 #include <thbase.h>
 #include <sysclib.h>
@@ -22,8 +22,8 @@ typedef struct ps2_partition_run_type
     u_long size_in_mb;
 } ps2_partition_run_t;
 
-//Remove this line, and uncomment the next line, to reactivate 'apa_check'
-//static int apa_check(const apa_partition_table_t *table);
+// Remove this line, and uncomment the next line, to reactivate 'apa_check'
+// static int apa_check(const apa_partition_table_t *table);
 
 //--------------------------------------------------------------
 u_long apa_partition_checksum(const ps2_partition_header_t *part)
@@ -36,7 +36,7 @@ u_long apa_partition_checksum(const ps2_partition_header_t *part)
     return sum;
 }
 //------------------------------
-//endfunc apa_partition_checksum
+// endfunc apa_partition_checksum
 //--------------------------------------------------------------
 static apa_partition_table_t *apa_ptable_alloc(void)
 {
@@ -46,7 +46,7 @@ static apa_partition_table_t *apa_ptable_alloc(void)
     return table;
 }
 //------------------------------
-//endfunc apa_ptable_alloc
+// endfunc apa_ptable_alloc
 //--------------------------------------------------------------
 void apa_ptable_free(apa_partition_table_t *table)
 {
@@ -59,7 +59,7 @@ void apa_ptable_free(apa_partition_table_t *table)
     }
 }
 //------------------------------
-//endfunc apa_ptable_free
+// endfunc apa_ptable_free
 //--------------------------------------------------------------
 static int apa_part_add(apa_partition_table_t *table, const ps2_partition_header_t *part, int existing, int linked)
 {
@@ -86,7 +86,7 @@ static int apa_part_add(apa_partition_table_t *table, const ps2_partition_header
     return 0;
 }
 //------------------------------
-//endfunc apa_part_add
+// endfunc apa_part_add
 //--------------------------------------------------------------
 /* //Remove this line and a similar one below to reactivate 'apa_setup_statistics'
 static int apa_setup_statistics(apa_partition_table_t *table)
@@ -133,9 +133,9 @@ static int apa_setup_statistics(apa_partition_table_t *table)
  else return -2;
 }
 */
-//Remove this line and a similar one below to reactivate 'apa_setup_statistics'
+// Remove this line and a similar one below to reactivate 'apa_setup_statistics'
 //------------------------------
-//endfunc apa_setup_statistics
+// endfunc apa_setup_statistics
 //--------------------------------------------------------------
 int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
 {
@@ -144,7 +144,7 @@ int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
     if (result == 0) {
         u_long total_sectors;
         // limit HDD size to 128GB - 1KB; that is: exclude the last 128MB chunk
-        //if (size_in_kb > 128 * 1024 * 1024 - 1)
+        // if (size_in_kb > 128 * 1024 * 1024 - 1)
         // size_in_kb = 128 * 1024 * 1024 - 1;
 
         total_sectors = size_in_kb * 2; /* 1KB = 2 sectors of 512 bytes, each */
@@ -174,17 +174,17 @@ int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
                         result = 1;
                 }
                 /* TODO: check whether next partition is not loaded already --
-				* do not deadlock; that is a quick-and-dirty hack */
+                 * do not deadlock; that is a quick-and-dirty hack */
                 if ((*table)->part_count > 10000)
                     result = 7;
             } while (result == 0 && sector != 0);
 
             if (result == 0) {
                 (*table)->device_size_in_mb = size_in_kb / 1024;
-                //NB: uncommenting the next lines requires changes elsewhere too
-                //result = apa_setup_statistics (*table);
-                //if (result == 0)
-                //result = apa_check (*table);
+                // NB: uncommenting the next lines requires changes elsewhere too
+                // result = apa_setup_statistics (*table);
+                // if (result == 0)
+                // result = apa_check (*table);
             }
 
             if (result != 0) {
@@ -197,7 +197,7 @@ int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
     return result;
 }
 //------------------------------
-//endfunc apa_ptable_read_ex
+// endfunc apa_ptable_read_ex
 //--------------------------------------------------------------
 /* //Remove this line and a similar one below to reactivate 'apa_check'
 static int apa_check(const apa_partition_table_t *table)
@@ -268,9 +268,9 @@ static int apa_check(const apa_partition_table_t *table)
     return 0;
 }
 */
-//Remove this line and a similar one above to reactivate 'apa_check'
+// Remove this line and a similar one above to reactivate 'apa_check'
 //------------------------------
-//endfunc apa_check
+// endfunc apa_check
 //--------------------------------------------------------------
 u_long get_u32(const void *buffer)
 {
@@ -281,7 +281,7 @@ u_long get_u32(const void *buffer)
             (((u_long)p[0]) << 0));
 }
 //------------------------------
-//endfunc get_u32
+// endfunc get_u32
 //--------------------------------------------------------------
 void set_u32(void *buffer, u_long val)
 {
@@ -292,7 +292,7 @@ void set_u32(void *buffer, u_long val)
     p[0] = (u_char)(val >> 0);
 }
 //------------------------------
-//endfunc set_u32
+// endfunc set_u32
 //--------------------------------------------------------------
 u_short get_u16(const void *buffer)
 {
@@ -301,7 +301,7 @@ u_short get_u16(const void *buffer)
             (((u_short)p[0]) << 0));
 }
 //------------------------------
-//endfunc get_u16
+// endfunc get_u16
 //--------------------------------------------------------------
 void set_u16(void *buffer, u_short val)
 {
@@ -310,7 +310,7 @@ void set_u16(void *buffer, u_short val)
     p[0] = (u_char)(val >> 0);
 }
 //------------------------------
-//endfunc set_u16
+// endfunc set_u16
 //--------------------------------------------------------------
-//End of file: apa.c
+// End of file: apa.c
 //--------------------------------------------------------------

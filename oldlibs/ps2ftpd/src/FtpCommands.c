@@ -165,9 +165,9 @@ void FtpClient_OnCmdPasv(FtpClient *pClient)
     itoa(buf + strlen(buf), port & 0xff);
     strcat(buf, ").");
     /*
-	sprintf( buffer, "Entering passive mode (%d,%d,%d,%d,%d,%d).",
-										(addr>>24)&0xff, (addr>>16)&0xff, (addr>>8)&0xff, addr&0xff,
-										port>>8,port&0xff );
+    sprintf( buffer, "Entering passive mode (%d,%d,%d,%d,%d,%d).",
+                                        (addr>>24)&0xff, (addr>>16)&0xff, (addr>>8)&0xff, addr&0xff,
+                                        port>>8,port&0xff );
 */
 
     FtpClient_Send(pClient, 227, buffer);
@@ -202,9 +202,9 @@ void FtpClient_OnCmdSyst(FtpClient *pClient)
     FtpClient_Send(pClient, 215, "UNIX Type: L8");
 
     /* MS-style LIST format: To use uncomment this format after commenting out UNIX-style LIST format
-		and making changes in FtpClient.c's FtpClient_OnDataWrite
-	FtpClient_Send( pClient, 215, "Windows_NT version 5.0" );
-	*/
+        and making changes in FtpClient.c's FtpClient_OnDataWrite
+    FtpClient_Send( pClient, 215, "Windows_NT version 5.0" );
+    */
 }
 
 void FtpClient_OnCmdList(struct FtpClient *pClient, const char *pPath, int iNamesOnly)
