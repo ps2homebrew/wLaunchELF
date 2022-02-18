@@ -211,6 +211,7 @@ extern int cdmode;      //Last detected disc type
 void load_vmc_fs(void);
 void load_ps2host(void);
 void loadHddModules(void);
+void loadDVRPHddModules(void);
 void loadHdlInfoModule(void);
 int uLE_related(char *pathout, const char *pathin);
 int uLE_InitializeRegion(void);
@@ -351,6 +352,8 @@ int genRemove(char *path);
 int genRmdir(char *path);
 int genCmpFileExt(const char *filename, const char *extension);
 int mountParty(const char *party);
+void unmountDVRPParty(int party_ix);
+int mountDVRPParty(const char *party);
 void unmountParty(int party_ix);
 void unmountAll(void);
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode);
