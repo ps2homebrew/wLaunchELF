@@ -86,9 +86,9 @@ enum {
 
     // possible commands, we'll implement them if it become necessary
 
-    //FTPCMD_FEAT = FCOMMAND('f','e','a','t'),
-    //FTPCMD_STAT = FCOMMAND('s','t','a','t'),
-    //FTPCMD_HELP = FCOMMAND('h','e','l','p'),
+    // FTPCMD_FEAT = FCOMMAND('f','e','a','t'),
+    // FTPCMD_STAT = FCOMMAND('s','t','a','t'),
+    // FTPCMD_HELP = FCOMMAND('h','e','l','p'),
 };
 
 enum {

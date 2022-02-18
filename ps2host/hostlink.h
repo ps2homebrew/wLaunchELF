@@ -33,8 +33,8 @@
 #define PKO_RMDIR_CMD  0xbabe01B1
 #define PKO_RMDIR_RLY  0xbabe01B2
 
-#define PKO_IOCTL_CMD 0xbabe01C1  //dlanor: Added for Rename capability
-#define PKO_IOCTL_RLY 0xbabe01C2  //dlanor: Added for Rename capability
+#define PKO_IOCTL_CMD 0xbabe01C1  // dlanor: Added for Rename capability
+#define PKO_IOCTL_RLY 0xbabe01C2  // dlanor: Added for Rename capability
 
 #define PKO_RESET_CMD    0xbabe0201
 #define PKO_EXECIOP_CMD  0xbabe0202

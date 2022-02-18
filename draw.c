@@ -1,5 +1,5 @@
 //--------------------------------------------------------------
-//File name:   draw.c
+// File name:   draw.c
 //--------------------------------------------------------------
 #include "launchelf.h"
 
@@ -8,29 +8,29 @@ GSTEXTURE TexSkin, TexPreview, TexPicture, TexThumb[MAX_ENTRY], TexIcon[2];
 int testskin, testsetskin, testjpg, testthumb;
 int SCREEN_WIDTH = 640;
 int SCREEN_HEIGHT = 448;
-//dlanor: values shown above are defaults for NTSC mode
+// dlanor: values shown above are defaults for NTSC mode
 u64 BrightColor;
 
-int updateScr_1;      //dlanor: flags screen updates for drawScr()
-int updateScr_2;      //dlanor: used for anti-flicker delay in drawScr()
-u64 updateScr_t = 0;  //dlanor: exit time of last drawScr()
+int updateScr_1;      // dlanor: flags screen updates for drawScr()
+int updateScr_2;      // dlanor: used for anti-flicker delay in drawScr()
+u64 updateScr_t = 0;  // dlanor: exit time of last drawScr()
 
 char LastMessage[MAX_TEXT_LINE + 2];
 
 int Menu_start_x = SCREEN_MARGIN + LINE_THICKNESS + FONT_WIDTH;
 int Menu_title_y = SCREEN_MARGIN;
 int Menu_message_y = SCREEN_MARGIN + FONT_HEIGHT;
-int Frame_start_y = SCREEN_MARGIN + 2 * FONT_HEIGHT + 2;  //First line of menu frame
+int Frame_start_y = SCREEN_MARGIN + 2 * FONT_HEIGHT + 2;  // First line of menu frame
 int Menu_start_y = SCREEN_MARGIN + 2 * FONT_HEIGHT + LINE_THICKNESS + 5;
-//dlanor: Menu_start_y is the 1st pixel line that may be used for main content of a menu
-//dlanor: values below are only calculated when a rez is activated
-int Menu_end_y;      //Normal menu display should not use pixels at this line or beyond
-int Frame_end_y;     //first line of frame bottom
-int Menu_tooltip_y;  //Menus may also use this row for tooltips
+// dlanor: Menu_start_y is the 1st pixel line that may be used for main content of a menu
+// dlanor: values below are only calculated when a rez is activated
+int Menu_end_y;      // Normal menu display should not use pixels at this line or beyond
+int Frame_end_y;     // first line of frame bottom
+int Menu_tooltip_y;  // Menus may also use this row for tooltips
 
 
-//The font file ELISA100.FNT is needed to display MC save titles in japanese
-//and the arrays defined here are needed to find correct data in that file
+// The font file ELISA100.FNT is needed to display MC save titles in japanese
+// and the arrays defined here are needed to find correct data in that file
 const u16 font404[] = {
     0xA2AF, 11,
     0xA2C2, 8,
@@ -474,11 +474,11 @@ void drawPopSprite(u64 color, int x1, int y1, int x2, int y2)
     }
 }
 //--------------------------------------------------------------
-//drawOpSprite exists only to eliminate the use of primitive sprite functions
-//that are specific to the graphics lib used (currently gsKit). So normally
-//it will merely be a 'wrapper' function for one of the lib calls, except
-//that it will also perform any coordinate adjustments (if any)implemented for
-//the functions drawSprite and drawPopSprite, to keep all of them compatible.
+// drawOpSprite exists only to eliminate the use of primitive sprite functions
+// that are specific to the graphics lib used (currently gsKit). So normally
+// it will merely be a 'wrapper' function for one of the lib calls, except
+// that it will also perform any coordinate adjustments (if any)implemented for
+// the functions drawSprite and drawPopSprite, to keep all of them compatible.
 //
 void drawOpSprite(u64 color, int x1, int y1, int x2, int y2)
 {
@@ -559,8 +559,8 @@ void setupGS(void)
     // GS Init
     gsGlobal = gsKit_init_global();
 
-    if (New_TV_mode == TV_mode_AUTO) {         //If no forced request
-        New_TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
+    if (New_TV_mode == TV_mode_AUTO) {         // If no forced request
+        New_TV_mode = uLE_InitializeRegion();  // Let console region decide TV_mode
     }
 
     // Screen display mode
@@ -610,8 +610,8 @@ void updateScreenMode(void)
     int setGS_flag = 0;
     int New_TV_mode = setting->TV_mode;
 
-    if (New_TV_mode == TV_mode_AUTO) {         //If no forced request
-        New_TV_mode = uLE_InitializeRegion();  //Let console region decide TV_mode
+    if (New_TV_mode == TV_mode_AUTO) {         // If no forced request
+        New_TV_mode = uLE_InitializeRegion();  // Let console region decide TV_mode
     }
 
     if (New_TV_mode != TV_mode) {
@@ -880,7 +880,7 @@ int loadFont(char *path_arg)
     return 0;
 }
 //------------------------------
-//endfunc loadFont
+// endfunc loadFont
 //--------------------------------------------------------------
 // Set Skin Brightness
 void setBrightness(int Brightness)
@@ -919,31 +919,31 @@ void clrScr(u64 color)
 //--------------------------------------------------------------
 void drawScr(void)
 {
-    if (updateScr_2) {  //Did we render anything last time
+    if (updateScr_2) {  // Did we render anything last time
         while (Timer() < updateScr_t + 5)
-            ;  //if so, delay to complete rendering
+            ;  // if so, delay to complete rendering
     }
-    gsKit_sync_flip(gsGlobal);   //Await sync and flip buffers
-    gsKit_queue_exec(gsGlobal);  //Start rendering recent transfers for NEXT time
-    updateScr_t = Timer();       //Note the time when the rendering started
-    updateScr_2 = updateScr_1;   //Note if this rendering had expected updates
-    updateScr_1 = 0;             //Note that we've nothing expected for next time
-}  //NB: Apparently the GS keeps rendering while we continue with other work
+    gsKit_sync_flip(gsGlobal);   // Await sync and flip buffers
+    gsKit_queue_exec(gsGlobal);  // Start rendering recent transfers for NEXT time
+    updateScr_t = Timer();       // Note the time when the rendering started
+    updateScr_2 = updateScr_1;   // Note if this rendering had expected updates
+    updateScr_1 = 0;             // Note that we've nothing expected for next time
+}  // NB: Apparently the GS keeps rendering while we continue with other work
 //--------------------------------------------------------------
 void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 {
     updateScr_1 = 1;
 
-    //Top horizontal edge
+    // Top horizontal edge
     gsKit_prim_sprite(gsGlobal, x1, y1, x2, y1 + LINE_THICKNESS - 1, 1, color);
 
-    //Bottom horizontal
+    // Bottom horizontal
     gsKit_prim_sprite(gsGlobal, x1, y2 - LINE_THICKNESS + 1, x2, y2, 1, color);
 
-    //Left vertical edge
+    // Left vertical edge
     gsKit_prim_sprite(gsGlobal, x1, y1, x1 + LINE_THICKNESS - 1, y2, 1, color);
 
-    //Right vertical edge
+    // Right vertical edge
     gsKit_prim_sprite(gsGlobal, x2 - LINE_THICKNESS + 1, y1, x2, y2, 1, color);
 }
 
@@ -958,29 +958,29 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
 
     if (c >= FONT_COUNT)
         c = '_';
-    if (c > 0xFF)                  //if char is beyond normal ascii range
+    if (c > 0xFF)                  // if char is beyond normal ascii range
         cm = &font_uLE[c * 16];    //  cm points to special char def in default font
-    else                           //else char is inside normal ascii range
+    else                           // else char is inside normal ascii range
         cm = &FontBuffer[c * 16];  //  cm points to normal char def in active font
 
     pixMask = 0x80;
-    for (i = 0; i < 8; i++) {  //for i == each pixel column
+    for (i = 0; i < 8; i++) {  // for i == each pixel column
         pixBase = -1;
-        for (j = 0; j < 16; j++) {                     //for j == each pixel row
-            if ((pixBase < 0) && (cm[j] & pixMask)) {  //if start of sequence
+        for (j = 0; j < 16; j++) {                     // for j == each pixel row
+            if ((pixBase < 0) && (cm[j] & pixMask)) {  // if start of sequence
                 pixBase = j;
-            } else if ((pixBase > -1) && !(cm[j] & pixMask)) {  //if end of sequence
+            } else if ((pixBase > -1) && !(cm[j] & pixMask)) {  // if end of sequence
                 gsKit_prim_sprite(gsGlobal, x + i, y + pixBase - 1, x + i + 1, y + j - 1, 1, colour);
                 pixBase = -1;
             }
-        }                  //ends for j == each pixel row
-        if (pixBase > -1)  //if end of sequence including final row
+        }                  // ends for j == each pixel row
+        if (pixBase > -1)  // if end of sequence including final row
             gsKit_prim_sprite(gsGlobal, x + i, y + pixBase - 1, x + i + 1, y + j - 1, 1, colour);
         pixMask >>= 1;
-    }  //ends for i == each pixel column
+    }  // ends for i == each pixel column
 }
 //------------------------------
-//endfunc drawChar
+// endfunc drawChar
 //--------------------------------------------------------------
 // draw a char using the ELISA font (16x16)
 void drawChar2(int n, int x, int y, u64 colour)
@@ -1001,7 +1001,7 @@ void drawChar2(int n, int x, int y, u64 colour)
     }
 }
 //------------------------------
-//endfunc drawChar2
+// endfunc drawChar2
 //--------------------------------------------------------------
 // draw a string of characters, without shift-JIS support
 int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
@@ -1029,7 +1029,7 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
             if (x > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH)
                 break;
             continue;
-        }  //End if for normal character
+        }  // End if for normal character
         // Here we got a sequence starting with 0xFF ('�')
         if ((c2 = (unsigned char)s[i++]) == 0)
             break;
@@ -1037,7 +1037,7 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
             continue;
         c1 = (c2 - '0') * 2 + 0x100;
         if (draw) {
-            //expand sequence �0=Circle  �1=Cross  �2=Square  �3=Triangle  �4=FilledBox
+            // expand sequence �0=Circle  �1=Cross  �2=Square  �3=Triangle  �4=FilledBox
             //"�:"=Pad_Right  "�;"=Pad_Down  "�<"=Pad_Left  "�="=Pad_Up
             drawChar(c1, x, y, colour);
             x += 8;
@@ -1052,7 +1052,7 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
     return x;
 }
 //------------------------------
-//endfunc printXY
+// endfunc printXY
 //--------------------------------------------------------------
 // draw a string of characters, with shift-JIS support (only for gamesave titles)
 int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
@@ -1064,7 +1064,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
 
     i = 0;
     while (s[i]) {
-        if ((s[i] & 0x80) && s[i + 1]) {  //we have top bit and some more char ?
+        if ((s[i] & 0x80) && s[i + 1]) {  // we have top bit and some more char ?
             // SJIS
             code = s[i++];
             code = (code << 8) + s[i++];
@@ -1152,7 +1152,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                                 drawChar('_', x, y, colour);
                             x += 8;
                         }
-                    } else {  //elisa font is not available
+                    } else {  // elisa font is not available
                         ascii = 0xFF;
                         if (code >> 8 == 0x81)
                             ascii = sjis_lookup_81[code & 0x00FF];
@@ -1169,23 +1169,23 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                     }
                     break;
             }
-        } else {  //First char does not have top bit set or no following char
+        } else {  // First char does not have top bit set or no following char
             if (draw)
                 drawChar(s[i], x, y, colour);
             i++;
             x += 8;
         }
         if (x > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH) {
-            //x=16; y=y+8;
+            // x=16; y=y+8;
             return x;
         }
     }
     return x;
 }
 //------------------------------
-//endfunc printXY_sjis
+// endfunc printXY_sjis
 //--------------------------------------------------------------
-//translate a string from shift-JIS to ascii (for gamesave titles)
+// translate a string from shift-JIS to ascii (for gamesave titles)
 char *transcpy_sjis(char *d, const unsigned char *s)
 {
     u8 ascii;
@@ -1194,7 +1194,7 @@ char *transcpy_sjis(char *d, const unsigned char *s)
 
     for (i = 0, j = 0; s[i];) {
         code1 = s[i++];
-        if ((code1 & 0x80) && s[i]) {  //we have top bit and some more char (SJIS) ?
+        if ((code1 & 0x80) && s[i]) {  // we have top bit and some more char (SJIS) ?
             // SJIS
             code2 = s[i++];
             ascii = 0xFF;
@@ -1207,18 +1207,18 @@ char *transcpy_sjis(char *d, const unsigned char *s)
             } else {
                 d[j++] = '_';
             }
-        } else {  //First char lacks top bit set or no following char (non-SJIS)
+        } else {  // First char lacks top bit set or no following char (non-SJIS)
             d[j++] = (char)code1;
         }
-    }             //ends for
-    d[j] = '\0';  //terminate result string
+    }             // ends for
+    d[j] = '\0';  // terminate result string
     return d;
 }
 //------------------------------
-//endfunc transcpy_sjis
+// endfunc transcpy_sjis
 //--------------------------------------------------------------
-//WriteFont_C is used to save the current font as C source code
-//Comment it out if not used
+// WriteFont_C is used to save the current font as C source code
+// Comment it out if not used
 /*
 int WriteFont_C(char *path_arg)
 {
@@ -1284,7 +1284,7 @@ finish:
 }
 */
 //------------------------------
-//endfunc WriteFont_C
+// endfunc WriteFont_C
 //--------------------------------------------------------------
-//End of file: draw.c
+// End of file: draw.c
 //--------------------------------------------------------------

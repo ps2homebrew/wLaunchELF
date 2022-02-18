@@ -1,5 +1,5 @@
 //--------------------------------------------------------------
-//File name:   hdd.c
+// File name:   hdd.c
 //--------------------------------------------------------------
 #include <thbase.h>
 #include <sysclib.h>
@@ -25,7 +25,7 @@ static int iop_stat(hio_t *hio, u_long *size_in_kb)
     return 0;
 }
 //------------------------------
-//endfunc iop_stat
+// endfunc iop_stat
 //--------------------------------------------------------------
 static int iop_read(hio_t *hio, u_long start_sector, u_long num_sectors, void *output, u_long *bytes)
 {
@@ -38,7 +38,7 @@ static int iop_read(hio_t *hio, u_long start_sector, u_long num_sectors, void *o
         return -1;
 }
 //------------------------------
-//endfunc iop_read
+// endfunc iop_read
 //--------------------------------------------------------------
 static int iop_write(hio_t *hio, u_long start_sector, u_long num_sectors, const void *input, u_long *bytes)
 {
@@ -51,7 +51,7 @@ static int iop_write(hio_t *hio, u_long start_sector, u_long num_sectors, const 
     return -1;
 }
 //------------------------------
-//endfunc iop_write
+// endfunc iop_write
 //--------------------------------------------------------------
 static int iop_flush(hio_t *hio)
 {
@@ -60,7 +60,7 @@ static int iop_flush(hio_t *hio)
     return result;
 }
 //------------------------------
-//endfunc iop_flush
+// endfunc iop_flush
 //--------------------------------------------------------------
 static int iop_close(hio_t *hio)
 {
@@ -68,16 +68,16 @@ static int iop_close(hio_t *hio)
     return 0;
 }
 //------------------------------
-//endfunc iop_close
+// endfunc iop_close
 //--------------------------------------------------------------
 static int iop_poweroff(hio_t *hio)
-{                        //Prerequisites: all files on the HDD must be saved & all partitions unmounted.
-    dev9Shutdown();      //Power off DEV9
-    PoweroffShutdown();  //Power off PlayStation 2
+{                        // Prerequisites: all files on the HDD must be saved & all partitions unmounted.
+    dev9Shutdown();      // Power off DEV9
+    PoweroffShutdown();  // Power off PlayStation 2
     return 0;
 }
 //------------------------------
-//endfunc iop_poweroff
+// endfunc iop_poweroff
 //--------------------------------------------------------------
 static hio_t *iop_alloc(int unit, size_t size_in_sectors)
 {
@@ -96,7 +96,7 @@ static hio_t *iop_alloc(int unit, size_t size_in_sectors)
     return ((hio_t *)iop);
 }
 //------------------------------
-//endfunc iop_alloc
+// endfunc iop_alloc
 //--------------------------------------------------------------
 int hio_iop_probe(const char *path, hio_t **hio)
 {
@@ -119,7 +119,7 @@ int hio_iop_probe(const char *path, hio_t **hio)
     return 14;
 }
 //------------------------------
-//endfunc hio_iop_probe
+// endfunc hio_iop_probe
 //--------------------------------------------------------------
 int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
 {
@@ -142,18 +142,18 @@ int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
                     strcpy(GameInf->Name, game->name);
                     strcpy(GameInf->Startup, game->startup);
                     GameInf->Is_Dvd = game->is_dvd;
-                    return 0;  //Return flag for no error
+                    return 0;  // Return flag for no error
                 }
                 ++count;
             }           /* for */
-            return -3;  //Return error flag for 'Game not found'
+            return -3;  // Return error flag for 'Game not found'
         }               /* if */
-        return err;     //Return error flag for 'hdl_glist_read failed'
+        return err;     // Return error flag for 'hdl_glist_read failed'
     }                   /* if */
-    return -1;          //Return error flag for 'hio_iop_probe failed'
+    return -1;          // Return error flag for 'hio_iop_probe failed'
 }
 //------------------------------
-//endfunc HdlGetGameInfo
+// endfunc HdlGetGameInfo
 //--------------------------------------------------------------
 
 int HdlRenameGame(void *Data)
@@ -179,20 +179,20 @@ int HdlRenameGame(void *Data)
                     printf("Renaming Game %s To %s.\n", game->name, Packet->NewName);
                     strcpy(game->name, Packet->NewName);
                     if ((err = hdl_glist_write(hio, game)) == 0)
-                        return 0;  //Return flag for no error
+                        return 0;  // Return flag for no error
                     else
-                        return err;  //Return error flag for 'hdl_glist_write failed'
+                        return err;  // Return error flag for 'hdl_glist_write failed'
                 }
                 ++count;
             }           /* for */
-            return -3;  //Return error flag for 'Game not found'
+            return -3;  // Return error flag for 'Game not found'
         }               /* if */
-        return err;     //Return error flag for 'hdl_glist_read failed'
+        return err;     // Return error flag for 'hdl_glist_read failed'
     }                   /* if */
-    return -1;          //Return error flag for 'hio_iop_probe failed'
+    return -1;          // Return error flag for 'hio_iop_probe failed'
 }
 //------------------------------
-//endfunc HdlRenameGame
+// endfunc HdlRenameGame
 //--------------------------------------------------------------
-//End of file: hdd.c
+// End of file: hdd.c
 //--------------------------------------------------------------

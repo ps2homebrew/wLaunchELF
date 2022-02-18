@@ -1719,7 +1719,7 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
             goto mountAbort;
         }
 
-        //Reaching this point means we have a valid PS2 image
+        // Reaching this point means we have a valid PS2 image
         DEBUGPRINT(4, "vmc_fs: Image file Info: Vmc card type         : %s MemoryCard.\n", (g_Vmc_Image[f->unit].header.mc_type == PSX_MEMORYCARD ? "PSX" : (g_Vmc_Image[f->unit].header.mc_type == PS2_MEMORYCARD ? "PS2" : "PDA")));
 
         g_Vmc_Image[f->unit].total_pages = g_Vmc_Image[f->unit].header.pages_per_cluster * g_Vmc_Image[f->unit].header.clusters_per_card;

@@ -10,8 +10,8 @@
 
 //  Define this to enable debugging, will later support debugging levels, so only messages greater then a certain level will be displayed
 //#define DEBUG 8
-//For release versions of uLE, DEBUG should not be defined
-//To avoid slowdown and size bloat
+// For release versions of uLE, DEBUG should not be defined
+// To avoid slowdown and size bloat
 
 //  Define this to enable some basic profiling support, each function will display the time it took to run.
 //  #define PROFILING
@@ -105,15 +105,15 @@ typedef enum {
 #ifdef PROFILING
 void profilerStart(iop_sys_clock_t *iopclock);
 void profilerEnd(const char *function, const char *name, iop_sys_clock_t *iopclock1);
-//This creates 2 variables with the names name1/name2, and starts the profiler
+// This creates 2 variables with the names name1/name2, and starts the profiler
 #define PROF_START(name)  \
     iop_sys_clock_t name; \
     profilerStart(&name);
-//this takes the 2 variable names and ends the profiler, printing the time taken
+// this takes the 2 variable names and ends the profiler, printing the time taken
 #define PROF_END(name) \
     profilerEnd(__func__, #name, &name);
 #else
-//define away the profiler functions
+// define away the profiler functions
 #define PROF_START(args) ;
 #define PROF_END(args)   ;
 #endif

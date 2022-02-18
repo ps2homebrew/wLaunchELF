@@ -1,5 +1,5 @@
 //--------------------------------------------------------------
-//File name:   hdl.c
+// File name:   hdl.c
 //--------------------------------------------------------------
 #include <thbase.h>
 #include <stdio.h>
@@ -22,7 +22,7 @@ void hdl_glist_free(hdl_games_list_t *glist)
     }
 }
 //------------------------------
-//endfunc hdl_glist_free
+// endfunc hdl_glist_free
 //--------------------------------------------------------------
 static int hdl_ginfo_read(hio_t *hio, const ps2_partition_header_t *part, hdl_game_info_t *ginfo)
 {
@@ -57,7 +57,7 @@ static int hdl_ginfo_read(hio_t *hio, const ps2_partition_header_t *part, hdl_ga
     return (result);
 }
 //------------------------------
-//endfunc hdl_ginfo_read
+// endfunc hdl_ginfo_read
 //--------------------------------------------------------------
 int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
 {
@@ -98,12 +98,12 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
             result = -2;
 
         apa_ptable_free(ptable);
-    } else {  //apa_ptable_read_ex failed
+    } else {  // apa_ptable_read_ex failed
     }
     return result;
 }
 //------------------------------
-//endfunc hdl_glist_read
+// endfunc hdl_glist_read
 //--------------------------------------------------------------
 static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_game_info_t *ginfo)
 {
@@ -122,7 +122,7 @@ static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_g
     return result;
 }
 //------------------------------
-//endfunc hdl_ginfo_write
+// endfunc hdl_ginfo_write
 //--------------------------------------------------------------
 int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
 {
@@ -172,7 +172,7 @@ int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
     return result;
 }
 //------------------------------
-//endfunc hdl_glist_write
+// endfunc hdl_glist_write
 //--------------------------------------------------------------
-//End of file: hdl.c
+// End of file: hdl.c
 //--------------------------------------------------------------
