@@ -98,7 +98,7 @@ int checkELFheader(char *path)
     }
     if ((fd = genOpen(fullpath, O_RDONLY)) < 0)
         goto error;
-    size = genLseek(fd, 0, SEEK_END);
+    size = (int)genLseek(fd, 0, SEEK_END);
     if (!size) {
         genClose(fd);
         goto error;

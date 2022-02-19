@@ -987,9 +987,13 @@ int genDopen(char *path)
 //------------------------------
 // endfunc genDopen
 //--------------------------------------------------------------
-int genLseek(int fd, int where, int how)
+s64 genLseek(int fd, s64 where, int how)
 {
-    return lseek(fd, where, how);
+    s64 res = lseek64(fd, where, how);
+    if (res == -48) {
+        res = lseek(fd, where, how);
+    }
+    return res;
 }
 //------------------------------
 // endfunc genLseek
@@ -1516,7 +1520,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     strcpy(tmpdir, dir);
     strcat(tmpdir, "icon.sys");
     if ((fd = genOpen(tmpdir, O_RDONLY)) >= 0) {
-        if ((size = genLseek(fd, 0, SEEK_END)) <= 0x100)
+        if ((size = (int)genLseek(fd, 0, SEEK_END)) <= 0x100)
             goto finish;
         genLseek(fd, 0xC0, SEEK_SET);
         goto read_title;
@@ -1528,7 +1532,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
 get_PS1_GameTitle:
     if ((fd = genOpen(tmpdir, O_RDONLY)) < 0)
         goto finish;  // PS1 gamesave file needed
-    if ((size = genLseek(fd, 0, SEEK_END)) < 0x2000)
+    if ((size = (int)genLseek(fd, 0, SEEK_END)) < 0x2000)
         goto finish;  // Min size is 8K
     if (size & 0x1FFF)
         goto finish;  // Size must be a multiple of 8K
@@ -2157,7 +2161,7 @@ int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
         progress[MAX_PATH * 4],
         *buff = NULL, inParty[MAX_NAME], outParty[MAX_NAME];
     int nfiles, i;
-    size_t size;
+    s64 size;
     int ret = -1, pfsout = -1, pfsin = -1, in_fd = -1, out_fd = -1, buffSize, bytesRead, bytesWritten;
     int dummy;
     sceMcTblGetDir stats;
@@ -3443,7 +3447,7 @@ int BrowserModePopup(void)
                         if (res >= 0) {
                             fd = genOpen(tmp, O_RDONLY);
                             if (fd >= 0) {
-                                test = genLseek(fd, 0, SEEK_END);
+                                test = (int)genLseek(fd, 0, SEEK_END);
                                 if (test == 55016) {
                                     elisaFnt = (unsigned char *)memalign(64, test);
                                     genLseek(fd, 0, SEEK_SET);
