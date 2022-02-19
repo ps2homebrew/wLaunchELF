@@ -163,12 +163,12 @@ int tex_printXY(const unsigned char *s, int x, int y, u16 colour)
             x += text_spacing;
             continue;
         }  // End if for normal character
-        // Here we got a sequence starting with 0xFF ('�')
+        // Here we got a sequence starting with 0xFF ('\xff')
         if ((c2 = s[i++]) == 0) {  // if that was the final character
             i--;                   // back index to retry on next loop
-            goto norm_char;        // and go display '�' as any other character
+            goto norm_char;        // and go display '\xff' as any other character
         }
-        // Here we deal with any sequence prefixed by '�'
+        // Here we deal with any sequence prefixed by '\xff'
         if ((c2 < '0') || (c2 > '='))    // if the sequence is illegal
             continue;                    // then just ignore it
         c1 = (c2 - '0') * 2 + 0x100;     // generate adjusted char code > 0xFF
@@ -176,8 +176,8 @@ int tex_printXY(const unsigned char *s, int x, int y, u16 colour)
         x += text_spacing;
         if ((c2 > '4') && (c2 < ':'))  // if this is a normal-width character
             continue;                  // continue with the next loop
-        // compound sequence '�0'=Circle '�1'=Cross '�2'=Square '�3'=Triangle
-        //'�4'=FilledBox '�:'=Pad_Rt '�;'=Pad_Dn '�<'=Pad_Lt '�='=Pad_Up
+        // compound sequence "\xff""0"=Circle "\xff""1"=Cross "\xff""2"=Square "\xff""3"=Triangle
+        //"\xff""4"=FilledBox "\xff"":"=Pad_Rt "\xff"";"=Pad_Dn "\xff""<"=Pad_Lt "\xff""="=Pad_Up
         if (x > ICON_WIDTH - ICON_MARGIN - 2 * FONT_WIDTH)  // if out of room for compound character ?
             goto force_newrow;                              // then cut this row here.
         tex_drawChar(c1 + 1, x, y, colour);                 // render 2nd half of compound character

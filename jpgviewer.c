@@ -102,12 +102,18 @@ static void Command_List(void)
             printXY(LNG(Right_Joystick_Vertical_Zoom), x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
             if (swapKeys)
-                sprintf(tmp, "�1: %s", LNG(FullScreen_Mode));
+                sprintf(tmp, "\xff"
+                             "1: %s",
+                        LNG(FullScreen_Mode));
             else
-                sprintf(tmp, "�0: %s", LNG(FullScreen_Mode));
+                sprintf(tmp, "\xff"
+                             "0: %s",
+                        LNG(FullScreen_Mode));
             printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
-            sprintf(tmp, "�3: %s", LNG(Exit_To_Jpg_Browser));
+            sprintf(tmp, "\xff"
+                         "3: %s",
+                    LNG(Exit_To_Jpg_Browser));
             printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
             y += FONT_HEIGHT;
 
@@ -173,13 +179,13 @@ static void View_Render(void)
     // Draw color8 graph4
     gsKit_prim_sprite(gsGlobal, ScreenPosX, ScreenPosY, ScreenPosX1, ScreenPosY1, 0, setting->color[COLOR_GRAPH4]);
     // Draw picture
-    if (PicRotate == 0 || PicRotate == 1 || PicRotate == 3) {  // No rotation, rotate +90�, -90�
+    if (PicRotate == 0 || PicRotate == 1 || PicRotate == 3) {  // No rotation, rotate +90 degrees, -90 degrees
         gsKit_prim_sprite_texture(gsGlobal,
                                   &TexPicture,
                                   ScreenPosX + ScreenOffsetX, ScreenPosY + ScreenOffsetY, PanPosX, PanPosY,
                                   ScreenPosX1 - ScreenOffsetX, ScreenPosY1 - ScreenOffsetY, PanPosX1, PanPosY1,
                                   0, GS_SETREG_RGBAQ(Brightness * 1.28f, Brightness * 1.28f, Brightness * 1.28f, 0x80, 0x00));
-    } else if (PicRotate == 2) {  // Rotate 180�
+    } else if (PicRotate == 2) {  // Rotate 180 degrees
         gsKit_prim_sprite_texture(gsGlobal,
                                   &TexPicture,
                                   ScreenPosX + ScreenOffsetX, ScreenPosY + ScreenOffsetY, PanPosX1, PanPosY1,
@@ -812,13 +818,27 @@ void JpgViewer(char *file)
             // Tooltip section
             msg1[0] = '\0';
             if (swapKeys)
-                sprintf(msg1, "�1:%s", LNG(View));
+                sprintf(msg1, "\xff"
+                              "1:%s",
+                        LNG(View));
             else
-                sprintf(msg1, "�0:%s", LNG(View));
+                sprintf(msg1, "\xff"
+                              "0:%s",
+                        LNG(View));
             if (jpg_browser_mode == LIST)
-                sprintf(tmp, " �3:%s �2:%s", LNG(Up), LNG(Thumb));
+                sprintf(tmp, " "
+                             "\xff"
+                             "3:%s "
+                             "\xff"
+                             "2:%s",
+                        LNG(Up), LNG(Thumb));
             else
-                sprintf(tmp, " �3:%s �2:%s", LNG(Up), LNG(List));
+                sprintf(tmp, " "
+                             "\xff"
+                             "3:%s "
+                             "\xff"
+                             "2:%s",
+                        LNG(Up), LNG(List));
             strcat(msg1, tmp);
             sprintf(tmp, " Sel:%s Start:%s L1/R1:%dsec L2:",
                     LNG(Exit), LNG(SlideShow), SlideShowTime);
