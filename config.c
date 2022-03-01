@@ -1929,7 +1929,7 @@ static void saveNetworkSettings(char *Message)
 
     if (in_fd >= 0) {
 
-        size = genLseek(in_fd, 0, SEEK_END);
+        size = (int)genLseek(in_fd, 0, SEEK_END);
         printf("size of existing file is %ibytes\n\r", size);
 
         ipconfigfile = (char *)memalign(64, size);

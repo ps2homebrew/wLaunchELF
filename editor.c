@@ -1063,7 +1063,7 @@ static int Open(int Win, char *path)
     fd = genOpen(filePath, O_RDONLY);
 
     if (fd >= 0) {
-        TextSize[Win] = genLseek(fd, 0, SEEK_END);
+        TextSize[Win] = (int)genLseek(fd, 0, SEEK_END);
         genLseek(fd, 0, SEEK_SET);
 
         if (TextSize[Win] && TextSize[Win] <= 512 * 1024) {             // Limit Text Size To 512Kb???
