@@ -52,17 +52,17 @@ const u16 font404[] = {
     0xF4A5, 1030,
     0, 0};
 
-// ASCII��SJIS�̕ϊ��p�z��
+// Tables to map SJIS/CP932 full-width to ASCII half-width.
 static const u8 sjis_lookup_81[256] = {
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x00
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x10
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x20
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0x30
-    ' ', ',', '.', ',', '.', 0xFF, ':', ';', '?', '!', 0xFF, 0xFF, '�', '`', 0xFF, '^',              // 0x40
+    ' ', ',', '.', ',', '.', 0xFF, ':', ';', '?', '!', 0xFF, 0xFF, 0xFF, '`', 0xFF, '^',             // 0x40
     0xFF, '_', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '0', 0xFF, '-', '-', 0xFF, 0xFF,      // 0x50
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '\'', '\'', '"', '"', '(', ')', 0xFF, 0xFF, '[', ']', '{',         // 0x60
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '+', '-', 0xFF, '*', 0xFF,     // 0x70
-    '/', '=', 0xFF, '<', '>', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, '�', 0xFF, 0xFF, '�', 0xFF,        // 0x80
+    '/', '=', 0xFF, '<', '>', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,      // 0x80
     '$', 0xFF, 0xFF, '%', '#', '&', '*', '@', 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,        // 0x90
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xA0
     0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,  // 0xB0
@@ -395,7 +395,7 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
             Byte += 3;
         }
     }
-    if (Way == 1) {  // +90�
+    if (Way == 1) {  // +90 degrees
         for (i = 0, l = 0; i < Width; i++, l++) {
             for (j = 0, k = Height - 1; j < Height; j++, k--) {
                 newpixels[j][i][0] = pixels[l][k][0];
@@ -403,7 +403,7 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
                 newpixels[j][i][2] = pixels[l][k][2];
             }
         }
-    } else if (Way == 3) {  // -90�
+    } else if (Way == 3) {  // -90 degrees
         for (i = 0, l = Width - 1; i < Width; i++, l--) {
             for (j = 0, k = 0; j < Height; j++, k++) {
                 newpixels[j][i][0] = pixels[l][k][0];
@@ -437,7 +437,12 @@ void setScrTmp(const char *msg0, const char *msg1)
     x = SCREEN_MARGIN;
     y = Menu_title_y;
     printXY(setting->Menu_Title, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-    sprintf(temp_txt, " �4 LaunchELF %s �4", ULE_VERSION);
+    sprintf(temp_txt, " "
+                      "\xff"
+                      "4 LaunchELF %s "
+                      "\xff"
+                      "4",
+            ULE_VERSION);
     printXY(temp_txt, SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH * strlen(temp_txt), y,
             setting->color[COLOR_FRAME], TRUE, 0);
 
@@ -1030,15 +1035,15 @@ int printXY(const char *s, int x, int y, u64 colour, int draw, int space)
                 break;
             continue;
         }  // End if for normal character
-        // Here we got a sequence starting with 0xFF ('�')
+        // Here we got a sequence starting with 0xFF ('\xff')
         if ((c2 = (unsigned char)s[i++]) == 0)
             break;
         if ((c2 < '0') || (c2 > '='))
             continue;
         c1 = (c2 - '0') * 2 + 0x100;
         if (draw) {
-            // expand sequence �0=Circle  �1=Cross  �2=Square  �3=Triangle  �4=FilledBox
-            //"�:"=Pad_Right  "�;"=Pad_Down  "�<"=Pad_Left  "�="=Pad_Up
+            // expand sequence "\xff""0"=Circle  "\xff""1"=Cross  "\xff""2"=Square  "\xff""3"=Triangle  "\xff""4"=FilledBox
+            //"\xff"":"=Pad_Right  "\xff"";"=Pad_Down  "\xff""<"=Pad_Left  "\xff""="=Pad_Up
             drawChar(c1, x, y, colour);
             x += 8;
             if (x > SCREEN_WIDTH - SCREEN_MARGIN - FONT_WIDTH)
@@ -1070,7 +1075,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
             code = (code << 8) + s[i++];
 
             switch (code) {
-                // Circle == "��"
+                // Circle == "O"
                 case 0x819B:
                     if (draw) {
                         drawChar(0x100, x, y, colour);
@@ -1078,7 +1083,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                     }
                     x += 16;
                     break;
-                // Cross == "�~"
+                // Cross == "X"
                 case 0x817E:
                     if (draw) {
                         drawChar(0x102, x, y, colour);
@@ -1086,7 +1091,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                     }
                     x += 16;
                     break;
-                // Square == "��"
+                // Square == "[]"
                 case 0x81A0:
                     if (draw) {
                         drawChar(0x104, x, y, colour);
@@ -1094,7 +1099,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                     }
                     x += 16;
                     break;
-                // Triangle == "��"
+                // Triangle == "/\"
                 case 0x81A2:
                     if (draw) {
                         drawChar(0x106, x, y, colour);
@@ -1102,7 +1107,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                     }
                     x += 16;
                     break;
-                // FilledBox == "��"
+                // FilledBox
                 case 0x81A1:
                     if (draw) {
                         drawChar(0x108, x, y, colour);
@@ -1115,7 +1120,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                         tmp = y;
                         if (code <= 0x829A)
                             tmp++;
-                        // SJIS����EUC�ɕϊ�
+                        // Convert SJIS/CP932 to EUC_JP.
                         if (code >= 0xE000)
                             code -= 0x4000;
                         code = ((((code >> 8) & 0xFF) - 0x81) << 9) + (code & 0x00FF);
@@ -1127,7 +1132,7 @@ int printXY_sjis(const unsigned char *s, int x, int y, u64 colour, int draw)
                             code -= 0x40;
                         code += 0x2121 + 0x8080;
 
-                        // EUC����b�����t�H���g�̔ԍ��𐶐�
+                        // EUC_JP normalization (?)
                         n = (((code >> 8) & 0xFF) - 0xA1) * (0xFF - 0xA1) + (code & 0xFF) - 0xA1;
                         j = 0;
                         while (font404[j]) {
