@@ -45,8 +45,12 @@ extern u8 iopmod_irx[];
 extern int size_iopmod_irx;
 extern u8 usbd_irx[];
 extern int size_usbd_irx;
-extern u8 usb_mass_irx[];
-extern int size_usb_mass_irx;
+extern u8 bdm_irx[];
+extern int size_bdm_irx;
+extern u8 bdmfs_fatfs_irx[];
+extern int size_bdmfs_fatfs_irx;
+extern u8 usbmass_bd_irx[];
+extern int size_usbmass_bd_irx;
 extern u8 cdfs_irx[];
 extern int size_cdfs_irx;
 extern u8 ps2kbd_irx[];
@@ -1177,9 +1181,18 @@ static void loadUsbDModule(void)
 //---------------------------------------------------------------------------
 static void loadUsbModules(void)
 {
+    int ret;
+
     loadUsbDModule();
-    if (have_usbd && !have_usb_mass && (USB_mass_loaded = loadExternalModule(setting->usbmass_file, &usb_mass_irx, size_usb_mass_irx))) {
+    if (have_usbd && !have_usb_mass && (USB_mass_loaded = loadExternalModule(setting->usbmass_file, NULL, 0))) {
         delay(3);
+        have_usb_mass = 1;
+    } else if (have_usbd && !have_usb_mass) {
+        SifExecModuleBuffer(bdm_irx, size_bdm_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL, &ret);
+        SifExecModuleBuffer(usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL, &ret);
+        delay(3);
+        USB_mass_loaded = 1;
         have_usb_mass = 1;
     }
     if (USB_mass_loaded == 1)                       // if using the internal mass driver
