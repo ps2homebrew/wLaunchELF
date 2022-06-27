@@ -2232,7 +2232,6 @@ enum BOOT_DEVICE {
 
 int main(int argc, char *argv[])
 {
-    char *p;
     int event, post_event = 0;
     char RunPath[MAX_PATH];
     int RunELF_index, nElfs = 0;
@@ -2322,11 +2321,14 @@ int main(int argc, char *argv[])
         boot = BOOT_DEVICE_HOST;
     }
 
-    if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
-        p = strrchr(LaunchElfDir, ':');
-    if (p != NULL)
-        *(p + 1) = 0;
-    // The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
+    {
+        char *p;
+        if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
+            p = strrchr(LaunchElfDir, ':');
+        if (p != NULL)
+            *(p + 1) = 0;
+        // The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
+    }
 
     LastDir[0] = 0;
 

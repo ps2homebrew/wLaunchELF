@@ -3572,7 +3572,7 @@ int getFilePath(char *out, int cnfmode)
     u64 color;
     FILEINFO files[MAX_ENTRY];
     int top = 0, rows;
-    int x, y, y0, y1;
+    int x, y;
     int i, j, ret, rv = -1;  // NB: rv is for return value of this function
     int event, post_event = 0;
     int font_height;
@@ -4138,8 +4138,8 @@ int getFilePath(char *out, int cnfmode)
             if (browser_nfiles > rows) {  // if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
                           SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
-                y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
-                y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
+                int y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
+                int y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
                 drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
@@ -4321,7 +4321,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
             text_pos += text_inc;
         }
         // sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
-        unsigned long long size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
+        size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
         // Max length is 20 characters+NULL
         char sizeC[21] = {0};
         char *sizeP = &sizeC[21];

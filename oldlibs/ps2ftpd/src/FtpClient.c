@@ -374,14 +374,14 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                 char *marker = strtok(NULL, "");
 
                 if (marker) {
-                    char *c = marker;
-                    while (*c) {
-                        if ((*c < '0') || (*c > '9'))
+                    char *cmarker = marker;
+                    while (*cmarker) {
+                        if ((*cmarker < '0') || (*cmarker > '9'))
                             break;
-                        c++;
+                        cmarker++;
                     }
 
-                    if (!*c)
+                    if (!*cmarker)
                         FtpClient_OnCmdRest(pClient, strtol(marker, NULL, 10));
                 } else
                     FtpClient_Send(pClient, 500, pClient->m_pMessages[FTPMSG_REQUIRES_PARAMETERS]);
