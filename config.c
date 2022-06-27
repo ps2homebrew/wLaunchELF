@@ -1938,7 +1938,7 @@ static void saveNetworkSettings(char *Message)
         genRead(in_fd, ipconfigfile, size);
 
 
-        for (i = 0; (ipconfigfile[i] != 0 && i <= size); i++)
+        for (i = 0; (i <= size && ipconfigfile[i] != 0); i++)
 
         {
             // printf("%i-%c\n\r",i,ipconfigfile[i]);
