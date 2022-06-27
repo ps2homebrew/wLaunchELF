@@ -3,7 +3,7 @@
 
 // Fat table functions
 
-unsigned int getFatEntry(int fd, unsigned int cluster, unsigned int *indir_fat_clusters, GetFat_Mode Mode)
+unsigned int getFatEntry(int fd, unsigned int cluster, const unsigned int *indir_fat_clusters, GetFat_Mode Mode)
 {
 
     int unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
@@ -61,7 +61,7 @@ unsigned int getFatEntry(int fd, unsigned int cluster, unsigned int *indir_fat_c
     return g_Vmc_Image[unit].fat_cluster[fat_offset] & FREE_CLUSTER;
 }
 
-unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, unsigned int *indir_fat_clusters, SetFat_Mode Mode)
+unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, const unsigned int *indir_fat_clusters, SetFat_Mode Mode)
 {
 
     int unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
@@ -82,7 +82,7 @@ unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, unsig
     // 256 regular fat clusters, and each fat cluster holds information on 256 sectors.
     unsigned int dbl_indirect_index = fat_index / ((g_Vmc_Image[unit].cluster_size / 4) * (g_Vmc_Image[unit].cluster_size / 4));
 
-    // Cache indirect file table? ( Generally we will be accessing the first part of it for most virtual memory cards
+    // Cache indirect file table? ( Generally we will be accessing the first part of it for most virtual memory cards
     // Get the data for the indirect fat cluster ( as indicated by dbl_indirect_index )
     unsigned int indirect_cluster_num = indir_fat_clusters[dbl_indirect_index];
 

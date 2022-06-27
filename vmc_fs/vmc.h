@@ -279,8 +279,8 @@ typedef enum {
     FAT_SET
 } SetFat_Mode;
 
-unsigned int getFatEntry(int fd, unsigned int cluster, unsigned int *indir_fat_clusters, GetFat_Mode Mode);
-unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, unsigned int *indir_fat_clusters, SetFat_Mode Mode);
+unsigned int getFatEntry(int fd, unsigned int cluster, const unsigned int *indir_fat_clusters, GetFat_Mode Mode);
+unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, const unsigned int *indir_fat_clusters, SetFat_Mode Mode);
 
 
 //  ps2.c

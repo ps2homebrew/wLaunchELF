@@ -378,7 +378,7 @@ int ScaleBitmap(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 **pOutBuff, u16 wNewWid
 } /* end ScaleBitmap */
 
 //--------------------------------------------------------------
-void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
+void RotateBitmap(const u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
 {
 
     int i, j, k, l;

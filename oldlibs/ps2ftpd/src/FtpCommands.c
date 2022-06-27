@@ -173,7 +173,7 @@ void FtpClient_OnCmdPasv(FtpClient *pClient)
     FtpClient_Send(pClient, 227, buffer);
 }
 
-void FtpClient_OnCmdPort(FtpClient *pClient, int *ip, int port)
+void FtpClient_OnCmdPort(FtpClient *pClient, const int *ip, int port)
 {
     assert(pClient);
 

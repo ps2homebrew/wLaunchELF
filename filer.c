@@ -1298,7 +1298,7 @@ char *makeHostPath(char *dp, char *sp)
     return dp;
 }
 //--------------------------------------------------------------
-char *makeFslPath(char *dp, char *sp)
+char *makeFslPath(char *dp, const char *sp)
 {
     int i;
     char ch;

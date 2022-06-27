@@ -399,7 +399,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
         FtpClient_Send(pClient, 500, pClient->m_pMessages[FTPMSG_NOT_UNDERSTOOD]);
 }
 
-void FtpClient_OnDataConnect(FtpClient *pClient, int *ip, int port)
+void FtpClient_OnDataConnect(FtpClient *pClient, const int *ip, int port)
 {
     int s;
     struct sockaddr_in sa;
