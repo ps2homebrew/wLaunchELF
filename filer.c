@@ -2659,9 +2659,9 @@ non_PSU_RESTORE_init:
         sprintf(tmp, "\n%s : ", LNG(Remain_Size));
         strcat(progress, tmp);
         if (size <= 1024)
-            sprintf(tmp, "%lu %s", (long)size, LNG(bytes));  // bytes
+            sprintf(tmp, "%lu %s", (unsigned long)size, LNG(bytes));  // bytes
         else
-            sprintf(tmp, "%lu %s", (long)size / 1024, LNG(Kbytes));  // Kbytes
+            sprintf(tmp, "%lu %s", (unsigned long)size / 1024, LNG(Kbytes));  // Kbytes
         strcat(progress, tmp);
 
         sprintf(tmp, "\n%s: ", LNG(Current_Speed));

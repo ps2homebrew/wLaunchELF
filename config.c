@@ -292,7 +292,7 @@ char *preloadCNF(char *path)
         return NULL;
     }
     CNF_size = genLseek(fd, 0, SEEK_END);
-    printf("CNF_size=%d\n", CNF_size);
+    printf("CNF_size=%lu\n", (unsigned long)CNF_size);
     genLseek(fd, 0, SEEK_SET);
     RAM_p = (char *)memalign(64, CNF_size);
     if (RAM_p == NULL) {
