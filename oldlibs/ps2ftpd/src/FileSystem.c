@@ -517,13 +517,13 @@ int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
                     int unit = pContext->m_kFile.unit;
                     pContext->m_kFile.unit++;
 
+                    if (!ppkDevices[unit])
+                        continue;
+
                     if (strcmp(ppkDevices[unit]->name, "hdd") &&
                         strcmp(ppkDevices[unit]->name, "mass") &&
                         strcmp(ppkDevices[unit]->name, "mc") &&
                         strcmp(ppkDevices[unit]->name, "pfs"))
-                        continue;
-
-                    if (!ppkDevices[unit])
                         continue;
 
                     if (!(ppkDevices[unit]->type & (IOP_DT_FS | IOP_DT_BLOCK)))
