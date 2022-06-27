@@ -804,8 +804,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
             free(ImgData2);
         if (Jpg->buffer)
             free(Jpg->buffer);
-        if (Jpg)
-            free(Jpg);
+        free(Jpg);
     }
 
     if (!strncmp(tmpPath, "cdfs", 4)) {

@@ -240,7 +240,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                     if (!val)
                         break;
 
-                    if (i >= 0 && i < 4) {
+                    if (i < 4) {
                         ip[i] = strtol(val, NULL, 10);
                     } else if (4 == i) {
                         port = strtol(val, NULL, 10) * 256;
@@ -382,7 +382,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                     }
 
                     if (!*c)
-                        FtpClient_OnCmdRest(pClient, (!*c) ? strtol(marker, NULL, 10) : -1);
+                        FtpClient_OnCmdRest(pClient, strtol(marker, NULL, 10));
                 } else
                     FtpClient_Send(pClient, 500, pClient->m_pMessages[FTPMSG_REQUIRES_PARAMETERS]);
             } break;

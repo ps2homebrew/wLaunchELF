@@ -2049,8 +2049,6 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
                 memcpy((void *)file->stats.EntryName, name, 32);
                 mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  // Fix file stats
                 mcSync(0, NULL, &test);
-                if (ret == -4)
-                    ret = -EEXIST;
             }
         }
     } else if (!strncmp(path, "host", 4)) {
@@ -3437,7 +3435,7 @@ int BrowserModePopup(void)
                 case PAD_SQUARE:
                     file_show = 2;
                     event |= 2;  // event |= valid pad command
-                    if ((file_show == 2) && (elisaFnt == NULL) && (elisa_failed == FALSE)) {
+                    if ((elisaFnt == NULL) && (elisa_failed == FALSE)) {
                         int fd, res;
                         elisa_failed = TRUE;  // Default to FAILED. If it succeeds, then this status will be cleared.
 
@@ -3604,8 +3602,6 @@ int getFilePath(char *out, int cnfmode)
     file_sort = 1;
 
     font_height = FONT_HEIGHT;
-    if ((file_show == 2) && (elisaFnt != NULL))
-        font_height = FONT_HEIGHT + 2;
     rows = (Menu_end_y - Menu_start_y) / font_height;
 
     event = 1;  // event = initial entry

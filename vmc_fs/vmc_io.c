@@ -17,8 +17,6 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     DEBUGPRINT(1, "vmc_fs: format %d\n", f->unit);
 
-    int mode = FORMAT_FULL;
-
     struct direntry dirent;
     int all_sector;
     u8 *mcbuffer, *mcbuffer2;
@@ -32,7 +30,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     PROF_START(vmc_formatProf)
 
-    if (mode == FORMAT_FULL) {
+    {
 
         for (i = 0; i < g_Vmc_Image[f->unit].total_pages / g_Vmc_Image[f->unit].header.pages_per_block; i++) {
 

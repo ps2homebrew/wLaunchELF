@@ -942,8 +942,7 @@ void hddManager(void)
                 Angle = 0;
 
                 for (i = 0; i < 360; i++) {
-                    if ((Angle = i - 90) >= 360)
-                        Angle = i + 270;
+                    Angle = i - 90;
                     if (((i * 100) / 360) >= hddFree)
                         Color = setting->color[COLOR_GRAPH2];
                     else
@@ -1064,8 +1063,7 @@ void hddManager(void)
                     Angle = 0;
 
                     for (i = 0; i < 360; i++) {
-                        if ((Angle = i - 90) >= 360)
-                            Angle = i + 270;
+                        Angle = i - 90;
                         if (((i * 100) / 360) >= pfsFree)
                             Color = setting->color[COLOR_GRAPH2];
                         else

@@ -843,8 +843,7 @@ static void Editor_Rules(void)
         else
             Editor_Cur = Tmp_Cur + Editor_nRowsWidth[i] + ((Editor_Cur + 1) - Tmp_Cur) - 1;
 
-        if (Editor_PushRows++ >= 0)
-            Editor_PushRows = 0;
+        Editor_PushRows++;
 
         if (Editor_Cur + 1 >= Editor_nChar && TextBuffer[Active_Window][Editor_Cur] != '\0') {
             Editor_Cur = Editor_nChar - 1;
@@ -866,8 +865,7 @@ static void Editor_Rules(void)
         else
             Editor_Cur = Tmp_Cur - Editor_nRowsWidth[i - 1] + ((Editor_Cur + 1) - Tmp_Cur) - 1;
 
-        if (Editor_PushRows-- <= 0)
-            Editor_PushRows = 0;
+        Editor_PushRows--;
 
         if (Editor_Cur <= 0) {
             Editor_Cur = 0;
@@ -948,7 +946,7 @@ static int Windows_Selector(void)
                     printXY(LNG(Free_Window), wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 else if (Window[i][CREATED])
                     printXY(LNG(Window_Not_Yet_Saved), wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
-                else if (Window[i][OPENED])
+                else
                     printXY(Path[i], wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
 
                 y += FONT_HEIGHT;
@@ -1021,7 +1019,7 @@ static int New(int Win)
 
     TextSize[Win] = 1;
 
-    if (TextSize[Win]) {
+    {
         if ((TextBuffer[Win] = malloc(TextSize[Win] + 256)) > 0) {
             TextBuffer[Win][0] = '\0';
             TextMode[Win] = OTHER;

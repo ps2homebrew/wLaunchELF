@@ -2409,7 +2409,7 @@ int main(int argc, char *argv[])
         event |= 4;  // event |= disc change detection
         if (cdmode <= 0)
             sprintf(mainMsg, "%s ", LNG(No_Disc));
-        else if (cdmode >= 1 && cdmode <= 4)
+        else if (cdmode <= 4)
             sprintf(mainMsg, "%s == ", LNG(Detecting_Disc));
         else  // if(cdmode>=5)
             sprintf(mainMsg, "%s == ", LNG(Stop_Disc));

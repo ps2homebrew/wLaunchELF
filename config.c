@@ -1484,8 +1484,7 @@ static void Config_Screen(void)
             } else {                                                                      // if cursor indicates anything after colour components
                 y += (s - CONFIG_SCREEN_AFT_COLORS + 6) * FONT_HEIGHT + FONT_HEIGHT / 2;  // adjust y for cursor beyond colours
                 // Here y is almost correct, except for additional group spacing
-                if (s >= CONFIG_SCREEN_AFT_COLORS)  // if cursor at or beyond TV mode choice
-                    y += FONT_HEIGHT / 2;           // adjust for half-row space below colours
+                y += FONT_HEIGHT / 2;               // adjust for half-row space below colours
                 if (s >= CONFIG_SCREEN_TV_STARTX)   // if cursor at or beyond screen offsets
                     y += FONT_HEIGHT / 2;           // adjust for half-row space below TV mode choice
                 if (s >= CONFIG_SCREEN_SKIN)        // if cursor at or beyond 'SKIN SETTINGS'
@@ -1691,7 +1690,7 @@ static void Config_Startup(void)
                     getFilePath(setting->font_file, FONT_CNF);
                     if (loadFont(setting->font_file) == 0)
                         setting->font_file[0] = '\0';
-                } else if (s == CONFIG_STARTUP_CNF) {  // Make ESR file choice
+                } else if (s == CONFIG_STARTUP_ESR) {  // Make ESR file choice
                     getFilePath(setting->LK_Path[SETTING_LK_ESR], LK_ELF_CNF);
                     if (!strncmp(setting->LK_Path[SETTING_LK_ESR], "mc0", 3) ||
                         !strncmp(setting->LK_Path[SETTING_LK_ESR], "mc1", 3)) {
