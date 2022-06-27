@@ -1957,7 +1957,6 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
     Fail_PS2Disc:
         sprintf(mainMsg, "%s => %s CDVD 0x%02X", LNG(PS2Disc), LNG(Failed), cdmode);
     Done_PS2Disc:
-        x = x;
     } else if (!strcasecmp(path, setting->Misc_FileBrowser)) {
         if (setting->GUI_skin[0]) {
             GUI_active = 0;
