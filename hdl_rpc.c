@@ -61,7 +61,7 @@ int HdlGetGameInfo(char *PartName, GameInfo *Game)
 
     SifCallRpc(&client, HDL_GETINFO, 0, (void *)Rpc_Buffer, sizeof(Rpc_Packet_Send_GetInfo), (void *)Rpc_Buffer, sizeof(GameInfo) + 4, 0, 0);
 
-    memcpy(Game, ((void *)Rpc_Buffer) + 4, sizeof(GameInfo));
+    memcpy(Game, (void *)(((u8 *)Rpc_Buffer) + 4), sizeof(GameInfo));
 
     return Rpc_Buffer[0];
 }

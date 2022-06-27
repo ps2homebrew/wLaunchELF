@@ -61,7 +61,7 @@ void *rpcCommandHandler(int command, void *Data, int Size)
 {
     switch (command) {
         case 4:  // HDL Get Game Info
-            ((int *)Data)[0] = HdlGetGameInfo((char *)Data, (GameInfo *)(Data + 4));
+            ((int *)Data)[0] = HdlGetGameInfo((char *)Data, (GameInfo *)(((u8 *)Data) + 4));
             break;
         case 5:  // HDL Rename Game
             ((int *)Data)[0] = HdlRenameGame((char *)Data);

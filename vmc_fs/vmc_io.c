@@ -451,7 +451,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
 
             DEBUGPRINT(3, "vmc_fs: Read in %i bytes\n", size);
 
-            memcpy(buffer + data_read, cluster_data + fprivdata->cluster_offset, size - data_read);
+            memcpy((void *)((u8 *)buffer + data_read), cluster_data + fprivdata->cluster_offset, size - data_read);
             fprivdata->cluster_offset += (size - data_read);
             data_read += (size - data_read);
 
@@ -460,7 +460,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
 
             DEBUGPRINT(3, "vmc_fs: Read in %i bytes\n", g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
 
-            memcpy(buffer + data_read, cluster_data + fprivdata->cluster_offset, g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
+            memcpy((void *)((u8 *)buffer + data_read), cluster_data + fprivdata->cluster_offset, g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
             data_read += (g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
             fprivdata->cluster_offset += (g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
         }

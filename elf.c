@@ -190,7 +190,7 @@ void RunLoaderElf(char *filename, char *party)
         memcpy(eph[i].vaddr, pdata, eph[i].filesz);
 
         if (eph[i].memsz > eph[i].filesz)
-            memset(eph[i].vaddr + eph[i].filesz, 0,
+            memset((void *)(((u8 *)(eph[i].vaddr)) + eph[i].filesz), 0,
                    eph[i].memsz - eph[i].filesz);
     }
 
