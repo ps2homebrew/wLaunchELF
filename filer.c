@@ -266,7 +266,7 @@ int mountParty(const char *party)
 
     pfs_str[3] = '0' + i;
     if (fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0) {          // if FTP stole it
-        for (i = 0; i <= 4; i++) {                                // for loop to kill FTP partition mountpoints
+        for (i = 0; i < MOUNT_LIMIT; i++) {                       // for loop to kill FTP partition mountpoints
             if ((i != latestMount) && (Party_vmcIndex[i] < 0)) {  // if unneeded by uLE
                 unmountParty(i);                                  // unmount partition mountpoint
                 pfs_str[3] = '0' + i;                             // prepare to reuse that mountpoint
@@ -276,10 +276,12 @@ int mountParty(const char *party)
         }                   // ends for loop to kill FTP partition mountpoints
         // Here i indicates what happened above with the following meanings:
         // 0..4==Success after trying i mountpoints,  5==Failure
-        if (i > 4)
+        if (i >= MOUNT_LIMIT)
             return -1;
     }  // ends if clause for mountpoints stolen by FTP
-    strcpy(mountedParty[i], party);
+    if (i < MOUNT_LIMIT) {
+        strcpy(mountedParty[i], party);
+    }
 return_i:
     latestMount = i;
     return i;
