@@ -49,6 +49,7 @@
 #define NEWLIB_PORT_AWARE
 #include <fileXio_rpc.h>
 #include <io_common.h>
+#include <ps2sdkapi.h>
 
 #ifdef SIO_DEBUG
 #define DPRINTF(args...) sio_printf(args)

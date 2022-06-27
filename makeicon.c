@@ -4,6 +4,7 @@
 #include "launchelf.h"
 #include "libmc.h"
 #include "math.h"
+#include "sjis.h"
 extern u8 font_uLE[];
 
 static u16 *tex_buffer;
@@ -125,7 +126,7 @@ void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 // NOTE: I added in the ability for \n to be part of the string, don't know if its
 // necessary though, although there are some cases where it doesnt work
 
-int tex_printXY(const unsigned char *s, int x, int y, u16 colour)
+int tex_printXY(const char *s, int x, int y, u16 colour)
 {
     unsigned int c1, c2;
     int i;
@@ -333,7 +334,7 @@ int make_iconsys(char *title, char *iconname, char *filename)
 
     memset(((void *)&icon_sys), 0, sizeof(icon_sys));
 
-    strcpy(icon_sys.head, "PS2D");
+    strcpy((char *)icon_sys.head, "PS2D");
     icon_sys.nlOffset = 0;  // 0=automagically wordwrap, otherwise newline position(multiple of 2)
     strcpy_sjis((short *)&icon_sys.title, title);
 
@@ -355,9 +356,9 @@ int make_iconsys(char *title, char *iconname, char *filename)
     memcpy(icon_sys.lightDir, lightdirection, sizeof(lightdirection));
     memcpy(icon_sys.lightCol, lightcolors, sizeof(lightcolors));
     memcpy(icon_sys.lightAmbient, ambientlight, sizeof(ambientlight));
-    strcpy(icon_sys.view, iconname);
-    strcpy(icon_sys.copy, iconname);
-    strcpy(icon_sys.del, iconname);
+    strcpy((char *)icon_sys.view, iconname);
+    strcpy((char *)icon_sys.copy, iconname);
+    strcpy((char *)icon_sys.del, iconname);
 
     FILE *f = fopen(filename, "wb");  // open/create the file
     if (f == NULL)

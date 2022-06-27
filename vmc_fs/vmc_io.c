@@ -1729,8 +1729,8 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
         g_Vmc_Image[f->unit].last_cluster = EOF_CLUSTER;
         g_Vmc_Image[f->unit].last_free_cluster = g_Vmc_Image[f->unit].header.first_allocatable;
 
-        memset(&g_Vmc_Image[f->unit].indirect_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE);
-        memset(&g_Vmc_Image[f->unit].fat_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE);
+        memset(&g_Vmc_Image[f->unit].indirect_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE * sizeof(unsigned int));
+        memset(&g_Vmc_Image[f->unit].fat_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE * sizeof(unsigned int));
 
         if (g_Vmc_Image[f->unit].card_size == ((g_Vmc_Image[f->unit].header.page_size + 0x10) * g_Vmc_Image[f->unit].total_pages)) {
             g_Vmc_Image[f->unit].ecc_flag = TRUE;

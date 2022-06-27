@@ -94,7 +94,7 @@ int timeout = 0, prev_timeout = 1;
 int init_delay = 0, prev_init_delay = 1;
 int mode = BUTTON;
 int user_acted = 0; /* Set when commands given, to break timeout */
-char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
+char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH * 2];
 char CNF[MAX_NAME];
 int numCNF = 0;
 int maxCNF;
@@ -114,7 +114,7 @@ char ip[16] = "192.168.0.10";
 char netmask[16] = "255.255.255.0";
 char gw[16] = "192.168.0.1";
 
-char netConfig[IPCONF_MAX_LEN + 64];  // Adjust size as needed
+char netConfig[IPCONF_MAX_LEN + 128];  // Adjust size as needed
 
 // State of module collections
 static u8 have_NetModules = 0;
@@ -371,19 +371,22 @@ static void getIpConfig(void)
         for (i = 0; ((c = buf[i]) != '\0'); i++)  // Clear out spaces and any CR/LF
             if ((c == ' ') || (c == '\r') || (c == '\n'))
                 buf[i] = '\0';
-        strncpy(ip, buf, 15);
+        memcpy(ip, buf, sizeof(ip) - 1);
+        ip[sizeof(ip) - 1] = 0;
         i = strlen(ip) + 1;
-        strncpy(netmask, buf + i, 15);
+        memcpy(netmask, buf + i, sizeof(netmask) - 1);
+        netmask[sizeof(netmask) - 1] = 0;
         i += strlen(netmask) + 1;
-        strncpy(gw, buf + i, 15);
+        memcpy(gw, buf + i, sizeof(gw) - 1);
+        gw[sizeof(gw) - 1] = 0;
     }
 
     bzero(if_conf, IPCONF_MAX_LEN);
-    strncpy(if_conf, ip, 15);
+    memcpy(if_conf, ip, sizeof(ip));
     i = strlen(ip) + 1;
-    strncpy(if_conf + i, netmask, 15);
+    memcpy(if_conf + i, netmask, sizeof(netmask));
     i += strlen(netmask) + 1;
-    strncpy(if_conf + i, gw, 15);
+    memcpy(if_conf + i, gw, sizeof(gw));
     i += strlen(gw) + 1;
     if_conf_len = i;
     sprintf(netConfig, "%s:  %-15s %-15s %-15s", LNG(Net_Config), ip, netmask, gw);
@@ -804,7 +807,7 @@ static void load_ps2dvr(void)
 //------------------------------
 static void ShowDebugInfo(void)
 {
-    char TextRow[256];
+    char TextRow[2048];
     int i, event, post_event = 0;
 #ifdef SMB
     int row;
@@ -1740,7 +1743,7 @@ static void Execute(char *pathin)
     char tmp[MAX_PATH];
     static char path[MAX_PATH];
     static char fullpath[MAX_PATH];
-    static char party[40];
+    static char party[1024];
     char *pathSep;
     char *p;
     int x, t = 0;
@@ -1888,7 +1891,7 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 char arg0[20], arg1[20], arg2[20], arg3[40];
                 char *args[4] = {arg0, arg1, arg2, arg3};
                 char kelf_loader[40];
-                char MG_region[10];
+                const char *MG_region = "ACEJMORU";
                 int i, pos, tst, argc;
 
                 if ((tst = SifLoadModule("rom0:ADDDRV", 0, NULL)) < 0)
@@ -1900,9 +1903,8 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 argc = 3;
                 strcpy(kelf_loader, "moduleload2 rom1:UDNL rom1:DVDCNF");
 
-                strcpy(MG_region, "ACEJMORU");
                 pos = strlen(arg0) - 1;
-                for (i = 0; i < 9; i++) {  // NB: MG_region[8] is a string terminator
+                for (i = 0; i < strlen(MG_region); i++) {  // NB: MG_region[8] is a string terminator
                     arg0[pos] = MG_region[i];
                     tst = SifLoadModuleEncrypted(arg0 + 3, 0, NULL);
                     if (tst >= 0)
@@ -1910,7 +1912,7 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 }
 
                 pos = strlen(arg2);
-                if (i == 8)
+                if (i == strlen(MG_region))
                     strcpy(&arg2[pos - 3], "ELF");
                 else
                     arg2[pos - 1] = MG_region[i];

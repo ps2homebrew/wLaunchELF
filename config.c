@@ -382,7 +382,7 @@ void loadSkinBrowser(void)
 {
     int tst;
     char path[MAX_PATH];
-    char mess[MAX_PATH];
+    char mess[MAX_PATH * 2];
 
     getFilePath(path, TEXT_CNF);  // No Filtering, Be Careful.
     tst = loadSkinCNF(path);
@@ -697,7 +697,7 @@ void initConfig(void)
 int loadConfig(char *mainMsg, char *CNF)
 {
     int i, fd, tst, len, mcport, var_cnt, CNF_version;
-    char tsts[20];
+    char tsts[256];
     char path[MAX_PATH];
     char cnf_path[MAX_PATH];
     char *RAM_p, *CNF_p, *name, *value;
@@ -925,7 +925,7 @@ static void Config_Skin(void)
     int x, y;
     int len;
     int event, post_event = 0;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
     char skinSave[MAX_PATH], GUI_Save[MAX_PATH];
     int Brightness = setting->Brightness;
     int current_preview = 0;
@@ -1595,7 +1595,7 @@ static void Config_Startup(void)
     int x, y;
     int len;
     int event, post_event = 0;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
 
     event = 1;  // event = initial entry
     s = CONFIG_STARTUP_FIRST;
@@ -1985,6 +1985,7 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
     // Rewritten 22/10/05
 
     char oct_str[5];
+    char oct_chr_str[2];
     int oct_cnt, i;
 
     oct_cnt = 0;
@@ -1995,8 +1996,10 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
             ip_octet[oct_cnt] = atoi(oct_str);
             oct_cnt++;
             oct_str[0] = 0;
-        } else
-            sprintf(oct_str, "%s%c", oct_str, ip[i]);
+        } else {
+            sprintf(oct_chr_str, "%c", ip[i]);
+            strcat(oct_str, oct_chr_str);
+        }
     }
 }
 //---------------------------------------------------------------------------
@@ -2036,12 +2039,12 @@ static void Config_Network(void)
     int x, y;
     int event, post_event = 0;
     int len;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
     extern char ip[16];
     extern char netmask[16];
     extern char gw[16];
     data_ip_struct ipdata;
-    char NetMsg[MAX_PATH] = "";
+    char NetMsg[MAX_PATH * 2] = "";
     char path[MAX_PATH];
 
     event = 1;  // event = initial entry

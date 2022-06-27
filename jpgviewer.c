@@ -923,7 +923,8 @@ void JpgViewer(char *file)
                 } else {
                 // pushed OK for a file
                 restart:
-                    sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
+                    strncpy(jpgpath, path, sizeof(jpgpath));
+                    strcat(jpgpath, files[jpg_browser_sel].name);
 
                     SlideShowBegin = 1;
 
@@ -935,7 +936,8 @@ void JpgViewer(char *file)
                             i = jpg_browser_sel + 1;
                             SlideShowBegin = 0;
                         }
-                        sprintf(jpgpath, "%s%s", path, files[i].name);
+                        strncpy(jpgpath, path, sizeof(jpgpath));
+                        strcat(jpgpath, files[i].name);
                         loadPic();
                         PicRotate = 0;
                         if (testjpg)

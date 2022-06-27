@@ -536,6 +536,7 @@ void FtpClient_OnDataRead(FtpClient *pClient)
 
 void FtpClient_OnDataWrite(FtpClient *pClient)
 {
+    char name_buf[256];
     assert(pClient);
 
     switch (pClient->m_eDataAction) {
@@ -722,7 +723,8 @@ void FtpClient_OnDataWrite(FtpClient *pClient)
                     */
                     // end of MS-style LIST format
                 }
-                strcat(buffer, pInfo->m_Name);
+                memcpy(name_buf, pInfo->m_Name, sizeof(name_buf));
+                strcat(buffer, name_buf);
                 strcat(buffer, "\r\n");
                 //				sprintf(buffer,"%srwxr-xr-x user group %d Jan 01 00:01 %s\r\n",(FT_DIRECTORY == pInfo->m_eType) ? "d" : "-", pInfo->m_iSize, pInfo->m_Name);
                 send(pClient->m_iDataSocket, buffer, strlen(buffer), 0);

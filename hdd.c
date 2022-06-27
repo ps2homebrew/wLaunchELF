@@ -152,7 +152,7 @@ void GetHddInfo(void)
             drawMsg(dbgtmp);
 
             memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
-            strncpy(PartyInfo[numParty].Name, infoDirEnt.name, MAX_PART_NAME);
+            memcpy(PartyInfo[numParty].Name, infoDirEnt.name, MAX_PART_NAME);
             PartyInfo[numParty].Name[MAX_PART_NAME] = '\0';
             PartyInfo[numParty].RawSize = found_size;  // Store found segment size
             PartyInfo[numParty].Count = numParty;

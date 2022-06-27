@@ -423,9 +423,6 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
         }
     }
 
-    free(pixels);
-    free(newpixels);
-
 } /* end RotateBitmap */
 
 //--------------------------------------------------------------
@@ -686,7 +683,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
     PicW = 0, PicH = 0, PicCoeff = 0;
 
     jpgData *Jpg;
-    u8 *ImgData1, *ImgData2;
+    u8 *ImgData1 = NULL, *ImgData2 = NULL;
     int W = 0;
 
     Jpg = jpgFromFilename(skinpath, JPG_WIDTH_FIX);

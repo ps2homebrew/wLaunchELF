@@ -55,7 +55,7 @@ enum {
 #define TMP  10  // Temp Buffer For Add / Remove Char.
 #define EDIT 11  // Edit Buffer For Copy / Cut / Paste.
 
-static u8 *TextBuffer[12];         // Text Buffers, 10 Windows Max + 1 TMP + 1 EDIT. See above.
+static char *TextBuffer[12];       // Text Buffers, 10 Windows Max + 1 TMP + 1 EDIT. See above.
 static int Window[10][NUM_STATE],  // Windowing System, 10 Windows Max.
     TextMode[10],                  // Text Mode, UNIX, MAC, OTHER.
     TextSize[10],                  // Text Size, 10 Windows Max.
@@ -513,7 +513,7 @@ static void Virt_KeyBoard_Entry(void)
 static int KeyBoard_Entry(void)
 {
     int i, ret = 0, Operation;
-    unsigned char KeyPress;
+    char KeyPress;
 
     Operation = 0;
 
