@@ -293,7 +293,7 @@ unsigned int addObject(struct gen_privdata *gendata, unsigned int parent_cluster
 void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit)
 {
 
-    unsigned int current_cluster = 0;
+    unsigned int current_cluster;
     unsigned int last_cluster = dirent->cluster;
 
     DEBUGPRINT(3, "vmc_fs: Searching last cluster of direntry\n");
@@ -342,9 +342,9 @@ void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, str
 unsigned int getFreeCluster(struct gen_privdata *gendata, int unit)
 {
 
-    unsigned int i = 0;
-    unsigned int value = 0;
-    unsigned int cluster_mask = MASK_CLUSTER;
+    unsigned int i;
+    unsigned int value;
+    unsigned int cluster_mask;
 
     for (i = g_Vmc_Image[unit].last_free_cluster; i < gendata->last_allocatable; i++) {
 

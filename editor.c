@@ -171,7 +171,6 @@ static int MenuEditor(void)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
@@ -923,7 +922,6 @@ static int Windows_Selector(void)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }

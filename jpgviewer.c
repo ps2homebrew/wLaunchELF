@@ -73,7 +73,6 @@ static void Command_List(void)
         waitPadReady(0, 0);
         if (readpad()) {
             if (new_pad) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
@@ -115,7 +114,6 @@ static void Command_List(void)
                          "3: %s",
                     LNG(Exit_To_Jpg_Browser));
             printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
         }  // ends if(event||post_event).
         drawScr();
@@ -227,7 +225,7 @@ static void View_Render(void)
 static void View_Input(void)
 {
 
-    int i = 0;
+    int i;
     u64 OldTime = Timer() + 1000;
 
     while (1) {

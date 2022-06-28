@@ -94,7 +94,7 @@ static int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
 {
 
     int nSum = 0;
-    int nSum2 = 0;
+    int nSum2;
     int *pRes = (int *)malloc(2 * nLen * sizeof(int));
     int *pCoeff = pRes;
     int nNorm = (bShrink) ? (nNewLen << 12) / nLen : 0x1000;
@@ -684,7 +684,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
 
     jpgData *Jpg;
     u8 *ImgData1 = NULL, *ImgData2 = NULL;
-    int W = 0;
+    int W;
 
     Jpg = jpgFromFilename(skinpath, JPG_WIDTH_FIX);
     if (Jpg) {

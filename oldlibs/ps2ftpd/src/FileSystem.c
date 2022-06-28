@@ -576,7 +576,6 @@ int FileSystem_DeleteFile(FSContext *pContext, const char *pFile)
 
 int FileSystem_CreateDir(FSContext *pContext, const char *pDir)
 {
-    int fileMode = 0;
     FileSystem_BuildPath(buffer, pContext->m_Path, pDir);
 
 #ifdef LINUX
@@ -587,6 +586,8 @@ int FileSystem_CreateDir(FSContext *pContext, const char *pDir)
 
     switch (pContext->m_eType) {
         case FS_IODEVICE: {
+            int fileMode = 0;
+
             if (!pContext->m_kFile.device)
                 break;
 

@@ -200,9 +200,9 @@ int tex_printXY(const char *s, int x, int y, u16 colour)
 u32 tex_compresRLE()
 {
     u16 *new_tex = (u16 *)malloc(128 * 128 * 2);
-    u16 outbufferpos = 0, runcounter = 0, currentposition = 0;
+    u16 outbufferpos = 0, currentposition = 0;
     while (currentposition < 128 * 128) {
-        runcounter = 1;
+        u16 runcounter = 1;
         // 16384 is size of the uncompressed texture/2
         while (currentposition + runcounter < 16384 && tex_buffer[currentposition] == tex_buffer[currentposition + runcounter])
             runcounter++;

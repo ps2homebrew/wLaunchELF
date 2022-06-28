@@ -269,7 +269,6 @@ int sizeSelector(int size)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -410,7 +409,6 @@ int MenuParty(PARTYINFO Info)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -745,13 +743,13 @@ void hddManager(void)
     int i, ret;
     int partySize;
     int pfsFree;
-    int ray = 50;
+    int ray;
     u64 Color;
     char tmp[MAX_PATH];
     char tooltip[MAX_TEXT_LINE];
     int top = 0, rows;
     int event, post_event = 0;
-    int browser_sel = 0, browser_nfiles = 0;
+    int browser_sel = 0, browser_nfiles;
     int Treat;
 
     rows = (Menu_end_y - Menu_start_y) / FONT_HEIGHT;
@@ -939,8 +937,6 @@ void hddManager(void)
                 else
                     y += ray + 25;
 
-                Angle = 0;
-
                 for (i = 0; i < 360; i++) {
                     Angle = i - 90;
                     if (((i * 100) / 360) >= hddFree)
@@ -1059,8 +1055,6 @@ void hddManager(void)
                         y += ray + 20;
                     else
                         y += ray + 25;
-
-                    Angle = 0;
 
                     for (i = 0; i < 360; i++) {
                         Angle = i - 90;

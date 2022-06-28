@@ -298,7 +298,6 @@ static void Show_About_uLE(void)
         // Pad response section
         waitAnyPadReady();
         if (readpad() && new_pad) {
-            event |= 2;
             if (setting->GUI_skin[0]) {
                 GUI_active = 1;
                 loadSkin(BACKGROUND_PIC, 0, 0);
@@ -822,8 +821,8 @@ static void ShowDebugInfo(void)
         // Pad response section
         waitAnyPadReady();
         if (readpad() && new_pad) {
-            event |= 2;
 #ifdef SMB
+            event |= 2;
             if (new_pad & PAD_CIRCLE) {
                 if (smbCurrentServer + 1 < smbServerListCount)
                     smbCurrentServer++;

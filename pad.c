@@ -310,13 +310,13 @@ void waitAnyPadReady(void)
 // setup PAD
 int setupPad(void)
 {
-    int ret, i, port, state, modes;
+    int i, port, state, modes;
 
     padInit(0);
 
     for (port = 0; port < 2; port++) {
         padtype_t[port] = 0;  // Assume that we don't have a proper PS2 controller
-        if ((ret = padPortOpen(port, 0, &padBuf_t[port][0])) == 0)
+        if (padPortOpen(port, 0, &padBuf_t[port][0]) == 0)
             return 0;
         waitPadReady(port, 0);
         state = padGetState(port, 0);

@@ -1676,10 +1676,8 @@ int menu(const char *path, FILEINFO *file)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             } else if (new_pad & PAD_SQUARE && sel == PASTE) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -2274,7 +2272,6 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
             if (setting->PSU_DateNames && setting->PSU_NoOverwrite) {
                 if (0 <= (out_fd = genOpen(tmp, O_RDONLY))) {  // Name conflict ?
                     genClose(out_fd);
-                    out_fd = -1;
                     return 0;
                 }
             }
@@ -2458,7 +2455,7 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
             memcpy(PSU_head.name, mcT_head_p->name, sizeof(PSU_head.name));
             PSU_head.unknown_1_u16 = mcT_head_p->unknown_1_u16;
             PSU_head.unknown_2_u64 = mcT_head_p->unknown_2_u64;
-            size = genWrite(PM_file[recurses + 1], (void *)&PSU_head, sizeof(PSU_head));
+            genWrite(PM_file[recurses + 1], (void *)&PSU_head, sizeof(PSU_head));
             genLseek(PM_file[recurses + 1], 0, SEEK_END);
             genClose(PM_file[recurses + 1]);
         } else if (PM_flag[recurses + 1] == PM_MC_RESTORE) {  // MC Restore mode folder paste closure
@@ -2833,7 +2830,7 @@ int keyboard(char *out, int max)
                 "<>(){}[].,:;\""
                 "!@#$%&=+-^*_'";
     int KEY_LEN;
-    int cur = 0, sel = 0, i = 0, x, y, t = 0;
+    int cur = 0, sel = 0, i, x, y, t = 0;
     char tmp[256], *p;
     char KeyPress;
 
@@ -4329,7 +4326,6 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
             *(--sizeP) = '0' + (size % 10);
         } while (size /= 10);
         sprintf(mess + text_pos, " mcTsz=%s%n", sizeP, &text_inc);
-        text_pos += text_inc;
     }
     //----- End of sections that show attributes -----
     browser_pushed = FALSE;

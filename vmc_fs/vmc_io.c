@@ -23,7 +23,6 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
     unsigned int i, j, k, x, y, last_blk_sector, Page_Num, Page_Num2;
 
     Page_Num = 0;
-    Page_Num2 = 0;
 
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
@@ -1172,7 +1171,6 @@ int Vmc_Rmdir(iop_file_t *f, const char *path1)
         char *foldername = strrchr(path, '/');
 
         foldername[0] = '\0';
-        foldername++;
 
         struct direntry child;
         unsigned int child_cluster;
