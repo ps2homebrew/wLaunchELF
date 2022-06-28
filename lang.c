@@ -257,7 +257,7 @@ void Load_External_Language(void)
     }      // end if language file string set
 
     if (error_id < -1) {
-        char tmp_s[80 * 16], t1_s[102], t2_s[102];
+        char tmp_s[80 * 16];
         int pos = 0, stp = 0;
         sprintf(tmp_s,
                 "LNG loading failed with error_id==%d and test==%d\n"
@@ -272,6 +272,8 @@ void Load_External_Language(void)
                     filePath);
         }
         if (error_id == -6) {  // if parsing error
+            char t1_s[102], t2_s[102];
+
             strncpy(t1_s, oldf_tp, 100);
             t1_s[100] = '\0';
             strncpy(t2_s, file_tp, 100);
@@ -289,13 +291,14 @@ void Load_External_Language(void)
 
     memcpy(Lang_String, Lang, sizeof(Lang_String));
 
-    int i;
-    char *tmp;
-
     if (strlen(setting->Misc) > 0) {
+        int i;
+
         for (i = 0; i < 16; i++) {  // Loop to rename the ELF paths with new language for launch keys
             if ((i < 12) || (setting->LK_Flag[i] != 0)) {
                 if (!strncmp(setting->LK_Path[i], setting->Misc, strlen(setting->Misc))) {
+                    char *tmp;
+
                     tmp = strrchr(setting->LK_Path[i], '/');
                     if (!strcmp(tmp + 1, setting->Misc_PS2Disc + strlen(setting->Misc)))
                         sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2Disc));

@@ -293,12 +293,12 @@ unsigned int addObject(struct gen_privdata *gendata, unsigned int parent_cluster
 void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit)
 {
 
-    unsigned int current_cluster;
     unsigned int last_cluster = dirent->cluster;
 
     DEBUGPRINT(3, "vmc_fs: Searching last cluster of direntry\n");
 
     while (1) {
+        unsigned int current_cluster;
 
         current_cluster = getFatEntry(gendata->fd, last_cluster, gendata->indir_fat_clusters, FAT_VALUE);
 
@@ -343,10 +343,10 @@ unsigned int getFreeCluster(struct gen_privdata *gendata, int unit)
 {
 
     unsigned int i;
-    unsigned int value;
     unsigned int cluster_mask;
 
     for (i = g_Vmc_Image[unit].last_free_cluster; i < gendata->last_allocatable; i++) {
+        unsigned int value;
 
         value = getFatEntry(gendata->fd, i - gendata->first_allocatable, gendata->indir_fat_clusters, FAT_VALUE);
 
@@ -596,11 +596,12 @@ const unsigned char ECC_XOR_Table[256] = {
 //----------------------------------------------------------------------------
 static void calculateECC(u8 *ECC_Chunk, const u8 *Data_Chunk)
 {
-    int i, c;
+    int i;
 
     ECC_Chunk[0] = ECC_Chunk[1] = ECC_Chunk[2] = 0;
 
     for (i = 0; i < 0x80; i++) {
+        int c;
 
         c = ECC_XOR_Table[Data_Chunk[i]];
 

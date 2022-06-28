@@ -86,11 +86,12 @@ pko_lwip_send(int sock, void *buf, int len, int flag)
 int pko_recv_bytes(int sock, char *buf, int bytes)
 {
     int left;
-    int len;
 
     left = bytes;
 
     while (left > 0) {
+        int len;
+
         len = recv(sock, &buf[bytes - left], left, 0);
         if (len < 0) {
             dbgprintf("pko_file: pko_recv_bytes error!!\n");
@@ -694,8 +695,6 @@ int pko_file_serv(void *argv)
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
     int sock;
-    int client_sock;
-    int client_len;
     int ret;
 
     dbgprintf(" - PS2 Side application -\n");
@@ -733,6 +732,9 @@ int pko_file_serv(void *argv)
 
     // Connection loop
     while (pko_fileio_active) {
+        int client_sock;
+        int client_len;
+
         dbgprintf("Waiting for connection\n");
 
         client_len = sizeof(client_addr);

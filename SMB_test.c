@@ -131,9 +131,9 @@ int saveSMBCNF(char *CNFpath)
 //------------------------------
 int scanSMBCNF(unsigned char *name, unsigned char *value)
 {
-    int test;
-
     if (!strcmp(name, "smbIndex")) {
+        int test;
+
         test = atoi(value);
         if ((test >= 0) && (test < SERVERLIST_MAX)) {
             smbCurrentServer = test;

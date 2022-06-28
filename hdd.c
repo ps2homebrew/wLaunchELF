@@ -520,7 +520,7 @@ int CreateParty(char *party, int size)
 //--------------------------------------------------------------
 int RemoveParty(PARTYINFO Info)
 {
-    int i, ret = 0;
+    int ret = 0;
     char tmpName[MAX_ENTRY];
 
     // printf("Remove Partition: %d\n", Info.Count);
@@ -538,6 +538,8 @@ int RemoveParty(PARTYINFO Info)
         if (Info.Count == numParty) {
             memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
         } else {
+            int i;
+
             for (i = Info.Count; i < numParty; i++) {
                 memset(&PartyInfo[i], 0, sizeof(PARTYINFO));
                 memcpy(&PartyInfo[i], &PartyInfo[i + 1], sizeof(PARTYINFO));

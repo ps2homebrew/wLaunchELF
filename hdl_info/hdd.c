@@ -123,9 +123,6 @@ int hio_iop_probe(const char *path, hio_t **hio)
 //--------------------------------------------------------------
 int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
 {
-
-    int i, count = 0, err;
-
     hdl_glist_free(games);
     games = NULL;
     if (hio != NULL)
@@ -133,7 +130,11 @@ int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
     hio = NULL;
 
     if (hio_iop_probe("hdd0:", &hio) == 0) {
+        int err;
+
         if ((err = hdl_glist_read(hio, &games)) == 0) {
+            int i;
+
             for (i = 0; i < games->count; ++i) {
                 const hdl_game_info_t *game = &games->games[i];
 
@@ -144,7 +145,6 @@ int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
                     GameInf->Is_Dvd = game->is_dvd;
                     return 0;  // Return flag for no error
                 }
-                ++count;
             }           /* for */
             return -3;  // Return error flag for 'Game not found'
         }               /* if */
@@ -159,8 +159,6 @@ int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
 int HdlRenameGame(void *Data)
 {
 
-    int i, count = 0, err;
-
     int *Pointer = Data;
     Rpc_Packet_Send_Rename *Packet = (Rpc_Packet_Send_Rename *)Pointer;
 
@@ -171,7 +169,11 @@ int HdlRenameGame(void *Data)
     hio = NULL;
 
     if (hio_iop_probe("hdd0:", &hio) == 0) {
+        int err;
+
         if ((err = hdl_glist_read(hio, &games)) == 0) {
+            int i;
+
             for (i = 0; i < games->count; ++i) {
                 hdl_game_info_t *game = &games->games[i];
 
@@ -183,7 +185,6 @@ int HdlRenameGame(void *Data)
                     else
                         return err;  // Return error flag for 'hdl_glist_write failed'
                 }
-                ++count;
             }           /* for */
             return -3;  // Return error flag for 'Game not found'
         }               /* if */

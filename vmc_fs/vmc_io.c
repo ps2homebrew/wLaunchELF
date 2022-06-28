@@ -20,7 +20,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
     struct direntry dirent;
     int all_sector;
     u8 *mcbuffer, *mcbuffer2;
-    unsigned int i, j, k, x, y, last_blk_sector, Page_Num, Page_Num2;
+    unsigned int i, j, k, x, y, Page_Num, Page_Num2;
 
     Page_Num = 0;
 
@@ -63,6 +63,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     //  Write fat table pages
     for (x = 0; g_Vmc_Image[f->unit].header.indir_fat_clusters[x] != 0; x++) {
+        unsigned int last_blk_sector;
 
         last_blk_sector = g_Vmc_Image[f->unit].header.indir_fat_clusters[0] + x;
         Page_Num = last_blk_sector * g_Vmc_Image[f->unit].header.pages_per_cluster;
@@ -273,12 +274,12 @@ int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
             DEBUGPRINT(3, "vmc_fs: Open with O_TRUNC.\n");
 
         int first_cluster = 1;
-        unsigned int current_cluster;
         unsigned int last_cluster = dirent.cluster;
 
         DEBUGPRINT(4, "vmc_fs: Searching last cluster of file ...\n");
 
         while (1) {
+            unsigned int current_cluster;
 
             current_cluster = getFatEntry(fprivdata->gendata.fd, last_cluster, fprivdata->gendata.indir_fat_clusters, FAT_VALUE);
 
@@ -2125,7 +2126,6 @@ unsigned int Vmc_Checkfree(int unit)
     PROF_START(vmc_checkfreeProf)
 
     int i = 0;
-    unsigned int cluster_value;
     unsigned int cluster_mask;
     unsigned int free_space = 0;
     unsigned int free_cluster_num = 0;
@@ -2138,6 +2138,7 @@ unsigned int Vmc_Checkfree(int unit)
     memcpy(gendata.indir_fat_clusters, g_Vmc_Image[unit].header.indir_fat_clusters, sizeof(unsigned int) * 32);
 
     for (i = gendata.first_allocatable; i < gendata.last_allocatable; i++) {
+        unsigned int cluster_value;
 
         cluster_value = getFatEntry(gendata.fd, i - gendata.first_allocatable, gendata.indir_fat_clusters, FAT_VALUE);
 
@@ -2198,7 +2199,6 @@ int Vmc_Clean(int unit)
     PROF_START(vmc_cleanProf)
 
     int i = 0;
-    unsigned int cluster_value;
     unsigned int cluster_mask;
     struct gen_privdata gendata;
 
@@ -2209,6 +2209,7 @@ int Vmc_Clean(int unit)
     memcpy(gendata.indir_fat_clusters, g_Vmc_Image[unit].header.indir_fat_clusters, sizeof(unsigned int) * 32);
 
     for (i = gendata.first_allocatable; i < gendata.last_allocatable; i++) {
+        unsigned int cluster_value;
 
         cluster_value = getFatEntry(gendata.fd, i - gendata.first_allocatable, gendata.indir_fat_clusters, FAT_VALUE);
 

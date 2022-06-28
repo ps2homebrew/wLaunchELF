@@ -536,7 +536,6 @@ void FtpClient_OnDataRead(FtpClient *pClient)
 
 void FtpClient_OnDataWrite(FtpClient *pClient)
 {
-    char name_buf[256];
     assert(pClient);
 
     switch (pClient->m_eDataAction) {
@@ -574,6 +573,8 @@ void FtpClient_OnDataWrite(FtpClient *pClient)
             FSFileInfo *pInfo = (FSFileInfo *)(buffer + BUFFER_OFFSET);
 
             if (FileSystem_ReadDir(&pClient->m_kContext, pInfo) >= 0) {
+                char name_buf[256];
+
                 buffer[0] = '\0';
                 if (DATAACTION_LIST == pClient->m_eDataAction) {
                     int i;

@@ -124,12 +124,8 @@ static void Command_List(void)
 //--------------------------------------------------------------
 static void View_Render(void)
 {
-
-    char *name, tmp[MAX_PATH];
-
     float ScreenPosX, ScreenPosX1, ScreenPosY, ScreenPosY1;
     float ScreenOffsetX, ScreenOffsetY;
-    float TmpPosX, TmpPosY;
 
     // Init picture position on screen
     if (FullScreen) {
@@ -159,6 +155,8 @@ static void View_Render(void)
         PanOffsetX = 0.0f;
         PanOffsetY = 0.0f;
     } else {
+        float TmpPosX, TmpPosY;
+
         PanPosX = TmpPosX = ((PicWidth / 8) - ((1.5f - PanZoom) * (PicWidth / 4)));
         if ((PanPosX += PanOffsetX * TmpPosX) <= 0.0f)
             PanPosX = 0.0f;
@@ -193,6 +191,8 @@ static void View_Render(void)
     setBrightness(50);
 
     if (!FullScreen) {
+        char *name, tmp[MAX_PATH];
+
         // Tooltip section
         strcpy(tmp, jpgpath);
         name = strrchr(tmp, '/');
@@ -405,8 +405,6 @@ static void View_Input(void)
 //--------------------------------------------------------------
 static void loadPic(void)
 {
-    int i = 0;
-
     loadSkin(JPG_PIC, jpgpath, 0);
 
     Brightness = 0;
@@ -415,6 +413,8 @@ static void loadPic(void)
     PanOffsetY = 0.0f;
 
     if (testjpg) {
+        int i = 0;
+
         switch (SlideShowTrans) {
             case OFF: {
                 View_Render();

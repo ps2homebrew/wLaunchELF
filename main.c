@@ -350,7 +350,6 @@ static void getIpConfig(void)
     int fd;
     int i;
     int len;
-    char c;
     char buf[IPCONF_MAX_LEN];
     char path[MAX_PATH];
 
@@ -366,6 +365,8 @@ static void getIpConfig(void)
     }
 
     if ((fd >= 0) && (len > 0)) {
+        char c;
+
         buf[len] = '\0';                          // Ensure string termination, regardless of file content
         for (i = 0; ((c = buf[i]) != '\0'); i++)  // Clear out spaces and any CR/LF
             if ((c == ' ') || (c == '\r') || (c == '\n'))
@@ -656,8 +657,9 @@ static int drawMainScreen2(int TV_mode)
 static void delay(int count)
 {
     int i;
-    int ret;
     for (i = 0; i < count; i++) {
+        int ret;
+
         ret = 0x01000000;
         while (ret--)
             asm("nop\nnop\nnop\nnop");
@@ -677,9 +679,11 @@ static void initsbv_patches(void)
 //---------------------------------------------------------------------------
 static void load_ps2dev9(void)
 {
-    int ret, rcode;
+    int rcode;
 
     if (!have_ps2dev9) {
+        int ret;
+
         ret = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &rcode);
         ps2dev9_loaded = (ret >= 0 && rcode == 0);  // DEV9.IRX must have successfully loaded and returned RESIDENT END.
         have_ps2dev9 = 1;
@@ -713,24 +717,6 @@ static void load_ps2ip(void)
 static void load_ps2atad(void)
 {
     int ret;
-    static char hddarg[] = "-o"
-                           "\0"
-                           "4"
-                           "\0"
-                           "-n"
-                           "\0"
-                           "20";
-    static char pfsarg[] = "-m"
-                           "\0"
-                           "4"
-                           "\0"
-                           "-o"
-                           "\0"
-                           "10"
-                           "\0"
-                           "-n"
-                           "\0"
-                           "40";
 
     load_ps2dev9();
     if (!have_ps2atad) {
@@ -738,10 +724,30 @@ static void load_ps2atad(void)
         have_ps2atad = 1;
     }
     if (!have_ps2hdd) {
+        static char hddarg[] = "-o"
+                               "\0"
+                               "4"
+                               "\0"
+                               "-n"
+                               "\0"
+                               "20";
+
         SifExecModuleBuffer(ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
         have_ps2hdd = 1;
     }
     if (!have_ps2fs) {
+        static char pfsarg[] = "-m"
+                               "\0"
+                               "4"
+                               "\0"
+                               "-o"
+                               "\0"
+                               "10"
+                               "\0"
+                               "-n"
+                               "\0"
+                               "40";
+
         SifExecModuleBuffer(ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
         have_ps2fs = 1;
     }
@@ -1325,7 +1331,6 @@ static void loadNetModules(void)
 //---------------------------------------------------------------------------
 static void startKbd(void)
 {
-    int kbd_fd;
     void *mapBase;
     int mapSize;
 
@@ -1335,6 +1340,8 @@ static void startKbd(void)
         PS2KbdInit();
         ps2kbd_opened = 1;
         if (setting->kbdmap_file[0]) {
+            int kbd_fd;
+
             if ((kbd_fd = open(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
                 printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n", kbd_fd, setting->kbdmap_file);
                 if (loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
@@ -1378,7 +1385,6 @@ static int scanSystemCnf(char *name, char *value)
 //------------------------------
 static int readSystemCnf(void)
 {
-    int var_cnt;
     char *RAM_p, *CNF_p, *name, *value;
 
     BootDiscType = 0;
@@ -1388,6 +1394,8 @@ static int readSystemCnf(void)
     SystemCnf_VMODE[0] = '\0';
 
     if ((RAM_p = preloadCNF("cdrom0:\\SYSTEM.CNF;1")) != NULL) {
+        int var_cnt;
+
         CNF_p = RAM_p;
         for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
             scanSystemCnf(name, value);
@@ -1540,9 +1548,9 @@ done_test:
 //---------------------------------------------------------------------------
 static void Validate_CNF_Path(void)
 {
-    char cnf_path[MAX_PATH];
-
     if (setting->CNF_Path[0] != '\0') {
+        char cnf_path[MAX_PATH];
+
         if (genFixPath(setting->CNF_Path, cnf_path) >= 0)
             strcpy(LaunchElfDir, setting->CNF_Path);
     }
@@ -2132,10 +2140,11 @@ static void Reset()
 //---------------------------------------------------------------------------
 int uLE_InitializeRegion(void)
 {
-    int ROMVER_fd;
     static int TVMode = -1;
 
     if (TVMode < 0) {
+        int ROMVER_fd;
+
         ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
         if (ROMVER_fd < 0) {
             memset(ROMVER_data, 0, sizeof(ROMVER_data));
@@ -2270,13 +2279,15 @@ int main(int argc, char *argv[])
         } else if (!strncmp(argv[0], "hdd", 3)) {
             // Booting from the HDD requires special handling for HDD-based paths.
             char temp[MAX_PATH];
-            char *t, *p;
+            char *t;
             /* Change boot_path to contain a path to the block device.
                 Standard HDD path format: hdd0:partition:pfs:path/to/file
                 However, (older) homebrew may not use this format. */
             strcpy(temp, boot_path + 5);  // Skip "hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
+                char *p;
+
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
                 if (p != NULL) {
@@ -2293,13 +2304,15 @@ int main(int argc, char *argv[])
         } else if (!strncmp(argv[0], "dvr_hdd", 7)) {
             // Booting from the HDD requires special handling for HDD-based paths.
             char temp[MAX_PATH];
-            char *t, *p;
+            char *t;
             /* Change boot_path to contain a path to the block device.
                 Standard HDD path format: dvr_hdd0:partition:pfs:path/to/file
                 However, (older) homebrew may not use this format. */
             strcpy(temp, boot_path + 9);  // Skip "dvr_hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
+                char *p;
+
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
                 if (p != NULL) {

@@ -1896,8 +1896,8 @@ static void saveNetworkSettings(char *Message)
     extern char netmask[16];
     extern char gw[16];
     int out_fd, in_fd;
-    int ret = 0, i = 0, port;
-    int size, sizeleft = 0;
+    int ret = 0, i = 0;
+    int sizeleft = 0;
     char *ipconfigfile = 0;
     char path[MAX_PATH];
 
@@ -1924,6 +1924,7 @@ static void saveNetworkSettings(char *Message)
     }
 
     if (in_fd >= 0) {
+        int size;
 
         size = (int)genLseek(in_fd, 0, SEEK_END);
         printf("size of existing file is %ibytes\n\r", size);
@@ -1944,6 +1945,8 @@ static void saveNetworkSettings(char *Message)
 
         genClose(in_fd);
     } else {
+        int port;
+
         port = CheckMC();
         if (port < 0)
             port = 0;  // Default to mc0, if it fails.

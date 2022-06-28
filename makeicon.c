@@ -73,7 +73,7 @@ struct icon_framedata
 // draw a char using the system font (16x16)
 void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 {
-    int i, j, k, pixBase, pixMask;
+    int i, j, k, pixMask;
     u8 *cm;
 
     u16 temp_image[16][32];
@@ -88,6 +88,8 @@ void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 
     pixMask = 0x80;
     for (i = 0; i < 8; i++) {  // for i == each pixel column
+        int pixBase;
+
         pixBase = -1;
         for (j = 0; j < 16; j++) {                     // for j == each pixel row
             if ((pixBase < 0) && (cm[j] & pixMask)) {  // if start of sequence

@@ -500,7 +500,7 @@ void nonDialog(char *message)
     char msg[80 * 30];          // More than this can't be shown on screen, even in PAL
     static int dh, dw, dx, dy;  // These are static, to allow cleanup
     int a = 6, b = 4, c = 2, n, tw;
-    int i, len, ret;
+    int i, len;
 
     if (message == NULL) {  // NULL message means cleanup for last nonDialog
         drawSprite(setting->color[COLOR_BACKGR],
@@ -516,8 +516,10 @@ void nonDialog(char *message)
             msg[i] = 0;                     // split old line to separate string
             n++;                            // increment string count
         }
-    }                                                 // loop back for next character pos
-    for (i = len = tw = 0; i < n; i++) {              // start with string 0, assume 0 length & width
+    }                                     // loop back for next character pos
+    for (i = len = tw = 0; i < n; i++) {  // start with string 0, assume 0 length & width
+        int ret;
+
         ret = printXY(&msg[len], 0, 0, 0, FALSE, 0);  // get width of current string
         if (ret > tw)
             tw = ret;                  // tw = largest text width of strings so far
@@ -552,14 +554,17 @@ void nonDialog(char *message)
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 {
-    char ca, cb;
-    int i, n, ret, aElf = FALSE, bElf = FALSE, t = (file_sort == 2);
+    int t = (file_sort == 2);
 
     if (file_sort == 0)
         return 0;  // return 0 for unsorted mode
 
     if ((a->stats.AttrFile & MC_ATTR_OBJECT) == (b->stats.AttrFile & MC_ATTR_OBJECT)) {
+        int i, n;
+
         if (a->stats.AttrFile & sceMcFileAttrFile) {
+            int aElf = FALSE, bElf = FALSE;
+
             if (genCmpFileExt(a->name, "ELF"))
                 aElf = TRUE;
             if (genCmpFileExt(b->name, "ELF"))
@@ -593,6 +598,9 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
         else
             n = strlen(a->name);
         for (i = 0; i <= n; i++) {
+            char ca, cb;
+            int ret;
+
             if (t) {
                 ca = a->title[i];
                 cb = b->title[i];
@@ -620,9 +628,10 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 void sort(FILEINFO *a, int left, int right)
 {
     FILEINFO tmp, pivot;
-    int i, p;
 
     if (left < right) {
+        int i, p;
+
         pivot = a[left];
         p = left;
         for (i = left + 1; i <= right; i++) {
@@ -1281,12 +1290,13 @@ exit:
 char *makeHostPath(char *dp, char *sp)
 {
     int i;
-    char ch;
 
     if (!host_use_Bsl)
         return strcpy(dp, sp);
 
     for (i = 0; i < MAX_PATH - 1; i++) {
+        char ch;
+
         ch = sp[i];
         if (ch == '/')
             dp[i] = '\\';
@@ -1301,9 +1311,10 @@ char *makeHostPath(char *dp, char *sp)
 char *makeFslPath(char *dp, const char *sp)
 {
     int i;
-    char ch;
 
     for (i = 0; i < MAX_PATH - 1; i++) {
+        char ch;
+
         ch = sp[i];
         if (ch == '\\')
             dp[i] = '/';
@@ -1337,9 +1348,9 @@ void initHOST(void)
 int readHOST(const char *path, FILEINFO *info, int max)
 {
     iox_dirent_t hostcontent;
-    int hfd, rv, size, contentptr, hostcount = 0;
-    char *elflisttxt, elflistchar;
-    char host_path[MAX_PATH * 2], host_next[MAX_PATH];
+    int hfd, rv, hostcount = 0;
+    char *elflisttxt;
+    char host_path[MAX_PATH * 2];
     char Win_path[MAX_PATH];
 
     initHOST();
@@ -1347,6 +1358,8 @@ int readHOST(const char *path, FILEINFO *info, int max)
     if (!strncmp(path, "host:/", 6))
         strcpy(host_path + 5, path + 6);
     if ((host_elflist) && !strcmp(host_path, "host:")) {
+        int size, contentptr;
+
         if ((hfd = open("host:elflist.txt", O_RDONLY, 0)) < 0)
             return 0;
         if ((size = lseek(hfd, 0, SEEK_END)) <= 0) {
@@ -1359,6 +1372,9 @@ int readHOST(const char *path, FILEINFO *info, int max)
         close(hfd);
         contentptr = 0;
         for (rv = 0; rv <= size; rv++) {
+            char elflistchar;
+            char host_next[MAX_PATH];
+
             elflistchar = elflisttxt[rv];
             if ((elflistchar == 0x0a) || (rv == size)) {
                 host_next[contentptr] = 0;
@@ -1890,10 +1906,11 @@ u64 getFileSize(const char *path, const FILEINFO *file)
     iox_stat_t stat;
     u64 size, filesize;
     FILEINFO files[MAX_ENTRY];
-    char dir[MAX_PATH], party[MAX_NAME];
-    int nfiles, i, ret;
+    char dir[MAX_PATH];
 
     if (file->stats.AttrFile & sceMcFileAttrSubdir) {  // Folder object to size up
+        int nfiles, i;
+
         sprintf(dir, "%s%s/", path, file->name);
         nfiles = getDir(dir, files);
         for (i = size = 0; i < nfiles; i++) {
@@ -1904,6 +1921,9 @@ u64 getFileSize(const char *path, const FILEINFO *file)
                 size += filesize;
         }
     } else {  // File object to size up
+        char party[MAX_NAME];
+        int ret;
+
         if (!strncmp(path, "hdd", 3)) {
             getHddParty(path, file, party, dir);
             ret = mountParty(party);
@@ -1934,7 +1954,7 @@ int delete (const char *path, const FILEINFO *file)
 {
     FILEINFO files[MAX_ENTRY];
     char party[MAX_NAME], dir[MAX_PATH], hdddir[MAX_PATH];
-    int nfiles, i, ret;
+    int ret;
 
     if (!strncmp(path, "hdd", 3)) {
         getHddParty(path, file, party, hdddir);
@@ -1955,6 +1975,8 @@ int delete (const char *path, const FILEINFO *file)
         makeHostPath(dir + 5, dir + 6);
 
     if (file->stats.AttrFile & sceMcFileAttrSubdir) {  // Is the object to delete a folder ?
+        int nfiles, i;
+
         strcat(dir, "/");
         nfiles = getDir(dir, files);
         for (i = 0; i < nfiles; i++) {
@@ -3435,13 +3457,15 @@ int BrowserModePopup(void)
                     file_show = 2;
                     event |= 2;  // event |= valid pad command
                     if ((elisaFnt == NULL) && (elisa_failed == FALSE)) {
-                        int fd, res;
+                        int res;
                         elisa_failed = TRUE;  // Default to FAILED. If it succeeds, then this status will be cleared.
 
                         res = genFixPath("uLE:/ELISA100.FNT", tmp);
                         if (!strncmp(tmp, "cdrom", 5))
                             strcat(tmp, ";1");
                         if (res >= 0) {
+                            int fd;
+
                             fd = genOpen(tmp, O_RDONLY);
                             if (fd >= 0) {
                                 test = (int)genLseek(fd, 0, SEEK_END);
@@ -4074,8 +4098,6 @@ int getFilePath(char *out, int cnfmode)
                 if (file_show > 0) {
                     //					unsigned int size = files[top+i].stats.fileSizeByte;
                     unsigned long long size = ((unsigned long long)files[top + i].stats.Reserve2 << 32) | files[top + i].stats.FileSizeByte;
-                    int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-                    char scale_s[6] = " KMGTP";
                     PS2TIME timestamp = *(PS2TIME *)&files[top + i].stats._Modify;
 
                     if (!size_valid)
@@ -4086,6 +4108,9 @@ int getFilePath(char *out, int cnfmode)
                     if (!size_valid || !(top + i))
                         strcpy(tmp, "----- B");
                     else {
+                        int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
+                        char scale_s[6] = " KMGTP";
+
                         while (size > 99999) {
                             scale++;
                             size /= 1024;
@@ -4235,8 +4260,7 @@ int getFilePath(char *out, int cnfmode)
 void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 {
     u64 size;
-    int ret, i, text_pos, text_inc, sel = -1;
-    char filepath[MAX_PATH];
+    int ret, text_pos, text_inc, sel = -1;
 
     /*
     int test;
@@ -4249,6 +4273,8 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
         size = getFileSize(path, &files[browser_sel]);
         sel = browser_sel;  // for stat checking
     } else {
+        int i;
+
         for (i = size = 0; i < browser_nfiles; i++) {
             if (marks[i]) {
                 size += getFileSize(path, &files[i]);
@@ -4275,6 +4301,8 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 
     //----- Comment out this section to skip attributes entirely -----
     if ((nmarks < 2) && (sel >= 0)) {
+        char filepath[MAX_PATH];
+
         sprintf(filepath, "%s%s", path, files[sel].name);
         //----- Start of section for debug display of attributes -----
         /*

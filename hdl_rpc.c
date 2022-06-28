@@ -25,10 +25,11 @@ int Hdl_Inited = 0;
 
 int Hdl_Info_BindRpc()
 {
-    int ret;
     int retryCount = 0x1000;
 
     while (retryCount--) {
+        int ret;
+
         ret = SifBindRpc(&client, HDL_IRX, 0);
         if (ret < 0) {
             printf("Hdl Info: EE Bind RPC Error.\n");
