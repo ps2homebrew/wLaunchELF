@@ -1468,12 +1468,12 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
 
     if (!strncmp(path, "hdd", 3)) {
         ret = getHddParty(path, file, party, dir);
-        if ((ret = mountParty(party)) < 0)
+        if (mountParty(party) < 0)
             return -1;
         dir[3] = ret + '0';
     } else if (!strncmp(path, "dvr_hdd", 7)) {
         ret = getHddDVRPParty(path, file, party, dir);
-        if ((ret = mountDVRPParty(party)) < 0)
+        if (mountDVRPParty(party) < 0)
             return -1;
         dir[7] = ret + '0';
     } else {

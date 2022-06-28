@@ -112,7 +112,7 @@ static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_g
     int result;
     u_long bytes;
 
-    result = hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
+    hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
 
     memset(buffer + 8, 0, PS2_PART_NAMEMAX);
     memcpy(buffer + 8, ginfo->name, PS2_PART_NAMEMAX);

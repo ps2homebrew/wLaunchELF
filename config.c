@@ -590,7 +590,7 @@ void saveConfig(char *mainMsg, char *CNF)
             strcpy(c, LaunchElfDir);
             strcat(c, CNF);
         }
-        ret = genFixPath(c, cnf_path);
+        genFixPath(c, cnf_path);
         if ((fd = genOpen(cnf_path, O_CREAT | O_WRONLY | O_TRUNC)) < 0) {
             sprintf(mainMsg, "%s %s", LNG(Failed_To_Save), CNF);
             return;
@@ -1086,7 +1086,6 @@ static void Config_Skin(void)
 
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             if (current_preview == PREVIEW_PIC)
                 sprintf(c, "%s ", LNG(Normal));
@@ -1470,7 +1469,6 @@ static void Config_Screen(void)
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Use_Default_Screen_Settings));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             x = Menu_start_x;
@@ -1824,7 +1822,6 @@ static void Config_Startup(void)
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             y = Menu_start_y + s * FONT_HEIGHT + FONT_HEIGHT / 2;
@@ -2174,7 +2171,6 @@ static void Config_Network(void)
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             y = Menu_start_y + s * FONT_HEIGHT + FONT_HEIGHT / 2;
