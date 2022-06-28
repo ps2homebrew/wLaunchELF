@@ -2006,6 +2006,8 @@ static data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
 
     data_ip_struct iplist;
 
+    memset(&iplist, 0, sizeof(iplist));
+
     ipStringToOctet(ip, iplist.ip);
     ipStringToOctet(nm, iplist.nm);
     ipStringToOctet(gw, iplist.gw);
