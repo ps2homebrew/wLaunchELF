@@ -94,7 +94,6 @@ static int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
 {
 
     int nSum = 0;
-    int nSum2 = 0;
     int *pRes = (int *)malloc(2 * nLen * sizeof(int));
     int *pCoeff = pRes;
     int nNorm = (bShrink) ? (nNewLen << 12) / nLen : 0x1000;
@@ -104,6 +103,7 @@ static int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
     memset(pRes, 0, 2 * nLen * sizeof(int));
 
     for (i = 0; i < nLen; i++, pCoeff += 2) {
+        int nSum2;
 
         nSum2 = nSum + nNewLen;
 
@@ -137,13 +137,12 @@ static int *CreateCoeffInt(int nLen, int nNewLen, int bShrink)
 static int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
 {
 
-    u8 *pLine = pInBuff, *pPix;
+    u8 *pLine = pInBuff;
     u8 *pOutLine = pOutBuff;
     u32 dwInLn = (3 * wWidth + 3) & ~3;
     u32 dwOutLn = (3 * wNewWidth + 3) & ~3;
 
-    int x, y, i, ii;
-    int bCrossRow, bCrossCol;
+    int y, i, ii;
     int *pRowCoeff = CreateCoeffInt(wWidth, wNewWidth, 1);
     int *pColCoeff = CreateCoeffInt(wHeight, wNewHeight, 1);
 
@@ -153,13 +152,17 @@ static int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wN
     u32 *pdwCurrLn = pdwBuff;
     u32 *pdwNextLn = pdwBuff + 3 * wNewWidth;
     u32 *pdwCurrPix;
-    u32 dwTmp, *pdwNextPix;
+    u32 dwTmp;
 
     memset(pdwBuff, 0, 2 * dwBuffLn);
 
     y = 0;
 
     while (y < wNewHeight) {
+        u8 *pPix;
+        int x;
+        int bCrossRow;
+        u32 *pdwNextPix;
 
         pPix = pLine;
         pLine += dwInLn;
@@ -172,6 +175,7 @@ static int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wN
         bCrossRow = pYCoeff[1] > 0;
 
         while (x < wNewWidth) {
+            int bCrossCol;
 
             dwTmp = *pXCoeff * *pYCoeff;
             for (i = 0; i < 3; i++)
@@ -258,12 +262,11 @@ static int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 w
        *pPixOld,
        *pUpPix,
        *pUpPixOld;
-    u8 *pOutLine = pOutBuff, *pOutPix;
+    u8 *pOutLine = pOutBuff;
     u32 dwInLn = (3 * wWidth + 3) & ~3;
     u32 dwOutLn = (3 * wNewWidth + 3) & ~3;
 
-    int x, y, i;
-    int bCrossRow, bCrossCol;
+    int y, i;
 
     int *pRowCoeff = CreateCoeffInt(wNewWidth, wWidth, 0);
     int *pColCoeff = CreateCoeffInt(wNewHeight, wHeight, 0);
@@ -274,6 +277,9 @@ static int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 w
     y = 0;
 
     while (y < wHeight) {
+        u8 *pOutPix;
+        int x;
+        int bCrossRow;
 
         bCrossRow = pYCoeff[1] > 0;
         x = 0;
@@ -291,6 +297,7 @@ static int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 w
         } /* end if */
 
         while (x < wWidth) {
+            int bCrossCol;
 
             bCrossCol = pXCoeff[1] > 0;
             pUpPixOld = pUpPix;
@@ -378,7 +385,7 @@ int ScaleBitmap(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 **pOutBuff, u16 wNewWid
 } /* end ScaleBitmap */
 
 //--------------------------------------------------------------
-void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
+void RotateBitmap(const u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
 {
 
     int i, j, k, l;
@@ -422,9 +429,6 @@ void RotateBitmap(u8 *InBuff, u16 Width, u16 Height, u8 *OutBuff, int Way)
             Byte += 3;
         }
     }
-
-    free(pixels);
-    free(newpixels);
 
 } /* end RotateBitmap */
 
@@ -686,8 +690,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
     PicW = 0, PicH = 0, PicCoeff = 0;
 
     jpgData *Jpg;
-    u8 *ImgData1, *ImgData2;
-    int W = 0;
+    u8 *ImgData1 = NULL, *ImgData2 = NULL;
 
     Jpg = jpgFromFilename(skinpath, JPG_WIDTH_FIX);
     if (Jpg) {
@@ -750,6 +753,8 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
             if ((ScaleBitmap(Jpg->buffer, Jpg->width, Jpg->height, &ImgData1, (int)PicWidth, Jpg->height)) != 0) {
                 if ((ScaleBitmap(ImgData1, (int)PicWidth, Jpg->height, &ImgData2, (int)PicWidth, (int)PicHeight)) != 0) {
                     if ((PicRotate == 1) || (PicRotate == 3)) {  // Rotate picture
+                        int W;
+
                         TexPicture.Mem = (u32 *)memalign(64, ((int)PicWidth * (int)PicHeight * 3) + 1);
                         RotateBitmap(ImgData2, (int)PicWidth, (int)PicHeight, (void *)TexPicture.Mem, PicRotate);
                         W = PicW;
@@ -807,8 +812,7 @@ void loadSkin(int Picture, char *Path, int ThumbNum)
             free(ImgData2);
         if (Jpg->buffer)
             free(Jpg->buffer);
-        if (Jpg)
-            free(Jpg);
+        free(Jpg);
     }
 
     if (!strncmp(tmpPath, "cdfs", 4)) {
@@ -956,7 +960,7 @@ void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 // draw a char using the system font (16x16)
 void drawChar(unsigned int c, int x, int y, u64 colour)
 {
-    int i, j, pixBase, pixMask;
+    int i, j, pixMask;
     u8 *cm;
 
     updateScr_1 = 1;
@@ -970,6 +974,8 @@ void drawChar(unsigned int c, int x, int y, u64 colour)
 
     pixMask = 0x80;
     for (i = 0; i < 8; i++) {  // for i == each pixel column
+        int pixBase;
+
         pixBase = -1;
         for (j = 0; j < 16; j++) {                     // for j == each pixel row
             if ((pixBase < 0) && (cm[j] & pixMask)) {  // if start of sequence

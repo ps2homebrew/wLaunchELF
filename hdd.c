@@ -152,7 +152,7 @@ void GetHddInfo(void)
             drawMsg(dbgtmp);
 
             memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
-            strncpy(PartyInfo[numParty].Name, infoDirEnt.name, MAX_PART_NAME);
+            memcpy(PartyInfo[numParty].Name, infoDirEnt.name, MAX_PART_NAME);
             PartyInfo[numParty].Name[MAX_PART_NAME] = '\0';
             PartyInfo[numParty].RawSize = found_size;  // Store found segment size
             PartyInfo[numParty].Count = numParty;
@@ -269,7 +269,6 @@ int sizeSelector(int size)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -410,7 +409,6 @@ int MenuParty(PARTYINFO Info)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -522,7 +520,7 @@ int CreateParty(char *party, int size)
 //--------------------------------------------------------------
 int RemoveParty(PARTYINFO Info)
 {
-    int i, ret = 0;
+    int ret = 0;
     char tmpName[MAX_ENTRY];
 
     // printf("Remove Partition: %d\n", Info.Count);
@@ -540,6 +538,8 @@ int RemoveParty(PARTYINFO Info)
         if (Info.Count == numParty) {
             memset(&PartyInfo[numParty], 0, sizeof(PARTYINFO));
         } else {
+            int i;
+
             for (i = Info.Count; i < numParty; i++) {
                 memset(&PartyInfo[i], 0, sizeof(PARTYINFO));
                 memcpy(&PartyInfo[i], &PartyInfo[i + 1], sizeof(PARTYINFO));
@@ -745,13 +745,13 @@ void hddManager(void)
     int i, ret;
     int partySize;
     int pfsFree;
-    int ray = 50;
+    int ray;
     u64 Color;
     char tmp[MAX_PATH];
     char tooltip[MAX_TEXT_LINE];
     int top = 0, rows;
     int event, post_event = 0;
-    int browser_sel = 0, browser_nfiles = 0;
+    int browser_sel = 0, browser_nfiles;
     int Treat;
 
     rows = (Menu_end_y - Menu_start_y) / FONT_HEIGHT;
@@ -939,11 +939,8 @@ void hddManager(void)
                 else
                     y += ray + 25;
 
-                Angle = 0;
-
                 for (i = 0; i < 360; i++) {
-                    if ((Angle = i - 90) >= 360)
-                        Angle = i + 270;
+                    Angle = i - 90;
                     if (((i * 100) / 360) >= hddFree)
                         Color = setting->color[COLOR_GRAPH2];
                     else
@@ -1061,11 +1058,8 @@ void hddManager(void)
                     else
                         y += ray + 25;
 
-                    Angle = 0;
-
                     for (i = 0; i < 360; i++) {
-                        if ((Angle = i - 90) >= 360)
-                            Angle = i + 270;
+                        Angle = i - 90;
                         if (((i * 100) / 360) >= pfsFree)
                             Color = setting->color[COLOR_GRAPH2];
                         else

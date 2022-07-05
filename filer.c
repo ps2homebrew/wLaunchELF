@@ -266,7 +266,7 @@ int mountParty(const char *party)
 
     pfs_str[3] = '0' + i;
     if (fileXioMount(pfs_str, party, FIO_MT_RDWR) < 0) {          // if FTP stole it
-        for (i = 0; i <= 4; i++) {                                // for loop to kill FTP partition mountpoints
+        for (i = 0; i < MOUNT_LIMIT; i++) {                       // for loop to kill FTP partition mountpoints
             if ((i != latestMount) && (Party_vmcIndex[i] < 0)) {  // if unneeded by uLE
                 unmountParty(i);                                  // unmount partition mountpoint
                 pfs_str[3] = '0' + i;                             // prepare to reuse that mountpoint
@@ -276,10 +276,12 @@ int mountParty(const char *party)
         }                   // ends for loop to kill FTP partition mountpoints
         // Here i indicates what happened above with the following meanings:
         // 0..4==Success after trying i mountpoints,  5==Failure
-        if (i > 4)
+        if (i >= MOUNT_LIMIT)
             return -1;
     }  // ends if clause for mountpoints stolen by FTP
-    strcpy(mountedParty[i], party);
+    if (i < MOUNT_LIMIT) {
+        strcpy(mountedParty[i], party);
+    }
 return_i:
     latestMount = i;
     return i;
@@ -328,19 +330,13 @@ int getHddDVRPParty(const char *path, const FILEINFO *file, char *party, char *d
 //--------------------------------------------------------------
 int mountDVRPParty(const char *party)
 {
-    int i, j;
+    int i;
 
     for (i = 0; i < MOUNT_LIMIT; i++) {  // Here we check already mounted PFS indexes
         if (!strcmp(party, mountedDVRPParty[i]))
             goto return_i;
     }
 
-    for (i = 0, j = -1; i < MOUNT_LIMIT; i++) {  // Here we search for a free PFS index
-        if (mountedDVRPParty[i][0] == 0) {
-            j = i;
-            break;
-        }
-    }
     if (strcmp(party, "dvr_hdd0:__xdata") == 0) {
         i = 1;
     } else if (strcmp(party, "dvr_hdd0:__xcontents") == 0) {
@@ -504,7 +500,7 @@ void nonDialog(char *message)
     char msg[80 * 30];          // More than this can't be shown on screen, even in PAL
     static int dh, dw, dx, dy;  // These are static, to allow cleanup
     int a = 6, b = 4, c = 2, n, tw;
-    int i, len, ret;
+    int i, len;
 
     if (message == NULL) {  // NULL message means cleanup for last nonDialog
         drawSprite(setting->color[COLOR_BACKGR],
@@ -520,8 +516,10 @@ void nonDialog(char *message)
             msg[i] = 0;                     // split old line to separate string
             n++;                            // increment string count
         }
-    }                                                 // loop back for next character pos
-    for (i = len = tw = 0; i < n; i++) {              // start with string 0, assume 0 length & width
+    }                                     // loop back for next character pos
+    for (i = len = tw = 0; i < n; i++) {  // start with string 0, assume 0 length & width
+        int ret;
+
         ret = printXY(&msg[len], 0, 0, 0, FALSE, 0);  // get width of current string
         if (ret > tw)
             tw = ret;                  // tw = largest text width of strings so far
@@ -556,14 +554,17 @@ void nonDialog(char *message)
 //--------------------------------------------------------------
 int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 {
-    char ca, cb;
-    int i, n, ret, aElf = FALSE, bElf = FALSE, t = (file_sort == 2);
+    int t = (file_sort == 2);
 
     if (file_sort == 0)
         return 0;  // return 0 for unsorted mode
 
     if ((a->stats.AttrFile & MC_ATTR_OBJECT) == (b->stats.AttrFile & MC_ATTR_OBJECT)) {
+        int i, n;
+
         if (a->stats.AttrFile & sceMcFileAttrFile) {
+            int aElf = FALSE, bElf = FALSE;
+
             if (genCmpFileExt(a->name, "ELF"))
                 aElf = TRUE;
             if (genCmpFileExt(b->name, "ELF"))
@@ -597,6 +598,9 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
         else
             n = strlen(a->name);
         for (i = 0; i <= n; i++) {
+            char ca, cb;
+            int ret;
+
             if (t) {
                 ca = a->title[i];
                 cb = b->title[i];
@@ -624,9 +628,10 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 void sort(FILEINFO *a, int left, int right)
 {
     FILEINFO tmp, pivot;
-    int i, p;
 
     if (left < right) {
+        int i, p;
+
         pivot = a[left];
         p = left;
         for (i = left + 1; i <= right; i++) {
@@ -713,7 +718,8 @@ int readCD(const char *path, FILEINFO *info, int max)
             info[n].stats.Reserve2 = 0;
         } else
             continue;  // Skip entry which is neither a file nor a folder
-        strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
+        memcpy((char *)info[n].stats.EntryName, info[n].name, 32);
+        info[n].stats.EntryName[sizeof(info[n].stats.EntryName) - 1] = 0;
         memcpy((void *)&info[n].stats._Create, record.stat.ctime, 8);
         memcpy((void *)&info[n].stats._Modify, record.stat.mtime, 8);
         n++;
@@ -762,7 +768,7 @@ void setPartyList(void)
             strcmp(dirEnt.name, "__common"))
             continue;
     */
-        strncpy(parties[nparties], dirEnt.name, MAX_PART_NAME);
+        memcpy(parties[nparties], dirEnt.name, MAX_PART_NAME);
         parties[nparties++][MAX_PART_NAME] = '\0';
     }
     fileXioDclose(hddFd);
@@ -800,7 +806,7 @@ void setDVRPPartyList(void)
             strcmp(dirEnt.name, "__common"))
             continue;
     */
-        strncpy(parties[ndvrpparties], dirEnt.name, MAX_PART_NAME);
+        memcpy(parties[ndvrpparties], dirEnt.name, MAX_PART_NAME);
         parties[ndvrpparties++][MAX_PART_NAME] = '\0';
     }
     fileXioDclose(hddFd);
@@ -1071,7 +1077,8 @@ int readVMC(const char *path, FILEINFO *info, int max)
             info[i].stats.Reserve2 = dirbuf.stat.hisize;
         } else
             continue;  // Skip entry which is neither a file nor a folder
-        strncpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        memcpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        info[i].stats.EntryName[sizeof(info[i].stats.EntryName) - 1] = 0;
         memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
         memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
         i++;
@@ -1132,7 +1139,8 @@ int readHDD(const char *path, FILEINFO *info, int max)
             info[i].stats.Reserve2 = dirbuf.stat.hisize;
         } else
             continue;  // Skip entry which is neither a file nor a folder
-        strncpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        memcpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        info[i].stats.EntryName[sizeof(info[i].stats.EntryName) - 1] = 0;
         memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
         memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
         i++;
@@ -1193,7 +1201,8 @@ int readHDDDVRP(const char *path, FILEINFO *info, int max)
             info[i].stats.Reserve2 = dirbuf.stat.hisize;
         } else
             continue;  // Skip entry which is neither a file nor a folder
-        strncpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        memcpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        info[i].stats.EntryName[sizeof(info[i].stats.EntryName) - 1] = 0;
         memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
         memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
         i++;
@@ -1259,7 +1268,8 @@ int readMASS(const char *path, FILEINFO *info, int max)
             info[n].stats.Reserve2 = record.stat.hisize;
         } else
             continue;  // Skip entry which is neither a file nor a folder
-        strncpy((char *)info[n].stats.EntryName, info[n].name, 32);
+        memcpy((char *)info[n].stats.EntryName, info[n].name, 32);
+        info[n].stats.EntryName[sizeof(info[n].stats.EntryName) - 1] = 0;
         memcpy((void *)&info[n].stats._Create, record.stat.ctime, 8);
         memcpy((void *)&info[n].stats._Modify, record.stat.mtime, 8);
         n++;
@@ -1280,12 +1290,13 @@ exit:
 char *makeHostPath(char *dp, char *sp)
 {
     int i;
-    char ch;
 
     if (!host_use_Bsl)
         return strcpy(dp, sp);
 
     for (i = 0; i < MAX_PATH - 1; i++) {
+        char ch;
+
         ch = sp[i];
         if (ch == '/')
             dp[i] = '\\';
@@ -1297,12 +1308,13 @@ char *makeHostPath(char *dp, char *sp)
     return dp;
 }
 //--------------------------------------------------------------
-char *makeFslPath(char *dp, char *sp)
+char *makeFslPath(char *dp, const char *sp)
 {
     int i;
-    char ch;
 
     for (i = 0; i < MAX_PATH - 1; i++) {
+        char ch;
+
         ch = sp[i];
         if (ch == '\\')
             dp[i] = '/';
@@ -1336,9 +1348,9 @@ void initHOST(void)
 int readHOST(const char *path, FILEINFO *info, int max)
 {
     iox_dirent_t hostcontent;
-    int hfd, rv, size, contentptr, hostcount = 0;
-    char *elflisttxt, elflistchar;
-    char host_path[MAX_PATH], host_next[MAX_PATH];
+    int hfd, rv, hostcount = 0;
+    char *elflisttxt;
+    char host_path[MAX_PATH * 2];
     char Win_path[MAX_PATH];
 
     initHOST();
@@ -1346,6 +1358,8 @@ int readHOST(const char *path, FILEINFO *info, int max)
     if (!strncmp(path, "host:/", 6))
         strcpy(host_path + 5, path + 6);
     if ((host_elflist) && !strcmp(host_path, "host:")) {
+        int size, contentptr;
+
         if ((hfd = open("host:elflist.txt", O_RDONLY, 0)) < 0)
             return 0;
         if ((size = lseek(hfd, 0, SEEK_END)) <= 0) {
@@ -1358,10 +1372,13 @@ int readHOST(const char *path, FILEINFO *info, int max)
         close(hfd);
         contentptr = 0;
         for (rv = 0; rv <= size; rv++) {
+            char elflistchar;
+            char host_next[MAX_PATH];
+
             elflistchar = elflisttxt[rv];
             if ((elflistchar == 0x0a) || (rv == size)) {
                 host_next[contentptr] = 0;
-                snprintf(host_path, MAX_PATH - 1, "%s%s", "host:", host_next);
+                snprintf(host_path, sizeof(host_path), "%s%s", "host:", host_next);
                 clear_mcTable(&info[hostcount].stats);
                 if ((hfd = open(makeHostPath(Win_path, host_path), O_RDONLY)) >= 0) {
                     close(hfd);
@@ -1467,12 +1484,12 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
 
     if (!strncmp(path, "hdd", 3)) {
         ret = getHddParty(path, file, party, dir);
-        if ((ret = mountParty(party) < 0))
+        if (mountParty(party) < 0)
             return -1;
         dir[3] = ret + '0';
     } else if (!strncmp(path, "dvr_hdd", 7)) {
         ret = getHddDVRPParty(path, file, party, dir);
-        if ((ret = mountDVRPParty(party) < 0))
+        if (mountDVRPParty(party) < 0)
             return -1;
         dir[7] = ret + '0';
     } else {
@@ -1675,10 +1692,8 @@ int menu(const char *path, FILEINFO *file)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command
                 break;
             } else if (new_pad & PAD_SQUARE && sel == PASTE) {
-                event |= 2;  // event |= valid pad command
                 break;
             }
         }
@@ -1891,10 +1906,11 @@ u64 getFileSize(const char *path, const FILEINFO *file)
     iox_stat_t stat;
     u64 size, filesize;
     FILEINFO files[MAX_ENTRY];
-    char dir[MAX_PATH], party[MAX_NAME];
-    int nfiles, i, ret;
+    char dir[MAX_PATH];
 
     if (file->stats.AttrFile & sceMcFileAttrSubdir) {  // Folder object to size up
+        int nfiles, i;
+
         sprintf(dir, "%s%s/", path, file->name);
         nfiles = getDir(dir, files);
         for (i = size = 0; i < nfiles; i++) {
@@ -1905,6 +1921,9 @@ u64 getFileSize(const char *path, const FILEINFO *file)
                 size += filesize;
         }
     } else {  // File object to size up
+        char party[MAX_NAME];
+        int ret;
+
         if (!strncmp(path, "hdd", 3)) {
             getHddParty(path, file, party, dir);
             ret = mountParty(party);
@@ -1935,7 +1954,7 @@ int delete (const char *path, const FILEINFO *file)
 {
     FILEINFO files[MAX_ENTRY];
     char party[MAX_NAME], dir[MAX_PATH], hdddir[MAX_PATH];
-    int nfiles, i, ret;
+    int ret;
 
     if (!strncmp(path, "hdd", 3)) {
         getHddParty(path, file, party, hdddir);
@@ -1956,6 +1975,8 @@ int delete (const char *path, const FILEINFO *file)
         makeHostPath(dir + 5, dir + 6);
 
     if (file->stats.AttrFile & sceMcFileAttrSubdir) {  // Is the object to delete a folder ?
+        int nfiles, i;
+
         strcat(dir, "/");
         nfiles = getDir(dir, files);
         for (i = 0; i < nfiles; i++) {
@@ -2039,18 +2060,17 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
         } else {  // No file/folder of the same name exists
             mcGetInfo(path[2] - '0', 0, &mctype_PSx, NULL, NULL);
             mcSync(0, NULL, &test);
-            if (mctype_PSx == 2)  // PS2 MC ?
-                strncpy((void *)file->stats.EntryName, name, 32);
+            if (mctype_PSx == 2) {  // PS2 MC ?
+                memcpy((void *)file->stats.EntryName, name, 32);
+            }
             mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  // Fix file stats
             mcSync(0, NULL, &test);
             if (ret == -4)
                 ret = -EEXIST;
             else {  // PS1 MC !
-                strncpy((void *)file->stats.EntryName, name, 32);
+                memcpy((void *)file->stats.EntryName, name, 32);
                 mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  // Fix file stats
                 mcSync(0, NULL, &test);
-                if (ret == -4)
-                    ret = -EEXIST;
             }
         }
     } else if (!strncmp(path, "host", 4)) {
@@ -2157,7 +2177,7 @@ int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
     FILEINFO newfile, files[MAX_ENTRY];
     iox_stat_t iox_stat;
-    char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH],
+    char out[MAX_PATH], in[MAX_PATH], tmp[MAX_PATH * 2],
         progress[MAX_PATH * 4],
         *buff = NULL, inParty[MAX_NAME], outParty[MAX_NAME];
     int nfiles, i;
@@ -2274,7 +2294,6 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
             if (setting->PSU_DateNames && setting->PSU_NoOverwrite) {
                 if (0 <= (out_fd = genOpen(tmp, O_RDONLY))) {  // Name conflict ?
                     genClose(out_fd);
-                    out_fd = -1;
                     return 0;
                 }
             }
@@ -2458,7 +2477,7 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
             memcpy(PSU_head.name, mcT_head_p->name, sizeof(PSU_head.name));
             PSU_head.unknown_1_u16 = mcT_head_p->unknown_1_u16;
             PSU_head.unknown_2_u64 = mcT_head_p->unknown_2_u64;
-            size = genWrite(PM_file[recurses + 1], (void *)&PSU_head, sizeof(PSU_head));
+            genWrite(PM_file[recurses + 1], (void *)&PSU_head, sizeof(PSU_head));
             genLseek(PM_file[recurses + 1], 0, SEEK_END);
             genClose(PM_file[recurses + 1]);
         } else if (PM_flag[recurses + 1] == PM_MC_RESTORE) {  // MC Restore mode folder paste closure
@@ -2659,9 +2678,9 @@ non_PSU_RESTORE_init:
         sprintf(tmp, "\n%s : ", LNG(Remain_Size));
         strcat(progress, tmp);
         if (size <= 1024)
-            sprintf(tmp, "%lu %s", (long)size, LNG(bytes));  // bytes
+            sprintf(tmp, "%lu %s", (unsigned long)size, LNG(bytes));  // bytes
         else
-            sprintf(tmp, "%lu %s", (long)size / 1024, LNG(Kbytes));  // Kbytes
+            sprintf(tmp, "%lu %s", (unsigned long)size / 1024, LNG(Kbytes));  // Kbytes
         strcat(progress, tmp);
 
         sprintf(tmp, "\n%s: ", LNG(Current_Speed));
@@ -2833,7 +2852,7 @@ int keyboard(char *out, int max)
                 "<>(){}[].,:;\""
                 "!@#$%&=+-^*_'";
     int KEY_LEN;
-    int cur = 0, sel = 0, i = 0, x, y, t = 0;
+    int cur = 0, sel = 0, i, x, y, t = 0;
     char tmp[256], *p;
     char KeyPress;
 
@@ -3437,14 +3456,16 @@ int BrowserModePopup(void)
                 case PAD_SQUARE:
                     file_show = 2;
                     event |= 2;  // event |= valid pad command
-                    if ((file_show == 2) && (elisaFnt == NULL) && (elisa_failed == FALSE)) {
-                        int fd, res;
+                    if ((elisaFnt == NULL) && (elisa_failed == FALSE)) {
+                        int res;
                         elisa_failed = TRUE;  // Default to FAILED. If it succeeds, then this status will be cleared.
 
                         res = genFixPath("uLE:/ELISA100.FNT", tmp);
                         if (!strncmp(tmp, "cdrom", 5))
                             strcat(tmp, ";1");
                         if (res >= 0) {
+                            int fd;
+
                             fd = genOpen(tmp, O_RDONLY);
                             if (fd >= 0) {
                                 test = (int)genLseek(fd, 0, SEEK_END);
@@ -3565,14 +3586,14 @@ static void submenu_func_mcPaste(char *mess, char *path);
 static void submenu_func_psuPaste(char *mess, char *path);
 int getFilePath(char *out, int cnfmode)
 {
-    char path[MAX_PATH], cursorEntry[MAX_PATH],
+    char path[MAX_PATH + 1], cursorEntry[MAX_PATH],
         msg0[MAX_PATH], msg1[MAX_PATH],
         tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH], ext[8], *p;
     const unsigned char *mcTitle;
     u64 color;
     FILEINFO files[MAX_ENTRY];
     int top = 0, rows;
-    int x, y, y0, y1;
+    int x, y;
     int i, j, ret, rv = -1;  // NB: rv is for return value of this function
     int event, post_event = 0;
     int font_height;
@@ -3604,8 +3625,6 @@ int getFilePath(char *out, int cnfmode)
     file_sort = 1;
 
     font_height = FONT_HEIGHT;
-    if ((file_show == 2) && (elisaFnt != NULL))
-        font_height = FONT_HEIGHT + 2;
     rows = (Menu_end_y - Menu_start_y) / font_height;
 
     event = 1;  // event = initial entry
@@ -4079,8 +4098,6 @@ int getFilePath(char *out, int cnfmode)
                 if (file_show > 0) {
                     //					unsigned int size = files[top+i].stats.fileSizeByte;
                     unsigned long long size = ((unsigned long long)files[top + i].stats.Reserve2 << 32) | files[top + i].stats.FileSizeByte;
-                    int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-                    char scale_s[6] = " KMGTP";
                     PS2TIME timestamp = *(PS2TIME *)&files[top + i].stats._Modify;
 
                     if (!size_valid)
@@ -4091,6 +4108,9 @@ int getFilePath(char *out, int cnfmode)
                     if (!size_valid || !(top + i))
                         strcpy(tmp, "----- B");
                     else {
+                        int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
+                        char scale_s[6] = " KMGTP";
+
                         while (size > 99999) {
                             scale++;
                             size /= 1024;
@@ -4140,8 +4160,8 @@ int getFilePath(char *out, int cnfmode)
             if (browser_nfiles > rows) {  // if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
                           SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
-                y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
-                y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
+                int y0 = (Menu_end_y - Menu_start_y + 8) * ((double)top / browser_nfiles);
+                int y1 = (Menu_end_y - Menu_start_y + 8) * ((double)(top + rows) / browser_nfiles);
                 drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
@@ -4240,8 +4260,7 @@ int getFilePath(char *out, int cnfmode)
 void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 {
     u64 size;
-    int ret, i, text_pos, text_inc, sel = -1;
-    char filepath[MAX_PATH];
+    int ret, text_pos, text_inc, sel = -1;
 
     /*
     int test;
@@ -4254,6 +4273,8 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
         size = getFileSize(path, &files[browser_sel]);
         sel = browser_sel;  // for stat checking
     } else {
+        int i;
+
         for (i = size = 0; i < browser_nfiles; i++) {
             if (marks[i]) {
                 size += getFileSize(path, &files[i]);
@@ -4263,7 +4284,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
                 size = -1;
         }
     }
-    printf("size result = %lu\r\n", size);
+    printf("size result = %llu\r\n", size);
     if (size < 0) {
         strcpy(mess, LNG(Size_test_Failed));
         text_pos = strlen(mess);
@@ -4274,12 +4295,14 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
         else if (size >= 1024)
             sprintf(mess, "%s = %.1fKB%n", LNG(SIZE), (double)size / 1024, &text_inc);
         else
-            sprintf(mess, "%s = %luB%n", LNG(SIZE), size, &text_inc);
+            sprintf(mess, "%s = %lluB%n", LNG(SIZE), size, &text_inc);
         text_pos += text_inc;
     }
 
     //----- Comment out this section to skip attributes entirely -----
     if ((nmarks < 2) && (sel >= 0)) {
+        char filepath[MAX_PATH];
+
         sprintf(filepath, "%s%s", path, files[sel].name);
         //----- Start of section for debug display of attributes -----
         /*
@@ -4323,7 +4346,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
             text_pos += text_inc;
         }
         // sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
-        unsigned long long size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
+        size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
         // Max length is 20 characters+NULL
         char sizeC[21] = {0};
         char *sizeP = &sizeC[21];
@@ -4331,7 +4354,6 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
             *(--sizeP) = '0' + (size % 10);
         } while (size /= 10);
         sprintf(mess + text_pos, " mcTsz=%s%n", sizeP, &text_inc);
-        text_pos += text_inc;
     }
     //----- End of sections that show attributes -----
     browser_pushed = FALSE;

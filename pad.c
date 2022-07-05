@@ -18,9 +18,11 @@ static int test_joy = 0;
 //---------------------------------------------------------------------------
 int readpad_noKBnoRepeat(void)
 {
-    int port, state, ret[2];
+    int port, ret[2];
 
     for (port = 0; port < 2; port++) {
+        int state;
+
         if ((state = padGetState(port, 0)) == PAD_STATE_STABLE || (state == PAD_STATE_FINDCTP1)) {
             // Deal with cases where pad state is valid for padRead
             ret[port] = padRead(port, 0, &buttons_t[port]);
@@ -48,9 +50,11 @@ int readpad_no_KB(void)
 {
     static u64 rpt_time[2] = {0, 0};
     static int rpt_count[2];
-    int port, state, ret[2];
+    int port, ret[2];
 
     for (port = 0; port < 2; port++) {
+        int state;
+
         if ((state = padGetState(port, 0)) == PAD_STATE_STABLE || (state == PAD_STATE_FINDCTP1)) {
             // Deal with cases where pad state is valid for padRead
             ret[port] = padRead(port, 0, &buttons_t[port]);
@@ -310,13 +314,15 @@ void waitAnyPadReady(void)
 // setup PAD
 int setupPad(void)
 {
-    int ret, i, port, state, modes;
+    int i, port, modes;
 
     padInit(0);
 
     for (port = 0; port < 2; port++) {
+        int state;
+
         padtype_t[port] = 0;  // Assume that we don't have a proper PS2 controller
-        if ((ret = padPortOpen(port, 0, &padBuf_t[port][0])) == 0)
+        if (padPortOpen(port, 0, &padBuf_t[port][0]) == 0)
             return 0;
         waitPadReady(port, 0);
         state = padGetState(port, 0);

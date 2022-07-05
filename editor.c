@@ -55,7 +55,7 @@ enum {
 #define TMP  10  // Temp Buffer For Add / Remove Char.
 #define EDIT 11  // Edit Buffer For Copy / Cut / Paste.
 
-static u8 *TextBuffer[12];         // Text Buffers, 10 Windows Max + 1 TMP + 1 EDIT. See above.
+static char *TextBuffer[12];       // Text Buffers, 10 Windows Max + 1 TMP + 1 EDIT. See above.
 static int Window[10][NUM_STATE],  // Windowing System, 10 Windows Max.
     TextMode[10],                  // Text Mode, UNIX, MAC, OTHER.
     TextSize[10],                  // Text Size, 10 Windows Max.
@@ -171,7 +171,6 @@ static int MenuEditor(void)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
@@ -513,7 +512,7 @@ static void Virt_KeyBoard_Entry(void)
 static int KeyBoard_Entry(void)
 {
     int i, ret = 0, Operation;
-    unsigned char KeyPress;
+    char KeyPress;
 
     Operation = 0;
 
@@ -843,8 +842,7 @@ static void Editor_Rules(void)
         else
             Editor_Cur = Tmp_Cur + Editor_nRowsWidth[i] + ((Editor_Cur + 1) - Tmp_Cur) - 1;
 
-        if (Editor_PushRows++ >= 0)
-            Editor_PushRows = 0;
+        Editor_PushRows++;
 
         if (Editor_Cur + 1 >= Editor_nChar && TextBuffer[Active_Window][Editor_Cur] != '\0') {
             Editor_Cur = Editor_nChar - 1;
@@ -866,8 +864,7 @@ static void Editor_Rules(void)
         else
             Editor_Cur = Tmp_Cur - Editor_nRowsWidth[i - 1] + ((Editor_Cur + 1) - Tmp_Cur) - 1;
 
-        if (Editor_PushRows-- <= 0)
-            Editor_PushRows = 0;
+        Editor_PushRows--;
 
         if (Editor_Cur <= 0) {
             Editor_Cur = 0;
@@ -925,7 +922,6 @@ static int Windows_Selector(void)
             } else if ((new_pad & PAD_TRIANGLE) || (!swapKeys && new_pad & PAD_CROSS) || (swapKeys && new_pad & PAD_CIRCLE)) {
                 return -1;
             } else if ((swapKeys && new_pad & PAD_CROSS) || (!swapKeys && new_pad & PAD_CIRCLE)) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
@@ -948,7 +944,7 @@ static int Windows_Selector(void)
                     printXY(LNG(Free_Window), wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
                 else if (Window[i][CREATED])
                     printXY(LNG(Window_Not_Yet_Saved), wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
-                else if (Window[i][OPENED])
+                else
                     printXY(Path[i], wSprite_X1 + 2 * FONT_WIDTH, y, color, TRUE, 0);
 
                 y += FONT_HEIGHT;
@@ -1021,7 +1017,7 @@ static int New(int Win)
 
     TextSize[Win] = 1;
 
-    if (TextSize[Win]) {
+    {
         if ((TextBuffer[Win] = malloc(TextSize[Win] + 256)) > 0) {
             TextBuffer[Win][0] = '\0';
             TextMode[Win] = OTHER;

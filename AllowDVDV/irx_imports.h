@@ -4,6 +4,7 @@
 #include <irx.h>
 
 #include <ioman.h>
+#include <secrman.h>
 #include <sysclib.h>
 
 #endif

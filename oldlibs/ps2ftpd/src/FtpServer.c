@@ -352,7 +352,7 @@ FtpClient *FtpServer_OnClientConnect(FtpServer *pServer, int iSocket)
     return pClient;
 }
 
-void FtpServer_OnClientDisconnect(FtpServer *pServer, FtpClient *pClient)
+void FtpServer_OnClientDisconnect(const FtpServer *pServer, FtpClient *pClient)
 {
     assert(pServer && pClient);
 

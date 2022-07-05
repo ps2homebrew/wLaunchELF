@@ -131,9 +131,9 @@ int saveSMBCNF(char *CNFpath)
 //------------------------------
 int scanSMBCNF(unsigned char *name, unsigned char *value)
 {
-    int test;
-
     if (!strcmp(name, "smbIndex")) {
+        int test;
+
         test = atoi(value);
         if ((test >= 0) && (test < SERVERLIST_MAX)) {
             smbCurrentServer = test;
@@ -171,14 +171,14 @@ int scanSMBCNF(unsigned char *name, unsigned char *value)
 //------------------------------
 int loadSMBCNF(char *path)
 {
-    int dummy, var_cnt;
+    int var_cnt;
     unsigned char *RAM_p, *CNF_p, *name, *value;
 
     if (!(RAM_p = preloadCNF(path)))
         return -1;
     CNF_p = RAM_p;
     for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
-        dummy = scanSMBCNF(name, value);
+        scanSMBCNF(name, value);
     free(RAM_p);
     return 0;
 }

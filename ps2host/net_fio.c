@@ -86,11 +86,12 @@ pko_lwip_send(int sock, void *buf, int len, int flag)
 int pko_recv_bytes(int sock, char *buf, int bytes)
 {
     int left;
-    int len;
 
     left = bytes;
 
     while (left > 0) {
+        int len;
+
         len = recv(sock, &buf[bytes - left], left, 0);
         if (len < 0) {
             dbgprintf("pko_file: pko_recv_bytes error!!\n");
@@ -362,7 +363,6 @@ int pko_write_file(int fd, char *buf, int length)
 //
 int pko_read_file(int fd, char *buf, int length)
 {
-    int readbytes;
     int nbytes;
     int i;
     pko_pkt_read_req *readcmd;
@@ -375,13 +375,10 @@ int pko_read_file(int fd, char *buf, int length)
 
     readcmd = (pko_pkt_read_req *)&send_packet[0];
     readrly = (pko_pkt_read_rly *)&recv_packet[0];
-    readbytes = 0;
 
     readcmd->cmd = htonl(PKO_READ_CMD);
     readcmd->len = htons((unsigned short)sizeof(pko_pkt_read_req));
     readcmd->fd = htonl(fd);
-
-    readbytes = 0;
 
     if (length < 0) {
         dbgprintf("pko_read_file: illegal req!! (whish to read < 0 bytes!)\n");
@@ -415,7 +412,6 @@ int pko_read_file(int fd, char *buf, int length)
         return -1;
     }
     return nbytes;
-    return readbytes;
 }
 
 //----------------------------------------------------------------------
@@ -647,7 +643,8 @@ int pko_read_dir(int fd, void *buf)
     memcpy(dirent->stat.ctime, dirrly->ctime, 8);
     memcpy(dirent->stat.atime, dirrly->atime, 8);
     memcpy(dirent->stat.mtime, dirrly->mtime, 8);
-    strncpy(dirent->name, dirrly->name, 256);
+    memcpy(dirent->name, dirrly->name, 256);
+    dirent->name[sizeof(dirent->name) - 1] = 0;
     dirent->unknown = 0;
 
     return ntohl(dirrly->retval);
@@ -698,8 +695,6 @@ int pko_file_serv(void *argv)
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
     int sock;
-    int client_sock;
-    int client_len;
     int ret;
 
     dbgprintf(" - PS2 Side application -\n");
@@ -737,6 +732,9 @@ int pko_file_serv(void *argv)
 
     // Connection loop
     while (pko_fileio_active) {
+        int client_sock;
+        int client_len;
+
         dbgprintf("Waiting for connection\n");
 
         client_len = sizeof(client_addr);

@@ -517,13 +517,13 @@ int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
                     int unit = pContext->m_kFile.unit;
                     pContext->m_kFile.unit++;
 
+                    if (!ppkDevices[unit])
+                        continue;
+
                     if (strcmp(ppkDevices[unit]->name, "hdd") &&
                         strcmp(ppkDevices[unit]->name, "mass") &&
                         strcmp(ppkDevices[unit]->name, "mc") &&
                         strcmp(ppkDevices[unit]->name, "pfs"))
-                        continue;
-
-                    if (!ppkDevices[unit])
                         continue;
 
                     if (!(ppkDevices[unit]->type & (IOP_DT_FS | IOP_DT_BLOCK)))
@@ -576,7 +576,6 @@ int FileSystem_DeleteFile(FSContext *pContext, const char *pFile)
 
 int FileSystem_CreateDir(FSContext *pContext, const char *pDir)
 {
-    int fileMode = 0;
     FileSystem_BuildPath(buffer, pContext->m_Path, pDir);
 
 #ifdef LINUX
@@ -587,6 +586,8 @@ int FileSystem_CreateDir(FSContext *pContext, const char *pDir)
 
     switch (pContext->m_eType) {
         case FS_IODEVICE: {
+            int fileMode = 0;
+
             if (!pContext->m_kFile.device)
                 break;
 

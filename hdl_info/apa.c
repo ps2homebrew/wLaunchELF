@@ -16,12 +16,6 @@
 
 #define _MB *(1024 * 1024) /* really ugly :-) */
 
-typedef struct ps2_partition_run_type
-{
-    unsigned long sector;
-    u_long size_in_mb;
-} ps2_partition_run_t;
-
 // Remove this line, and uncomment the next line, to reactivate 'apa_check'
 // static int apa_check(const apa_partition_table_t *table);
 

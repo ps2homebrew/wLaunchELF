@@ -4,6 +4,7 @@
 #include "launchelf.h"
 #include "libmc.h"
 #include "math.h"
+#include "sjis.h"
 extern u8 font_uLE[];
 
 static u16 *tex_buffer;
@@ -72,7 +73,7 @@ struct icon_framedata
 // draw a char using the system font (16x16)
 void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 {
-    int i, j, k, pixBase, pixMask;
+    int i, j, k, pixMask;
     u8 *cm;
 
     u16 temp_image[16][32];
@@ -87,6 +88,8 @@ void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 
     pixMask = 0x80;
     for (i = 0; i < 8; i++) {  // for i == each pixel column
+        int pixBase;
+
         pixBase = -1;
         for (j = 0; j < 16; j++) {                     // for j == each pixel row
             if ((pixBase < 0) && (cm[j] & pixMask)) {  // if start of sequence
@@ -125,7 +128,7 @@ void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 // NOTE: I added in the ability for \n to be part of the string, don't know if its
 // necessary though, although there are some cases where it doesnt work
 
-int tex_printXY(const unsigned char *s, int x, int y, u16 colour)
+int tex_printXY(const char *s, int x, int y, u16 colour)
 {
     unsigned int c1, c2;
     int i;
@@ -199,9 +202,9 @@ int tex_printXY(const unsigned char *s, int x, int y, u16 colour)
 u32 tex_compresRLE()
 {
     u16 *new_tex = (u16 *)malloc(128 * 128 * 2);
-    u16 outbufferpos = 0, runcounter = 0, currentposition = 0;
+    u16 outbufferpos = 0, currentposition = 0;
     while (currentposition < 128 * 128) {
-        runcounter = 1;
+        u16 runcounter = 1;
         // 16384 is size of the uncompressed texture/2
         while (currentposition + runcounter < 16384 && tex_buffer[currentposition] == tex_buffer[currentposition + runcounter])
             runcounter++;
@@ -333,7 +336,7 @@ int make_iconsys(char *title, char *iconname, char *filename)
 
     memset(((void *)&icon_sys), 0, sizeof(icon_sys));
 
-    strcpy(icon_sys.head, "PS2D");
+    strcpy((char *)icon_sys.head, "PS2D");
     icon_sys.nlOffset = 0;  // 0=automagically wordwrap, otherwise newline position(multiple of 2)
     strcpy_sjis((short *)&icon_sys.title, title);
 
@@ -355,9 +358,9 @@ int make_iconsys(char *title, char *iconname, char *filename)
     memcpy(icon_sys.lightDir, lightdirection, sizeof(lightdirection));
     memcpy(icon_sys.lightCol, lightcolors, sizeof(lightcolors));
     memcpy(icon_sys.lightAmbient, ambientlight, sizeof(ambientlight));
-    strcpy(icon_sys.view, iconname);
-    strcpy(icon_sys.copy, iconname);
-    strcpy(icon_sys.del, iconname);
+    strcpy((char *)icon_sys.view, iconname);
+    strcpy((char *)icon_sys.copy, iconname);
+    strcpy((char *)icon_sys.del, iconname);
 
     FILE *f = fopen(filename, "wb");  // open/create the file
     if (f == NULL)

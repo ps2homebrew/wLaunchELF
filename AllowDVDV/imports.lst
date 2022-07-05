@@ -3,6 +3,10 @@ I_memset
 I_memcpy
 sysclib_IMPORTS_end
 
+secrman_IMPORTS_start
+I_SecrDiskBootFile
+secrman_IMPORTS_end
+
 ioman_IMPORTS_start
 I_open
 I_close

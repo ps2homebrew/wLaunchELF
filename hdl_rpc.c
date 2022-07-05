@@ -25,10 +25,11 @@ int Hdl_Inited = 0;
 
 int Hdl_Info_BindRpc()
 {
-    int ret;
     int retryCount = 0x1000;
 
     while (retryCount--) {
+        int ret;
+
         ret = SifBindRpc(&client, HDL_IRX, 0);
         if (ret < 0) {
             printf("Hdl Info: EE Bind RPC Error.\n");
@@ -61,7 +62,7 @@ int HdlGetGameInfo(char *PartName, GameInfo *Game)
 
     SifCallRpc(&client, HDL_GETINFO, 0, (void *)Rpc_Buffer, sizeof(Rpc_Packet_Send_GetInfo), (void *)Rpc_Buffer, sizeof(GameInfo) + 4, 0, 0);
 
-    memcpy(Game, ((void *)Rpc_Buffer) + 4, sizeof(GameInfo));
+    memcpy(Game, (void *)(((u8 *)Rpc_Buffer) + 4), sizeof(GameInfo));
 
     return Rpc_Buffer[0];
 }

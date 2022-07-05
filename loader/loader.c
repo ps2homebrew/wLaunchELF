@@ -75,7 +75,6 @@ int main(int argc, char *argv[])
 {
     static t_ExecData elfdata;
     char *target, *path;
-    char *args[1];
     int ret;
 
     // Initialize
@@ -94,6 +93,8 @@ int main(int argc, char *argv[])
     FlushCache(0);
     ret = SifLoadElf(target, &elfdata);
     if (ret == 0) {
+        char *args[1];
+
         args[0] = path;
 
         if (strncmp(path, "hdd", 3) == 0 && (path[3] >= '0' && path[3] <= ':')) { /* Final IOP reset, to fill the IOP with the default modules.

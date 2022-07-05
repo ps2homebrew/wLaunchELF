@@ -292,7 +292,7 @@ char *preloadCNF(char *path)
         return NULL;
     }
     CNF_size = genLseek(fd, 0, SEEK_END);
-    printf("CNF_size=%d\n", CNF_size);
+    printf("CNF_size=%lu\n", (unsigned long)CNF_size);
     genLseek(fd, 0, SEEK_SET);
     RAM_p = (char *)memalign(64, CNF_size);
     if (RAM_p == NULL) {
@@ -382,7 +382,7 @@ void loadSkinBrowser(void)
 {
     int tst;
     char path[MAX_PATH];
-    char mess[MAX_PATH];
+    char mess[MAX_PATH * 2];
 
     getFilePath(path, TEXT_CNF);  // No Filtering, Be Careful.
     tst = loadSkinCNF(path);
@@ -590,7 +590,7 @@ void saveConfig(char *mainMsg, char *CNF)
             strcpy(c, LaunchElfDir);
             strcat(c, CNF);
         }
-        ret = genFixPath(c, cnf_path);
+        genFixPath(c, cnf_path);
         if ((fd = genOpen(cnf_path, O_CREAT | O_WRONLY | O_TRUNC)) < 0) {
             sprintf(mainMsg, "%s %s", LNG(Failed_To_Save), CNF);
             return;
@@ -697,7 +697,7 @@ void initConfig(void)
 int loadConfig(char *mainMsg, char *CNF)
 {
     int i, fd, tst, len, mcport, var_cnt, CNF_version;
-    char tsts[20];
+    char tsts[256];
     char path[MAX_PATH];
     char cnf_path[MAX_PATH];
     char *RAM_p, *CNF_p, *name, *value;
@@ -925,7 +925,7 @@ static void Config_Skin(void)
     int x, y;
     int len;
     int event, post_event = 0;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
     char skinSave[MAX_PATH], GUI_Save[MAX_PATH];
     int Brightness = setting->Brightness;
     int current_preview = 0;
@@ -1086,7 +1086,6 @@ static void Config_Skin(void)
 
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             if (current_preview == PREVIEW_PIC)
                 sprintf(c, "%s ", LNG(Normal));
@@ -1470,7 +1469,6 @@ static void Config_Screen(void)
             y += FONT_HEIGHT;
             sprintf(c, "  %s", LNG(Use_Default_Screen_Settings));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             x = Menu_start_x;
@@ -1484,8 +1482,7 @@ static void Config_Screen(void)
             } else {                                                                      // if cursor indicates anything after colour components
                 y += (s - CONFIG_SCREEN_AFT_COLORS + 6) * FONT_HEIGHT + FONT_HEIGHT / 2;  // adjust y for cursor beyond colours
                 // Here y is almost correct, except for additional group spacing
-                if (s >= CONFIG_SCREEN_AFT_COLORS)  // if cursor at or beyond TV mode choice
-                    y += FONT_HEIGHT / 2;           // adjust for half-row space below colours
+                y += FONT_HEIGHT / 2;               // adjust for half-row space below colours
                 if (s >= CONFIG_SCREEN_TV_STARTX)   // if cursor at or beyond screen offsets
                     y += FONT_HEIGHT / 2;           // adjust for half-row space below TV mode choice
                 if (s >= CONFIG_SCREEN_SKIN)        // if cursor at or beyond 'SKIN SETTINGS'
@@ -1595,7 +1592,7 @@ static void Config_Startup(void)
     int x, y;
     int len;
     int event, post_event = 0;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
 
     event = 1;  // event = initial entry
     s = CONFIG_STARTUP_FIRST;
@@ -1691,7 +1688,7 @@ static void Config_Startup(void)
                     getFilePath(setting->font_file, FONT_CNF);
                     if (loadFont(setting->font_file) == 0)
                         setting->font_file[0] = '\0';
-                } else if (s == CONFIG_STARTUP_CNF) {  // Make ESR file choice
+                } else if (s == CONFIG_STARTUP_ESR) {  // Make ESR file choice
                     getFilePath(setting->LK_Path[SETTING_LK_ESR], LK_ELF_CNF);
                     if (!strncmp(setting->LK_Path[SETTING_LK_ESR], "mc0", 3) ||
                         !strncmp(setting->LK_Path[SETTING_LK_ESR], "mc1", 3)) {
@@ -1825,7 +1822,6 @@ static void Config_Startup(void)
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             y = Menu_start_y + s * FONT_HEIGHT + FONT_HEIGHT / 2;
@@ -1900,8 +1896,8 @@ static void saveNetworkSettings(char *Message)
     extern char netmask[16];
     extern char gw[16];
     int out_fd, in_fd;
-    int ret = 0, i = 0, port;
-    int size, sizeleft = 0;
+    int ret = 0, i = 0;
+    int sizeleft = 0;
     char *ipconfigfile = 0;
     char path[MAX_PATH];
 
@@ -1928,6 +1924,7 @@ static void saveNetworkSettings(char *Message)
     }
 
     if (in_fd >= 0) {
+        int size;
 
         size = (int)genLseek(in_fd, 0, SEEK_END);
         printf("size of existing file is %ibytes\n\r", size);
@@ -1938,7 +1935,7 @@ static void saveNetworkSettings(char *Message)
         genRead(in_fd, ipconfigfile, size);
 
 
-        for (i = 0; (ipconfigfile[i] != 0 && i <= size); i++)
+        for (i = 0; (i <= size && ipconfigfile[i] != 0); i++)
 
         {
             // printf("%i-%c\n\r",i,ipconfigfile[i]);
@@ -1948,6 +1945,8 @@ static void saveNetworkSettings(char *Message)
 
         genClose(in_fd);
     } else {
+        int port;
+
         port = CheckMC();
         if (port < 0)
             port = 0;  // Default to mc0, if it fails.
@@ -1985,6 +1984,7 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
     // Rewritten 22/10/05
 
     char oct_str[5];
+    char oct_chr_str[2];
     int oct_cnt, i;
 
     oct_cnt = 0;
@@ -1995,8 +1995,10 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
             ip_octet[oct_cnt] = atoi(oct_str);
             oct_cnt++;
             oct_str[0] = 0;
-        } else
-            sprintf(oct_str, "%s%c", oct_str, ip[i]);
+        } else {
+            sprintf(oct_chr_str, "%c", ip[i]);
+            strcat(oct_str, oct_chr_str);
+        }
     }
 }
 //---------------------------------------------------------------------------
@@ -2006,6 +2008,8 @@ static data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
     // Populate 3 arrays with the ip address (as ints)
 
     data_ip_struct iplist;
+
+    memset(&iplist, 0, sizeof(iplist));
 
     ipStringToOctet(ip, iplist.ip);
     ipStringToOctet(nm, iplist.nm);
@@ -2036,12 +2040,12 @@ static void Config_Network(void)
     int x, y;
     int event, post_event = 0;
     int len;
-    char c[MAX_PATH];
+    char c[MAX_PATH * 2];
     extern char ip[16];
     extern char netmask[16];
     extern char gw[16];
     data_ip_struct ipdata;
-    char NetMsg[MAX_PATH] = "";
+    char NetMsg[MAX_PATH * 2] = "";
     char path[MAX_PATH];
 
     event = 1;  // event = initial entry
@@ -2172,7 +2176,6 @@ static void Config_Network(void)
             y += FONT_HEIGHT / 2;
             sprintf(c, "  %s", LNG(RETURN));
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
             // Cursor positioning section
             y = Menu_start_y + s * FONT_HEIGHT + FONT_HEIGHT / 2;

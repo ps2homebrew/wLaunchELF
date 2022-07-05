@@ -77,7 +77,6 @@ s32 _start(int argc, char *argv[])
 {
     iop_thread_t mythread;
     int pid;
-    int i;
 
     // TODO: fix CD/DVD support
     // printf("cdinit: %d\n",sceCdInit(CdMmodeDvd));
@@ -117,6 +116,8 @@ s32 _start(int argc, char *argv[])
     pid = CreateThread(&mythread);
 
     if (pid > 0) {
+        int i;
+
         if ((i = StartThread(pid, NULL)) < 0) {
             FtpServer_Destroy(&srv);
             printf("ps2ftpd: StartThread failed (%d)\n", i);

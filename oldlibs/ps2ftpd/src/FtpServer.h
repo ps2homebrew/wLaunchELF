@@ -61,6 +61,6 @@ void FtpServer_SetPassword(FtpServer *pServer, char *pPassword);
 int FtpServer_IsRunning(struct FtpServer *pServer);
 int FtpServer_HandleEvents(struct FtpServer *pServer);
 FtpClient *FtpServer_OnClientConnect(struct FtpServer *pServer, int iSocket);
-void FtpServer_OnClientDisconnect(struct FtpServer *pServer, FtpClient *pClient);
+void FtpServer_OnClientDisconnect(const struct FtpServer *pServer, FtpClient *pClient);
 
 #endif

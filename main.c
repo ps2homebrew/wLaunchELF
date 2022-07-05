@@ -94,7 +94,7 @@ int timeout = 0, prev_timeout = 1;
 int init_delay = 0, prev_init_delay = 1;
 int mode = BUTTON;
 int user_acted = 0; /* Set when commands given, to break timeout */
-char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH];
+char LaunchElfDir[MAX_PATH], mainMsg[MAX_PATH * 2];
 char CNF[MAX_NAME];
 int numCNF = 0;
 int maxCNF;
@@ -114,7 +114,7 @@ char ip[16] = "192.168.0.10";
 char netmask[16] = "255.255.255.0";
 char gw[16] = "192.168.0.1";
 
-char netConfig[IPCONF_MAX_LEN + 64];  // Adjust size as needed
+char netConfig[IPCONF_MAX_LEN + 128];  // Adjust size as needed
 
 // State of module collections
 static u8 have_NetModules = 0;
@@ -298,7 +298,6 @@ static void Show_About_uLE(void)
         // Pad response section
         waitAnyPadReady();
         if (readpad() && new_pad) {
-            event |= 2;
             if (setting->GUI_skin[0]) {
                 GUI_active = 1;
                 loadSkin(BACKGROUND_PIC, 0, 0);
@@ -351,7 +350,6 @@ static void getIpConfig(void)
     int fd;
     int i;
     int len;
-    char c;
     char buf[IPCONF_MAX_LEN];
     char path[MAX_PATH];
 
@@ -367,23 +365,28 @@ static void getIpConfig(void)
     }
 
     if ((fd >= 0) && (len > 0)) {
+        char c;
+
         buf[len] = '\0';                          // Ensure string termination, regardless of file content
         for (i = 0; ((c = buf[i]) != '\0'); i++)  // Clear out spaces and any CR/LF
             if ((c == ' ') || (c == '\r') || (c == '\n'))
                 buf[i] = '\0';
-        strncpy(ip, buf, 15);
+        memcpy(ip, buf, sizeof(ip) - 1);
+        ip[sizeof(ip) - 1] = 0;
         i = strlen(ip) + 1;
-        strncpy(netmask, buf + i, 15);
+        memcpy(netmask, buf + i, sizeof(netmask) - 1);
+        netmask[sizeof(netmask) - 1] = 0;
         i += strlen(netmask) + 1;
-        strncpy(gw, buf + i, 15);
+        memcpy(gw, buf + i, sizeof(gw) - 1);
+        gw[sizeof(gw) - 1] = 0;
     }
 
     bzero(if_conf, IPCONF_MAX_LEN);
-    strncpy(if_conf, ip, 15);
+    memcpy(if_conf, ip, sizeof(ip));
     i = strlen(ip) + 1;
-    strncpy(if_conf + i, netmask, 15);
+    memcpy(if_conf + i, netmask, sizeof(netmask));
     i += strlen(netmask) + 1;
-    strncpy(if_conf + i, gw, 15);
+    memcpy(if_conf + i, gw, sizeof(gw));
     i += strlen(gw) + 1;
     if_conf_len = i;
     sprintf(netConfig, "%s:  %-15s %-15s %-15s", LNG(Net_Config), ip, netmask, gw);
@@ -654,8 +657,9 @@ static int drawMainScreen2(int TV_mode)
 static void delay(int count)
 {
     int i;
-    int ret;
     for (i = 0; i < count; i++) {
+        int ret;
+
         ret = 0x01000000;
         while (ret--)
             asm("nop\nnop\nnop\nnop");
@@ -675,9 +679,11 @@ static void initsbv_patches(void)
 //---------------------------------------------------------------------------
 static void load_ps2dev9(void)
 {
-    int ret, rcode;
+    int rcode;
 
     if (!have_ps2dev9) {
+        int ret;
+
         ret = SifExecModuleBuffer(ps2dev9_irx, size_ps2dev9_irx, 0, NULL, &rcode);
         ps2dev9_loaded = (ret >= 0 && rcode == 0);  // DEV9.IRX must have successfully loaded and returned RESIDENT END.
         have_ps2dev9 = 1;
@@ -711,24 +717,6 @@ static void load_ps2ip(void)
 static void load_ps2atad(void)
 {
     int ret;
-    static char hddarg[] = "-o"
-                           "\0"
-                           "4"
-                           "\0"
-                           "-n"
-                           "\0"
-                           "20";
-    static char pfsarg[] = "-m"
-                           "\0"
-                           "4"
-                           "\0"
-                           "-o"
-                           "\0"
-                           "10"
-                           "\0"
-                           "-n"
-                           "\0"
-                           "40";
 
     load_ps2dev9();
     if (!have_ps2atad) {
@@ -736,10 +724,30 @@ static void load_ps2atad(void)
         have_ps2atad = 1;
     }
     if (!have_ps2hdd) {
+        static char hddarg[] = "-o"
+                               "\0"
+                               "4"
+                               "\0"
+                               "-n"
+                               "\0"
+                               "20";
+
         SifExecModuleBuffer(ps2hdd_irx, size_ps2hdd_irx, sizeof(hddarg), hddarg, &ret);
         have_ps2hdd = 1;
     }
     if (!have_ps2fs) {
+        static char pfsarg[] = "-m"
+                               "\0"
+                               "4"
+                               "\0"
+                               "-o"
+                               "\0"
+                               "10"
+                               "\0"
+                               "-n"
+                               "\0"
+                               "40";
+
         SifExecModuleBuffer(ps2fs_irx, size_ps2fs_irx, sizeof(pfsarg), pfsarg, &ret);
         have_ps2fs = 1;
     }
@@ -804,7 +812,7 @@ static void load_ps2dvr(void)
 //------------------------------
 static void ShowDebugInfo(void)
 {
-    char TextRow[256];
+    char TextRow[2048];
     int i, event, post_event = 0;
 #ifdef SMB
     int row;
@@ -819,8 +827,8 @@ static void ShowDebugInfo(void)
         // Pad response section
         waitAnyPadReady();
         if (readpad() && new_pad) {
-            event |= 2;
 #ifdef SMB
+            event |= 2;
             if (new_pad & PAD_CIRCLE) {
                 if (smbCurrentServer + 1 < smbServerListCount)
                     smbCurrentServer++;
@@ -1323,7 +1331,6 @@ static void loadNetModules(void)
 //---------------------------------------------------------------------------
 static void startKbd(void)
 {
-    int kbd_fd;
     void *mapBase;
     int mapSize;
 
@@ -1333,14 +1340,16 @@ static void startKbd(void)
         PS2KbdInit();
         ps2kbd_opened = 1;
         if (setting->kbdmap_file[0]) {
+            int kbd_fd;
+
             if ((kbd_fd = open(PS2KBD_DEVFILE, O_RDONLY)) >= 0) {
                 printf("kbd_fd=%d; Loading Kbd map file \"%s\"\r\n", kbd_fd, setting->kbdmap_file);
                 if (loadExternalFile(setting->kbdmap_file, &mapBase, &mapSize)) {
                     if (mapSize == 0x600) {
                         _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETKEYMAP, mapBase);
-                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, mapBase + 0x300);
-                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, mapBase + 0x400);
-                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, mapBase + 0x500);
+                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETSPECIALMAP, (void *)(((u8 *)mapBase) + 0x300));
+                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETCTRLMAP, (void *)(((u8 *)mapBase) + 0x400));
+                        _ps2sdk_ioctl(kbd_fd, PS2KBD_IOCTL_SETALTMAP, (void *)(((u8 *)mapBase) + 0x500));
                     }
                     printf("Freeing buffer after setting Kbd maps\r\n");
                     free(mapBase);
@@ -1376,7 +1385,6 @@ static int scanSystemCnf(char *name, char *value)
 //------------------------------
 static int readSystemCnf(void)
 {
-    int var_cnt;
     char *RAM_p, *CNF_p, *name, *value;
 
     BootDiscType = 0;
@@ -1386,6 +1394,8 @@ static int readSystemCnf(void)
     SystemCnf_VMODE[0] = '\0';
 
     if ((RAM_p = preloadCNF("cdrom0:\\SYSTEM.CNF;1")) != NULL) {
+        int var_cnt;
+
         CNF_p = RAM_p;
         for (var_cnt = 0; get_CNF_string(&CNF_p, &name, &value); var_cnt++)
             scanSystemCnf(name, value);
@@ -1538,9 +1548,9 @@ done_test:
 //---------------------------------------------------------------------------
 static void Validate_CNF_Path(void)
 {
-    char cnf_path[MAX_PATH];
-
     if (setting->CNF_Path[0] != '\0') {
+        char cnf_path[MAX_PATH];
+
         if (genFixPath(setting->CNF_Path, cnf_path) >= 0)
             strcpy(LaunchElfDir, setting->CNF_Path);
     }
@@ -1740,7 +1750,7 @@ static void Execute(char *pathin)
     char tmp[MAX_PATH];
     static char path[MAX_PATH];
     static char fullpath[MAX_PATH];
-    static char party[40];
+    static char party[1024];
     char *pathSep;
     char *p;
     int x, t = 0;
@@ -1888,7 +1898,7 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 char arg0[20], arg1[20], arg2[20], arg3[40];
                 char *args[4] = {arg0, arg1, arg2, arg3};
                 char kelf_loader[40];
-                char MG_region[10];
+                const char *MG_region = "ACEJMORU";
                 int i, pos, tst, argc;
 
                 if ((tst = SifLoadModule("rom0:ADDDRV", 0, NULL)) < 0)
@@ -1900,9 +1910,8 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 argc = 3;
                 strcpy(kelf_loader, "moduleload2 rom1:UDNL rom1:DVDCNF");
 
-                strcpy(MG_region, "ACEJMORU");
                 pos = strlen(arg0) - 1;
-                for (i = 0; i < 9; i++) {  // NB: MG_region[8] is a string terminator
+                for (i = 0; i < strlen(MG_region); i++) {  // NB: MG_region[8] is a string terminator
                     arg0[pos] = MG_region[i];
                     tst = SifLoadModuleEncrypted(arg0 + 3, 0, NULL);
                     if (tst >= 0)
@@ -1910,7 +1919,7 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
                 }
 
                 pos = strlen(arg2);
-                if (i == 8)
+                if (i == strlen(MG_region))
                     strcpy(&arg2[pos - 3], "ELF");
                 else
                     arg2[pos - 1] = MG_region[i];
@@ -1955,7 +1964,6 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
     Fail_PS2Disc:
         sprintf(mainMsg, "%s => %s CDVD 0x%02X", LNG(PS2Disc), LNG(Failed), cdmode);
     Done_PS2Disc:
-        x = x;
     } else if (!strcasecmp(path, setting->Misc_FileBrowser)) {
         if (setting->GUI_skin[0]) {
             GUI_active = 0;
@@ -2132,10 +2140,11 @@ static void Reset()
 //---------------------------------------------------------------------------
 int uLE_InitializeRegion(void)
 {
-    int ROMVER_fd;
     static int TVMode = -1;
 
     if (TVMode < 0) {
+        int ROMVER_fd;
+
         ROMVER_fd = genOpen("rom0:ROMVER", O_RDONLY);
         if (ROMVER_fd < 0) {
             memset(ROMVER_data, 0, sizeof(ROMVER_data));
@@ -2231,7 +2240,6 @@ enum BOOT_DEVICE {
 
 int main(int argc, char *argv[])
 {
-    char *p;
     int event, post_event = 0;
     char RunPath[MAX_PATH];
     int RunELF_index, nElfs = 0;
@@ -2271,13 +2279,15 @@ int main(int argc, char *argv[])
         } else if (!strncmp(argv[0], "hdd", 3)) {
             // Booting from the HDD requires special handling for HDD-based paths.
             char temp[MAX_PATH];
-            char *t, *p;
+            char *t;
             /* Change boot_path to contain a path to the block device.
                 Standard HDD path format: hdd0:partition:pfs:path/to/file
                 However, (older) homebrew may not use this format. */
             strcpy(temp, boot_path + 5);  // Skip "hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
+                char *p;
+
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
                 if (p != NULL) {
@@ -2294,13 +2304,15 @@ int main(int argc, char *argv[])
         } else if (!strncmp(argv[0], "dvr_hdd", 7)) {
             // Booting from the HDD requires special handling for HDD-based paths.
             char temp[MAX_PATH];
-            char *t, *p;
+            char *t;
             /* Change boot_path to contain a path to the block device.
                 Standard HDD path format: dvr_hdd0:partition:pfs:path/to/file
                 However, (older) homebrew may not use this format. */
             strcpy(temp, boot_path + 9);  // Skip "dvr_hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
+                char *p;
+
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
                 if (p != NULL) {
@@ -2321,11 +2333,14 @@ int main(int argc, char *argv[])
         boot = BOOT_DEVICE_HOST;
     }
 
-    if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
-        p = strrchr(LaunchElfDir, ':');
-    if (p != NULL)
-        *(p + 1) = 0;
-    // The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
+    {
+        char *p;
+        if (((p = strrchr(LaunchElfDir, '/')) == NULL) && ((p = strrchr(LaunchElfDir, '\\')) == NULL))
+            p = strrchr(LaunchElfDir, ':');
+        if (p != NULL)
+            *(p + 1) = 0;
+        // The above cuts away the ELF filename from LaunchElfDir, leaving a pure path
+    }
 
     LastDir[0] = 0;
 
@@ -2407,7 +2422,7 @@ int main(int argc, char *argv[])
         event |= 4;  // event |= disc change detection
         if (cdmode <= 0)
             sprintf(mainMsg, "%s ", LNG(No_Disc));
-        else if (cdmode >= 1 && cdmode <= 4)
+        else if (cdmode <= 4)
             sprintf(mainMsg, "%s == ", LNG(Detecting_Disc));
         else  // if(cdmode>=5)
             sprintf(mainMsg, "%s == ", LNG(Stop_Disc));

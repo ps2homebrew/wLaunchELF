@@ -74,7 +74,6 @@ static void fsysInit(iop_device_t *driver)
 {
     struct _iop_thread mythread;
     int pid;
-    int i;
 
     dbgprintf("initializing %s\n", driver->name);
 
@@ -91,6 +90,8 @@ static void fsysInit(iop_device_t *driver)
     pid = CreateThread(&mythread);
 
     if (pid > 0) {
+        int i;
+
         if ((i = StartThread(pid, NULL)) < 0) {
             printf("StartThread failed (%d)\n", i);
         }

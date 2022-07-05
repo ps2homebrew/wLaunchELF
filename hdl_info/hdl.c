@@ -26,7 +26,6 @@ void hdl_glist_free(hdl_games_list_t *glist)
 //--------------------------------------------------------------
 static int hdl_ginfo_read(hio_t *hio, const ps2_partition_header_t *part, hdl_game_info_t *ginfo)
 {
-    u_long i, size;
     /* data we're interested in starts @ 0x101000 and is header
      * plus information for up to 65 partitions
      * (1 main + 64 sub) by 12 bytes each */
@@ -38,6 +37,8 @@ static int hdl_ginfo_read(hio_t *hio, const ps2_partition_header_t *part, hdl_ga
     result = hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
     if (result == 0) {
         if (bytes == 1024) {
+            u_long i, size;
+
             /* calculate total size */
             size = get_u32(&part->length);
             for (i = 0; i < get_u32(&part->nsub); ++i)
@@ -112,7 +113,7 @@ static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_g
     int result;
     u_long bytes;
 
-    result = hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
+    hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
 
     memset(buffer + 8, 0, PS2_PART_NAMEMAX);
     memcpy(buffer + 8, ginfo->name, PS2_PART_NAMEMAX);
@@ -126,7 +127,6 @@ static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_g
 //--------------------------------------------------------------
 int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
 {
-    hdl_games_list_t *tmplist;
     apa_partition_table_t *ptable;
     int result;
 
@@ -140,6 +140,8 @@ int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
 
         tmp = malloc(sizeof(hdl_game_info_t) * count);
         if (tmp != NULL) {
+            hdl_games_list_t *tmplist;
+
             memset(tmp, 0, sizeof(hdl_game_info_t) * count);
             tmplist = malloc(sizeof(hdl_games_list_t));
             if (tmplist != NULL) {

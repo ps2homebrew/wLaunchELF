@@ -17,22 +17,19 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     DEBUGPRINT(1, "vmc_fs: format %d\n", f->unit);
 
-    int mode = FORMAT_FULL;
-
     struct direntry dirent;
     int all_sector;
     u8 *mcbuffer, *mcbuffer2;
-    unsigned int i, j, k, x, y, last_blk_sector, Page_Num, Page_Num2;
+    unsigned int i, j, k, x, y, Page_Num, Page_Num2;
 
     Page_Num = 0;
-    Page_Num2 = 0;
 
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
     PROF_START(vmc_formatProf)
 
-    if (mode == FORMAT_FULL) {
+    {
 
         for (i = 0; i < g_Vmc_Image[f->unit].total_pages / g_Vmc_Image[f->unit].header.pages_per_block; i++) {
 
@@ -66,6 +63,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
     //  Write fat table pages
     for (x = 0; g_Vmc_Image[f->unit].header.indir_fat_clusters[x] != 0; x++) {
+        unsigned int last_blk_sector;
 
         last_blk_sector = g_Vmc_Image[f->unit].header.indir_fat_clusters[0] + x;
         Page_Num = last_blk_sector * g_Vmc_Image[f->unit].header.pages_per_cluster;
@@ -276,12 +274,12 @@ int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
             DEBUGPRINT(3, "vmc_fs: Open with O_TRUNC.\n");
 
         int first_cluster = 1;
-        unsigned int current_cluster;
         unsigned int last_cluster = dirent.cluster;
 
         DEBUGPRINT(4, "vmc_fs: Searching last cluster of file ...\n");
 
         while (1) {
+            unsigned int current_cluster;
 
             current_cluster = getFatEntry(fprivdata->gendata.fd, last_cluster, fprivdata->gendata.indir_fat_clusters, FAT_VALUE);
 
@@ -453,7 +451,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
 
             DEBUGPRINT(3, "vmc_fs: Read in %i bytes\n", size);
 
-            memcpy(buffer + data_read, cluster_data + fprivdata->cluster_offset, size - data_read);
+            memcpy((void *)((u8 *)buffer + data_read), cluster_data + fprivdata->cluster_offset, size - data_read);
             fprivdata->cluster_offset += (size - data_read);
             data_read += (size - data_read);
 
@@ -462,7 +460,7 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
 
             DEBUGPRINT(3, "vmc_fs: Read in %i bytes\n", g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
 
-            memcpy(buffer + data_read, cluster_data + fprivdata->cluster_offset, g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
+            memcpy((void *)((u8 *)buffer + data_read), cluster_data + fprivdata->cluster_offset, g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
             data_read += (g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
             fprivdata->cluster_offset += (g_Vmc_Image[f->unit].cluster_size - fprivdata->cluster_offset);
         }
@@ -1174,7 +1172,6 @@ int Vmc_Rmdir(iop_file_t *f, const char *path1)
         char *foldername = strrchr(path, '/');
 
         foldername[0] = '\0';
-        foldername++;
 
         struct direntry child;
         unsigned int child_cluster;
@@ -1729,8 +1726,8 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
         g_Vmc_Image[f->unit].last_cluster = EOF_CLUSTER;
         g_Vmc_Image[f->unit].last_free_cluster = g_Vmc_Image[f->unit].header.first_allocatable;
 
-        memset(&g_Vmc_Image[f->unit].indirect_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE);
-        memset(&g_Vmc_Image[f->unit].fat_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE);
+        memset(&g_Vmc_Image[f->unit].indirect_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE * sizeof(unsigned int));
+        memset(&g_Vmc_Image[f->unit].fat_cluster, g_Vmc_Image[f->unit].erase_byte, MAX_CLUSTER_SIZE * sizeof(unsigned int));
 
         if (g_Vmc_Image[f->unit].card_size == ((g_Vmc_Image[f->unit].header.page_size + 0x10) * g_Vmc_Image[f->unit].total_pages)) {
             g_Vmc_Image[f->unit].ecc_flag = TRUE;
@@ -2129,7 +2126,6 @@ unsigned int Vmc_Checkfree(int unit)
     PROF_START(vmc_checkfreeProf)
 
     int i = 0;
-    unsigned int cluster_value;
     unsigned int cluster_mask;
     unsigned int free_space = 0;
     unsigned int free_cluster_num = 0;
@@ -2142,6 +2138,7 @@ unsigned int Vmc_Checkfree(int unit)
     memcpy(gendata.indir_fat_clusters, g_Vmc_Image[unit].header.indir_fat_clusters, sizeof(unsigned int) * 32);
 
     for (i = gendata.first_allocatable; i < gendata.last_allocatable; i++) {
+        unsigned int cluster_value;
 
         cluster_value = getFatEntry(gendata.fd, i - gendata.first_allocatable, gendata.indir_fat_clusters, FAT_VALUE);
 
@@ -2202,7 +2199,6 @@ int Vmc_Clean(int unit)
     PROF_START(vmc_cleanProf)
 
     int i = 0;
-    unsigned int cluster_value;
     unsigned int cluster_mask;
     struct gen_privdata gendata;
 
@@ -2213,6 +2209,7 @@ int Vmc_Clean(int unit)
     memcpy(gendata.indir_fat_clusters, g_Vmc_Image[unit].header.indir_fat_clusters, sizeof(unsigned int) * 32);
 
     for (i = gendata.first_allocatable; i < gendata.last_allocatable; i++) {
+        unsigned int cluster_value;
 
         cluster_value = getFatEntry(gendata.fd, i - gendata.first_allocatable, gendata.indir_fat_clusters, FAT_VALUE);
 

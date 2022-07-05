@@ -124,7 +124,6 @@ int writeClusterPart(int fd, u8 *cluster, unsigned int clusternum, int cluster_o
     unit = (fd == g_Vmc_Image[0].fd) ? 0 : 1;
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
-    Page_offset = cluster_offset;
 
     Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
 

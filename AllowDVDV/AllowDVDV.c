@@ -78,7 +78,3 @@ int _start()
 
     return 0;
 }
-//-------------------------------------------------------------------------
-DECLARE_IMPORT_TABLE(secrman, 1, 0)
-DECLARE_IMPORT(13, SecrDiskBootFile)
-END_IMPORT_TABLE

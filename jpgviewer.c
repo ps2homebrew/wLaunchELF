@@ -73,7 +73,6 @@ static void Command_List(void)
         waitPadReady(0, 0);
         if (readpad()) {
             if (new_pad) {
-                event |= 2;  // event |= valid pad command.
                 break;
             }
         }
@@ -115,7 +114,6 @@ static void Command_List(void)
                          "3: %s",
                     LNG(Exit_To_Jpg_Browser));
             printXY(tmp, x, y, setting->color[COLOR_TEXT], TRUE, 0);
-            y += FONT_HEIGHT;
 
         }  // ends if(event||post_event).
         drawScr();
@@ -126,12 +124,8 @@ static void Command_List(void)
 //--------------------------------------------------------------
 static void View_Render(void)
 {
-
-    char *name, tmp[MAX_PATH];
-
     float ScreenPosX, ScreenPosX1, ScreenPosY, ScreenPosY1;
     float ScreenOffsetX, ScreenOffsetY;
-    float TmpPosX, TmpPosY;
 
     // Init picture position on screen
     if (FullScreen) {
@@ -161,6 +155,8 @@ static void View_Render(void)
         PanOffsetX = 0.0f;
         PanOffsetY = 0.0f;
     } else {
+        float TmpPosX, TmpPosY;
+
         PanPosX = TmpPosX = ((PicWidth / 8) - ((1.5f - PanZoom) * (PicWidth / 4)));
         if ((PanPosX += PanOffsetX * TmpPosX) <= 0.0f)
             PanPosX = 0.0f;
@@ -195,6 +191,8 @@ static void View_Render(void)
     setBrightness(50);
 
     if (!FullScreen) {
+        char *name, tmp[MAX_PATH];
+
         // Tooltip section
         strcpy(tmp, jpgpath);
         name = strrchr(tmp, '/');
@@ -227,7 +225,7 @@ static void View_Render(void)
 static void View_Input(void)
 {
 
-    int i = 0;
+    int i;
     u64 OldTime = Timer() + 1000;
 
     while (1) {
@@ -407,8 +405,6 @@ static void View_Input(void)
 //--------------------------------------------------------------
 static void loadPic(void)
 {
-    int i = 0;
-
     loadSkin(JPG_PIC, jpgpath, 0);
 
     Brightness = 0;
@@ -417,6 +413,8 @@ static void loadPic(void)
     PanOffsetY = 0.0f;
 
     if (testjpg) {
+        int i = 0;
+
         switch (SlideShowTrans) {
             case OFF: {
                 View_Render();
@@ -923,7 +921,8 @@ void JpgViewer(char *file)
                 } else {
                 // pushed OK for a file
                 restart:
-                    sprintf(jpgpath, "%s%s", path, files[jpg_browser_sel].name);
+                    strncpy(jpgpath, path, sizeof(jpgpath));
+                    strcat(jpgpath, files[jpg_browser_sel].name);
 
                     SlideShowBegin = 1;
 
@@ -935,7 +934,8 @@ void JpgViewer(char *file)
                             i = jpg_browser_sel + 1;
                             SlideShowBegin = 0;
                         }
-                        sprintf(jpgpath, "%s%s", path, files[i].name);
+                        strncpy(jpgpath, path, sizeof(jpgpath));
+                        strcat(jpgpath, files[i].name);
                         loadPic();
                         PicRotate = 0;
                         if (testjpg)

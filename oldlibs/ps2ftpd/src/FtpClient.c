@@ -240,7 +240,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                     if (!val)
                         break;
 
-                    if (i >= 0 && i < 4) {
+                    if (i < 4) {
                         ip[i] = strtol(val, NULL, 10);
                     } else if (4 == i) {
                         port = strtol(val, NULL, 10) * 256;
@@ -374,15 +374,15 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                 char *marker = strtok(NULL, "");
 
                 if (marker) {
-                    char *c = marker;
-                    while (*c) {
-                        if ((*c < '0') || (*c > '9'))
+                    char *cmarker = marker;
+                    while (*cmarker) {
+                        if ((*cmarker < '0') || (*cmarker > '9'))
                             break;
-                        c++;
+                        cmarker++;
                     }
 
-                    if (!*c)
-                        FtpClient_OnCmdRest(pClient, (!*c) ? strtol(marker, NULL, 10) : -1);
+                    if (!*cmarker)
+                        FtpClient_OnCmdRest(pClient, strtol(marker, NULL, 10));
                 } else
                     FtpClient_Send(pClient, 500, pClient->m_pMessages[FTPMSG_REQUIRES_PARAMETERS]);
             } break;
@@ -399,7 +399,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
         FtpClient_Send(pClient, 500, pClient->m_pMessages[FTPMSG_NOT_UNDERSTOOD]);
 }
 
-void FtpClient_OnDataConnect(FtpClient *pClient, int *ip, int port)
+void FtpClient_OnDataConnect(FtpClient *pClient, const int *ip, int port)
 {
     int s;
     struct sockaddr_in sa;
@@ -573,6 +573,8 @@ void FtpClient_OnDataWrite(FtpClient *pClient)
             FSFileInfo *pInfo = (FSFileInfo *)(buffer + BUFFER_OFFSET);
 
             if (FileSystem_ReadDir(&pClient->m_kContext, pInfo) >= 0) {
+                char name_buf[256];
+
                 buffer[0] = '\0';
                 if (DATAACTION_LIST == pClient->m_eDataAction) {
                     int i;
@@ -722,7 +724,8 @@ void FtpClient_OnDataWrite(FtpClient *pClient)
                     */
                     // end of MS-style LIST format
                 }
-                strcat(buffer, pInfo->m_Name);
+                memcpy(name_buf, pInfo->m_Name, sizeof(name_buf));
+                strcat(buffer, name_buf);
                 strcat(buffer, "\r\n");
                 //				sprintf(buffer,"%srwxr-xr-x user group %d Jan 01 00:01 %s\r\n",(FT_DIRECTORY == pInfo->m_eType) ? "d" : "-", pInfo->m_iSize, pInfo->m_Name);
                 send(pClient->m_iDataSocket, buffer, strlen(buffer), 0);
