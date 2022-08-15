@@ -103,10 +103,10 @@ netman_irx.s: $(PS2SDK)/iop/irx/netman.irx
 ps2smap_irx.s: $(PS2SDK)/iop/irx/smap.irx
 	$(BIN2S) $< $@ ps2smap_irx
 
-oldlibs/ps2ftpd/bin/ps2ftpd.irx: oldlibs/ps2ftpd
+oldlibs/ps2ftpd/ps2ftpd.irx: oldlibs/ps2ftpd
 	$(MAKE) -C $<
 
-ps2ftpd_irx.s: oldlibs/ps2ftpd/bin/ps2ftpd.irx
+ps2ftpd_irx.s: oldlibs/ps2ftpd/ps2ftpd.irx
 	$(BIN2S) $< $@ ps2ftpd_irx
 
 ps2atad_irx.s: $(PS2SDK)/iop/irx/ps2atad.irx
