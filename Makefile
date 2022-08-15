@@ -55,10 +55,10 @@ githash.h:
 	git rev-parse --short HEAD | tr -d "\n" >> $@ && \
 	printf '"\n#endif\n' >> $@
 
-mcman_irx.s: $(PS2SDK)/iop/irx/mcman.irx
+mcman_irx.s: $(PS2SDK)/iop/irx/mcman-old.irx
 	$(BIN2S) $< $@ mcman_irx
 
-mcserv_irx.s: $(PS2SDK)/iop/irx/mcserv.irx
+mcserv_irx.s: $(PS2SDK)/iop/irx/mcserv-old.irx
 	$(BIN2S) $< $@ mcserv_irx
 
 dvrdrv_irx.s: $(PS2SDK)/iop/irx/dvrdrv.irx
