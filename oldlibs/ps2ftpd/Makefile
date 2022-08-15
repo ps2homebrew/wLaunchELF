@@ -11,18 +11,16 @@ IOP_BIN_DIR = bin/
 IOP_SRC_DIR = src/
 IOP_INC_DIR = include/
 
-IOP_BIN = bin/ps2ftpd.irx
-IOP_OBJS = obj/main.o obj/FileSystem.o obj/FtpServer.o obj/FtpClient.o obj/FtpCommands.o obj/FtpMessages.o obj/imports.o
+IOP_BIN = ps2ftpd.irx
+IOP_OBJS = main.o FileSystem.o FtpServer.o FtpClient.o FtpCommands.o FtpMessages.o imports.o
 
-IOP_CFLAGS += -Wall -fno-builtin
+IOP_CFLAGS += -Iinclude -Isrc
 # -DDEBUG
-IOP_LDFLAGS += -s
-IOP_INCS += -I$(PS2SDK)/iop/include
 
-all: $(IOP_OBJS_DIR) $(IOP_BIN_DIR) $(IOP_BIN)
+all: $(IOP_BIN)
 
 clean:
 	rm -f -r $(IOP_OBJS_DIR) $(IOP_BIN_DIR)
 
 include $(PS2SDK)/Defs.make
-include Rules.make
+include $(PS2SDK)/samples/Makefile.iopglobal
