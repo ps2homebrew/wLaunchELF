@@ -12,6 +12,10 @@
 #include "ps2_hdd.h"
 #include "hdd.h"
 
+#define MODNAME "Hdl Info"
+
+IRX_ID(MODNAME, 1, 1);
+
 int __attribute__((unused)) shutdown() { return 0; }
 
 /* function declaration */

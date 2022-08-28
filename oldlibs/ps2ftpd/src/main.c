@@ -59,6 +59,10 @@ int process_args(FtpServer *pServer, int argc, char *argv[])
 
 #ifndef LINUX
 
+#define MODNAME "ps2ftpd"
+
+IRX_ID(MODNAME, 1, 1);
+
 // placed out here to end up on the heap, not the stack
 FtpServer srv;
 
