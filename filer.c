@@ -968,6 +968,18 @@ int genRemove(char *path)
 int genOpen(char *path, int mode)
 {
     genLimObjName(path, 0);
+    // Don't attempt to read the memory cards if they are unformatted
+    // This can result in a deadlock and a pretty nice looking black screen
+    if (!strncmp(path, "mc", 2)) {
+        int formatted;
+        mcSync(0, NULL, NULL);
+        mcGetInfo(path[2] - '0', 0, NULL, NULL, &formatted);
+        mcSync(0, NULL, NULL);
+        if (!formatted) {
+            DPRINTF("Memory card is not formatted, skipping genOpen.\n");
+            return -1;
+        }
+    }
     return open(path, mode, fileMode);
 }
 //------------------------------
