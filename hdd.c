@@ -97,7 +97,7 @@ void DebugDispStat(iox_dirent_t *p)
 //--------------------------------------------------------------
 void GetHddInfo(void)
 {
-    iox_dirent_t infoDirEnt __attribute__((aligned(64)));
+    iox_dirent_t infoDirEnt;
     int rv, hddFd = 0, partitionFd, i, Treat = TREAT_NOACCESS, tooManyPartitions;
     u32 size = 0, zoneFree, zoneSize;
     char tmp[MAX_PATH];
