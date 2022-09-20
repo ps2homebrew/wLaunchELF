@@ -684,7 +684,7 @@ int readMC(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readCD(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t record;
+    iox_dirent_t record __attribute__((aligned(64)));
     int n = 0, dd = -1;
     u64 wait_start;
 
@@ -738,7 +738,7 @@ exit:
 //--------------------------------------------------------------
 void setPartyList(void)
 {
-    iox_dirent_t dirEnt;
+    iox_dirent_t dirEnt __attribute__((aligned(64)));
     int hddFd;
 
     nparties = 0;
@@ -776,7 +776,7 @@ void setPartyList(void)
 //--------------------------------------------------------------
 void setDVRPPartyList(void)
 {
-    iox_dirent_t dirEnt;
+    iox_dirent_t dirEnt __attribute__((aligned(64)));
     int hddFd;
 
     ndvrpparties = 0;
@@ -1056,7 +1056,7 @@ int genCmpFileExt(const char *filename, const char *extension)
 //--------------------------------------------------------------
 int readVMC(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t dirbuf;
+    iox_dirent_t dirbuf __attribute__((aligned(64)));
     char dir[MAX_PATH];
     int i = 0, fd;
 
@@ -1110,7 +1110,7 @@ int readVMC(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readHDD(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t dirbuf;
+    iox_dirent_t dirbuf __attribute__((aligned(64)));
     char party[MAX_PATH], dir[MAX_PATH];
     int i = 0, fd, ret;
 
@@ -1172,7 +1172,7 @@ int readHDD(const char *path, FILEINFO *info, int max)
 //--------------------------------------------------------------
 int readHDDDVRP(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t dirbuf;
+    iox_dirent_t dirbuf __attribute__((aligned(64)));
     char party[MAX_PATH], dir[MAX_PATH];
     int i = 0, fd, ret;
 
@@ -1258,7 +1258,7 @@ void scan_USB_mass(void)
 //--------------------------------------------------------------
 int readMASS(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t record;
+    iox_dirent_t record __attribute__((aligned(64)));
     int n = 0, dd = -1;
 
     if (!USB_mass_scanned)
@@ -1359,7 +1359,7 @@ void initHOST(void)
 //--------------------------------------------------------------
 int readHOST(const char *path, FILEINFO *info, int max)
 {
-    iox_dirent_t hostcontent;
+    iox_dirent_t hostcontent __attribute__((aligned(64)));
     int hfd, rv, hostcount = 0;
     char *elflisttxt;
     char host_path[MAX_PATH * 2];
