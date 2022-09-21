@@ -15,6 +15,10 @@
 #include <cdvdman.h>
 #endif
 
+#define MODNAME "ps2host"
+
+IRX_ID(MODNAME, 1, 1);
+
 // Entry points
 extern int fsysMount(void);
 ////////////////////////////////////////////////////////////////////////
