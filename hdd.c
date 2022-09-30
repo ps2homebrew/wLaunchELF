@@ -382,6 +382,8 @@ int MenuParty(PARTYINFO Info)
     if (Info.Treatment == TREAT_NOACCESS) {
         enable[EXPAND] = FALSE;
     }
+    // FIXME: Always disable the expand option, since it causes corruption
+    enable[EXPAND] = FALSE;
 
     for (sel = 0; sel < NUM_MENU; sel++)
         if (enable[sel] == TRUE)
