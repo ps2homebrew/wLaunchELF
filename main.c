@@ -61,8 +61,10 @@ extern u8 mcman_irx[];
 extern int size_mcman_irx;
 extern u8 mcserv_irx[];
 extern int size_mcserv_irx;
+#ifdef SIO_DEBUG
 extern u8 sior_irx[];
 extern int size_sior_irx;
+#endif
 extern u8 allowdvdv_irx[];
 extern int size_allowdvdv_irx;
 extern u8 dvrdrv_irx[];
