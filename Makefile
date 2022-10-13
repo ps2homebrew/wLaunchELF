@@ -25,7 +25,7 @@ EE_LIBS = -lgskit -ldmakit -ljpeg_ps2_addons -ljpeg -lpad -lmc -lhdd -lkbd -lm \
 	-lcdvd -lfileXio -lpatches -lpoweroff -ldebug -lsior
 EE_CFLAGS := -mno-gpopt -G0
 
-idea ($(SIO_DEBUG),1)
+ifeq ($(SIO_DEBUG),1)
 	EE_CFLAGS += -DSIO_DEBUG
 	EE_OBJS += sior_irx.o
 endif
