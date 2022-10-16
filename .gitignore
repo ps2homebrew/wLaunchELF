@@ -35,3 +35,7 @@
 # Generated source files
 #
 githash.h
+
+#objects and embedded files subfolders
+obj/
+asm/
