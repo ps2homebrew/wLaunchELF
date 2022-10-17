@@ -173,7 +173,7 @@ clean:
 	$(MAKE) -C vmc_fs clean
 	$(MAKE) -C AllowDVDV clean
 	$(MAKE) -C oldlibs/ps2ftpd clean
-	rm -f githash.h $(EE_BIN) $(EE_BIN_PKD) $(EE_ASM_DIR) $(EE_OBJS_DIR)
+	rm -rf githash.h $(EE_BIN) $(EE_BIN_PKD) $(EE_ASM_DIR) $(EE_OBJS_DIR)
 
 rebuild: clean all
 
