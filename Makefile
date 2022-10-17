@@ -1,6 +1,7 @@
 #.SILENT:
 
-SMB = 0
+SMB ?= 0
+SIO_DEBUG ?= 0
 #set SMB to 1 to build uLe with smb support
 
 EE_BIN = BOOT-UNC.ELF
@@ -11,7 +12,8 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	dvrdrv_irx.o dvrfile_irx.o \
 	cdfs_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr.o sior_irx.o allowdvdv_irx.o
+	font_uLE.o makeicon.o chkesr.o allowdvdv_irx.o
+
 ifeq ($(SMB),1)
 	EE_OBJS += smbman.o
 endif
@@ -22,6 +24,11 @@ EE_LDFLAGS := -L$(PS2DEV)/gsKit/lib -L$(PS2SDK)/ports/lib -s
 EE_LIBS = -lgskit -ldmakit -ljpeg_ps2_addons -ljpeg -lpad -lmc -lhdd -lkbd -lm \
 	-lcdvd -lfileXio -lpatches -lpoweroff -ldebug -lsior
 EE_CFLAGS := -mno-gpopt -G0
+
+ifeq ($(SIO_DEBUG),1)
+	EE_CFLAGS += -DSIO_DEBUG
+	EE_OBJS += sior_irx.o
+endif
 
 ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
