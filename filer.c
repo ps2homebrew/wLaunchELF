@@ -971,11 +971,11 @@ int genOpen(char *path, int mode)
     // Don't attempt to read the memory cards if they are unformatted
     // This can result in a deadlock and a pretty nice looking black screen
     if (!strncmp(path, "mc", 2)) {
-        int formatted;
-        mcSync(0, NULL, NULL);
-        mcGetInfo(path[2] - '0', 0, NULL, NULL, &formatted);
-        mcSync(0, NULL, NULL);
-        if (!formatted) {
+        iox_stat_t chk_stat;
+        char mc_path[6] = "mc0:/";
+        mc_path[2] = path[2];
+
+        if (fileXioGetStat(mc_path, &chk_stat) < 0) {
             DPRINTF("Memory card is not formatted, skipping genOpen.\n");
             return -1;
         }
