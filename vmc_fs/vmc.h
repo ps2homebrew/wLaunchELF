@@ -29,16 +29,16 @@ void free(void *ptr);
 
 
 //  Vmc_fs error definitions
-#define VMCFS_ERR_NO            0
-#define VMCFS_ERR_INITIALIZED   -1
-#define VMCFS_ERR_VMC_OPEN      -2
-#define VMCFS_ERR_VMC_READ      -3
-#define VMCFS_ERR_CARD_TYPE     -4
-#define VMCFS_ERR_NOT_FORMATTED -5
-#define VMCFS_ERR_VMC_SIZE      -6
-#define VMCFS_ERR_NOT_MOUNT     -7
-#define VMCFS_ERR_MOUNT_BUSY    -8
-#define VMCFS_ERR_IMPLEMENTED   -9
+#define VMCFS_ERR_NO           0
+#define VMCFS_ERR_INITIALIZED  -1
+#define VMCFS_ERR_VMC_OPEN     -2
+#define VMCFS_ERR_VMC_READ     -3
+#define VMCFS_ERR_CARD_TYPE    -4
+#define VMCFS_ERR_NOT_FORMATED -5
+#define VMCFS_ERR_VMC_SIZE     -6
+#define VMCFS_ERR_NOT_MOUNT    -7
+#define VMCFS_ERR_MOUNT_BUSY   -8
+#define VMCFS_ERR_IMPLEMENTED  -9
 
 
 //  The devctl commands: 0x56 == V, 0x4D == M, 0x43 == C, 0x01, 0x02, ... == command number.
@@ -215,7 +215,7 @@ struct global_vmc
 {
     int fd;                                           //  global descriptor
     struct superblock header;                         //  superblock header
-    int formatted;                                    //  card is formatted
+    int formated;                                     //  card is formated
     int ecc_flag;                                     //  ecc data found in vmc file
     unsigned int card_size;                           //  vmc file size
     unsigned int total_pages;                         //  total number of pages in the vmc file
