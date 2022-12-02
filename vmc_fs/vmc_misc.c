@@ -384,7 +384,7 @@ unsigned int getFreeCluster(struct gen_privdata *gendata, int unit)
 
 
 //----------------------------------------------------------------------------
-// Set default specification to superblock header when card is not formated
+// Set default specification to superblock header when card is not formatted
 //----------------------------------------------------------------------------
 int setDefaultSpec(int unit)
 {

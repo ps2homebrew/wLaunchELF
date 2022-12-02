@@ -41,7 +41,7 @@ enum {  // For menu commands
 static PARTYINFO PartyInfo[MAX_PARTITIONS];
 static int numParty;
 static u32 hddSize, hddFree, hddFreeSpace, hddUsed;
-static int hddConnected, hddFormated;
+static int hddConnected, hddFormatted;
 
 static char DbgMsg[MAX_TEXT_LINE * 30];
 
@@ -106,7 +106,7 @@ void GetHddInfo(void)
 
     //	strcpy(pfs_str, "pfs0:");
     hddSize = 0, hddFree = 0, hddFreeSpace = 0, hddUsed = 0;
-    hddConnected = 0, hddFormated = 0;
+    hddConnected = 0, hddFormatted = 0;
     numParty = 0;
     tooManyPartitions = 0;
 
@@ -119,10 +119,10 @@ void GetHddInfo(void)
         hddConnected = 1;
 
     if (hddCheckFormatted() < 0) {
-        hddFormated = 0;
+        hddFormatted = 0;
         goto end;
     } else
-        hddFormated = 1;
+        hddFormatted = 1;
 
     hddSize = (u32)fileXioDevctl("hdd0:", HDIOC_TOTALSECTOR, NULL, 0, NULL, 0) / SECTORS_PER_MB;
 
@@ -717,12 +717,12 @@ int FormatHdd(void)
 {
     int ret = 0;
 
-    drawMsg(LNG(Formating_HDD));
+    drawMsg(LNG(Formatting_HDD));
 
     ret = hddFormat();
 
     if (ret == 0) {
-        drawMsg(LNG(HDD_Formated));
+        drawMsg(LNG(HDD_Formatted));
     } else {
         drawMsg(LNG(HDD_Format_Failed));
     }
@@ -894,13 +894,13 @@ void hddManager(void)
 
             if (hddConnected == 0)
                 sprintf(c, "%s:  %s / %s:  %s",
-                        LNG(CONNECTED), LNG(NO), LNG(FORMATED), LNG(NO));
-            else if ((hddConnected == 1) && (hddFormated == 0))
+                        LNG(CONNECTED), LNG(NO), LNG(FORMATTED), LNG(NO));
+            else if ((hddConnected == 1) && (hddFormatted == 0))
                 sprintf(c, "%s:  %s / %s:  %s",
-                        LNG(CONNECTED), LNG(YES), LNG(FORMATED), LNG(NO));
-            else if (hddFormated == 1)
+                        LNG(CONNECTED), LNG(YES), LNG(FORMATTED), LNG(NO));
+            else if (hddFormatted == 1)
                 sprintf(c, "%s:  %s / %s:  %s",
-                        LNG(CONNECTED), LNG(YES), LNG(FORMATED), LNG(YES));
+                        LNG(CONNECTED), LNG(YES), LNG(FORMATTED), LNG(YES));
 
             x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
             printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
@@ -918,7 +918,7 @@ void hddManager(void)
                          SCREEN_MARGIN, y - 6,
                          SCREEN_WIDTH / 2 - 20, y - 4);
 
-            if (hddFormated == 1) {
+            if (hddFormatted == 1) {
 
                 sprintf(c, "%s: %u %s", LNG(HDD_SIZE), hddSize, LNG(MB));
                 x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
@@ -1108,7 +1108,7 @@ void hddManager(void)
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
                 }  // ends clause for scrollbar
-            }      // ends hdd formated
+            }      // ends hdd formatted
             // Tooltip section
             sprintf(tooltip, "R1:%s  \xFF"
                              "3:%s",

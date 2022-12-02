@@ -159,8 +159,8 @@ int Vmc_Open(iop_file_t *f, const char *path1, int flags, int mode)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_openProf)
 
@@ -357,8 +357,8 @@ int Vmc_Close(iop_file_t *f)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_closeProf)
 
@@ -386,8 +386,8 @@ int Vmc_Read(iop_file_t *f, void *buffer, int size)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_readProf)
 
@@ -501,8 +501,8 @@ int Vmc_Write(iop_file_t *f, void *buffer, int size)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_writeProf)
 
@@ -765,8 +765,8 @@ int Vmc_Lseek(iop_file_t *f, int offset, int whence)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_lseekProf)
 
@@ -853,8 +853,8 @@ int Vmc_Remove(iop_file_t *f, const char *path)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_removeProf)
 
@@ -921,8 +921,8 @@ int Vmc_Mkdir(iop_file_t *f, const char *path1, int mode)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_mkdirProf)
 
@@ -1111,8 +1111,8 @@ int Vmc_Rmdir(iop_file_t *f, const char *path1)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_rmdirProf)
 
@@ -1260,8 +1260,8 @@ int Vmc_Dopen(iop_file_t *f, const char *path)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_dopenProf)
 
@@ -1354,8 +1354,8 @@ int Vmc_Dread(iop_file_t *f, iox_dirent_t *buffer)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_dreadProf)
 
@@ -1440,8 +1440,8 @@ int Vmc_Getstat(iop_file_t *f, const char *path, iox_stat_t *stat)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_getstatProf)
 
@@ -1502,8 +1502,8 @@ int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int s
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_chstatProf)
 
@@ -1568,8 +1568,8 @@ int Vmc_Rename(iop_file_t *f, const char *path, const char *new_name)
     if (g_Vmc_Image[f->unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[f->unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_renameProf)
 
@@ -1678,8 +1678,8 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
     lseek(g_Vmc_Image[f->unit].fd, 0, SEEK_SET);
 
     if (g_Vmc_Image[f->unit].header.magic[0] != 'S' || g_Vmc_Image[f->unit].header.magic[1] != 'o' || g_Vmc_Image[f->unit].header.magic[2] != 'n' || g_Vmc_Image[f->unit].header.magic[3] != 'y' || g_Vmc_Image[f->unit].header.magic[4] != ' ' || g_Vmc_Image[f->unit].header.magic[5] != 'P' || g_Vmc_Image[f->unit].header.magic[6] != 'S' || g_Vmc_Image[f->unit].header.magic[7] != '2' || g_Vmc_Image[f->unit].header.magic[8] != ' ' || g_Vmc_Image[f->unit].header.magic[9] != 'M' || g_Vmc_Image[f->unit].header.magic[10] != 'e' || g_Vmc_Image[f->unit].header.magic[11] != 'm' || g_Vmc_Image[f->unit].header.magic[12] != 'o' || g_Vmc_Image[f->unit].header.magic[13] != 'r' || g_Vmc_Image[f->unit].header.magic[14] != 'y' || g_Vmc_Image[f->unit].header.magic[15] != ' ' || g_Vmc_Image[f->unit].header.magic[16] != 'C' || g_Vmc_Image[f->unit].header.magic[17] != 'a' || g_Vmc_Image[f->unit].header.magic[18] != 'r' || g_Vmc_Image[f->unit].header.magic[19] != 'd' || g_Vmc_Image[f->unit].header.magic[20] != ' ' || g_Vmc_Image[f->unit].header.magic[21] != 'F' || g_Vmc_Image[f->unit].header.magic[22] != 'o' || g_Vmc_Image[f->unit].header.magic[23] != 'r' || g_Vmc_Image[f->unit].header.magic[24] != 'm' || g_Vmc_Image[f->unit].header.magic[25] != 'a' || g_Vmc_Image[f->unit].header.magic[26] != 't') {
-        //  Card is not formated
-        DEBUGPRINT(1, "vmc_fs: Warning vmc file %s is not formated\n", devname);
+        //  Card is not formatted
+        DEBUGPRINT(1, "vmc_fs: Warning vmc file %s is not formatted\n", devname);
         if (!setDefaultSpec(f->unit)) {
             //  Card size error
             DEBUGPRINT(1, "vmc_fs: Error size of vmc file %s is incompatible\n", devname);
@@ -1687,9 +1687,9 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
             errcode = VMCFS_ERR_VMC_SIZE;
             goto mountAbort;
         }
-        g_Vmc_Image[f->unit].formated = FALSE;
+        g_Vmc_Image[f->unit].formatted = FALSE;
     } else {
-        g_Vmc_Image[f->unit].formated = TRUE;
+        g_Vmc_Image[f->unit].formatted = TRUE;
 
         DEBUGPRINT(4, "vmc_fs: SuperBlock readed from vmc file %s.\n", devname);
 
@@ -1745,8 +1745,8 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
         DEBUGPRINT(4, "vmc_fs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[f->unit].ecc_flag ? "YES" : "NO");
     }
 
-    if (g_Vmc_Image[f->unit].formated == FALSE) {
-        errcode = VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[f->unit].formatted == FALSE) {
+        errcode = VMCFS_ERR_NOT_FORMATTED;
         goto mountAbort;
     }
 
@@ -1862,8 +1862,8 @@ int Vmc_Recover(int unit, const char *path1)
     if (g_Vmc_Image[unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_recoverProf)
 
@@ -2120,8 +2120,8 @@ unsigned int Vmc_Checkfree(int unit)
     if (g_Vmc_Image[unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_checkfreeProf)
 
@@ -2193,8 +2193,8 @@ int Vmc_Clean(int unit)
     if (g_Vmc_Image[unit].fd < 0)
         return VMCFS_ERR_NOT_MOUNT;
 
-    if (g_Vmc_Image[unit].formated == FALSE)
-        return VMCFS_ERR_NOT_FORMATED;
+    if (g_Vmc_Image[unit].formatted == FALSE)
+        return VMCFS_ERR_NOT_FORMATTED;
 
     PROF_START(vmc_cleanProf)
 
