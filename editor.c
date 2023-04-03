@@ -92,7 +92,7 @@ static char *KEY = "  01ABCDEFGHIJKLM:; "
                    "  23NOPQRSTUVWXYZ., "
                    "  45abcdefghijklm() "
                    "  67nopqrstuvwxyz[] "
-                   "  89+-=!#\\/ $%&@_^' ";  // Virtual KeyBoard Matrix.
+                   "  89+-=!#\\/?$%&@_^' ";  // Virtual KeyBoard Matrix.
 
 // Function Prototypes
 static int MenuEditor(void);
