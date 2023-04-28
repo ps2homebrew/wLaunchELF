@@ -22,9 +22,9 @@ int __attribute__((unused)) shutdown() { return 0; }
 void rpcMainThread(void *param);
 void *rpcCommandHandler(int command, void *Data, int Size);
 
-static SifRpcDataQueue_t Rpc_Queue __attribute__((aligned(64)));
-static SifRpcServerData_t Rpc_Server __attribute((aligned(64)));
-static int Rpc_Buffer[1024] __attribute((aligned(64)));
+static SifRpcDataQueue_t Rpc_Queue __attribute__((__aligned__(16)));
+static SifRpcServerData_t Rpc_Server __attribute__((__aligned__(16)));
+static int Rpc_Buffer[1024] __attribute__((__aligned__(16)));
 
 /* Description: Module entry point */
 int _start(int argc, char **argv)
