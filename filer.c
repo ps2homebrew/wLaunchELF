@@ -2,6 +2,7 @@
 // File name:   filer.c
 //--------------------------------------------------------------
 #include "launchelf.h"
+#include <errno.h>
 
 typedef struct
 {
@@ -1008,7 +1009,7 @@ int genDopen(char *path)
 s64 genLseek(int fd, s64 where, int how)
 {
     s64 res = lseek64(fd, where, how);
-    if (res == -48) {
+    if (res == -48 || (res == -1 && errno == 48)) {
         res = lseek(fd, where, how);
     }
     return res;

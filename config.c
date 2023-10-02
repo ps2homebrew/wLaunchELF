@@ -280,7 +280,7 @@ test:
 char *preloadCNF(char *path)
 {
     int fd, tst;
-    size_t CNF_size;
+    s64 CNF_size;
     char cnf_path[MAX_PATH];
     char *RAM_p;
 
@@ -292,7 +292,7 @@ char *preloadCNF(char *path)
         return NULL;
     }
     CNF_size = genLseek(fd, 0, SEEK_END);
-    printf("CNF_size=%lu\n", (unsigned long)CNF_size);
+    printf("CNF_size=%lld\n", CNF_size);
     genLseek(fd, 0, SEEK_SET);
     RAM_p = (char *)memalign(64, CNF_size);
     if (RAM_p == NULL) {
