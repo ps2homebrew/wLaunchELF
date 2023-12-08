@@ -71,6 +71,10 @@ extern u8 dvrdrv_irx[];
 extern int size_dvrdrv_irx;
 extern u8 dvrfile_irx[];
 extern int size_dvrfile_irx;
+extern u8 extflash_irx[];
+extern int size_extflash_irx;
+extern u8 xfromman_irx[];
+extern int size_xfromman_irx;
 
 //#define DEBUG
 #ifdef DEBUG
@@ -122,6 +126,7 @@ char netConfig[IPCONF_MAX_LEN + 128];  // Adjust size as needed
 static u8 have_NetModules = 0;
 static u8 have_HDD_modules = 0;
 static u8 have_DVRP_HDD_modules = 0;
+static u8 have_Flash_modules = 0;
 // State of Uncheckable Modules (invalid header)
 static u8 have_cdvd = 0;
 static u8 have_usbd = 0;
@@ -139,6 +144,8 @@ static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
+static u8 have_extflash = 0;
+static u8 have_xfromman = 0;
 static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
@@ -757,6 +764,25 @@ static void load_ps2atad(void)
 //------------------------------
 // endfunc load_ps2atad
 //---------------------------------------------------------------------------
+static void load_pflash(void)
+{
+    load_ps2dev9();
+    if (!is_early_init)  // Do not draw any text before the UI is initialized.
+        drawMsg("Loading extflash");
+    if (!have_extflash) {
+        SifExecModuleBuffer(extflash_irx, size_extflash_irx, 0, NULL, NULL);
+        have_extflash = 1;
+    }
+    if (!is_early_init)  // Do not draw any text before the UI is initialized.
+        drawMsg("Loading xfromman");
+    if (!have_xfromman) {
+        SifExecModuleBuffer(xfromman_irx, size_xfromman_irx, 0, NULL, NULL);
+        have_xfromman = 1;
+    }
+}
+//------------------------------
+// endfunc load_pflash
+//---------------------------------------------------------------------------
 void load_ps2host(void)
 {
     int ret;
@@ -1308,6 +1334,19 @@ void loadDVRPHddModules(void)
 //------------------------------
 // endfunc loadDVRPHddModules
 //---------------------------------------------------------------------------
+void loadFlashModules(void)
+{
+    if (!have_Flash_modules) {
+        if (!is_early_init)  // Do not draw any text before the UI is initialized.
+            drawMsg(LNG(Loading_Flash_Modules));
+        setupPowerOff();
+        load_pflash();
+        have_Flash_modules = TRUE;
+    }
+}
+//------------------------------
+// endfunc loadFlashModules
+//---------------------------------------------------------------------------
 // Load Network modules by EP (modified by RA)
 //------------------------------
 static void loadNetModules(void)
@@ -1806,7 +1845,12 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
         sprintf(fullpath, "dvr_pfs0:%s", p);
         *p = 0;
         goto ELFchecked;
-
+    } else if (!strncmp(path, "xfrom", 5)) {
+        loadFlashModules();
+        if ((t = checkELFheader(path)) <= 0)
+            goto ELFnotFound;
+        strcpy(fullpath, path);
+        goto ELFchecked;
     } else if (!strncmp(path, "mass", 4)) {
         if ((t = checkELFheader(path)) <= 0)
             goto ELFnotFound;
@@ -2124,9 +2168,12 @@ static void Reset()
     have_ps2kbd = 0;
     have_dvrdrv = 0;
     have_dvrfile = 0;
+    have_extflash = 0;
+    have_xfromman = 0;
     have_NetModules = 0;
     have_HDD_modules = 0;
     have_DVRP_HDD_modules = 0;
+    have_Flash_modules = 0;
 
     loadBasicModules();
     loadCdModules();

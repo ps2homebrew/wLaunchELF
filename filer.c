@@ -832,7 +832,7 @@ void genLimObjName(char *uLE_path, int reserve)
     int folder_flag = (uLE_path[strlen(uLE_path) - 1] == '/');  // flag folder object
     int overflow;
 
-    if (!strncmp(uLE_path, "mc", 2) || !strncmp(uLE_path, "vmc", 3))
+    if (!strncmp(uLE_path, "mc", 2) || !strncmp(uLE_path, "vmc", 3) || !strncmp(uLE_path, "xfrom", 5))
         limit = 32;  // enforce MC limit of 32 characters
 
     if (folder_flag)                         // if path ends with path separator
@@ -1233,6 +1233,52 @@ int readHDDDVRP(const char *path, FILEINFO *info, int max)
 //------------------------------
 // endfunc readHDDDVRP
 //--------------------------------------------------------------
+int readXFROM(const char *path, FILEINFO *info, int max)
+{
+    iox_dirent_t dirbuf;
+    char dir[MAX_PATH];
+    int i = 0, fd;
+
+    loadFlashModules();
+
+    strcpy(dir, path);
+    if ((fd = fileXioDopen(path)) < 0)
+        return 0;
+
+    while (fileXioDread(fd, &dirbuf) > 0) {
+        if (dirbuf.stat.mode & FIO_S_IFDIR &&
+            (!strcmp(dirbuf.name, ".") || !strcmp(dirbuf.name, "..")))
+            continue;  // Skip pseudopaths "." and ".."
+
+        strcpy(info[i].name, dirbuf.name);
+        clear_mcTable(&info[i].stats);
+        if (dirbuf.stat.mode & FIO_S_IFDIR) {
+            info[i].stats.AttrFile = MC_ATTR_norm_folder;
+        } else if (dirbuf.stat.mode & FIO_S_IFREG) {
+            info[i].stats.AttrFile = MC_ATTR_norm_file;
+            info[i].stats.FileSizeByte = dirbuf.stat.size;
+            info[i].stats.Reserve2 = dirbuf.stat.hisize;
+        } else
+            continue;  // Skip entry which is neither a file nor a folder
+        memcpy((char *)info[i].stats.EntryName, info[i].name, 32);
+        info[i].stats.EntryName[sizeof(info[i].stats.EntryName) - 1] = 0;
+        memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
+        memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
+        i++;
+        if (i == max)
+            break;
+    }
+
+    fileXioDclose(fd);
+
+    size_valid = 1;
+    time_valid = 1;
+
+    return i;
+}
+//------------------------------
+// endfunc readXFROM
+//--------------------------------------------------------------
 void scan_USB_mass(void)
 {
     int i;
@@ -1468,6 +1514,8 @@ int getDir(const char *path, FILEINFO *info)
         n = readHOST(path, info, max);
     else if (!strncmp(path, "vmc", 3))
         n = readVMC(path, info, max);
+    else if (!strncmp(path, "xfrom", 5))
+        n = readXFROM(path, info, max);
     else
         return 0;
 
@@ -1656,7 +1704,7 @@ int menu(const char *path, FILEINFO *file)
         enable[RENAME] = FALSE;
     }
 
-    if ((file->stats.AttrFile & sceMcFileAttrSubdir) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2)) {
+    if ((file->stats.AttrFile & sceMcFileAttrSubdir) || !strncmp(path, "vmc", 3) || !strncmp(path, "mc", 2) || !strncmp(path, "xfrom", 5)) {
         enable[MOUNTVMC0] = FALSE;  // forbid insane VMC mounting
         enable[MOUNTVMC1] = FALSE;  // forbid insane VMC mounting
     }
@@ -1668,12 +1716,12 @@ int menu(const char *path, FILEINFO *file)
         enable[PSUPASTE] = FALSE;
     } else {
         // Something in clipboard
-        if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
-            if (!strncmp(clipPath, "mc", 2) || !strncmp(clipPath, "vmc", 3)) {
+        if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3) || !strncmp(path, "xfrom", 5)) {
+            if (!strncmp(clipPath, "mc", 2) || !strncmp(clipPath, "vmc", 3) || !strncmp(clipPath, "xfrom", 5)) {
                 enable[MCPASTE] = FALSE;  // No mcPaste if both src and dest are MC
                 enable[PSUPASTE] = FALSE;
             }
-        } else if (strncmp(clipPath, "mc", 2) && strncmp(clipPath, "vmc", 3)) {
+        } else if (strncmp(clipPath, "mc", 2) && strncmp(clipPath, "vmc", 3) && strncmp(clipPath, "xfrom", 5)) {
             enable[MCPASTE] = FALSE;  // No mcPaste if both src and dest non-MC
             enable[PSUPASTE] = FALSE;
         }
@@ -2640,10 +2688,10 @@ non_PSU_RESTORE_init:
        To prevent a loss in performance, these values must each be in a multiple of the device's sector/page size.
        They must also be in multiples of 64, to prevent FILEIO from doing alignment correction in software. */
     buffSize = 0x100000;  // First assume buffer size = 1MB (good for HDD)
-    if (!strncmp(out, "mc", 2) || !strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3))
+    if (!strncmp(out, "mc", 2) || !strncmp(out, "mass", 4) || !strncmp(out, "vmc", 3) || !strncmp(out, "xfrom", 5))
         buffSize = 131072;  // Use  128KB if writing to USB (Flash RAM writes) or MC (pretty slow).
                             // VMC contents should use the same size, as VMCs will often be stored on USB
-    else if (!strncmp(in, "mc", 2))
+    else if (!strncmp(in, "mc", 2) || !strncmp(in, "xfrom", 5))
         buffSize = 262144;  // Use 256KB if reading from MC (still pretty slow)
     else if (!strncmp(out, "host", 4))
         buffSize = 393216;  // Use 384KB if writing to HOST (acceptable)
@@ -3269,6 +3317,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         strcpy(files[nfiles].name, "mc0:");
         files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         strcpy(files[nfiles].name, "mc1:");
+        files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
+        strcpy(files[nfiles].name, "xfrom0:");
         files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         strcpy(files[nfiles].name, "hdd0:");
         files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
@@ -4430,7 +4480,7 @@ void submenu_func_Paste(char *mess, char *path)
 //--------------------------------------------------------------
 void submenu_func_mcPaste(char *mess, char *path)
 {
-    if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
+    if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3) || !strncmp(path, "xfrom", 5)) {
         PasteMode = PM_MC_RESTORE;
     } else {
         PasteMode = PM_MC_BACKUP;
@@ -4442,7 +4492,7 @@ void submenu_func_mcPaste(char *mess, char *path)
 //--------------------------------------------------------------
 void submenu_func_psuPaste(char *mess, char *path)
 {
-    if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
+    if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3) || !strncmp(path, "xfrom", 5)) {
         PasteMode = PM_PSU_RESTORE;
     } else {
         PasteMode = PM_PSU_BACKUP;
