@@ -38,7 +38,7 @@ ifeq ($(SMB),1)
 	EE_CFLAGS += -DSMB
 endif
 
-BIN2S = $(PS2SDK)/bin/bin2s
+BIN2C = $(PS2SDK)/bin/bin2c
 
 .PHONY: all run reset clean rebuild format format-check
 
@@ -66,112 +66,112 @@ githash.h:
 	git rev-parse --short HEAD | tr -d "\n" >> $@ && \
 	printf '"\n#endif\n' >> $@
 
-$(EE_ASM_DIR)mcman_irx.s: $(PS2SDK)/iop/irx/mcman-old.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ mcman_irx
+$(EE_ASM_DIR)mcman_irx.c: $(PS2SDK)/iop/irx/mcman-old.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ mcman_irx
 
-$(EE_ASM_DIR)mcserv_irx.s: $(PS2SDK)/iop/irx/mcserv-old.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ mcserv_irx
+$(EE_ASM_DIR)mcserv_irx.c: $(PS2SDK)/iop/irx/mcserv-old.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ mcserv_irx
 
-$(EE_ASM_DIR)dvrdrv_irx.s: $(PS2SDK)/iop/irx/dvrdrv.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ dvrdrv_irx
+$(EE_ASM_DIR)dvrdrv_irx.c: $(PS2SDK)/iop/irx/dvrdrv.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ dvrdrv_irx
 
-$(EE_ASM_DIR)dvrfile_irx.s: $(PS2SDK)/iop/irx/dvrfile.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ dvrfile_irx
+$(EE_ASM_DIR)dvrfile_irx.c: $(PS2SDK)/iop/irx/dvrfile.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ dvrfile_irx
 
-$(EE_ASM_DIR)usbd_irx.s: $(PS2SDK)/iop/irx/usbd.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ usbd_irx
+$(EE_ASM_DIR)usbd_irx.c: $(PS2SDK)/iop/irx/usbd.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ usbd_irx
 
-$(EE_ASM_DIR)bdm_irx.s: $(PS2SDK)/iop/irx/bdm.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ bdm_irx
+$(EE_ASM_DIR)bdm_irx.c: $(PS2SDK)/iop/irx/bdm.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ bdm_irx
 
-$(EE_ASM_DIR)bdmfs_fatfs_irx.s: $(PS2SDK)/iop/irx/bdmfs_fatfs.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ bdmfs_fatfs_irx
+$(EE_ASM_DIR)bdmfs_fatfs_irx.c: $(PS2SDK)/iop/irx/bdmfs_fatfs.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ bdmfs_fatfs_irx
 
-$(EE_ASM_DIR)usbmass_bd_irx.s: $(PS2SDK)/iop/irx/usbmass_bd.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ usbmass_bd_irx
+$(EE_ASM_DIR)usbmass_bd_irx.c: $(PS2SDK)/iop/irx/usbmass_bd.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ usbmass_bd_irx
 
-$(EE_ASM_DIR)cdfs_irx.s: $(PS2SDK)/iop/irx/cdfs.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ cdfs_irx
+$(EE_ASM_DIR)cdfs_irx.c: $(PS2SDK)/iop/irx/cdfs.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ cdfs_irx
 
-$(EE_ASM_DIR)poweroff_irx.s: $(PS2SDK)/iop/irx/poweroff.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ poweroff_irx
+$(EE_ASM_DIR)poweroff_irx.c: $(PS2SDK)/iop/irx/poweroff.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ poweroff_irx
 
-$(EE_ASM_DIR)iomanx_irx.s: $(PS2SDK)/iop/irx/iomanX.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ iomanx_irx
+$(EE_ASM_DIR)iomanx_irx.c: $(PS2SDK)/iop/irx/iomanX.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ iomanx_irx
 
-$(EE_ASM_DIR)filexio_irx.s: $(PS2SDK)/iop/irx/fileXio.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ filexio_irx
+$(EE_ASM_DIR)filexio_irx.c: $(PS2SDK)/iop/irx/fileXio.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ filexio_irx
 
-$(EE_ASM_DIR)ps2dev9_irx.s: $(PS2SDK)/iop/irx/ps2dev9.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2dev9_irx
+$(EE_ASM_DIR)ps2dev9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2dev9_irx
 
-$(EE_ASM_DIR)ps2ip_irx.s: $(PS2SDK)/iop/irx/ps2ip-nm.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2ip_irx
+$(EE_ASM_DIR)ps2ip_irx.c: $(PS2SDK)/iop/irx/ps2ip-nm.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2ip_irx
 
-$(EE_ASM_DIR)netman_irx.s: $(PS2SDK)/iop/irx/netman.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ netman_irx
+$(EE_ASM_DIR)netman_irx.c: $(PS2SDK)/iop/irx/netman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ netman_irx
 
-$(EE_ASM_DIR)ps2smap_irx.s: $(PS2SDK)/iop/irx/smap.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2smap_irx
+$(EE_ASM_DIR)ps2smap_irx.c: $(PS2SDK)/iop/irx/smap.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2smap_irx
 
 oldlibs/ps2ftpd/ps2ftpd.irx: oldlibs/ps2ftpd
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)ps2ftpd_irx.s: oldlibs/ps2ftpd/ps2ftpd.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2ftpd_irx
+$(EE_ASM_DIR)ps2ftpd_irx.c: oldlibs/ps2ftpd/ps2ftpd.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2ftpd_irx
 
-$(EE_ASM_DIR)ps2atad_irx.s: $(PS2SDK)/iop/irx/ps2atad.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2atad_irx
+$(EE_ASM_DIR)ps2atad_irx.c: $(PS2SDK)/iop/irx/ps2atad.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2atad_irx
 
-$(EE_ASM_DIR)ps2hdd_irx.s: $(PS2SDK)/iop/irx/ps2hdd-osd.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2hdd_irx
+$(EE_ASM_DIR)ps2hdd_irx.c: $(PS2SDK)/iop/irx/ps2hdd-osd.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2hdd_irx
 
-$(EE_ASM_DIR)ps2fs_irx.s: $(PS2SDK)/iop/irx/ps2fs.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2fs_irx
+$(EE_ASM_DIR)ps2fs_irx.c: $(PS2SDK)/iop/irx/ps2fs.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2fs_irx
 
-$(EE_ASM_DIR)ps2netfs_irx.s: $(PS2SDK)/iop/irx/ps2netfs.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2netfs_irx
+$(EE_ASM_DIR)ps2netfs_irx.c: $(PS2SDK)/iop/irx/ps2netfs.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2netfs_irx
 
 hdl_info/hdl_info.irx: hdl_info
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)hdl_info_irx.s: hdl_info/hdl_info.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ hdl_info_irx
+$(EE_ASM_DIR)hdl_info_irx.c: hdl_info/hdl_info.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ hdl_info_irx
 
 ps2host/ps2host.irx: ps2host
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)ps2host_irx.s: ps2host/ps2host.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2host_irx
+$(EE_ASM_DIR)ps2host_irx.c: ps2host/ps2host.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2host_irx
 
 ifeq ($(SMB),1)
-$(EE_ASM_DIR)smbman_irx.s: $(PS2SDK)/iop/irx/smbman.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ smbman_irx
+$(EE_ASM_DIR)smbman_irx.c: $(PS2SDK)/iop/irx/smbman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ smbman_irx
 endif
 
 vmc_fs/vmc_fs.irx: vmc_fs
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)vmc_fs_irx.s: vmc_fs/vmc_fs.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ vmc_fs_irx
+$(EE_ASM_DIR)vmc_fs_irx.c: vmc_fs/vmc_fs.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ vmc_fs_irx
 
 loader/loader.elf: loader
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)loader_elf.s: loader/loader.elf | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ loader_elf
+$(EE_ASM_DIR)loader_elf.c: loader/loader.elf | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ loader_elf
 
-$(EE_ASM_DIR)ps2kbd_irx.s: $(PS2SDK)/iop/irx/ps2kbd.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ ps2kbd_irx
+$(EE_ASM_DIR)ps2kbd_irx.c: $(PS2SDK)/iop/irx/ps2kbd.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ ps2kbd_irx
 
-$(EE_ASM_DIR)sior_irx.s: $(PS2SDK)/iop/irx/sior.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ sior_irx
+$(EE_ASM_DIR)sior_irx.c: $(PS2SDK)/iop/irx/sior.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ sior_irx
 
 AllowDVDV/AllowDVDV.irx: AllowDVDV
 	$(MAKE) -C $<
 
-$(EE_ASM_DIR)allowdvdv_irx.s: AllowDVDV/AllowDVDV.irx | $(EE_ASM_DIR)
-	$(BIN2S) $< $@ allowdvdv_irx
+$(EE_ASM_DIR)allowdvdv_irx.c: AllowDVDV/AllowDVDV.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ allowdvdv_irx
 
 clean:
 	$(MAKE) -C hdl_info clean
@@ -193,8 +193,8 @@ $(EE_OBJS_DIR):
 $(EE_OBJS_DIR)%.o: $(EE_SRC_DIR)%.c | $(EE_OBJS_DIR)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.s | $(EE_OBJS_DIR)
-	$(EE_AS) $(EE_ASFLAGS) $< -o $@
+$(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.c | $(EE_OBJS_DIR)
+	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
