@@ -1487,7 +1487,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     char party[MAX_NAME], dir[MAX_PATH], tmpdir[MAX_PATH];
     int fd = -1, size, ret;
     psu_header PSU_head;
-    int i, tst, PSU_content, psu_pad_pos;
+    int i, tst, PSU_content_local, psu_pad_pos;
 
     out[0] = '\0';  // Start by making an empty result string, for failures
 
@@ -1525,8 +1525,8 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
         tst = genRead(fd, (void *)&PSU_head, sizeof(PSU_head));
         if (tst != sizeof(PSU_head))
             goto finish;  // Abort if read fails
-        PSU_content = PSU_head.size;
-        for (i = 0; i < PSU_content; i++) {
+        PSU_content_local = PSU_head.size;
+        for (i = 0; i < PSU_content_local; i++) {
             tst = genRead(fd, (void *)&PSU_head, sizeof(PSU_head));
             if (tst != sizeof(PSU_head))
                 goto finish;  // Abort if read fails

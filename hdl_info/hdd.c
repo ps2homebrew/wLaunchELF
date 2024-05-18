@@ -15,7 +15,7 @@
 #include "apa.h"
 
 static hdl_games_list_t *games = NULL;
-static hio_t *hio = NULL;
+static hio_t *g_hio = NULL;
 
 //--------------------------------------------------------------
 static int iop_stat(hio_t *hio, u_long *size_in_kb)
@@ -125,14 +125,14 @@ int HdlGetGameInfo(const char *PartName, GameInfo *GameInf)
 {
     hdl_glist_free(games);
     games = NULL;
-    if (hio != NULL)
-        hio->close(hio);
-    hio = NULL;
+    if (g_hio != NULL)
+        g_hio->close(g_hio);
+    g_hio = NULL;
 
-    if (hio_iop_probe("hdd0:", &hio) == 0) {
+    if (hio_iop_probe("hdd0:", &g_hio) == 0) {
         int err;
 
-        if ((err = hdl_glist_read(hio, &games)) == 0) {
+        if ((err = hdl_glist_read(g_hio, &games)) == 0) {
             int i;
 
             for (i = 0; i < games->count; ++i) {
@@ -164,14 +164,14 @@ int HdlRenameGame(void *Data)
 
     hdl_glist_free(games);
     games = NULL;
-    if (hio != NULL)
-        hio->close(hio);
-    hio = NULL;
+    if (g_hio != NULL)
+        g_hio->close(g_hio);
+    g_hio = NULL;
 
-    if (hio_iop_probe("hdd0:", &hio) == 0) {
+    if (hio_iop_probe("hdd0:", &g_hio) == 0) {
         int err;
 
-        if ((err = hdl_glist_read(hio, &games)) == 0) {
+        if ((err = hdl_glist_read(g_hio, &games)) == 0) {
             int i;
 
             for (i = 0; i < games->count; ++i) {
@@ -180,7 +180,7 @@ int HdlRenameGame(void *Data)
                 if (!strcmp(Packet->OldName, game->name)) {
                     printf("Renaming Game %s To %s.\n", game->name, Packet->NewName);
                     strcpy(game->name, Packet->NewName);
-                    if ((err = hdl_glist_write(hio, game)) == 0)
+                    if ((err = hdl_glist_write(g_hio, game)) == 0)
                         return 0;  // Return flag for no error
                     else
                         return err;  // Return error flag for 'hdl_glist_write failed'
