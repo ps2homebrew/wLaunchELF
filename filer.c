@@ -628,7 +628,7 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 //--------------------------------------------------------------
 void sort(FILEINFO *a, int left, int right)
 {
-    FILEINFO tmp, pivot;
+    FILEINFO pivot;
 
     if (left < right) {
         int i, p;
@@ -637,6 +637,8 @@ void sort(FILEINFO *a, int left, int right)
         p = left;
         for (i = left + 1; i <= right; i++) {
             if (cmpFile(&a[i], &pivot) < 0) {
+                FILEINFO tmp;
+
                 p = p + 1;
                 tmp = a[p];
                 a[p] = a[i];
@@ -3259,7 +3261,7 @@ int keyboard2(char *out, int max)
 //--------------------------------------------------------------
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 {
-    int nfiles, i, j, ret;
+    int nfiles, i;
 
     size_valid = 0;
     time_valid = 0;
@@ -3370,6 +3372,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         files[0].stats.AttrFile = sceMcFileAttrSubdir;
         nfiles = getDir(path, &files[1]) + 1;
         if (strcmp(ext, "*")) {
+            int j;
+
             for (i = j = 1; i < nfiles; i++) {
                 if (files[i].stats.AttrFile & sceMcFileAttrSubdir)
                     files[j++] = files[i];
@@ -3382,6 +3386,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         }
         if ((file_show == 2) || (file_sort == 2)) {
             for (i = 1; i < nfiles; i++) {
+                int ret;
+
                 ret = getGameTitle(path, &files[i], files[i].title);
                 if (ret < 0)
                     files[i].title[0] = 0;

@@ -232,7 +232,6 @@ static int fsysLseek(int fd, unsigned int offset, int whence)
 //----------------------------------------------------------------------------
 static int fsysIoctl(iop_file_t *file, unsigned long request, void *data)
 {
-    int remote_fd = ((struct filedesc_info *)file)->own_fd;
     int ret;
     dbgprintf("fsysioctl..\n");
     // dbgprintf("  fd: %x\n"
@@ -242,6 +241,8 @@ static int fsysIoctl(iop_file_t *file, unsigned long request, void *data)
     remove_flag = 0;
 
     if (request == IOCTL_RENAME) {
+        int remote_fd = ((struct filedesc_info *)file)->own_fd;
+
         if (lastopen_fd == remote_fd) {
             WaitSema(fsys_sema);
             ret = pko_ioctl(remote_fd, request, data);
