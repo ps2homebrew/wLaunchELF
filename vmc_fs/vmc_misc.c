@@ -352,26 +352,26 @@ unsigned int getFreeCluster(const struct gen_privdata *gendata, int unit)
 
         if (value == FREE_CLUSTER) {
 
-            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %d ... value is FREE_CLUSTER\n", i - gendata->first_allocatable);
+            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %u ... value is FREE_CLUSTER\n", i - gendata->first_allocatable);
 
-            DEBUGPRINT(6, "vmc_fs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable);
+            DEBUGPRINT(6, "vmc_fs: Free cluster found at %u in fat table\n", i - gendata->first_allocatable);
             g_Vmc_Image[unit].last_free_cluster = i;
 
             return (i - gendata->first_allocatable);
 
         } else if (value == EOF_CLUSTER) {
 
-            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %d ... value is EOF_CLUSTER\n", i - gendata->first_allocatable);
+            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %u ... value is EOF_CLUSTER\n", i - gendata->first_allocatable);
 
         } else {
 
-            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %d ... value is %d\n", i - gendata->first_allocatable, value);
+            DEBUGPRINT(10, "vmc_fs: Testing fat table cluster %u ... value is %u\n", i - gendata->first_allocatable, value);
 
             cluster_mask = getFatEntry(gendata->fd, i - gendata->first_allocatable, gendata->indir_fat_clusters, FAT_MASK);
 
             if (cluster_mask != MASK_CLUSTER) {
 
-                DEBUGPRINT(6, "vmc_fs: Free cluster found at %d in fat table\n", i - gendata->first_allocatable);
+                DEBUGPRINT(6, "vmc_fs: Free cluster found at %u in fat table\n", i - gendata->first_allocatable);
                 g_Vmc_Image[unit].last_free_cluster = i;
 
                 return (i - gendata->first_allocatable);
@@ -428,8 +428,8 @@ int setDefaultSpec(int unit)
     g_Vmc_Image[unit].header.mc_type = 0x2;
     g_Vmc_Image[unit].header.mc_flag = 0x2B;
 
-    DEBUGPRINT(4, "vmc_fs: Image file Info: Number of pages       : %d\n", g_Vmc_Image[unit].total_pages);
-    DEBUGPRINT(4, "vmc_fs: Image file Info: Size of a cluster     : %d bytes\n", g_Vmc_Image[unit].cluster_size);
+    DEBUGPRINT(4, "vmc_fs: Image file Info: Number of pages       : %u\n", g_Vmc_Image[unit].total_pages);
+    DEBUGPRINT(4, "vmc_fs: Image file Info: Size of a cluster     : %u bytes\n", g_Vmc_Image[unit].cluster_size);
     DEBUGPRINT(4, "vmc_fs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[unit].ecc_flag ? "YES" : "NO");
     DEBUGPRINT(3, "vmc_fs: Image file Info: Vmc card type         : %s MemoryCard.\n", (g_Vmc_Image[unit].header.mc_type == PSX_MEMORYCARD ? "PSX" : (g_Vmc_Image[unit].header.mc_type == PS2_MEMORYCARD ? "PS2" : "PDA")));
     DEBUGPRINT(4, "vmc_fs: SuperBlock Info: page_size             : 0x%02x\n", g_Vmc_Image[unit].header.page_size);

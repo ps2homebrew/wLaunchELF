@@ -33,7 +33,7 @@ int Vmc_Format(iop_file_t *f, const char *dev, const char *blockdev, void *arg, 
 
         for (i = 0; i < g_Vmc_Image[f->unit].total_pages / g_Vmc_Image[f->unit].header.pages_per_block; i++) {
 
-            DEBUGPRINT(7, "vmc_fs: format erasing block %d / %d\r", i, g_Vmc_Image[f->unit].total_pages / g_Vmc_Image[f->unit].header.pages_per_block);
+            DEBUGPRINT(7, "vmc_fs: format erasing block %u / %d\r", i, g_Vmc_Image[f->unit].total_pages / g_Vmc_Image[f->unit].header.pages_per_block);
             eraseBlock(g_Vmc_Image[f->unit].fd, i);
         }
     }
@@ -536,21 +536,21 @@ int Vmc_Write(iop_file_t *f, void *buffer, int size)
     if ((fprivdata->file_length % g_Vmc_Image[f->unit].cluster_size) > 0)
         num_clusters++;
 
-    DEBUGPRINT(5, "vmc_fs: File lenght in cluster before this write: %u\n", num_clusters);
+    DEBUGPRINT(5, "vmc_fs: File lenght in cluster before this write: %d\n", num_clusters);
 
     int num_clusters_required = (fprivdata->file_position + size) / g_Vmc_Image[f->unit].cluster_size;
 
     if (((fprivdata->file_position + size) % g_Vmc_Image[f->unit].cluster_size) > 0)
         num_clusters_required++;
 
-    DEBUGPRINT(5, "vmc_fs: File lenght in cluster after this write : %u\n", num_clusters_required);
+    DEBUGPRINT(5, "vmc_fs: File lenght in cluster after this write : %d\n", num_clusters_required);
 
     if (num_clusters_required > num_clusters) {
 
         fprivdata->file_length = fprivdata->file_position + size;
 
         DEBUGPRINT(3, "vmc_fs: File position:  %u\n", fprivdata->file_position);
-        DEBUGPRINT(3, "vmc_fs: Size to write:  %u\n", size);
+        DEBUGPRINT(3, "vmc_fs: Size to write:  %d\n", size);
         DEBUGPRINT(3, "vmc_fs: File length  :  %u\n", fprivdata->file_length);
 
         //  now determine how many clusters we need forthis write
@@ -602,7 +602,7 @@ int Vmc_Write(iop_file_t *f, void *buffer, int size)
 
                 if (current_cluster == FREE_CLUSTER) {
 
-                    DEBUGPRINT(10, "vmc_fs: Testing cluster %d ... value is FREE_CLUSTER\n", last_cluster);
+                    DEBUGPRINT(10, "vmc_fs: Testing cluster %u ... value is FREE_CLUSTER\n", last_cluster);
 
                 } else if (current_cluster == EOF_CLUSTER) {
 
@@ -611,7 +611,7 @@ int Vmc_Write(iop_file_t *f, void *buffer, int size)
 
                 } else {
 
-                    DEBUGPRINT(10, "vmc_fs: Testing cluster %d ... value is %d\n", last_cluster, current_cluster);
+                    DEBUGPRINT(10, "vmc_fs: Testing cluster %u ... value is %u\n", last_cluster, current_cluster);
                 }
 
                 last_cluster = current_cluster;
@@ -1740,8 +1740,8 @@ int Vmc_Mount(iop_file_t *f, const char *fsname, const char *devname, int flag, 
             goto mountAbort;
         }
 
-        DEBUGPRINT(4, "vmc_fs: Image file Info: Number of pages       : %d\n", g_Vmc_Image[f->unit].total_pages);
-        DEBUGPRINT(4, "vmc_fs: Image file Info: Size of a cluster     : %d bytes\n", g_Vmc_Image[f->unit].cluster_size);
+        DEBUGPRINT(4, "vmc_fs: Image file Info: Number of pages       : %u\n", g_Vmc_Image[f->unit].total_pages);
+        DEBUGPRINT(4, "vmc_fs: Image file Info: Size of a cluster     : %u bytes\n", g_Vmc_Image[f->unit].cluster_size);
         DEBUGPRINT(4, "vmc_fs: Image file Info: ECC shunk found       : %s\n", g_Vmc_Image[f->unit].ecc_flag ? "YES" : "NO");
     }
 
