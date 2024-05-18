@@ -897,7 +897,7 @@ void JpgViewer(const char *file)
                 if (--SlideShowTime <= 1)
                     SlideShowTime = 1;
             } else if (new_pad & PAD_R2) {
-                char *temp = PathPad_menu(path);
+                const char *temp = PathPad_menu(path);
 
                 if (temp != NULL) {
                     strcpy(path, temp);

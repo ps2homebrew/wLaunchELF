@@ -74,7 +74,7 @@ struct icon_framedata
 void tex_drawChar(unsigned int c, int x, int y, u16 colour)
 {
     int i, j, k, pixMask;
-    u8 *cm;
+    const u8 *cm;
 
     u16 temp_image[16][32];
     // blank out the memory(was causing issues before)

@@ -31,7 +31,10 @@ Language *External_Lang_Buffer = NULL;
 //---------------------------------------------------------------------------
 int get_LANG_string(char **LANG_p_p, char **id_p_p, char **value_p_p)
 {
-    char *cp, *ip, *vp, *tp = *LANG_p_p;
+    const char *cp;
+    char *ip;
+    char *vp;
+    char *tp = *LANG_p_p;
     int ret, length;
 
     ip = NULL;
@@ -187,7 +190,7 @@ void Load_External_Language(void)
         External_Lang_Buffer = NULL;
     }
 
-    Language *Lang = Lang_Default;
+    const Language *Lang = Lang_Default;
     memcpy(Lang_String, Lang, sizeof(Lang_String));
 
     if (strlen(setting->lang_file) != 0) {  // if language file string set
@@ -297,7 +300,7 @@ void Load_External_Language(void)
         for (i = 0; i < 16; i++) {  // Loop to rename the ELF paths with new language for launch keys
             if ((i < 12) || (setting->LK_Flag[i] != 0)) {
                 if (!strncmp(setting->LK_Path[i], setting->Misc, strlen(setting->Misc))) {
-                    char *tmp;
+                    const char *tmp;
 
                     tmp = strrchr(setting->LK_Path[i], '/');
                     if (!strcmp(tmp + 1, setting->Misc_PS2Disc + strlen(setting->Misc)))

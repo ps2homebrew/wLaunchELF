@@ -247,8 +247,8 @@ int FileSystem_WriteFile(FSContext *pContext, const char *pBuffer, int iSize)
 int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
 {
 #ifdef LINUX
-    struct dirent *ent;
-    struct tm *t;
+    const struct dirent *ent;
+    const struct tm *t;
     struct stat s;
 
     memset(pInfo, 0, sizeof(FSFileInfo));
@@ -494,7 +494,7 @@ int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
             } else {
                 // evaluating devices
 
-                ModuleInfo_t *pkModule;
+                const ModuleInfo_t *pkModule;
                 iop_device_t **ppkDevices;
                 int num_devices;
                 int dev_offset;
@@ -725,7 +725,7 @@ int FileSystem_ChangeDir(FSContext *pContext, const char *pPath)
         if ((pContext->m_Path[strlen(pContext->m_Path) - 1] != '/'))
             strcat(pContext->m_Path, "/");
     } else {
-        char *entry = strtok(buffer, "/");
+        const char *entry = strtok(buffer, "/");
 
         while (entry && strlen(entry) > 0) {
             if (!strcmp(entry, "..")) {
@@ -915,7 +915,7 @@ ModuleInfo_t *FileSystem_GetModule(const char *pDevice)
 
 iop_device_t *FileSystem_ScanDevice(const char *pDevice, int iNumDevices, const char *pPath)
 {
-    ModuleInfo_t *pkModule;
+    const ModuleInfo_t *pkModule;
     iop_device_t **ppkDevices;
     int i;
     int offset;

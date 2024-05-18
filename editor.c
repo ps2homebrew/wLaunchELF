@@ -1173,7 +1173,7 @@ static void Save_As(int Win)
 {
     int fd, ret = 0;
     char tmp[MAX_PATH], oldPath[MAX_PATH], filePath[MAX_PATH];
-    char *p;
+    const char *p;
 
     tmp[0] = '\0', oldPath[0] = '\0', filePath[0] = '\0';
 

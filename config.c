@@ -2270,7 +2270,7 @@ void config(char *mainMsg, const char *CNF)
 {
     char c[MAX_PATH];
     char title_tmp[MAX_ELF_TITLE];
-    char *localMsg;
+    const char *localMsg;
     int i;
     int s;
     int x, y;

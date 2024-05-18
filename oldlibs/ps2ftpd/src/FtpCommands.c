@@ -394,7 +394,7 @@ void FtpClient_OnCmdSize(FtpClient *pClient, const char *pFile)
 
 void FtpClient_OnCmdSite(FtpClient *pClient, const char *pCmd)
 {
-    char *c;
+    const char *c;
 
     // copy command to clean buffer
     strcpy(buffer, pCmd);
@@ -412,8 +412,8 @@ void FtpClient_OnCmdSite(FtpClient *pClient, const char *pCmd)
 #ifndef LINUX
             // SITE MNT <device> <file>
             case SITECMD_MNT: {
-                char *mount_point;
-                char *mount_file;
+                const char *mount_point;
+                const char *mount_file;
 
                 // get mount point
                 mount_point = strtok(NULL, " ");
@@ -434,7 +434,7 @@ void FtpClient_OnCmdSite(FtpClient *pClient, const char *pCmd)
 
             // SITE UMNT <device>
             case SITECMD_UMNT: {
-                char *mount_point = strtok(NULL, "");
+                const char *mount_point = strtok(NULL, "");
 
                 if (mount_point)
                     FtpClient_OnSiteUmount(pClient, mount_point);
@@ -444,7 +444,7 @@ void FtpClient_OnCmdSite(FtpClient *pClient, const char *pCmd)
 
             // SITE SYNC <device>
             case SITECMD_SYNC: {
-                char *devname = strtok(NULL, "");
+                const char *devname = strtok(NULL, "");
 
                 if (devname)
                     FtpClient_OnSiteSync(pClient, devname);

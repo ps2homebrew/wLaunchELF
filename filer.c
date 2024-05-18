@@ -867,7 +867,7 @@ limited:
 int genFixPath(const char *inp_path, char *gen_path)
 {
     char uLE_path[MAX_PATH], loc_path[MAX_PATH], party[MAX_NAME], *p;
-    char *pathSep;
+    const char *pathSep;
     int part_ix;
 
     part_ix = 99;  // Assume valid non-HDD path
@@ -2857,16 +2857,17 @@ int keyboard(char *out, int max)
         KEY_H = LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (8 * FONT_HEIGHT) + 8 + LINE_THICKNESS,
         KEY_X = ((SCREEN_WIDTH - KEY_W) / 2) & -2,
         KEY_Y = ((SCREEN_HEIGHT - KEY_H) / 2) & -2;
-    char *KEY = "ABCDEFGHIJKLM"
-                "NOPQRSTUVWXYZ"
-                "abcdefghijklm"
-                "nopqrstuvwxyz"
-                "0123456789/|\\"
-                "<>(){}[].,:;\""
-                "!@#$%&=+-^*_'";
+    const char *KEY = "ABCDEFGHIJKLM"
+                      "NOPQRSTUVWXYZ"
+                      "abcdefghijklm"
+                      "nopqrstuvwxyz"
+                      "0123456789/|\\"
+                      "<>(){}[].,:;\""
+                      "!@#$%&=+-^*_'";
     int KEY_LEN;
     int cur = 0, sel = 0, i, x, y, t = 0;
-    char tmp[256], *p;
+    char tmp[256];
+    const char *p;
     char KeyPress;
 
     p = strrchr(out, '.');
@@ -3711,7 +3712,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
             } else if (new_pad & PAD_R2) {
-                char *temp = PathPad_menu(path);
+                const char *temp = PathPad_menu(path);
 
                 if (temp != NULL) {
                     strcpy(path, temp);

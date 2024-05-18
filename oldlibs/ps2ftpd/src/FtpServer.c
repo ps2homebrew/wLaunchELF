@@ -231,7 +231,7 @@ int FtpServer_HandleEvents(FtpServer *pServer)
                           sizeof(pClient->m_CommandBuffer) - pClient->m_iCommandOffset, 0);
 
             if (rv > 0) {
-                char *rofs;
+                const char *rofs;
                 char *nofs;
 
                 pClient->m_CommandBuffer[pClient->m_iCommandOffset + rv] = '\0';

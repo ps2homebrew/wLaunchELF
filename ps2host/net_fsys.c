@@ -171,7 +171,7 @@ static int fsysClose(int fd)
 //----------------------------------------------------------------------------
 static int fsysRead(int fd, char *buf, int size)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     fd_info = (struct filedesc_info *)fd;
@@ -194,7 +194,7 @@ static int fsysRead(int fd, char *buf, int size)
 //----------------------------------------------------------------------------
 static int fsysWrite(int fd, char *buf, int size)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     dbgprintf("fsysWrite..."
@@ -212,7 +212,7 @@ static int fsysWrite(int fd, char *buf, int size)
 //----------------------------------------------------------------------------
 static int fsysLseek(int fd, unsigned int offset, int whence)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     dbgprintf("fsysLseek..\n"
@@ -354,7 +354,7 @@ static int fsysDclose(int fd)
 //----------------------------------------------------------------------------
 static int fsysDread(int fd, void *buf)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     fd_info = (struct filedesc_info *)fd;

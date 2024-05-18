@@ -20,7 +20,7 @@ static hio_t *hio = NULL;
 //--------------------------------------------------------------
 static int iop_stat(hio_t *hio, u_long *size_in_kb)
 {
-    hio_iop_t *iop = (hio_iop_t *)hio;
+    const hio_iop_t *iop = (const hio_iop_t *)hio;
     *size_in_kb = iop->size_in_sectors / 2;
     return 0;
 }
@@ -107,7 +107,7 @@ int hio_iop_probe(const char *path, hio_t **hio)
         path[4] == ':' &&
         path[5] == '\0') {
         int unit = path[3] - '0';
-        ata_devinfo_t *dev_info = ata_get_devinfo(unit);
+        const ata_devinfo_t *dev_info = ata_get_devinfo(unit);
         if (dev_info != NULL && dev_info->exists) {
             *hio = iop_alloc(unit, dev_info->total_sectors);
             if (*hio != NULL)
@@ -159,8 +159,8 @@ int HdlGetGameInfo(const char *PartName, GameInfo *GameInf)
 int HdlRenameGame(void *Data)
 {
 
-    int *Pointer = Data;
-    Rpc_Packet_Send_Rename *Packet = (Rpc_Packet_Send_Rename *)Pointer;
+    const int *Pointer = Data;
+    const Rpc_Packet_Send_Rename *Packet = (const Rpc_Packet_Send_Rename *)Pointer;
 
     hdl_glist_free(games);
     games = NULL;

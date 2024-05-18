@@ -55,7 +55,7 @@ int checkELFheader(char *path)
 {
     elf_header_t elf_head;
     u8 *boot_elf = (u8 *)&elf_head;
-    elf_header_t *eh = (elf_header_t *)boot_elf;
+    const elf_header_t *eh = (const elf_header_t *)boot_elf;
     int fd, size = 0, ret;
     char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
@@ -85,7 +85,7 @@ int checkELFheader(char *path)
             goto error;
         fullpath[7] += ret;
     } else if (!strncmp(fullpath, "mass", 4)) {
-        char *pathSep;
+        const char *pathSep;
 
         pathSep = strchr(path, '/');
         if (pathSep && (pathSep - path < 7) && pathSep[-1] == ':')
@@ -127,7 +127,7 @@ void RunLoaderElf(char *filename, char *party)
     u8 *boot_elf;
     elf_header_t *eh;
     elf_pheader_t *eph;
-    void *pdata;
+    const void *pdata;
     int i;
     char *argv[2], bootpath[256];
 

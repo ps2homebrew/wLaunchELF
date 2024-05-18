@@ -1056,7 +1056,7 @@ int uLE_cdStop(void)
 //---------------------------------------------------------------------------
 static void getExternalFilePath(const char *argPath, char *filePath)
 {
-    char *pathSep;
+    const char *pathSep;
 
     pathSep = strchr(argPath, '/');
 
@@ -1753,7 +1753,7 @@ static void Execute(const char *pathin)
     static char path[MAX_PATH];
     static char fullpath[MAX_PATH];
     static char party[1024];
-    char *pathSep;
+    const char *pathSep;
     char *p;
     int x, t = 0;
     char dvdpl_path[] = "mc0:/BREXEC-DVDPLAYER/dvdplayer.elf";
@@ -2288,7 +2288,7 @@ int main(int argc, char *argv[])
             strcpy(temp, boot_path + 5);  // Skip "hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
-                char *p;
+                const char *p;
 
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
@@ -2313,7 +2313,7 @@ int main(int argc, char *argv[])
             strcpy(temp, boot_path + 9);  // Skip "dvr_hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
-                char *p;
+                const char *p;
 
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
