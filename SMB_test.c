@@ -73,6 +73,7 @@ size_t storeSMBCNF(char *cnf_buf)
     int i;
 
     for (CNF_size = 0, i = 0; i < smbServerListCount; i++) {  // loop for each SMB server in the list
+        size_step = 0;
         sprintf(cnf_buf + CNF_size,
                 "smbIndex = %d\r\n"
                 "smbServer_IP = %s\r\n"

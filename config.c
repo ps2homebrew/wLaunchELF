@@ -152,6 +152,7 @@ static size_t storeSkinCNF(char *cnf_buf)
 {
     size_t CNF_size;
 
+    CNF_size = 0;
     sprintf(cnf_buf,
             "GUI_Col_1_ABGR = %08X\r\n"
             "GUI_Col_2_ABGR = %08X\r\n"
@@ -408,10 +409,12 @@ void saveConfig(char *mainMsg, const char *CNF)
     char cnf_path[MAX_PATH];
     size_t CNF_size, CNF_step;
 
+    CNF_size = 0;
     sprintf(tmp, "CNF_version = 3\r\n%n", &CNF_size);  // Start CNF with version header
 
     for (i = 0; i < SETTING_LK_COUNT; i++) {  // Loop to save the ELF paths for launch keys
         if ((i <= SETTING_LK_SELECT) || (setting->LK_Flag[i] != 0)) {
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "LK_%s_E1 = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -424,6 +427,7 @@ void saveConfig(char *mainMsg, const char *CNF)
     }  // ends for
 
     i = strlen(setting->Misc);
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "Misc = %s\r\n"
             "Misc_PS2Disc = %s\r\n"
@@ -468,6 +472,7 @@ void saveConfig(char *mainMsg, const char *CNF)
 
     CNF_size += storeSkinCNF(tmp + CNF_size);
 
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "LK_auto_Timer = %d\r\n"
             "Menu_Hide_Paths = %d\r\n"
@@ -524,6 +529,7 @@ void saveConfig(char *mainMsg, const char *CNF)
 
     for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {  // Loop to save user defined launch key titles
         if (setting->LK_Title[i][0]) {            // Only save non-empty strings
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "LK_%s_Title = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -535,6 +541,7 @@ void saveConfig(char *mainMsg, const char *CNF)
         }  // ends if
     }      // ends for
 
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "PathPad_Lock = %d\r\n"
             "%n",                   // %n causes NO output, but only a measurement
@@ -545,6 +552,7 @@ void saveConfig(char *mainMsg, const char *CNF)
 
     for (i = 0; i < MAX_PATH_PAD; i++) {  // Loop to save non-empty PathPad entries
         if (PathPad[i][0]) {              // Only save non-empty strings
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "PathPad[%02d] = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement

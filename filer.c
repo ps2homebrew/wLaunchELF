@@ -2204,9 +2204,12 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
     u64 OldTime = 0LL;
     psu_header PSU_head;
     mcT_header *mcT_head_p = (mcT_header *)&file.stats;
-    mcT_header *mcT_files_p = (mcT_header *)&files[0].stats;
+    mcT_header *mcT_files_p;
     int psu_pad_size = 0, PSU_restart_f = 0;
     char *cp, *np;
+
+    memset(&files, 0, sizeof(files));
+    mcT_files_p = (mcT_header *)&files[0].stats;
 
     PM_flag[recurses + 1] = PM_NORMAL;  // assume normal mode for next level
     PM_file[recurses + 1] = -1;         // assume that no special file is needed
@@ -4304,6 +4307,7 @@ void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files)
         text_pos = strlen(mess);
     } else {
         text_pos = 0;
+        text_inc = 0;
         if (size >= 1024 * 1024)
             sprintf(mess, "%s = %.1fMB%n", LNG(SIZE), (double)size / 1024 / 1024, &text_inc);
         else if (size >= 1024)
