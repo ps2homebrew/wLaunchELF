@@ -69,8 +69,6 @@ void FileSystem_Destroy(FSContext *pContext)
 int FileSystem_OpenFile(FSContext *pContext, const char *pFile, FileMode eMode, int iContinue)
 {
     int flags;
-    int fileMode = 0;
-    int iOpened = 0;
 
     FileSystem_Close(pContext);
     FileSystem_BuildPath(buffer, pContext->m_Path, pFile);
@@ -98,7 +96,11 @@ int FileSystem_OpenFile(FSContext *pContext, const char *pFile, FileMode eMode, 
 
     switch (pContext->m_eType) {
         case FS_IODEVICE: {
+            int fileMode = 0;
+
             if (iContinue) {
+                int iOpened = 0;
+
                 if (flags & O_WRONLY) {
                     pContext->m_kFile.mode = O_WRONLY;
                     if (pContext->m_kFile.device->ops->open(&(pContext->m_kFile), pFile, pContext->m_kFile.mode, 0) >= 0)
