@@ -131,7 +131,7 @@ void RunLoaderElf(char *filename, char *party)
     int i;
     char *argv[2], bootpath[256];
 
-    if ((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))) {
+    if ((!strncmp(party, "hdd0:", 5))) {
         if (0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)) {
             // Some error occurred, it could be due to something else having used pfs0
             unmountParty(0);  // So we try unmounting pfs0, to try again
@@ -149,7 +149,7 @@ void RunLoaderElf(char *filename, char *party)
 
         argv[0] = filename;
         argv[1] = bootpath;
-    } else if ((!strncmp(party, "dvr_hdd0:", 9)) && (!strncmp(filename, "dvr_pfs0:", 9))) {
+    } else if ((!strncmp(party, "dvr_hdd0:", 9))) {
         if (0 > fileXioMount("dvr_pfs0:", party, FIO_MT_RDONLY)) {
             // Some error occurred, it could be due to something else having used pfs0
             unmountDVRPParty(0);  // So we try unmounting pfs0, to try again

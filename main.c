@@ -623,7 +623,7 @@ static int drawMainScreen2(int TV_mode)
                     strcpy(f, setting->LK_Path[i]);
                 }
             }  // ends clause for No title
-            if (setting->LK_Path[i][0] && nElfs++ == selected && mode == DPAD)
+            if (nElfs++ == selected && mode == DPAD)
                 color = setting->color[COLOR_SELECT];
             else
                 color = setting->color[COLOR_TEXT];
