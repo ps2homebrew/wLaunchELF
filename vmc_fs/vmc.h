@@ -286,8 +286,8 @@ unsigned int setFatEntry(int fd, unsigned int cluster, unsigned int value, const
 //  ps2.c
 int eraseBlock(int fd, unsigned int block);
 int writePage(int fd, u8 *page, unsigned int pagenum);
-int writeCluster(int fd, u8 *cluster, unsigned int clusternum);
-int writeClusterPart(int fd, u8 *cluster, unsigned int clusternum, int cluster_offset, int size);
+int writeCluster(int fd, const u8 *cluster, unsigned int clusternum);
+int writeClusterPart(int fd, const u8 *cluster, unsigned int clusternum, int cluster_offset, int size);
 int readPage(int fd, u8 *page, unsigned int pagenum);
 int readCluster(int fd, u8 *cluster, unsigned int clusternum);
 
@@ -295,8 +295,8 @@ int readCluster(int fd, u8 *cluster, unsigned int clusternum);
 //  misc.c
 unsigned int getDirentryFromPath(struct direntry *retval, const char *path, struct gen_privdata *gendata, int unit);
 unsigned int addObject(struct gen_privdata *gendata, unsigned int parentcluster, struct direntry *parent, struct direntry *dirent, int unit);
-void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit);
-unsigned int getFreeCluster(struct gen_privdata *gendata, int unit);
+void removeObject(const struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit);
+unsigned int getFreeCluster(const struct gen_privdata *gendata, int unit);
 int getPs2Time(vmc_datetime *tm);
 int setDefaultSpec(int unit);
 void buildECC(int unit, const u8 *Page_Data, u8 *ECC_Data);

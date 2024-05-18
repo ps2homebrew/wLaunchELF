@@ -134,7 +134,7 @@ unsigned int getDirentryFromPath(struct direntry *retval, const char *path, stru
 //----------------------------------------------------------------------------
 // Add 2 pseudo entries for a new directory
 //----------------------------------------------------------------------------
-unsigned int addPseudoEntries(struct gen_privdata *gendata, struct direntry *parent, int unit)
+unsigned int addPseudoEntries(const struct gen_privdata *gendata, const struct direntry *parent, int unit)
 {
 
     // Get a free cluster we can use to store the entries '.' and '..'
@@ -290,7 +290,7 @@ unsigned int addObject(struct gen_privdata *gendata, unsigned int parent_cluster
 // Set as free the last cluster of the direntry.
 // Finaly, set deleted flag of the direntry. ( DF_EXISTS flag )
 //----------------------------------------------------------------------------
-void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit)
+void removeObject(const struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit)
 {
 
     unsigned int last_cluster = dirent->cluster;
@@ -339,7 +339,7 @@ void removeObject(struct gen_privdata *gendata, unsigned int dirent_cluster, str
 //----------------------------------------------------------------------------
 // Return a free cluster.
 //----------------------------------------------------------------------------
-unsigned int getFreeCluster(struct gen_privdata *gendata, int unit)
+unsigned int getFreeCluster(const struct gen_privdata *gendata, int unit)
 {
 
     unsigned int i;

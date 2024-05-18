@@ -52,7 +52,7 @@ float cosdgf(float f) { return cosf(f) * M_PI / 180.0f; }
 
 //--------------------------------------------------------------
 ///*
-void DebugDisp(char *Message)
+void DebugDisp(const char *Message)
 {
     int done;
 

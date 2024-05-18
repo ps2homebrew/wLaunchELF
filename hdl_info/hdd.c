@@ -121,7 +121,7 @@ int hio_iop_probe(const char *path, hio_t **hio)
 //------------------------------
 // endfunc hio_iop_probe
 //--------------------------------------------------------------
-int HdlGetGameInfo(char *PartName, GameInfo *GameInf)
+int HdlGetGameInfo(const char *PartName, GameInfo *GameInf)
 {
     hdl_glist_free(games);
     games = NULL;

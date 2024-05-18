@@ -496,7 +496,7 @@ int ynDialog(const char *message)
 //------------------------------
 // endfunc ynDialog
 //--------------------------------------------------------------
-void nonDialog(char *message)
+void nonDialog(const char *message)
 {
     char msg[80 * 30];          // More than this can't be shown on screen, even in PAL
     static int dh, dw, dx, dy;  // These are static, to allow cleanup
@@ -1300,7 +1300,7 @@ exit:
 //------------------------------
 // endfunc readMASS
 //--------------------------------------------------------------
-char *makeHostPath(char *dp, char *sp)
+char *makeHostPath(char *dp, const char *sp)
 {
     int i;
 
@@ -1585,7 +1585,7 @@ finish:
     return ret;
 }
 //--------------------------------------------------------------
-int menu(const char *path, FILEINFO *file)
+int menu(const char *path, const FILEINFO *file)
 {
     u64 color;
     char enable[NUM_MENU], tmp[80];
@@ -2186,7 +2186,7 @@ int newdir(const char *path, const char *name)
 // be either a single file or a folder. In the latter case the
 // folder contents should also be copied, recursively.
 //--------------------------------------------------------------
-int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
+int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
     FILEINFO newfile, files[MAX_ENTRY];
     iox_stat_t iox_stat;
@@ -3593,10 +3593,10 @@ int BrowserModePopup(void)
 // dlanor: ADD return value 0=pure path, 1=pathname, negative=error/no_selection
 static int browser_cd, browser_up, browser_repos, browser_pushed;
 static int browser_sel, browser_nfiles;
-static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
-static void submenu_func_Paste(char *mess, char *path);
-static void submenu_func_mcPaste(char *mess, char *path);
-static void submenu_func_psuPaste(char *mess, char *path);
+static void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files);
+static void submenu_func_Paste(char *mess, const char *path);
+static void submenu_func_mcPaste(char *mess, const char *path);
+static void submenu_func_psuPaste(char *mess, const char *path);
 int getFilePath(char *out, int cnfmode)
 {
     char path[MAX_PATH + 1], cursorEntry[MAX_PATH],
@@ -4270,7 +4270,7 @@ int getFilePath(char *out, int cnfmode)
 //------------------------------
 // endfunc getFilePath
 //--------------------------------------------------------------
-void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
+void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files)
 {
     u64 size;
     int ret, text_pos, text_inc, sel = -1;
@@ -4374,7 +4374,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 //------------------------------
 // endfunc submenu_func_GetSize
 //--------------------------------------------------------------
-void subfunc_Paste(char *mess, char *path)
+void subfunc_Paste(char *mess, const char *path)
 {
     char tmp[MAX_PATH], tmp1[MAX_PATH];
     int i, ret = -1;
@@ -4417,7 +4417,7 @@ finished:
 //------------------------------
 // endfunc subfunc_Paste
 //--------------------------------------------------------------
-void submenu_func_Paste(char *mess, char *path)
+void submenu_func_Paste(char *mess, const char *path)
 {
     if (new_pad & PAD_SQUARE)
         PasteMode = PM_RENAME;
@@ -4428,7 +4428,7 @@ void submenu_func_Paste(char *mess, char *path)
 //------------------------------
 // endfunc submenu_func_Paste
 //--------------------------------------------------------------
-void submenu_func_mcPaste(char *mess, char *path)
+void submenu_func_mcPaste(char *mess, const char *path)
 {
     if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
         PasteMode = PM_MC_RESTORE;
@@ -4440,7 +4440,7 @@ void submenu_func_mcPaste(char *mess, char *path)
 //------------------------------
 // endfunc submenu_func_mcPaste
 //--------------------------------------------------------------
-void submenu_func_psuPaste(char *mess, char *path)
+void submenu_func_psuPaste(char *mess, const char *path)
 {
     if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
         PasteMode = PM_PSU_RESTORE;

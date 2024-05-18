@@ -162,7 +162,7 @@ int pko_accept_pkt(int sock, char *buf, int len, int pkt_type)
 
 //----------------------------------------------------------------------
 //
-int pko_open_file(char *path, int flags)
+int pko_open_file(const char *path, int flags)
 {
     pko_pkt_open_req *openreq;
     pko_pkt_file_rly *openrly;
@@ -279,7 +279,7 @@ int pko_lseek_file(int fd, unsigned int offset, int whence)
 
 //----------------------------------------------------------------------
 //
-int pko_write_file(int fd, char *buf, int length)
+int pko_write_file(int fd, const char *buf, int length)
 {
     pko_pkt_write_req *writecmd;
     pko_pkt_file_rly *writerly;
@@ -416,7 +416,7 @@ int pko_read_file(int fd, char *buf, int length)
 
 //----------------------------------------------------------------------
 //
-int pko_ioctl(int fd, unsigned long request, void *data)
+int pko_ioctl(int fd, unsigned long request, const void *data)
 {
     pko_pkt_ioctl_req *ioctlreq;
     pko_pkt_file_rly *ioctlrly;
@@ -453,7 +453,7 @@ int pko_ioctl(int fd, unsigned long request, void *data)
 
 //----------------------------------------------------------------------
 //
-int pko_remove(char *name)
+int pko_remove(const char *name)
 {
     pko_pkt_remove_req *removereq;
     pko_pkt_file_rly *removerly;
@@ -489,7 +489,7 @@ int pko_remove(char *name)
 
 //----------------------------------------------------------------------
 //
-int pko_mkdir(char *name, int mode)
+int pko_mkdir(const char *name, int mode)
 {
     pko_pkt_mkdir_req *mkdirreq;
     pko_pkt_file_rly *mkdirrly;
@@ -526,7 +526,7 @@ int pko_mkdir(char *name, int mode)
 
 //----------------------------------------------------------------------
 //
-int pko_rmdir(char *name)
+int pko_rmdir(const char *name)
 {
     pko_pkt_rmdir_req *rmdirreq;
     pko_pkt_file_rly *rmdirrly;
@@ -562,7 +562,7 @@ int pko_rmdir(char *name)
 
 //----------------------------------------------------------------------
 //
-int pko_open_dir(char *path)
+int pko_open_dir(const char *path)
 {
     pko_pkt_open_req *openreq;
     pko_pkt_file_rly *openrly;

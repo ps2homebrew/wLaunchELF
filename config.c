@@ -135,7 +135,7 @@ int CheckMC(void)
     return -11;
 }
 //---------------------------------------------------------------------------
-unsigned long hextoul(char *string)
+unsigned long hextoul(const char *string)
 {
     unsigned long value;
     char c;
@@ -197,7 +197,7 @@ static size_t storeSkinCNF(char *cnf_buf)
 //---------------------------------------------------------------------------
 // saveSkinCNF will save most cosmetic settings to a skin CNF file
 //------------------------------
-static int saveSkinCNF(char *CNF)
+static int saveSkinCNF(const char *CNF)
 {
     int ret, fd;
     char tmp[26 * MAX_PATH + 30 * MAX_PATH];
@@ -277,7 +277,7 @@ test:
 //---------------------------------------------------------------------------
 // preloadCNF loads an entire CNF file into RAM it allocates
 //------------------------------
-char *preloadCNF(char *path)
+char *preloadCNF(const char *path)
 {
     int fd, tst;
     s64 CNF_size;
@@ -309,7 +309,7 @@ char *preloadCNF(char *path)
 //---------------------------------------------------------------------------
 // scanSkinCNF will check for most cosmetic variables of a CNF
 //------------------------------
-int scanSkinCNF(char *name, char *value)
+int scanSkinCNF(const char *name, const char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
         setting->color[COLOR_BACKGR] = hextoul(value);
@@ -357,7 +357,7 @@ int scanSkinCNF(char *name, char *value)
 //---------------------------------------------------------------------------
 // loadSkinCNF will load most cosmetic settings from CNF file
 //------------------------------
-int loadSkinCNF(char *path)
+int loadSkinCNF(const char *path)
 {
     int var_cnt;
     char *RAM_p, *CNF_p, *name, *value;
@@ -401,7 +401,7 @@ void loadSkinBrowser(void)
 // polo: ADD save SKIN_FILE string
 // suloku: ADD save MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 //---------------------------------------------------------------------------
-void saveConfig(char *mainMsg, char *CNF)
+void saveConfig(char *mainMsg, const char *CNF)
 {
     int i, ret, fd;
     char c[MAX_PATH], tmp[26 * MAX_PATH + 30 * MAX_PATH];
@@ -694,7 +694,7 @@ void initConfig(void)
 // suloku: ADD load MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 // dlanor: added error flag return value 0==OK, -1==failure
 //---------------------------------------------------------------------------
-int loadConfig(char *mainMsg, char *CNF)
+int loadConfig(char *mainMsg, const char *CNF)
 {
     int i, fd, tst, len, mcport, var_cnt, CNF_version;
     char tsts[256];
@@ -1976,7 +1976,7 @@ static void saveNetworkSettings(char *Message)
 //---------------------------------------------------------------------------
 // Convert IP string to numbers
 //---------------------------------------------------------------------------
-static void ipStringToOctet(char *ip, int ip_octet[4])
+static void ipStringToOctet(const char *ip, int ip_octet[4])
 {
 
     // This takes a string (ip) representing an IP address and converts it
@@ -2002,7 +2002,7 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
     }
 }
 //---------------------------------------------------------------------------
-static data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
+static data_ip_struct BuildOctets(const char *ip, const char *nm, const char *gw)
 {
 
     // Populate 3 arrays with the ip address (as ints)
@@ -2266,7 +2266,7 @@ enum CONFIG_MAIN {
     CONFIG_MAIN_COUNT
 };
 
-void config(char *mainMsg, char *CNF)
+void config(char *mainMsg, const char *CNF)
 {
     char c[MAX_PATH];
     char title_tmp[MAX_ELF_TITLE];

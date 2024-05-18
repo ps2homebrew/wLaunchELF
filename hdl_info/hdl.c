@@ -106,7 +106,7 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
 //------------------------------
 // endfunc hdl_glist_read
 //--------------------------------------------------------------
-static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_game_info_t *ginfo)
+static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, const hdl_game_info_t *ginfo)
 {
     const u_long offset = 0x101000;
     char buffer[1024];
@@ -125,7 +125,7 @@ static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, hdl_g
 //------------------------------
 // endfunc hdl_ginfo_write
 //--------------------------------------------------------------
-int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo)
+int hdl_glist_write(hio_t *hio, const hdl_game_info_t *ginfo)
 {
     apa_partition_table_t *ptable;
     int result;

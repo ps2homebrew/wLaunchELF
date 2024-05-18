@@ -233,7 +233,7 @@ u32 tex_compresRLE()
  * The position of the text is hard coded in on line 260
  */
 //--------------------------------------------------------------
-int make_icon(char *icontext, char *filename)
+int make_icon(const char *icontext, const char *filename)
 {
     int i;
     struct icon_header icn_head;
@@ -329,7 +329,7 @@ int make_icon(char *icontext, char *filename)
  * filename is where to store the icon.sys file(eg: mc0:/FOLDER/icon.sys)
  */
 //--------------------------------------------------------------
-int make_iconsys(char *title, char *iconname, char *filename)
+int make_iconsys(char *title, const char *iconname, const char *filename)
 {
     // mcIcon is defined as part of libmc
     mcIcon icon_sys;

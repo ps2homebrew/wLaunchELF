@@ -483,7 +483,7 @@ static void loadPic(void)
 } /* end loadPic */
 
 //--------------------------------------------------------------
-void JpgViewer(char *file)
+void JpgViewer(const char *file)
 {
     char path[MAX_PATH],
         cursorEntry[MAX_PATH], ext[8],

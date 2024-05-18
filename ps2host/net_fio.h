@@ -12,21 +12,21 @@
 int pko_file_serv(void *arg);
 int pko_recv_bytes(int fd, char *buf, int bytes);
 int pko_accept_pkt(int fd, char *buf, int len, int pkt_type);
-int pko_open_file(char *path, int flags);
+int pko_open_file(const char *path, int flags);
 int pko_close_file(int fd);
 int pko_read_file(int fd, char *buf, int length);
-int pko_write_file(int fd, char *buf, int length);
+int pko_write_file(int fd, const char *buf, int length);
 int pko_lseek_file(int fd, unsigned int offset, int whence);
 void pko_close_socket(void);
 void pko_close_fsys(void);
-int pko_open_dir(char *path);
+int pko_open_dir(const char *path);
 int pko_read_dir(int fd, void *buf);
 int pko_close_dir(int fd);
 int pko_make_dir(char *path);
-int pko_ioctl(int fd, unsigned long request, void *data);
-int pko_remove(char *name);
-int pko_mkdir(char *name, int mode);
-int pko_rmdir(char *name);
+int pko_ioctl(int fd, unsigned long request, const void *data);
+int pko_remove(const char *name);
+int pko_mkdir(const char *name, int mode);
+int pko_rmdir(const char *name);
 /*
  * Don't want printfs to broadcast in case more than 1 ps2 on the same network, so at
  * connect time, the remote PC's IP is stored here and used as destination for printfs.

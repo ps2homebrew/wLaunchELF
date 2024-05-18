@@ -103,7 +103,7 @@ static int Windows_Selector(void);
 static void Init(void);
 static int New(int Win);
 static int OpenFile(int Win);
-static int Open(int Win, char *path);
+static int Open(int Win, const char *path);
 static void Close(int Win);
 static void Save(int Win);
 static void Save_As(int Win);
@@ -1047,7 +1047,7 @@ static int OpenFile(int Win)
     return Open(Win, Path[Win]);
 }
 
-static int Open(int Win, char *path)
+static int Open(int Win, const char *path)
 {
     int fd, i, ret = 0;
     char filePath[MAX_PATH];
@@ -1234,7 +1234,7 @@ result_delay:
         ;  // display operation result during 1.5 sec.
 }
 //--------------------------------------------------------------
-void TextEditor(char *path)
+void TextEditor(const char *path)
 {
     char tmp[MAX_PATH], tmp1[MAX_PATH], tmp2[MAX_PATH];
     int ch;
