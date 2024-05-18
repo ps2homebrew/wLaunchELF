@@ -221,7 +221,7 @@ int uLE_cdStop(void);
 int IsSupportedFileType(char *path);
 
 /* elf.c */
-int checkELFheader(char *filename);
+int checkELFheader(char *path);
 void RunLoaderElf(char *filename, char *);
 
 /* draw.c */

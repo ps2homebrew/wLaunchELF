@@ -251,7 +251,7 @@ int Vmc_Mkdir(iop_file_t *f, const char *path1, int mode);
 int Vmc_Rmdir(iop_file_t *f, const char *path1);
 int Vmc_Dopen(iop_file_t *f, const char *path);
 int Vmc_Dclose(iop_file_t *f);
-int Vmc_Dread(iop_file_t *f, iox_dirent_t *buf);
+int Vmc_Dread(iop_file_t *f, iox_dirent_t *buffer);
 int Vmc_Getstat(iop_file_t *f, const char *path, iox_stat_t *stat);
 int Vmc_Chstat(iop_file_t *f, const char *path, iox_stat_t *stat, unsigned int statmask);
 int Vmc_Rename(iop_file_t *f, const char *path, const char *new_name);
@@ -294,7 +294,7 @@ int readCluster(int fd, u8 *cluster, unsigned int clusternum);
 
 //  misc.c
 unsigned int getDirentryFromPath(struct direntry *retval, const char *path, struct gen_privdata *gendata, int unit);
-unsigned int addObject(struct gen_privdata *gendata, unsigned int parentcluster, struct direntry *parent, struct direntry *dirent, int unit);
+unsigned int addObject(struct gen_privdata *gendata, unsigned int parent_cluster, struct direntry *parent, struct direntry *dirent, int unit);
 void removeObject(const struct gen_privdata *gendata, unsigned int dirent_cluster, struct direntry *dirent, int unit);
 unsigned int getFreeCluster(const struct gen_privdata *gendata, int unit);
 int getPs2Time(vmc_datetime *tm);

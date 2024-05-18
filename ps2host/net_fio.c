@@ -83,7 +83,7 @@ pko_lwip_send(int sock, void *buf, int len, int flag)
 //----------------------------------------------------------------------
 // Do repetetive recv() calles until 'bytes' bytes are received
 // or error returned
-int pko_recv_bytes(int sock, char *buf, int bytes)
+int pko_recv_bytes(int fd, char *buf, int bytes)
 {
     int left;
 
@@ -92,7 +92,7 @@ int pko_recv_bytes(int sock, char *buf, int bytes)
     while (left > 0) {
         int len;
 
-        len = recv(sock, &buf[bytes - left], left, 0);
+        len = recv(fd, &buf[bytes - left], left, 0);
         if (len < 0) {
             dbgprintf("pko_file: pko_recv_bytes error!!\n");
             return -1;
@@ -105,7 +105,7 @@ int pko_recv_bytes(int sock, char *buf, int bytes)
 
 //----------------------------------------------------------------------
 // Receive a 'packet' of the expected type 'pkt_type', and lenght 'len'
-int pko_accept_pkt(int sock, char *buf, int len, int pkt_type)
+int pko_accept_pkt(int fd, char *buf, int len, int pkt_type)
 {
     int length;
     pko_pkt_hdr *hdr;
@@ -113,7 +113,7 @@ int pko_accept_pkt(int sock, char *buf, int len, int pkt_type)
     unsigned short hlen;
 
 
-    length = pko_recv_bytes(sock, buf, sizeof(pko_pkt_hdr));
+    length = pko_recv_bytes(fd, buf, sizeof(pko_pkt_hdr));
     if (length < 0) {
         dbgprintf("pko_file: accept_pkt recv error\n");
         return -1;
@@ -143,7 +143,7 @@ int pko_accept_pkt(int sock, char *buf, int len, int pkt_type)
     }
 
     // get the actual packet data
-    length = pko_recv_bytes(sock, buf + sizeof(pko_pkt_hdr),
+    length = pko_recv_bytes(fd, buf + sizeof(pko_pkt_hdr),
                             hlen - sizeof(pko_pkt_hdr));
 
     if (length < 0) {
@@ -689,7 +689,7 @@ int pko_close_dir(int fd)
 
 //----------------------------------------------------------------------
 // Thread that waits for a PC to connect/disconnect/reconnect blah..
-int pko_file_serv(void *argv)
+int pko_file_serv(void *arg)
 {
     struct sockaddr_in server_addr;
     struct sockaddr_in client_addr;
