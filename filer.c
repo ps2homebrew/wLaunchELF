@@ -4122,7 +4122,7 @@ int getFilePath(char *out, int cnfmode)
                         strcpy(tmp, "----- B");
                     else {
                         int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-                        char scale_s[6] = " KMGTP";
+                        const char scale_s[6] = " KMGTP";
 
                         while (size > 99999) {
                             scale++;

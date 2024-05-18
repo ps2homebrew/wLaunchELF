@@ -1436,7 +1436,7 @@ static void ShowFont(void)
     int test_type = 0;
     int test_types = 2;  // Patch test_types for number of test loops
     int i, j, event, post_event = 0;
-    char Hex[18] = "0123456789ABCDEF";
+    const char Hex[18] = "0123456789ABCDEF";
     int ch_x_stp = 1 + FONT_WIDTH + 1 + LINE_THICKNESS;
     int ch_y_stp = 2 + FONT_HEIGHT + 1 + LINE_THICKNESS;
     int mat_w = LINE_THICKNESS + 17 * ch_x_stp;
