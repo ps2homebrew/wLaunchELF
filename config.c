@@ -1999,7 +1999,7 @@ static void ipStringToOctet(const char *ip, int ip_octet[4])
     oct_str[0] = 0;
 
     for (i = 0; ((i <= strlen(ip)) && (oct_cnt < 4)); i++) {
-        if ((ip[i] == '.') | (i == strlen(ip))) {
+        if ((ip[i] == '.') || (i == strlen(ip))) {
             ip_octet[oct_cnt] = atoi(oct_str);
             oct_cnt++;
             oct_str[0] = 0;
