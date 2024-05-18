@@ -369,7 +369,7 @@ int loadSkinCNF(char *path)
         scanSkinCNF(name, value);
     free(RAM_p);
     updateScreenMode();
-    if (setting->skin)
+    if (setting->skin[0])
         loadSkin(BACKGROUND_PIC, 0, 0);
     return 0;
 }
