@@ -55,10 +55,10 @@ void FtpServer_Stop(struct FtpServer *pServer);
 
 void FtpServer_SetPort(FtpServer *pServer, int iPort);
 void FtpServer_SetAnonymous(FtpServer *pServer, int iAnonymous);
-void FtpServer_SetUsername(FtpServer *pServer, char *pUsername);
-void FtpServer_SetPassword(FtpServer *pServer, char *pPassword);
+void FtpServer_SetUsername(FtpServer *pServer, const char *pUsername);
+void FtpServer_SetPassword(FtpServer *pServer, const char *pPassword);
 
-int FtpServer_IsRunning(struct FtpServer *pServer);
+int FtpServer_IsRunning(const struct FtpServer *pServer);
 int FtpServer_HandleEvents(struct FtpServer *pServer);
 FtpClient *FtpServer_OnClientConnect(struct FtpServer *pServer, int iSocket);
 void FtpServer_OnClientDisconnect(const struct FtpServer *pServer, FtpClient *pClient);

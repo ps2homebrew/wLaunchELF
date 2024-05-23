@@ -483,7 +483,7 @@ static void loadPic(void)
 } /* end loadPic */
 
 //--------------------------------------------------------------
-void JpgViewer(char *file)
+void JpgViewer(const char *file)
 {
     char path[MAX_PATH],
         cursorEntry[MAX_PATH], ext[8],
@@ -897,7 +897,7 @@ void JpgViewer(char *file)
                 if (--SlideShowTime <= 1)
                     SlideShowTime = 1;
             } else if (new_pad & PAD_R2) {
-                char *temp = PathPad_menu(path);
+                const char *temp = PathPad_menu(path);
 
                 if (temp != NULL) {
                     strcpy(path, temp);

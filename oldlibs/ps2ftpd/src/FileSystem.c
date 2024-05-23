@@ -69,8 +69,6 @@ void FileSystem_Destroy(FSContext *pContext)
 int FileSystem_OpenFile(FSContext *pContext, const char *pFile, FileMode eMode, int iContinue)
 {
     int flags;
-    int fileMode = 0;
-    int iOpened = 0;
 
     FileSystem_Close(pContext);
     FileSystem_BuildPath(buffer, pContext->m_Path, pFile);
@@ -98,7 +96,11 @@ int FileSystem_OpenFile(FSContext *pContext, const char *pFile, FileMode eMode, 
 
     switch (pContext->m_eType) {
         case FS_IODEVICE: {
+            int fileMode = 0;
+
             if (iContinue) {
+                int iOpened = 0;
+
                 if (flags & O_WRONLY) {
                     pContext->m_kFile.mode = O_WRONLY;
                     if (pContext->m_kFile.device->ops->open(&(pContext->m_kFile), pFile, pContext->m_kFile.mode, 0) >= 0)
@@ -247,8 +249,8 @@ int FileSystem_WriteFile(FSContext *pContext, const char *pBuffer, int iSize)
 int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
 {
 #ifdef LINUX
-    struct dirent *ent;
-    struct tm *t;
+    const struct dirent *ent;
+    const struct tm *t;
     struct stat s;
 
     memset(pInfo, 0, sizeof(FSFileInfo));
@@ -494,7 +496,7 @@ int FileSystem_ReadDir(FSContext *pContext, FSFileInfo *pInfo)
             } else {
                 // evaluating devices
 
-                ModuleInfo_t *pkModule;
+                const ModuleInfo_t *pkModule;
                 iop_device_t **ppkDevices;
                 int num_devices;
                 int dev_offset;
@@ -725,7 +727,7 @@ int FileSystem_ChangeDir(FSContext *pContext, const char *pPath)
         if ((pContext->m_Path[strlen(pContext->m_Path) - 1] != '/'))
             strcat(pContext->m_Path, "/");
     } else {
-        char *entry = strtok(buffer, "/");
+        const char *entry = strtok(buffer, "/");
 
         while (entry && strlen(entry) > 0) {
             if (!strcmp(entry, "..")) {
@@ -915,7 +917,7 @@ ModuleInfo_t *FileSystem_GetModule(const char *pDevice)
 
 iop_device_t *FileSystem_ScanDevice(const char *pDevice, int iNumDevices, const char *pPath)
 {
-    ModuleInfo_t *pkModule;
+    const ModuleInfo_t *pkModule;
     iop_device_t **ppkDevices;
     int i;
     int offset;

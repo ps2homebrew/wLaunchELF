@@ -496,7 +496,7 @@ int ynDialog(const char *message)
 //------------------------------
 // endfunc ynDialog
 //--------------------------------------------------------------
-void nonDialog(char *message)
+void nonDialog(const char *message)
 {
     char msg[80 * 30];          // More than this can't be shown on screen, even in PAL
     static int dh, dw, dx, dy;  // These are static, to allow cleanup
@@ -628,7 +628,7 @@ int cmpFile(FILEINFO *a, FILEINFO *b)  // Used for directory sort
 //--------------------------------------------------------------
 void sort(FILEINFO *a, int left, int right)
 {
-    FILEINFO tmp, pivot;
+    FILEINFO pivot;
 
     if (left < right) {
         int i, p;
@@ -637,6 +637,8 @@ void sort(FILEINFO *a, int left, int right)
         p = left;
         for (i = left + 1; i <= right; i++) {
             if (cmpFile(&a[i], &pivot) < 0) {
+                FILEINFO tmp;
+
                 p = p + 1;
                 tmp = a[p];
                 a[p] = a[i];
@@ -867,7 +869,7 @@ limited:
 int genFixPath(const char *inp_path, char *gen_path)
 {
     char uLE_path[MAX_PATH], loc_path[MAX_PATH], party[MAX_NAME], *p;
-    char *pathSep;
+    const char *pathSep;
     int part_ix;
 
     part_ix = 99;  // Assume valid non-HDD path
@@ -1300,7 +1302,7 @@ exit:
 //------------------------------
 // endfunc readMASS
 //--------------------------------------------------------------
-char *makeHostPath(char *dp, char *sp)
+char *makeHostPath(char *dp, const char *sp)
 {
     int i;
 
@@ -1487,7 +1489,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
     char party[MAX_NAME], dir[MAX_PATH], tmpdir[MAX_PATH];
     int fd = -1, size, ret;
     psu_header PSU_head;
-    int i, tst, PSU_content, psu_pad_pos;
+    int i, tst, PSU_content_local, psu_pad_pos;
 
     out[0] = '\0';  // Start by making an empty result string, for failures
 
@@ -1525,8 +1527,8 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
         tst = genRead(fd, (void *)&PSU_head, sizeof(PSU_head));
         if (tst != sizeof(PSU_head))
             goto finish;  // Abort if read fails
-        PSU_content = PSU_head.size;
-        for (i = 0; i < PSU_content; i++) {
+        PSU_content_local = PSU_head.size;
+        for (i = 0; i < PSU_content_local; i++) {
             tst = genRead(fd, (void *)&PSU_head, sizeof(PSU_head));
             if (tst != sizeof(PSU_head))
                 goto finish;  // Abort if read fails
@@ -1585,7 +1587,7 @@ finish:
     return ret;
 }
 //--------------------------------------------------------------
-int menu(const char *path, FILEINFO *file)
+int menu(const char *path, const FILEINFO *file)
 {
     u64 color;
     char enable[NUM_MENU], tmp[80];
@@ -2186,7 +2188,7 @@ int newdir(const char *path, const char *name)
 // be either a single file or a folder. In the latter case the
 // folder contents should also be copied, recursively.
 //--------------------------------------------------------------
-int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
+int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
 {
     FILEINFO newfile, files[MAX_ENTRY];
     iox_stat_t iox_stat;
@@ -2204,9 +2206,12 @@ int copy(char *outPath, const char *inPath, FILEINFO file, int recurses)
     u64 OldTime = 0LL;
     psu_header PSU_head;
     mcT_header *mcT_head_p = (mcT_header *)&file.stats;
-    mcT_header *mcT_files_p = (mcT_header *)&files[0].stats;
+    mcT_header *mcT_files_p;
     int psu_pad_size = 0, PSU_restart_f = 0;
     char *cp, *np;
+
+    memset(&files, 0, sizeof(files));
+    mcT_files_p = (mcT_header *)&files[0].stats;
 
     PM_flag[recurses + 1] = PM_NORMAL;  // assume normal mode for next level
     PM_file[recurses + 1] = -1;         // assume that no special file is needed
@@ -2857,16 +2862,17 @@ int keyboard(char *out, int max)
         KEY_H = LINE_THICKNESS + 1 + FONT_HEIGHT + 1 + LINE_THICKNESS + 8 + (8 * FONT_HEIGHT) + 8 + LINE_THICKNESS,
         KEY_X = ((SCREEN_WIDTH - KEY_W) / 2) & -2,
         KEY_Y = ((SCREEN_HEIGHT - KEY_H) / 2) & -2;
-    char *KEY = "ABCDEFGHIJKLM"
-                "NOPQRSTUVWXYZ"
-                "abcdefghijklm"
-                "nopqrstuvwxyz"
-                "0123456789/|\\"
-                "<>(){}[].,:;\""
-                "!@#$%&=+-^*_'";
+    const char *KEY = "ABCDEFGHIJKLM"
+                      "NOPQRSTUVWXYZ"
+                      "abcdefghijklm"
+                      "nopqrstuvwxyz"
+                      "0123456789/|\\"
+                      "<>(){}[].,:;\""
+                      "!@#$%&=+-^*_'";
     int KEY_LEN;
     int cur = 0, sel = 0, i, x, y, t = 0;
-    char tmp[256], *p;
+    char tmp[256];
+    const char *p;
     char KeyPress;
 
     p = strrchr(out, '.');
@@ -3255,7 +3261,7 @@ int keyboard2(char *out, int max)
 //--------------------------------------------------------------
 int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
 {
-    int nfiles, i, j, ret;
+    int nfiles, i;
 
     size_valid = 0;
     time_valid = 0;
@@ -3366,6 +3372,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         files[0].stats.AttrFile = sceMcFileAttrSubdir;
         nfiles = getDir(path, &files[1]) + 1;
         if (strcmp(ext, "*")) {
+            int j;
+
             for (i = j = 1; i < nfiles; i++) {
                 if (files[i].stats.AttrFile & sceMcFileAttrSubdir)
                     files[j++] = files[i];
@@ -3378,6 +3386,8 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         }
         if ((file_show == 2) || (file_sort == 2)) {
             for (i = 1; i < nfiles; i++) {
+                int ret;
+
                 ret = getGameTitle(path, &files[i], files[i].title);
                 if (ret < 0)
                     files[i].title[0] = 0;
@@ -3593,10 +3603,10 @@ int BrowserModePopup(void)
 // dlanor: ADD return value 0=pure path, 1=pathname, negative=error/no_selection
 static int browser_cd, browser_up, browser_repos, browser_pushed;
 static int browser_sel, browser_nfiles;
-static void submenu_func_GetSize(char *mess, char *path, FILEINFO *files);
-static void submenu_func_Paste(char *mess, char *path);
-static void submenu_func_mcPaste(char *mess, char *path);
-static void submenu_func_psuPaste(char *mess, char *path);
+static void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files);
+static void submenu_func_Paste(char *mess, const char *path);
+static void submenu_func_mcPaste(char *mess, const char *path);
+static void submenu_func_psuPaste(char *mess, const char *path);
 int getFilePath(char *out, int cnfmode)
 {
     char path[MAX_PATH + 1], cursorEntry[MAX_PATH],
@@ -3711,7 +3721,7 @@ int getFilePath(char *out, int cnfmode)
                     }
                 }
             } else if (new_pad & PAD_R2) {
-                char *temp = PathPad_menu(path);
+                const char *temp = PathPad_menu(path);
 
                 if (temp != NULL) {
                     strcpy(path, temp);
@@ -4122,7 +4132,7 @@ int getFilePath(char *out, int cnfmode)
                         strcpy(tmp, "----- B");
                     else {
                         int scale = 0;  // 0==Bytes, 1==KBytes, 2==MBytes, 3==GB
-                        char scale_s[6] = " KMGTP";
+                        const char scale_s[6] = " KMGTP";
 
                         while (size > 99999) {
                             scale++;
@@ -4270,7 +4280,7 @@ int getFilePath(char *out, int cnfmode)
 //------------------------------
 // endfunc getFilePath
 //--------------------------------------------------------------
-void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
+void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files)
 {
     u64 size;
     int ret, text_pos, text_inc, sel = -1;
@@ -4303,6 +4313,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
         text_pos = strlen(mess);
     } else {
         text_pos = 0;
+        text_inc = 0;
         if (size >= 1024 * 1024)
             sprintf(mess, "%s = %.1fMB%n", LNG(SIZE), (double)size / 1024 / 1024, &text_inc);
         else if (size >= 1024)
@@ -4374,7 +4385,7 @@ void submenu_func_GetSize(char *mess, char *path, FILEINFO *files)
 //------------------------------
 // endfunc submenu_func_GetSize
 //--------------------------------------------------------------
-void subfunc_Paste(char *mess, char *path)
+void subfunc_Paste(char *mess, const char *path)
 {
     char tmp[MAX_PATH], tmp1[MAX_PATH];
     int i, ret = -1;
@@ -4417,7 +4428,7 @@ finished:
 //------------------------------
 // endfunc subfunc_Paste
 //--------------------------------------------------------------
-void submenu_func_Paste(char *mess, char *path)
+void submenu_func_Paste(char *mess, const char *path)
 {
     if (new_pad & PAD_SQUARE)
         PasteMode = PM_RENAME;
@@ -4428,7 +4439,7 @@ void submenu_func_Paste(char *mess, char *path)
 //------------------------------
 // endfunc submenu_func_Paste
 //--------------------------------------------------------------
-void submenu_func_mcPaste(char *mess, char *path)
+void submenu_func_mcPaste(char *mess, const char *path)
 {
     if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
         PasteMode = PM_MC_RESTORE;
@@ -4440,7 +4451,7 @@ void submenu_func_mcPaste(char *mess, char *path)
 //------------------------------
 // endfunc submenu_func_mcPaste
 //--------------------------------------------------------------
-void submenu_func_psuPaste(char *mess, char *path)
+void submenu_func_psuPaste(char *mess, const char *path)
 {
     if (!strncmp(path, "mc", 2) || !strncmp(path, "vmc", 3)) {
         PasteMode = PM_PSU_RESTORE;

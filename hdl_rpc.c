@@ -50,7 +50,7 @@ int Hdl_Info_BindRpc()
     return retryCount;
 }
 
-int HdlGetGameInfo(char *PartName, GameInfo *Game)
+int HdlGetGameInfo(const char *PartName, GameInfo *Game)
 {
 
     Rpc_Packet_Send_GetInfo *Packet = (Rpc_Packet_Send_GetInfo *)Rpc_Buffer;
@@ -67,7 +67,7 @@ int HdlGetGameInfo(char *PartName, GameInfo *Game)
     return Rpc_Buffer[0];
 }
 
-int HdlRenameGame(char *OldName, char *NewName)
+int HdlRenameGame(const char *OldName, const char *NewName)
 {
 
     Rpc_Packet_Send_Rename *Packet = (Rpc_Packet_Send_Rename *)Rpc_Buffer;

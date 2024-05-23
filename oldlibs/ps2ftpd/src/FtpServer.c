@@ -141,19 +141,19 @@ void FtpServer_SetAnonymous(FtpServer *pServer, int iAnonymous)
     pServer->m_iAnonymous = iAnonymous;
 }
 
-void FtpServer_SetUsername(FtpServer *pServer, char *pUsername)
+void FtpServer_SetUsername(FtpServer *pServer, const char *pUsername)
 {
     strncpy(pServer->m_Username, pUsername, sizeof(pServer->m_Username));
     pServer->m_Username[sizeof(pServer->m_Username) - 1] = '\0';
 }
 
-void FtpServer_SetPassword(FtpServer *pServer, char *pPassword)
+void FtpServer_SetPassword(FtpServer *pServer, const char *pPassword)
 {
     strncpy(pServer->m_Password, pPassword, sizeof(pServer->m_Password));
     pServer->m_Password[sizeof(pServer->m_Password) - 1] = '\0';
 }
 
-int FtpServer_IsRunning(FtpServer *pServer)
+int FtpServer_IsRunning(const FtpServer *pServer)
 {
     return (-1 != pServer->m_iSocket);
 }
@@ -231,7 +231,7 @@ int FtpServer_HandleEvents(FtpServer *pServer)
                           sizeof(pClient->m_CommandBuffer) - pClient->m_iCommandOffset, 0);
 
             if (rv > 0) {
-                char *rofs;
+                const char *rofs;
                 char *nofs;
 
                 pClient->m_CommandBuffer[pClient->m_iCommandOffset + rv] = '\0';

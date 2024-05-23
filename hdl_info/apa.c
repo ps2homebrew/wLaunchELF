@@ -136,13 +136,6 @@ int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
     u_long size_in_kb;
     int result = hio->stat(hio, &size_in_kb);
     if (result == 0) {
-        u_long total_sectors;
-        // limit HDD size to 128GB - 1KB; that is: exclude the last 128MB chunk
-        // if (size_in_kb > 128 * 1024 * 1024 - 1)
-        // size_in_kb = 128 * 1024 * 1024 - 1;
-
-        total_sectors = size_in_kb * 2; /* 1KB = 2 sectors of 512 bytes, each */
-
         *table = apa_ptable_alloc();
         if (*table != NULL) {
             u_long sector = 0;
@@ -154,6 +147,13 @@ int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table)
                     if (bytes == sizeof(part) &&
                         get_u32(&part.checksum) == apa_partition_checksum(&part) &&
                         memcmp(part.magic, PS2_PARTITION_MAGIC, 4) == 0) {
+                        u_long total_sectors;
+                        // limit HDD size to 128GB - 1KB; that is: exclude the last 128MB chunk
+                        // if (size_in_kb > 128 * 1024 * 1024 - 1)
+                        // size_in_kb = 128 * 1024 * 1024 - 1;
+
+                        total_sectors = size_in_kb * 2; /* 1KB = 2 sectors of 512 bytes, each */
+
                         if (get_u32(&part.start) < total_sectors &&
                             get_u32(&part.start) + get_u32(&part.length) < total_sectors) {
                             if ((get_u16(&part.flags) == 0x0000) && (get_u16(&part.type) == 0x1337))

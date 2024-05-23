@@ -257,11 +257,11 @@ static int ShrinkData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wN
 static int EnlargeData(u8 *pInBuff, u16 wWidth, u16 wHeight, u8 *pOutBuff, u16 wNewWidth, u16 wNewHeight)
 {
 
-    u8 *pLine = pInBuff,
-       *pPix = pLine,
-       *pPixOld,
-       *pUpPix,
-       *pUpPixOld;
+    u8 *pLine = pInBuff;
+    u8 *pPix = pLine;
+    const u8 *pPixOld;
+    u8 *pUpPix;
+    const u8 *pUpPixOld;
     u8 *pOutLine = pOutBuff;
     u32 dwInLn = (3 * wWidth + 3) & ~3;
     u32 dwOutLn = (3 * wNewWidth + 3) & ~3;
@@ -659,7 +659,7 @@ void updateScreenMode(void)
     gsKit_set_display_offset(gsGlobal, setting->screen_x, setting->screen_y);
 }
 //--------------------------------------------------------------
-void loadSkin(int Picture, char *Path, int ThumbNum)
+void loadSkin(int Picture, const char *Path, int ThumbNum)
 {
     char tmpPath[MAX_PATH], skinpath[MAX_PATH];
 
@@ -848,7 +848,7 @@ void loadIcon(void)
     free(TexIcon[1].Mem);
 }
 //--------------------------------------------------------------
-int loadFont(char *path_arg)
+int loadFont(const char *path_arg)
 {
     int fd;
 
@@ -961,7 +961,7 @@ void drawFrame(int x1, int y1, int x2, int y2, u64 color)
 void drawChar(unsigned int c, int x, int y, u64 colour)
 {
     int i, j, pixMask;
-    u8 *cm;
+    const u8 *cm;
 
     updateScr_1 = 1;
 

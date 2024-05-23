@@ -88,7 +88,7 @@ int writePage(int fd, u8 *page, unsigned int pagenum)
     return 0;
 }
 
-int writeCluster(int fd, u8 *cluster, unsigned int clusternum)
+int writeCluster(int fd, const u8 *cluster, unsigned int clusternum)
 {
 
     int i, unit;
@@ -114,7 +114,7 @@ int writeCluster(int fd, u8 *cluster, unsigned int clusternum)
     return 0;
 }
 
-int writeClusterPart(int fd, u8 *cluster, unsigned int clusternum, int cluster_offset, int size)
+int writeClusterPart(int fd, const u8 *cluster, unsigned int clusternum, int cluster_offset, int size)
 {
 
     int i, unit;

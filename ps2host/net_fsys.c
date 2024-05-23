@@ -171,7 +171,7 @@ static int fsysClose(int fd)
 //----------------------------------------------------------------------------
 static int fsysRead(int fd, char *buf, int size)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     fd_info = (struct filedesc_info *)fd;
@@ -194,7 +194,7 @@ static int fsysRead(int fd, char *buf, int size)
 //----------------------------------------------------------------------------
 static int fsysWrite(int fd, char *buf, int size)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     dbgprintf("fsysWrite..."
@@ -212,7 +212,7 @@ static int fsysWrite(int fd, char *buf, int size)
 //----------------------------------------------------------------------------
 static int fsysLseek(int fd, unsigned int offset, int whence)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     dbgprintf("fsysLseek..\n"
@@ -232,7 +232,6 @@ static int fsysLseek(int fd, unsigned int offset, int whence)
 //----------------------------------------------------------------------------
 static int fsysIoctl(iop_file_t *file, unsigned long request, void *data)
 {
-    int remote_fd = ((struct filedesc_info *)file)->own_fd;
     int ret;
     dbgprintf("fsysioctl..\n");
     // dbgprintf("  fd: %x\n"
@@ -242,6 +241,8 @@ static int fsysIoctl(iop_file_t *file, unsigned long request, void *data)
     remove_flag = 0;
 
     if (request == IOCTL_RENAME) {
+        int remote_fd = ((struct filedesc_info *)file)->own_fd;
+
         if (lastopen_fd == remote_fd) {
             WaitSema(fsys_sema);
             ret = pko_ioctl(remote_fd, request, data);
@@ -354,7 +355,7 @@ static int fsysDclose(int fd)
 //----------------------------------------------------------------------------
 static int fsysDread(int fd, void *buf)
 {
-    struct filedesc_info *fd_info;
+    const struct filedesc_info *fd_info;
     int ret;
 
     fd_info = (struct filedesc_info *)fd;

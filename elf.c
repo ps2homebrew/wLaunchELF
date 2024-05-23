@@ -55,7 +55,7 @@ int checkELFheader(char *path)
 {
     elf_header_t elf_head;
     u8 *boot_elf = (u8 *)&elf_head;
-    elf_header_t *eh = (elf_header_t *)boot_elf;
+    const elf_header_t *eh = (const elf_header_t *)boot_elf;
     int fd, size = 0, ret;
     char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
@@ -85,7 +85,7 @@ int checkELFheader(char *path)
             goto error;
         fullpath[7] += ret;
     } else if (!strncmp(fullpath, "mass", 4)) {
-        char *pathSep;
+        const char *pathSep;
 
         pathSep = strchr(path, '/');
         if (pathSep && (pathSep - path < 7) && pathSep[-1] == ':')
@@ -127,11 +127,11 @@ void RunLoaderElf(char *filename, char *party)
     u8 *boot_elf;
     elf_header_t *eh;
     elf_pheader_t *eph;
-    void *pdata;
+    const void *pdata;
     int i;
     char *argv[2], bootpath[256];
 
-    if ((!strncmp(party, "hdd0:", 5)) && (!strncmp(filename, "pfs0:", 5))) {
+    if ((!strncmp(party, "hdd0:", 5))) {
         if (0 > fileXioMount("pfs0:", party, FIO_MT_RDONLY)) {
             // Some error occurred, it could be due to something else having used pfs0
             unmountParty(0);  // So we try unmounting pfs0, to try again
@@ -149,7 +149,7 @@ void RunLoaderElf(char *filename, char *party)
 
         argv[0] = filename;
         argv[1] = bootpath;
-    } else if ((!strncmp(party, "dvr_hdd0:", 9)) && (!strncmp(filename, "dvr_pfs0:", 9))) {
+    } else if ((!strncmp(party, "dvr_hdd0:", 9))) {
         if (0 > fileXioMount("dvr_pfs0:", party, FIO_MT_RDONLY)) {
             // Some error occurred, it could be due to something else having used pfs0
             unmountDVRPParty(0);  // So we try unmounting pfs0, to try again

@@ -73,6 +73,7 @@ size_t storeSMBCNF(char *cnf_buf)
     int i;
 
     for (CNF_size = 0, i = 0; i < smbServerListCount; i++) {  // loop for each SMB server in the list
+        size_step = 0;
         sprintf(cnf_buf + CNF_size,
                 "smbIndex = %d\r\n"
                 "smbServer_IP = %s\r\n"
@@ -104,7 +105,7 @@ size_t storeSMBCNF(char *cnf_buf)
 //---------------------------------------------------------------------------
 // saveSMBCNF will save SMB specific settings to an SMB CNF file
 //------------------------------
-int saveSMBCNF(char *CNFpath)
+int saveSMBCNF(const char *CNFpath)
 {
     int ret, fd;
     char tmp[SERVERLIST_MAX * 1500];  // Must have room for entire SMB CNF file
@@ -129,7 +130,7 @@ int saveSMBCNF(char *CNFpath)
 //---------------------------------------------------------------------------
 // scanSMBCNF will check for SMB specific variables of an SMB CNF in RAM
 //------------------------------
-int scanSMBCNF(unsigned char *name, unsigned char *value)
+int scanSMBCNF(const unsigned char *name, const unsigned char *value)
 {
     if (!strcmp(name, "smbIndex")) {
         int test;
@@ -169,7 +170,7 @@ int scanSMBCNF(unsigned char *name, unsigned char *value)
 //---------------------------------------------------------------------------
 // loadSMBCNF will load SMB specific settings from an SMB CNF file
 //------------------------------
-int loadSMBCNF(char *path)
+int loadSMBCNF(const char *path)
 {
     int var_cnt;
     unsigned char *RAM_p, *CNF_p, *name, *value;

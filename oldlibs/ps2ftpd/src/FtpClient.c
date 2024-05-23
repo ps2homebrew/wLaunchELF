@@ -166,7 +166,7 @@ void FtpClient_OnConnect(FtpClient *pClient)
 
 void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 {
-    char *c;
+    const char *c;
 
     assert(pClient);
 
@@ -187,7 +187,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
             switch (result) {
                 // USER <name>
                 case FTPCMD_USER: {
-                    char *user = strtok(NULL, "");
+                    const char *user = strtok(NULL, "");
 
                     if (user)
                         FtpClient_OnCmdUser(pClient, user);
@@ -197,7 +197,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 
                 // PASS <password>
                 case FTPCMD_PASS: {
-                    char *pass = strtok(NULL, "");
+                    const char *pass = strtok(NULL, "");
 
                     if (pass)
                         FtpClient_OnCmdPass(pClient, pass);
@@ -235,7 +235,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
                 int port = 0;
 
                 for (i = 0; i < 6; i++) {
-                    char *val = strtok(NULL, ",");
+                    const char *val = strtok(NULL, ",");
 
                     if (!val)
                         break;
@@ -267,7 +267,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 
             // LIST
             case FTPCMD_LIST: {
-                char *path = strtok(NULL, "");
+                const char *path = strtok(NULL, "");
 
                 if (path)
                     FtpClient_OnCmdList(pClient, path, 0);
@@ -277,7 +277,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
 
             // NLST
             case FTPCMD_NLST: {
-                char *path = strtok(NULL, "");
+                const char *path = strtok(NULL, "");
 
                 if (path)
                     FtpClient_OnCmdList(pClient, path, 1);
@@ -304,7 +304,7 @@ void FtpClient_OnCommand(FtpClient *pClient, const char *pString)
             case FTPCMD_MODE:
             case FTPCMD_STRU:
             case FTPCMD_SIZE: {
-                char *arg = strtok(NULL, "");
+                const char *arg = strtok(NULL, "");
 
                 if (arg) {
                     switch (result) {

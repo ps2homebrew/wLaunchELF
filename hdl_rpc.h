@@ -19,8 +19,8 @@ extern "C" {
 #endif /* __cplusplus */
 
 int Hdl_Info_BindRpc(void);
-int HdlGetGameInfo(char *PartName, GameInfo *Game);
-int HdlRenameGame(char *OldName, char *NewName);
+int HdlGetGameInfo(const char *PartName, GameInfo *Game);
+int HdlRenameGame(const char *OldName, const char *NewName);
 
 #ifdef __cplusplus
 }

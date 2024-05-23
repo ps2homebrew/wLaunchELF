@@ -25,6 +25,6 @@ typedef struct hdl_games_list_type
 
 void hdl_glist_free(hdl_games_list_t *glist);
 int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist);
-int hdl_glist_write(hio_t *hio, hdl_game_info_t *ginfo);
+int hdl_glist_write(hio_t *hio, const hdl_game_info_t *ginfo);
 
 #endif /* _CDVDHDL_H_ */

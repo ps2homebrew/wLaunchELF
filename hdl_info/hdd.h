@@ -76,7 +76,7 @@ typedef struct
     int Is_Dvd;
 } GameInfo;
 
-int HdlGetGameInfo(char *PartName, GameInfo *GameInf);
+int HdlGetGameInfo(const char *PartName, GameInfo *GameInf);
 int HdlRenameGame(void *Data);
 
 #endif

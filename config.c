@@ -135,7 +135,7 @@ int CheckMC(void)
     return -11;
 }
 //---------------------------------------------------------------------------
-unsigned long hextoul(char *string)
+unsigned long hextoul(const char *string)
 {
     unsigned long value;
     char c;
@@ -152,6 +152,7 @@ static size_t storeSkinCNF(char *cnf_buf)
 {
     size_t CNF_size;
 
+    CNF_size = 0;
     sprintf(cnf_buf,
             "GUI_Col_1_ABGR = %08X\r\n"
             "GUI_Col_2_ABGR = %08X\r\n"
@@ -197,7 +198,7 @@ static size_t storeSkinCNF(char *cnf_buf)
 //---------------------------------------------------------------------------
 // saveSkinCNF will save most cosmetic settings to a skin CNF file
 //------------------------------
-static int saveSkinCNF(char *CNF)
+static int saveSkinCNF(const char *CNF)
 {
     int ret, fd;
     char tmp[26 * MAX_PATH + 30 * MAX_PATH];
@@ -277,7 +278,7 @@ test:
 //---------------------------------------------------------------------------
 // preloadCNF loads an entire CNF file into RAM it allocates
 //------------------------------
-char *preloadCNF(char *path)
+char *preloadCNF(const char *path)
 {
     int fd, tst;
     s64 CNF_size;
@@ -309,7 +310,7 @@ char *preloadCNF(char *path)
 //---------------------------------------------------------------------------
 // scanSkinCNF will check for most cosmetic variables of a CNF
 //------------------------------
-int scanSkinCNF(char *name, char *value)
+int scanSkinCNF(const char *name, const char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
         setting->color[COLOR_BACKGR] = hextoul(value);
@@ -357,7 +358,7 @@ int scanSkinCNF(char *name, char *value)
 //---------------------------------------------------------------------------
 // loadSkinCNF will load most cosmetic settings from CNF file
 //------------------------------
-int loadSkinCNF(char *path)
+int loadSkinCNF(const char *path)
 {
     int var_cnt;
     char *RAM_p, *CNF_p, *name, *value;
@@ -369,7 +370,7 @@ int loadSkinCNF(char *path)
         scanSkinCNF(name, value);
     free(RAM_p);
     updateScreenMode();
-    if (setting->skin)
+    if (setting->skin[0])
         loadSkin(BACKGROUND_PIC, 0, 0);
     return 0;
 }
@@ -401,17 +402,19 @@ void loadSkinBrowser(void)
 // polo: ADD save SKIN_FILE string
 // suloku: ADD save MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 //---------------------------------------------------------------------------
-void saveConfig(char *mainMsg, char *CNF)
+void saveConfig(char *mainMsg, const char *CNF)
 {
     int i, ret, fd;
     char c[MAX_PATH], tmp[26 * MAX_PATH + 30 * MAX_PATH];
     char cnf_path[MAX_PATH];
     size_t CNF_size, CNF_step;
 
+    CNF_size = 0;
     sprintf(tmp, "CNF_version = 3\r\n%n", &CNF_size);  // Start CNF with version header
 
     for (i = 0; i < SETTING_LK_COUNT; i++) {  // Loop to save the ELF paths for launch keys
         if ((i <= SETTING_LK_SELECT) || (setting->LK_Flag[i] != 0)) {
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "LK_%s_E1 = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -424,6 +427,7 @@ void saveConfig(char *mainMsg, char *CNF)
     }  // ends for
 
     i = strlen(setting->Misc);
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "Misc = %s\r\n"
             "Misc_PS2Disc = %s\r\n"
@@ -468,6 +472,7 @@ void saveConfig(char *mainMsg, char *CNF)
 
     CNF_size += storeSkinCNF(tmp + CNF_size);
 
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "LK_auto_Timer = %d\r\n"
             "Menu_Hide_Paths = %d\r\n"
@@ -524,6 +529,7 @@ void saveConfig(char *mainMsg, char *CNF)
 
     for (i = 0; i < SETTING_LK_BTN_COUNT; i++) {  // Loop to save user defined launch key titles
         if (setting->LK_Title[i][0]) {            // Only save non-empty strings
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "LK_%s_Title = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -535,6 +541,7 @@ void saveConfig(char *mainMsg, char *CNF)
         }  // ends if
     }      // ends for
 
+    CNF_step = 0;
     sprintf(tmp + CNF_size,
             "PathPad_Lock = %d\r\n"
             "%n",                   // %n causes NO output, but only a measurement
@@ -545,6 +552,7 @@ void saveConfig(char *mainMsg, char *CNF)
 
     for (i = 0; i < MAX_PATH_PAD; i++) {  // Loop to save non-empty PathPad entries
         if (PathPad[i][0]) {              // Only save non-empty strings
+            CNF_step = 0;
             sprintf(tmp + CNF_size,
                     "PathPad[%02d] = %s\r\n"
                     "%n",  // %n causes NO output, but only a measurement
@@ -694,7 +702,7 @@ void initConfig(void)
 // suloku: ADD load MAIN_SKIN string //dlanor: changed to GUI_SKIN_FILE
 // dlanor: added error flag return value 0==OK, -1==failure
 //---------------------------------------------------------------------------
-int loadConfig(char *mainMsg, char *CNF)
+int loadConfig(char *mainMsg, const char *CNF)
 {
     int i, fd, tst, len, mcport, var_cnt, CNF_version;
     char tsts[256];
@@ -1976,7 +1984,7 @@ static void saveNetworkSettings(char *Message)
 //---------------------------------------------------------------------------
 // Convert IP string to numbers
 //---------------------------------------------------------------------------
-static void ipStringToOctet(char *ip, int ip_octet[4])
+static void ipStringToOctet(const char *ip, int ip_octet[4])
 {
 
     // This takes a string (ip) representing an IP address and converts it
@@ -1991,7 +1999,7 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
     oct_str[0] = 0;
 
     for (i = 0; ((i <= strlen(ip)) && (oct_cnt < 4)); i++) {
-        if ((ip[i] == '.') | (i == strlen(ip))) {
+        if ((ip[i] == '.') || (i == strlen(ip))) {
             ip_octet[oct_cnt] = atoi(oct_str);
             oct_cnt++;
             oct_str[0] = 0;
@@ -2002,7 +2010,7 @@ static void ipStringToOctet(char *ip, int ip_octet[4])
     }
 }
 //---------------------------------------------------------------------------
-static data_ip_struct BuildOctets(char *ip, char *nm, char *gw)
+static data_ip_struct BuildOctets(const char *ip, const char *nm, const char *gw)
 {
 
     // Populate 3 arrays with the ip address (as ints)
@@ -2266,11 +2274,11 @@ enum CONFIG_MAIN {
     CONFIG_MAIN_COUNT
 };
 
-void config(char *mainMsg, char *CNF)
+void config(char *mainMsg, const char *CNF)
 {
     char c[MAX_PATH];
     char title_tmp[MAX_ELF_TITLE];
-    char *localMsg;
+    const char *localMsg;
     int i;
     int s;
     int x, y;

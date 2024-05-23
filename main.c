@@ -206,8 +206,8 @@ DiscType DiscTypes[] = {
 };              // ends DiscTypes array
 
 // Static function declarations
-static int PrintRow(int row_f, char *text_p);
-static int PrintPos(int row_f, int column, char *text_p);
+static int PrintRow(int row_f, const char *text_p);
+static int PrintPos(int row_f, int column, const char *text_p);
 static void Show_About_uLE(void);
 static void getIpConfig(void);
 static void setLaunchKeys(void);
@@ -226,8 +226,8 @@ static void load_ps2ftpd(void);
 static void load_ps2netfs(void);
 static void loadBasicModules(void);
 static void loadCdModules(void);
-static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP);
-static int loadExternalModule(char *modPath, void *defBase, int defSize);
+static int loadExternalFile(const char *argPath, void **fileBaseP, int *fileSizeP);
+static int loadExternalModule(const char *modPath, void *defBase, int defSize);
 static void loadUsbDModule(void);
 static void loadUsbModules(void);
 static void loadKbdModules(void);
@@ -236,7 +236,7 @@ static void poweroffHandler(int i);
 static void setupPowerOff(void);
 static void loadNetModules(void);
 static void startKbd(void);
-static int scanSystemCnf(char *name, char *value);
+static int scanSystemCnf(const char *name, const char *value);
 static int readSystemCnf(void);
 static void ShowFont(void);
 static void Validate_CNF_Path(void);
@@ -246,7 +246,7 @@ static void decConfig(void);
 static void incConfig(void);
 static int exists(char *path);
 static void CleanUp(void);
-static void Execute(char *pathin);
+static void Execute(const char *pathin);
 static void Reset(void);
 static void InitializeBootExecPath();
 //---------------------------------------------------------------------------
@@ -254,7 +254,7 @@ static void InitializeBootExecPath();
 //---------------------------------------------------------------------------
 // Function to print a text row to the 'gs' screen
 //------------------------------
-static int PrintRow(int row_f, char *text_p)
+static int PrintRow(int row_f, const char *text_p)
 {
     static int row;
     int x = (Menu_start_x + 4);
@@ -271,7 +271,7 @@ static int PrintRow(int row_f, char *text_p)
 //---------------------------------------------------------------------------
 // Function to print a text row with text positioning
 //------------------------------
-static int PrintPos(int row_f, int column, char *text_p)
+static int PrintPos(int row_f, int column, const char *text_p)
 {
     static int row;
     int x = (Menu_start_x + 4 + column * FONT_WIDTH);
@@ -623,7 +623,7 @@ static int drawMainScreen2(int TV_mode)
                     strcpy(f, setting->LK_Path[i]);
                 }
             }  // ends clause for No title
-            if (setting->LK_Path[i][0] && nElfs++ == selected && mode == DPAD)
+            if (nElfs++ == selected && mode == DPAD)
                 color = setting->color[COLOR_SELECT];
             else
                 color = setting->color[COLOR_TEXT];
@@ -1056,7 +1056,7 @@ int uLE_cdStop(void)
 //---------------------------------------------------------------------------
 static void getExternalFilePath(const char *argPath, char *filePath)
 {
-    char *pathSep;
+    const char *pathSep;
 
     pathSep = strchr(argPath, '/');
 
@@ -1112,7 +1112,7 @@ static void getExternalFilePath(const char *argPath, char *filePath)
 // needed anymore, is entirely the responsibility of the caller,
 // though, of course, none is allocated if the file is not found.
 //---------------------------------------------------------------------------
-static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
+static int loadExternalFile(const char *argPath, void **fileBaseP, int *fileSizeP)
 {  // The first three variables are local variants similar to the arguments
     char filePath[MAX_PATH];
     void *fileBase;
@@ -1156,7 +1156,7 @@ static int loadExternalFile(char *argPath, void **fileBaseP, int *fileSizeP)
 // normally the value returned will be 1 for an internal default
 // module, but 2 for an external module..
 //---------------------------------------------------------------------------
-static int loadExternalModule(char *modPath, void *defBase, int defSize)
+static int loadExternalModule(const char *modPath, void *defBase, int defSize)
 {
     char filePath[MAX_PATH];
     int ext_OK, def_OK;  // Flags success for external and default module
@@ -1366,7 +1366,7 @@ static void startKbd(void)
 //---------------------------------------------------------------------------
 // scanSystemCnf will check for a standard variable of a SYSTEM.CNF file
 //------------------------------
-static int scanSystemCnf(char *name, char *value)
+static int scanSystemCnf(const char *name, const char *value)
 {
     if (!strcmp(name, "BOOT"))
         strncat(SystemCnf_BOOT, value, MAX_PATH - 1);
@@ -1436,7 +1436,7 @@ static void ShowFont(void)
     int test_type = 0;
     int test_types = 2;  // Patch test_types for number of test loops
     int i, j, event, post_event = 0;
-    char Hex[18] = "0123456789ABCDEF";
+    const char Hex[18] = "0123456789ABCDEF";
     int ch_x_stp = 1 + FONT_WIDTH + 1 + LINE_THICKNESS;
     int ch_y_stp = 2 + FONT_HEIGHT + 1 + LINE_THICKNESS;
     int mat_w = LINE_THICKNESS + 17 * ch_x_stp;
@@ -1747,13 +1747,13 @@ int IsSupportedFileType(char *path)
 // Execute. Execute an action. May be called recursively.
 // For any path specified, its device must be accessible.
 //------------------------------
-static void Execute(char *pathin)
+static void Execute(const char *pathin)
 {
     char tmp[MAX_PATH];
     static char path[MAX_PATH];
     static char fullpath[MAX_PATH];
     static char party[1024];
-    char *pathSep;
+    const char *pathSep;
     char *p;
     int x, t = 0;
     char dvdpl_path[] = "mc0:/BREXEC-DVDPLAYER/dvdplayer.elf";
@@ -2288,7 +2288,7 @@ int main(int argc, char *argv[])
             strcpy(temp, boot_path + 5);  // Skip "hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
-                char *p;
+                const char *p;
 
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
@@ -2313,7 +2313,7 @@ int main(int argc, char *argv[])
             strcpy(temp, boot_path + 9);  // Skip "dvr_hdd0:" when copying.
             t = strchr(temp, ':');        // Check if the separator between the block device & the path exists.
             if (t != NULL) {
-                char *p;
+                const char *p;
 
                 *(t) = 0;                // If it does, get the block device name.
                 p = strchr(t + 1, ':');  // Get the path to the file
