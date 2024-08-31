@@ -34,6 +34,7 @@
 #include "string.h"
 #include "iopheap.h"
 #include "errno.h"
+#include "ps2sdkapi.h"
 //--------------------------------------------------------------
 
 //--------------------------------------------------------------
@@ -42,8 +43,13 @@
 // DON'T REMOVE is for reducing binary size.
 // These funtios are defined as weak in /libc/src/init.c
 //--------------------------------------------------------------
-void _ps2sdk_libc_init() {}
-void _ps2sdk_libc_deinit() {}
+void _libcglue_init() {}
+void _libcglue_deinit() {}
+void _libcglue_args_parse(int argc, char **argv) {}
+
+DISABLE_PATCHED_FUNCTIONS();
+DISABLE_EXTRA_TIMERS_FUNCTIONS();
+PS2_DISABLE_AUTOSTART_PTHREAD();
 
 //--------------------------------------------------------------
 // End of data declarations
