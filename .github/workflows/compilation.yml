@@ -15,7 +15,7 @@ jobs:
         run: |
           apk add build-base git zip
 
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git fetch --prune --unshallow
@@ -31,7 +31,7 @@ jobs:
 
       - name: Upload artifacts
         if: ${{ success() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: wLaunchELF-${{ steps.slug.outputs.sha8 }}
           path: BOOT.ELF
