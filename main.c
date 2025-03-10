@@ -11,6 +11,8 @@ extern u8 iomanx_irx[];
 extern int size_iomanx_irx;
 extern u8 filexio_irx[];
 extern int size_filexio_irx;
+extern u8 sio2man_irx[];
+extern int size_sio2man_irx;
 extern u8 ps2dev9_irx[];
 extern int size_ps2dev9_irx;
 extern u8 ps2ip_irx[];
@@ -61,6 +63,8 @@ extern u8 mcman_irx[];
 extern int size_mcman_irx;
 extern u8 mcserv_irx[];
 extern int size_mcserv_irx;
+extern u8 padman_irx[];
+extern int size_padman_irx;
 #ifdef SIO_DEBUG
 extern u8 sior_irx[];
 extern int size_sior_irx;
@@ -964,7 +968,8 @@ static void loadBasicModules(void)
 
     SifExecModuleBuffer(allowdvdv_irx, size_allowdvdv_irx, 0, NULL, &ret);  // unlocks cdvd for reading on psx dvr
 
-    SifLoadModule("rom0:SIO2MAN", 0, NULL);
+    // SifLoadModule("rom0:SIO2MAN", 0, NULL);
+    SifExecModuleBuffer(sio2man_irx, size_sio2man_irx, 0, NULL, &ret);
 
 #ifdef SIO_DEBUG
     int id;
@@ -983,7 +988,8 @@ static void loadBasicModules(void)
     // SifLoadModule("rom0:MCMAN", 0, NULL); //Sony
     SifExecModuleBuffer(mcserv_irx, size_mcserv_irx, 0, NULL, &ret);  // Home
     // SifLoadModule("rom0:MCSERV", 0, NULL); //Sony
-    SifLoadModule("rom0:PADMAN", 0, NULL);
+    // SifLoadModule("rom0:PADMAN", 0, NULL);
+    SifExecModuleBuffer(padman_irx, size_padman_irx, 0, NULL, &ret);
 }
 //------------------------------
 // endfunc loadBasicModules
@@ -1195,20 +1201,20 @@ static void loadUsbModules(void)
 
     loadUsbDModule();
     if (have_usbd && !have_usb_mass && (USB_mass_loaded = loadExternalModule(setting->usbmass_file, NULL, 0))) {
-        delay(3);
         have_usb_mass = 1;
     } else if (have_usbd && !have_usb_mass) {
         SifExecModuleBuffer(bdm_irx, size_bdm_irx, 0, NULL, &ret);
         SifExecModuleBuffer(bdmfs_fatfs_irx, size_bdmfs_fatfs_irx, 0, NULL, &ret);
         SifExecModuleBuffer(usbmass_bd_irx, size_usbmass_bd_irx, 0, NULL, &ret);
-        delay(3);
         USB_mass_loaded = 1;
         have_usb_mass = 1;
     }
-    if (USB_mass_loaded == 1)                       // if using the internal mass driver
-        USB_mass_max_drives = USB_MASS_MAX_DRIVES;  // allow multiple drives
-    else
-        USB_mass_max_drives = 1;  // else allow only one mass drive
+    delay(3);
+    BDM_mass_max_drives = MASS_MAX_DRIVES;  // allow multiple drives
+    // if (USB_mass_loaded == 1)                       // if using the internal mass driver
+    //     BDM_mass_max_drives = MASS_MAX_DRIVES;  // allow multiple drives
+    // else
+    //     BDM_mass_max_drives = 1;  // else allow only one mass drive
 }
 //------------------------------
 // endfunc loadUsbModules

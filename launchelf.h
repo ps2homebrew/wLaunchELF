@@ -450,10 +450,10 @@ extern int Check_ESR_Disc(void);
 
 // USB_mass definitions for multiple drive usage
 
-#define USB_MASS_MAX_DRIVES 10
+#define MASS_MAX_DRIVES 10
 
-extern char USB_mass_ix[10];
-extern int USB_mass_max_drives;
+extern char BDM_mass_ix[10];
+extern int BDM_mass_max_drives;
 extern u64 USB_mass_scan_time;
 extern int USB_mass_scanned;
 extern int USB_mass_loaded;  // 0==none, 1==internal, 2==external

@@ -161,8 +161,8 @@ typedef struct
 int PSU_content;  // Used to count PSU content headers for the main header
 
 // USB_mass definitions for multiple drive usage
-char USB_mass_ix[10] = {'0', 0, 0, 0, 0, 0, 0, 0, 0, 0};
-int USB_mass_max_drives = USB_MASS_MAX_DRIVES;
+char BDM_mass_ix[10] = {'0', 0, 0, 0, 0, 0, 0, 0, 0, 0};
+int BDM_mass_max_drives = MASS_MAX_DRIVES;
 u64 USB_mass_scan_time = 0;
 int USB_mass_scanned = 0;  // 0==Not_found_OR_No_Multi 1==found_Multi_mass_once
 int USB_mass_loaded = 0;   // 0==none, 1==internal, 2==external
@@ -1241,17 +1241,17 @@ void scan_USB_mass(void)
     iox_stat_t chk_stat;
     char mass_path[8] = "mass0:/";
 
-    if ((USB_mass_max_drives < 2)  // No need for dynamic lists with only one drive
+    if ((BDM_mass_max_drives < 2)  // No need for dynamic lists with only one drive
         || (USB_mass_scanned && ((Timer() - USB_mass_scan_time) < 5000)))
         return;
 
-    for (i = 0; i < USB_mass_max_drives; i++) {
+    for (i = 0; i < BDM_mass_max_drives; i++) {
         mass_path[4] = '0' + i;
         if (fileXioGetStat(mass_path, &chk_stat) < 0) {
-            USB_mass_ix[i] = 0;
+            BDM_mass_ix[i] = 0;
             continue;
         }
-        USB_mass_ix[i] = '0' + i;
+        BDM_mass_ix[i] = '0' + i;
         USB_mass_scanned = 1;
         USB_mass_scan_time = Timer();
     }  // ends for loop
@@ -3284,14 +3284,14 @@ int setFileList(const char *path, const char *ext, FILEINFO *files, int cnfmode)
         files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
         if ((cnfmode != USBD_IRX_CNF) && (cnfmode != USBKBD_IRX_CNF) && (cnfmode != USBMASS_IRX_CNF)) {
             // The condition above blocks selecting USB drivers from USB devices
-            if (USB_mass_ix[0] || !USB_mass_scanned) {
+            if (BDM_mass_ix[0] || !USB_mass_scanned) {
                 strcpy(files[nfiles].name, "mass:");
                 files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
             }
             for (i = 1; i < 10; i++) {
-                if (USB_mass_ix[i]) {
+                if (BDM_mass_ix[i]) {
                     strcpy(files[nfiles].name, "mass0:");
-                    files[nfiles].name[4] = USB_mass_ix[i];
+                    files[nfiles].name[4] = BDM_mass_ix[i];
                     files[nfiles++].stats.AttrFile = sceMcFileAttrSubdir;
                 }
             }

@@ -9,7 +9,7 @@ EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o netman_irx.o \
 	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o bdm_irx.o bdmfs_fatfs_irx.o usbmass_bd_irx.o mcman_irx.o mcserv_irx.o\
-	dvrdrv_irx.o dvrfile_irx.o \
+	dvrdrv_irx.o dvrfile_irx.o sio2man_irx.o padman_irx.o \
 	cdfs_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
 	font_uLE.o makeicon.o chkesr.o allowdvdv_irx.o
@@ -72,6 +72,9 @@ $(EE_ASM_DIR)mcman_irx.c: $(PS2SDK)/iop/irx/mcman-old.irx | $(EE_ASM_DIR)
 $(EE_ASM_DIR)mcserv_irx.c: $(PS2SDK)/iop/irx/mcserv-old.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ mcserv_irx
 
+$(EE_ASM_DIR)padman_irx.c: $(PS2SDK)/iop/irx/padman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ padman_irx
+
 $(EE_ASM_DIR)dvrdrv_irx.c: $(PS2SDK)/iop/irx/dvrdrv.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ dvrdrv_irx
 
@@ -101,6 +104,9 @@ $(EE_ASM_DIR)iomanx_irx.c: $(PS2SDK)/iop/irx/iomanX.irx | $(EE_ASM_DIR)
 
 $(EE_ASM_DIR)filexio_irx.c: $(PS2SDK)/iop/irx/fileXio.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ filexio_irx
+
+$(EE_ASM_DIR)sio2man_irx.c: $(PS2SDK)/iop/irx/sio2man.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ sio2man_irx
 
 $(EE_ASM_DIR)ps2dev9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ ps2dev9_irx
