@@ -213,6 +213,7 @@ void load_vmc_fs(void);
 void load_ps2host(void);
 void loadHddModules(void);
 void loadDVRPHddModules(void);
+void loadFlashModules(void);
 void loadHdlInfoModule(void);
 int uLE_related(char *pathout, const char *pathin);
 int uLE_InitializeRegion(void);
