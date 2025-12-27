@@ -9,6 +9,7 @@ EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o netman_irx.o \
 	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o bdm_irx.o bdmfs_fatfs_irx.o usbmass_bd_irx.o mcman_irx.o mcserv_irx.o\
+	extflash_irx.o xfromman_irx.o \
 	dvrdrv_irx.o dvrfile_irx.o \
 	cdfs_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
 	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
@@ -77,6 +78,12 @@ $(EE_ASM_DIR)dvrdrv_irx.c: $(PS2SDK)/iop/irx/dvrdrv.irx | $(EE_ASM_DIR)
 
 $(EE_ASM_DIR)dvrfile_irx.c: $(PS2SDK)/iop/irx/dvrfile.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ dvrfile_irx
+
+$(EE_ASM_DIR)extflash_irx.c: $(PS2SDK)/iop/irx/extflash.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ extflash_irx
+
+$(EE_ASM_DIR)xfromman_irx.c: $(PS2SDK)/iop/irx/xfromman.irx | $(EE_ASM_DIR)
+	$(BIN2C) $< $@ xfromman_irx
 
 $(EE_ASM_DIR)usbd_irx.c: $(PS2SDK)/iop/irx/usbd.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ usbd_irx

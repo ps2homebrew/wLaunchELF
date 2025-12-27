@@ -375,6 +375,8 @@ lang(325, Unload_HDL_Game_Info, "Unload HDL Game Info")
 //---------------------------------------------------------------------------
 // New status message for HDD information read, when there are too many partitions.
 lang(326, HDD_Information_Read_Overflow, "HDD Information Read (truncated)")
+//---------------------------------------------------------------------------
+lang(327, Loading_Flash_Modules, "Loading Flash Modules...")
 
     // clang-format on
     //---------------------------------------------------------------------------

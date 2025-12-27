@@ -60,7 +60,7 @@ int checkELFheader(char *path)
     char fullpath[MAX_PATH], tmp[MAX_PATH], *p;
 
     strcpy(fullpath, path);
-    if (!strncmp(fullpath, "mc", 2) || !strncmp(fullpath, "vmc", 3) || !strncmp(fullpath, "rom", 3) || !strncmp(fullpath, "cdrom", 5) || !strncmp(fullpath, "cdfs", 4)) {
+    if (!strncmp(fullpath, "mc", 2) || !strncmp(fullpath, "vmc", 3) || !strncmp(fullpath, "rom", 3) || !strncmp(fullpath, "cdrom", 5) || !strncmp(fullpath, "cdfs", 4) || !strncmp(fullpath, "xfrom", 5)) {
         ;  // fullpath is already correct
     } else if (!strncmp(fullpath, "hdd0:", 5)) {
         p = &path[5];
