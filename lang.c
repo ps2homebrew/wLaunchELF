@@ -303,63 +303,65 @@ void Load_External_Language(void)
                     const char *tmp;
 
                     tmp = strrchr(setting->LK_Path[i], '/');
+                    if (tmp == NULL)
+                        continue;
                     if (!strcmp(tmp + 1, setting->Misc_PS2Disc + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2Disc));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(PS2Disc));
                     else if (!strcmp(tmp + 1, setting->Misc_FileBrowser + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(FileBrowser));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(FileBrowser));
                     else if (!strcmp(tmp + 1, setting->Misc_PS2Browser + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2Browser));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(PS2Browser));
                     else if (!strcmp(tmp + 1, setting->Misc_PS2Net + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2Net));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(PS2Net));
                     else if (!strcmp(tmp + 1, setting->Misc_PS2PowerOff + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(PS2PowerOff));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(PS2PowerOff));
                     else if (!strcmp(tmp + 1, setting->Misc_HddManager + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(HddManager));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(HddManager));
                     else if (!strcmp(tmp + 1, setting->Misc_TextEditor + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(TextEditor));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(TextEditor));
                     else if (!strcmp(tmp + 1, setting->Misc_JpgViewer + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(JpgViewer));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(JpgViewer));
                     else if (!strcmp(tmp + 1, setting->Misc_Configure + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Configure));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Configure));
                     else if (!strcmp(tmp + 1, setting->Misc_Load_CNFprev + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Load_CNFprev));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Load_CNFprev));
                     else if (!strcmp(tmp + 1, setting->Misc_Load_CNFnext + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Load_CNFnext));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Load_CNFnext));
                     else if (!strcmp(tmp + 1, setting->Misc_Set_CNF_Path + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
                     else if (!strcmp(tmp + 1, setting->Misc_Load_CNF + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Load_CNF));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Load_CNF));
                     else if (!strcmp(tmp + 1, setting->Misc_ShowFont + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(ShowFont));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(ShowFont));
                     else if (!strcmp(tmp + 1, setting->Misc_Debug_Info + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(Debug_Info));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(Debug_Info));
                     else if (!strcmp(tmp + 1, setting->Misc_About_uLE + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(About_uLE));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(About_uLE));
                     else if (!strcmp(tmp + 1, setting->Misc_OSDSYS + strlen(setting->Misc)))
-                        sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(OSDSYS));
+                        snprintf(setting->LK_Path[i], MAX_PATH, "%s/%s", LNG(MISC), LNG(OSDSYS));
                 }  // end if Misc
             }      // end if LK assigned
         }          // end for
     }              // end if Misc Initialized
 
-    sprintf(setting->Misc, "%s/", LNG(MISC));
-    sprintf(setting->Misc_PS2Disc, "%s/%s", LNG(MISC), LNG(PS2Disc));
-    sprintf(setting->Misc_FileBrowser, "%s/%s", LNG(MISC), LNG(FileBrowser));
-    sprintf(setting->Misc_PS2Browser, "%s/%s", LNG(MISC), LNG(PS2Browser));
-    sprintf(setting->Misc_PS2Net, "%s/%s", LNG(MISC), LNG(PS2Net));
-    sprintf(setting->Misc_PS2PowerOff, "%s/%s", LNG(MISC), LNG(PS2PowerOff));
-    sprintf(setting->Misc_HddManager, "%s/%s", LNG(MISC), LNG(HddManager));
-    sprintf(setting->Misc_TextEditor, "%s/%s", LNG(MISC), LNG(TextEditor));
-    sprintf(setting->Misc_JpgViewer, "%s/%s", LNG(MISC), LNG(JpgViewer));
-    sprintf(setting->Misc_Configure, "%s/%s", LNG(MISC), LNG(Configure));
-    sprintf(setting->Misc_Load_CNFprev, "%s/%s", LNG(MISC), LNG(Load_CNFprev));
-    sprintf(setting->Misc_Load_CNFnext, "%s/%s", LNG(MISC), LNG(Load_CNFnext));
-    sprintf(setting->Misc_Set_CNF_Path, "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
-    sprintf(setting->Misc_Load_CNF, "%s/%s", LNG(MISC), LNG(Load_CNF));
-    sprintf(setting->Misc_ShowFont, "%s/%s", LNG(MISC), LNG(ShowFont));
-    sprintf(setting->Misc_Debug_Info, "%s/%s", LNG(MISC), LNG(Debug_Info));
-    sprintf(setting->Misc_About_uLE, "%s/%s", LNG(MISC), LNG(About_uLE));
-    sprintf(setting->Misc_OSDSYS, "%s/%s", LNG(MISC), LNG(OSDSYS));
+    snprintf(setting->Misc, sizeof(setting->Misc), "%s/", LNG(MISC));
+    snprintf(setting->Misc_PS2Disc, sizeof(setting->Misc_PS2Disc), "%s/%s", LNG(MISC), LNG(PS2Disc));
+    snprintf(setting->Misc_FileBrowser, sizeof(setting->Misc_FileBrowser), "%s/%s", LNG(MISC), LNG(FileBrowser));
+    snprintf(setting->Misc_PS2Browser, sizeof(setting->Misc_PS2Browser), "%s/%s", LNG(MISC), LNG(PS2Browser));
+    snprintf(setting->Misc_PS2Net, sizeof(setting->Misc_PS2Net), "%s/%s", LNG(MISC), LNG(PS2Net));
+    snprintf(setting->Misc_PS2PowerOff, sizeof(setting->Misc_PS2PowerOff), "%s/%s", LNG(MISC), LNG(PS2PowerOff));
+    snprintf(setting->Misc_HddManager, sizeof(setting->Misc_HddManager), "%s/%s", LNG(MISC), LNG(HddManager));
+    snprintf(setting->Misc_TextEditor, sizeof(setting->Misc_TextEditor), "%s/%s", LNG(MISC), LNG(TextEditor));
+    snprintf(setting->Misc_JpgViewer, sizeof(setting->Misc_JpgViewer), "%s/%s", LNG(MISC), LNG(JpgViewer));
+    snprintf(setting->Misc_Configure, sizeof(setting->Misc_Configure), "%s/%s", LNG(MISC), LNG(Configure));
+    snprintf(setting->Misc_Load_CNFprev, sizeof(setting->Misc_Load_CNFprev), "%s/%s", LNG(MISC), LNG(Load_CNFprev));
+    snprintf(setting->Misc_Load_CNFnext, sizeof(setting->Misc_Load_CNFnext), "%s/%s", LNG(MISC), LNG(Load_CNFnext));
+    snprintf(setting->Misc_Set_CNF_Path, sizeof(setting->Misc_Set_CNF_Path), "%s/%s", LNG(MISC), LNG(Set_CNF_Path));
+    snprintf(setting->Misc_Load_CNF, sizeof(setting->Misc_Load_CNF), "%s/%s", LNG(MISC), LNG(Load_CNF));
+    snprintf(setting->Misc_ShowFont, sizeof(setting->Misc_ShowFont), "%s/%s", LNG(MISC), LNG(ShowFont));
+    snprintf(setting->Misc_Debug_Info, sizeof(setting->Misc_Debug_Info), "%s/%s", LNG(MISC), LNG(Debug_Info));
+    snprintf(setting->Misc_About_uLE, sizeof(setting->Misc_About_uLE), "%s/%s", LNG(MISC), LNG(About_uLE));
+    snprintf(setting->Misc_OSDSYS, sizeof(setting->Misc_OSDSYS), "%s/%s", LNG(MISC), LNG(OSDSYS));
 }
 // Ends Load_External_Language
 //---------------------------------------------------------------------------
