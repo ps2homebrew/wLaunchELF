@@ -7,7 +7,7 @@ SIO_DEBUG ?= 0
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
-	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o netman_irx.o \
+	poweroff_irx.o iomanx_irx.o filexio_irx.o ps2atad_irx.o ps2dev9_irx.o ps2ip_irx.o \
 	ps2smap_irx.o ps2hdd_irx.o ps2fs_irx.o ps2netfs_irx.o usbd_irx.o bdm_irx.o bdmfs_fatfs_irx.o usbmass_bd_irx.o mcman_irx.o mcserv_irx.o\
 	extflash_irx.o xfromman_irx.o \
 	dvrdrv_irx.o dvrfile_irx.o \
@@ -112,13 +112,10 @@ $(EE_ASM_DIR)filexio_irx.c: $(PS2SDK)/iop/irx/fileXio.irx | $(EE_ASM_DIR)
 $(EE_ASM_DIR)ps2dev9_irx.c: $(PS2SDK)/iop/irx/ps2dev9.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ ps2dev9_irx
 
-$(EE_ASM_DIR)ps2ip_irx.c: $(PS2SDK)/iop/irx/ps2ip-nm.irx | $(EE_ASM_DIR)
+$(EE_ASM_DIR)ps2ip_irx.c: $(PS2SDK)/iop/irx/ps2ip.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ ps2ip_irx
 
-$(EE_ASM_DIR)netman_irx.c: $(PS2SDK)/iop/irx/netman.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ netman_irx
-
-$(EE_ASM_DIR)ps2smap_irx.c: $(PS2SDK)/iop/irx/smap.irx | $(EE_ASM_DIR)
+$(EE_ASM_DIR)ps2smap_irx.c: $(PS2SDK)/iop/irx/smap-ps2ip.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ ps2smap_irx
 
 oldlibs/ps2ftpd/ps2ftpd.irx: oldlibs/ps2ftpd

@@ -15,8 +15,6 @@ extern u8 ps2dev9_irx[];
 extern int size_ps2dev9_irx;
 extern u8 ps2ip_irx[];
 extern int size_ps2ip_irx;
-extern u8 netman_irx[];
-extern int size_netman_irx;
 extern u8 ps2smap_irx[];
 extern int size_ps2smap_irx;
 extern u8 ps2host_irx[];
@@ -139,7 +137,6 @@ static u8 have_hdl_info = 0;
 // State of Checkable Modules (valid header)
 static u8 have_poweroff = 0;
 static u8 have_ps2dev9 = 0;
-static u8 have_netman = 0;
 static u8 have_ps2ip = 0;
 static u8 have_ps2atad = 0;
 static u8 have_ps2hdd = 0;
@@ -706,18 +703,14 @@ static void load_ps2ip(void)
     int ret;
 
     load_ps2dev9();
-    if (!have_netman) {
-        SifExecModuleBuffer(netman_irx, size_netman_irx, 0, NULL, &ret);
-        have_netman = 1;
+    if (!have_ps2ip) {
+        SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
+        have_ps2ip = 1;
     }
     if (!have_ps2smap) {
         SifExecModuleBuffer(ps2smap_irx, size_ps2smap_irx,
                             if_conf_len, &if_conf[0], &ret);
         have_ps2smap = 1;
-    }
-    if (!have_ps2ip) {
-        SifExecModuleBuffer(ps2ip_irx, size_ps2ip_irx, 0, NULL, &ret);
-        have_ps2ip = 1;
     }
 }
 //------------------------------
@@ -2159,7 +2152,6 @@ static void Reset()
     have_cdvd = 0;
     have_usbd = 0;
     have_usb_mass = 0;
-    have_netman = 0;
     have_ps2smap = 0;
     have_ps2host = 0;
     have_vmc_fs = 0;
