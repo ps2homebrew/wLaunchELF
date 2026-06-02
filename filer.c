@@ -119,7 +119,7 @@ int host_error = 0;
 int host_elflist = 0;
 int host_use_Bsl = 1;  // By default assume that host paths use backslash
 
-unsigned long written_size;  // Used for pasting progress report
+u64 written_size;  // Used for pasting progress report
 u64 PasteTime;               // Used for pasting progress report
 
 typedef struct
@@ -2250,7 +2250,7 @@ int copy(const char *outPath, const char *inPath, FILEINFO file, int recurses)
     sceMcTblGetDir stats;
     int speed = 0;
     int remain_time = 0, TimeDiff = 0;
-    long old_size = 0, SizeDiff = 0;
+    s64 old_size = 0, SizeDiff = 0;
     u64 OldTime = 0LL;
     psu_header PSU_head;
     mcT_header *mcT_head_p = (mcT_header *)&file.stats;
@@ -2744,9 +2744,9 @@ non_PSU_RESTORE_init:
         sprintf(tmp, "\n%s : ", LNG(Remain_Size));
         strcat(progress, tmp);
         if (size <= 1024)
-            sprintf(tmp, "%lu %s", (unsigned long)size, LNG(bytes));  // bytes
+            sprintf(tmp, "%llu %s", (u64)size, LNG(bytes));  // bytes
         else
-            sprintf(tmp, "%lu %s", (unsigned long)size / 1024, LNG(Kbytes));  // Kbytes
+            sprintf(tmp, "%llu %s", (u64)size / 1024, LNG(Kbytes));  // Kbytes
         strcat(progress, tmp);
 
         sprintf(tmp, "\n%s: ", LNG(Current_Speed));
@@ -2773,7 +2773,7 @@ non_PSU_RESTORE_init:
 
         sprintf(tmp, "\n\n%s: ", LNG(Written_Total));
         strcat(progress, tmp);
-        sprintf(tmp, "%lu %s", written_size / 1024, LNG(Kbytes));  // Kbytes
+        sprintf(tmp, "%llu %s", written_size / 1024, LNG(Kbytes));  // Kbytes
         strcat(progress, tmp);
 
         sprintf(tmp, "\n%s: ", LNG(Average_Speed));
@@ -4170,7 +4170,7 @@ int getFilePath(char *out, int cnfmode)
                     printXY(tmp, x + 4, y, color, TRUE, name_limit);
                 if (file_show > 0) {
                     //					unsigned int size = files[top+i].stats.fileSizeByte;
-                    unsigned long long size = ((unsigned long long)files[top + i].stats.Reserve2 << 32) | files[top + i].stats.FileSizeByte;
+                    u64 size = ((u64)files[top + i].stats.Reserve2 << 32) | files[top + i].stats.FileSizeByte;
                     PS2TIME timestamp = *(PS2TIME *)&files[top + i].stats._Modify;
 
                     if (!size_valid)
@@ -4189,8 +4189,7 @@ int getFilePath(char *out, int cnfmode)
                             size /= 1024;
                         }
                         //						sprintf(tmp, "%5u%cB", size, scale_s[scale]);
-                        // size shouldn't be over 99999, and seems sprintf doesn't support unsigned long long (%llu crashes)
-                        sprintf(tmp, "%5u%cB", (unsigned)size, scale_s[scale]);
+                        sprintf(tmp, "%5llu%cB", size, scale_s[scale]);
                     }
 
                     if (!time_valid || !(top + i))
@@ -4420,7 +4419,7 @@ void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files)
             text_pos += text_inc;
         }
         // sprintf(mess+text_pos, " mcTsz=%d%n", files[sel].stats.fileSizeByte, &text_inc);
-        size = ((unsigned long long)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
+        size = ((u64)files[sel].stats.Reserve2 << 32) | files[sel].stats.FileSizeByte;
         // Max length is 20 characters+NULL
         char sizeC[21] = {0};
         char *sizeP = &sizeC[21];

@@ -135,9 +135,9 @@ int CheckMC(void)
     return -11;
 }
 //---------------------------------------------------------------------------
-unsigned long hextoul(const char *string)
+u32 hextou32(const char *string)
 {
-    unsigned long value;
+    u32 value;
     char c;
 
     value = 0;
@@ -313,21 +313,21 @@ char *preloadCNF(const char *path)
 int scanSkinCNF(const char *name, const char *value)
 {
     if (!strcmp(name, "GUI_Col_1_ABGR"))
-        setting->color[COLOR_BACKGR] = hextoul(value);
+        setting->color[COLOR_BACKGR] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_2_ABGR"))
-        setting->color[COLOR_FRAME] = hextoul(value);
+        setting->color[COLOR_FRAME] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_3_ABGR"))
-        setting->color[COLOR_SELECT] = hextoul(value);
+        setting->color[COLOR_SELECT] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_4_ABGR"))
-        setting->color[COLOR_TEXT] = hextoul(value);
+        setting->color[COLOR_TEXT] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_5_ABGR"))
-        setting->color[COLOR_GRAPH1] = hextoul(value);
+        setting->color[COLOR_GRAPH1] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_6_ABGR"))
-        setting->color[COLOR_GRAPH2] = hextoul(value);
+        setting->color[COLOR_GRAPH2] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_7_ABGR"))
-        setting->color[COLOR_GRAPH3] = hextoul(value);
+        setting->color[COLOR_GRAPH3] = hextou32(value);
     else if (!strcmp(name, "GUI_Col_8_ABGR"))
-        setting->color[COLOR_GRAPH4] = hextoul(value);
+        setting->color[COLOR_GRAPH4] = hextou32(value);
     //----------
     else if (!strcmp(name, "SKIN_FILE"))
         strcpy(setting->skin, value);

@@ -416,7 +416,7 @@ int pko_read_file(int fd, char *buf, int length)
 
 //----------------------------------------------------------------------
 //
-int pko_ioctl(int fd, unsigned long request, const void *data)
+int pko_ioctl(int fd, int request, const void *data)
 {
     pko_pkt_ioctl_req *ioctlreq;
     pko_pkt_file_rly *ioctlrly;
