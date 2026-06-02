@@ -295,7 +295,7 @@ char *preloadCNF(const char *path)
     CNF_size = genLseek(fd, 0, SEEK_END);
     printf("CNF_size=%lld\n", CNF_size);
     genLseek(fd, 0, SEEK_SET);
-    RAM_p = (char *)memalign(64, CNF_size);
+    RAM_p = (char *)memalign(64, CNF_size + 1);
     if (RAM_p == NULL) {
         genClose(fd);
         goto failed_load;
@@ -330,9 +330,9 @@ int scanSkinCNF(const char *name, const char *value)
         setting->color[COLOR_GRAPH4] = hextoul(value);
     //----------
     else if (!strcmp(name, "SKIN_FILE"))
-        strcpy(setting->skin, value);
+        snprintf(setting->skin, MAX_PATH, "%s", value);
     else if (!strcmp(name, "GUI_SKIN_FILE"))
-        strcpy(setting->GUI_skin, value);
+        snprintf(setting->GUI_skin, MAX_PATH, "%s", value);
     else if (!strcmp(name, "SKIN_Brightness"))
         setting->Brightness = atoi(value);
     //----------
@@ -620,24 +620,24 @@ void initConfig(void)
         free(setting);
     setting = (SETTING *)malloc(sizeof(SETTING));
 
-    sprintf(setting->Misc, "%s/", LNG_DEF(MISC));
-    sprintf(setting->Misc_PS2Disc, "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Disc));
-    sprintf(setting->Misc_FileBrowser, "%s/%s", LNG_DEF(MISC), LNG_DEF(FileBrowser));
-    sprintf(setting->Misc_PS2Browser, "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Browser));
-    sprintf(setting->Misc_PS2Net, "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Net));
-    sprintf(setting->Misc_PS2PowerOff, "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2PowerOff));
-    sprintf(setting->Misc_HddManager, "%s/%s", LNG_DEF(MISC), LNG_DEF(HddManager));
-    sprintf(setting->Misc_TextEditor, "%s/%s", LNG_DEF(MISC), LNG_DEF(TextEditor));
-    sprintf(setting->Misc_JpgViewer, "%s/%s", LNG_DEF(MISC), LNG_DEF(JpgViewer));
-    sprintf(setting->Misc_Configure, "%s/%s", LNG_DEF(MISC), LNG_DEF(Configure));
-    sprintf(setting->Misc_Load_CNFprev, "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNFprev));
-    sprintf(setting->Misc_Load_CNFnext, "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNFnext));
-    sprintf(setting->Misc_Set_CNF_Path, "%s/%s", LNG_DEF(MISC), LNG_DEF(Set_CNF_Path));
-    sprintf(setting->Misc_Load_CNF, "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNF));
-    sprintf(setting->Misc_ShowFont, "%s/%s", LNG_DEF(MISC), LNG_DEF(ShowFont));
-    sprintf(setting->Misc_Debug_Info, "%s/%s", LNG_DEF(MISC), LNG_DEF(Debug_Info));
-    sprintf(setting->Misc_About_uLE, "%s/%s", LNG_DEF(MISC), LNG_DEF(About_uLE));
-    sprintf(setting->Misc_OSDSYS, "%s/%s", LNG_DEF(MISC), LNG_DEF(OSDSYS));
+    snprintf(setting->Misc, sizeof(setting->Misc), "%s/", LNG_DEF(MISC));
+    snprintf(setting->Misc_PS2Disc, sizeof(setting->Misc_PS2Disc), "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Disc));
+    snprintf(setting->Misc_FileBrowser, sizeof(setting->Misc_FileBrowser), "%s/%s", LNG_DEF(MISC), LNG_DEF(FileBrowser));
+    snprintf(setting->Misc_PS2Browser, sizeof(setting->Misc_PS2Browser), "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Browser));
+    snprintf(setting->Misc_PS2Net, sizeof(setting->Misc_PS2Net), "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2Net));
+    snprintf(setting->Misc_PS2PowerOff, sizeof(setting->Misc_PS2PowerOff), "%s/%s", LNG_DEF(MISC), LNG_DEF(PS2PowerOff));
+    snprintf(setting->Misc_HddManager, sizeof(setting->Misc_HddManager), "%s/%s", LNG_DEF(MISC), LNG_DEF(HddManager));
+    snprintf(setting->Misc_TextEditor, sizeof(setting->Misc_TextEditor), "%s/%s", LNG_DEF(MISC), LNG_DEF(TextEditor));
+    snprintf(setting->Misc_JpgViewer, sizeof(setting->Misc_JpgViewer), "%s/%s", LNG_DEF(MISC), LNG_DEF(JpgViewer));
+    snprintf(setting->Misc_Configure, sizeof(setting->Misc_Configure), "%s/%s", LNG_DEF(MISC), LNG_DEF(Configure));
+    snprintf(setting->Misc_Load_CNFprev, sizeof(setting->Misc_Load_CNFprev), "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNFprev));
+    snprintf(setting->Misc_Load_CNFnext, sizeof(setting->Misc_Load_CNFnext), "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNFnext));
+    snprintf(setting->Misc_Set_CNF_Path, sizeof(setting->Misc_Set_CNF_Path), "%s/%s", LNG_DEF(MISC), LNG_DEF(Set_CNF_Path));
+    snprintf(setting->Misc_Load_CNF, sizeof(setting->Misc_Load_CNF), "%s/%s", LNG_DEF(MISC), LNG_DEF(Load_CNF));
+    snprintf(setting->Misc_ShowFont, sizeof(setting->Misc_ShowFont), "%s/%s", LNG_DEF(MISC), LNG_DEF(ShowFont));
+    snprintf(setting->Misc_Debug_Info, sizeof(setting->Misc_Debug_Info), "%s/%s", LNG_DEF(MISC), LNG_DEF(Debug_Info));
+    snprintf(setting->Misc_About_uLE, sizeof(setting->Misc_About_uLE), "%s/%s", LNG_DEF(MISC), LNG_DEF(About_uLE));
+    snprintf(setting->Misc_OSDSYS, sizeof(setting->Misc_OSDSYS), "%s/%s", LNG_DEF(MISC), LNG_DEF(OSDSYS));
 
     for (i = 0; i < SETTING_LK_COUNT; i++) {
         setting->LK_Path[i][0] = 0;
@@ -725,6 +725,8 @@ int loadConfig(char *mainMsg, const char *CNF)
         int pos;
 
         p = strrchr(path, '.');  // make p point to extension
+        if (p == NULL)
+            goto failed_load;    // no extension found, cannot patch path
         if (*(p - 1) != 'F')     // is this an indexed CNF
             p--;                 // then make p point to index
         pos = (p - path);
@@ -778,7 +780,7 @@ int loadConfig(char *mainMsg, const char *CNF)
         for (i = 0; i < SETTING_LK_COUNT; i++) {
             sprintf(tsts, "LK_%s_E%n", LK_ID[i], &len);
             if (!strncmp(name, tsts, len)) {
-                strcpy(setting->LK_Path[i], value);
+                snprintf(setting->LK_Path[i], MAX_PATH, "%s", value);
                 setting->LK_Flag[i] = 1;
                 break;
             }
@@ -789,41 +791,41 @@ int loadConfig(char *mainMsg, const char *CNF)
         // In the next group, the Misc device must be defined before its subprograms
         //----------
         else if (!strcmp(name, "Misc"))
-            sprintf(setting->Misc, "%s/", value);
+            snprintf(setting->Misc, sizeof(setting->Misc), "%s/", value);
         else if (!strcmp(name, "Misc_PS2Disc"))
-            sprintf(setting->Misc_PS2Disc, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_PS2Disc, sizeof(setting->Misc_PS2Disc), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_FileBrowser"))
-            sprintf(setting->Misc_FileBrowser, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_FileBrowser, sizeof(setting->Misc_FileBrowser), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_PS2Browser"))
-            sprintf(setting->Misc_PS2Browser, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_PS2Browser, sizeof(setting->Misc_PS2Browser), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_PS2Net"))
-            sprintf(setting->Misc_PS2Net, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_PS2Net, sizeof(setting->Misc_PS2Net), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_PS2PowerOff"))
-            sprintf(setting->Misc_PS2PowerOff, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_PS2PowerOff, sizeof(setting->Misc_PS2PowerOff), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_HddManager"))
-            sprintf(setting->Misc_HddManager, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_HddManager, sizeof(setting->Misc_HddManager), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_TextEditor"))
-            sprintf(setting->Misc_TextEditor, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_TextEditor, sizeof(setting->Misc_TextEditor), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_JpgViewer"))
-            sprintf(setting->Misc_JpgViewer, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_JpgViewer, sizeof(setting->Misc_JpgViewer), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Configure"))
-            sprintf(setting->Misc_Configure, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Configure, sizeof(setting->Misc_Configure), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Load_CNFprev"))
-            sprintf(setting->Misc_Load_CNFprev, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Load_CNFprev, sizeof(setting->Misc_Load_CNFprev), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Load_CNFnext"))
-            sprintf(setting->Misc_Load_CNFnext, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Load_CNFnext, sizeof(setting->Misc_Load_CNFnext), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Set_CNF_Path"))
-            sprintf(setting->Misc_Set_CNF_Path, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Set_CNF_Path, sizeof(setting->Misc_Set_CNF_Path), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Load_CNF"))
-            sprintf(setting->Misc_Load_CNF, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Load_CNF, sizeof(setting->Misc_Load_CNF), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_ShowFont"))
-            sprintf(setting->Misc_ShowFont, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_ShowFont, sizeof(setting->Misc_ShowFont), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_Debug_Info"))
-            sprintf(setting->Misc_Debug_Info, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_Debug_Info, sizeof(setting->Misc_Debug_Info), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_About_uLE"))
-            sprintf(setting->Misc_About_uLE, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_About_uLE, sizeof(setting->Misc_About_uLE), "%s%s", setting->Misc, value);
         else if (!strcmp(name, "Misc_OSDSYS"))
-            sprintf(setting->Misc_OSDSYS, "%s%s", setting->Misc, value);
+            snprintf(setting->Misc_OSDSYS, sizeof(setting->Misc_OSDSYS), "%s%s", setting->Misc, value);
         //----------
         else if (!strcmp(name, "LK_auto_Timer"))
             setting->timeout = atoi(value);
@@ -835,7 +837,7 @@ int loadConfig(char *mainMsg, const char *CNF)
         else if (!strcmp(name, "GUI_Swap_Keys"))
             setting->swapKeys = atoi(value);
         else if (!strcmp(name, "USBD_FILE"))
-            strcpy(setting->usbd_file, value);
+            snprintf(setting->usbd_file, MAX_PATH, "%s", value);
         else if (!strcmp(name, "NET_HOSTwrite"))
             setting->HOSTwrite = atoi(value);
         else if (!strcmp(name, "Menu_Title")) {
@@ -846,21 +848,21 @@ int loadConfig(char *mainMsg, const char *CNF)
         else if (!strcmp(name, "USBKBD_USED"))
             setting->usbkbd_used = atoi(value);
         else if (!strcmp(name, "USBKBD_FILE"))
-            strcpy(setting->usbkbd_file, value);
+            snprintf(setting->usbkbd_file, MAX_PATH, "%s", value);
         else if (!strcmp(name, "KBDMAP_FILE"))
-            strcpy(setting->kbdmap_file, value);
+            snprintf(setting->kbdmap_file, MAX_PATH, "%s", value);
         else if (!strcmp(name, "Menu_Show_Titles"))
             setting->Show_Titles = atoi(value);
         else if (!strcmp(name, "PathPad_Lock"))
             setting->PathPad_Lock = atoi(value);
         else if (!strcmp(name, "CNF_Path"))
-            strcpy(setting->CNF_Path, value);
+            snprintf(setting->CNF_Path, MAX_PATH, "%s", value);
         else if (!strcmp(name, "USBMASS_FILE"))
-            strcpy(setting->usbmass_file, value);
+            snprintf(setting->usbmass_file, MAX_PATH, "%s", value);
         else if (!strcmp(name, "LANG_FILE"))
-            strcpy(setting->lang_file, value);
+            snprintf(setting->lang_file, MAX_PATH, "%s", value);
         else if (!strcmp(name, "FONT_FILE"))
-            strcpy(setting->font_file, value);
+            snprintf(setting->font_file, MAX_PATH, "%s", value);
         //----------
         else if (!strcmp(name, "JpgView_Timer"))
             setting->JpgView_Timer = atoi(value);

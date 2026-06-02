@@ -1415,7 +1415,7 @@ int readHOST(const char *path, FILEINFO *info, int max)
     char Win_path[MAX_PATH];
 
     initHOST();
-    snprintf(host_path, MAX_PATH - 1, "%s", path);
+    snprintf(host_path, MAX_PATH, "%s", path);
     if (!strncmp(path, "host:/", 6))
         strcpy(host_path + 5, path + 6);
     if ((host_elflist) && !strcmp(host_path, "host:")) {
@@ -1428,6 +1428,10 @@ int readHOST(const char *path, FILEINFO *info, int max)
             return 0;
         }
         elflisttxt = (char *)memalign(64, size);
+        if (elflisttxt == NULL) {
+            close(hfd);
+            return 0;
+        }
         lseek(hfd, 0, SEEK_SET);
         read(hfd, elflisttxt, size);
         close(hfd);
@@ -1454,8 +1458,8 @@ int readHOST(const char *path, FILEINFO *info, int max)
                 if (hostcount > max)
                     break;
             } else if (elflistchar != 0x0d) {
-                host_next[contentptr] = elflistchar;
-                contentptr++;
+                if (contentptr < MAX_PATH - 1)
+                    host_next[contentptr++] = elflistchar;
             }
         }
         free(elflisttxt);
@@ -1470,7 +1474,7 @@ int readHOST(const char *path, FILEINFO *info, int max)
         if (strcmp(hostcontent.name, ".") && strcmp(hostcontent.name, "..")) {
             size_valid = 1;
             time_valid = 1;
-            snprintf(Win_path, MAX_PATH - 1, "%s%s", host_path, hostcontent.name);
+            snprintf(Win_path, MAX_PATH, "%s%s", host_path, hostcontent.name);
             strcpy(info[hostcount].name, hostcontent.name);
             clear_mcTable(&info[hostcount].stats);
 
