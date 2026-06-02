@@ -2512,8 +2512,13 @@ int main(int argc, char *argv[])
             switch (mode) {
                 case BUTTON:
                     if ((new_pad & PAD_SELECT) && (new_pad & PAD_START)) {
-                        initConfig();
-                        updateScreenMode();
+                        if (setting->GUI_skin[0]) {
+                            GUI_active = 0;
+                            loadSkin(BACKGROUND_PIC, 0, 0);
+                            Load_External_Language();
+                            loadFont(setting->font_file);
+                        }
+                        config(mainMsg, CNF);
                     } else if (new_pad & PAD_CIRCLE)
                         RunELF_index = SETTING_LK_CIRCLE;
                     else if (new_pad & PAD_CROSS)
