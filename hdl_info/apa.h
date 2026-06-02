@@ -19,30 +19,30 @@ typedef struct apa_partition_type
 
 typedef struct apa_partition_table_type
 {
-    u_long device_size_in_mb;
-    u_long total_chunks;
-    u_long allocated_chunks;
-    u_long free_chunks;
+    u_int32_t device_size_in_mb;
+    u_int32_t total_chunks;
+    u_int32_t allocated_chunks;
+    u_int32_t free_chunks;
 
     char *chunks_map;
 
     /* existing partitions */
-    u_long part_alloc_;
-    u_long part_count;
+    u_int32_t part_alloc_;
+    u_int32_t part_count;
     apa_partition_t *parts;
 } apa_partition_table_t;
 
 void apa_ptable_free(apa_partition_table_t *table);
 
-u_long apa_partition_checksum(const ps2_partition_header_t *part);
+u_int32_t apa_partition_checksum(const ps2_partition_header_t *part);
 
 int apa_ptable_read_ex(hio_t *hio, apa_partition_table_t **table);
 
-u_long get_u32(const void *buffer);
-void set_u32(void *buffer, u_long val);
+u_int32_t get_u32(const void *buffer);
+void set_u32(void *buffer, u_int32_t val);
 
-u_short get_u16(const void *buffer);
-void set_u16(void *buffer, u_short val);
+u_int16_t get_u16(const void *buffer);
+void set_u16(void *buffer, u_int16_t val);
 
 
 #endif /* _APA_H_ */

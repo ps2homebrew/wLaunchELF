@@ -12,8 +12,9 @@ EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
 	extflash_irx.o xfromman_irx.o \
 	dvrdrv_irx.o dvrfile_irx.o \
 	cdfs_irx.o ps2ftpd_irx.o ps2host_irx.o vmc_fs_irx.o ps2kbd_irx.o\
-	hdd.o hdl_rpc.o hdl_info_irx.o editor.o timer.o jpgviewer.o icon.o lang.o\
-	font_uLE.o makeicon.o chkesr.o allowdvdv_irx.o
+	hdd.o editor.o timer.o jpgviewer.o icon.o lang.o\
+	font_uLE.o makeicon.o chkesr.o allowdvdv_irx.o \
+	hdl_info/apa.o hdl_info/hdd.o hdl_info/hdl.o
 
 ifeq ($(SMB),1)
 	EE_OBJS += smbman.o
@@ -136,12 +137,6 @@ $(EE_ASM_DIR)ps2fs_irx.c: $(PS2SDK)/iop/irx/ps2fs.irx | $(EE_ASM_DIR)
 $(EE_ASM_DIR)ps2netfs_irx.c: $(PS2SDK)/iop/irx/ps2netfs.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ ps2netfs_irx
 
-hdl_info/hdl_info.irx: hdl_info
-	$(MAKE) -C $<
-
-$(EE_ASM_DIR)hdl_info_irx.c: hdl_info/hdl_info.irx | $(EE_ASM_DIR)
-	$(BIN2C) $< $@ hdl_info_irx
-
 ps2host/ps2host.irx: ps2host
 	$(MAKE) -C $<
 
@@ -178,7 +173,6 @@ $(EE_ASM_DIR)allowdvdv_irx.c: AllowDVDV/AllowDVDV.irx | $(EE_ASM_DIR)
 	$(BIN2C) $< $@ allowdvdv_irx
 
 clean:
-	$(MAKE) -C hdl_info clean
 	$(MAKE) -C ps2host clean
 	$(MAKE) -C loader clean
 	$(MAKE) -C vmc_fs clean
@@ -191,13 +185,12 @@ rebuild: clean all
 $(EE_ASM_DIR):
 	@mkdir -p $@
 
-$(EE_OBJS_DIR):
-	@mkdir -p $@
-
-$(EE_OBJS_DIR)%.o: $(EE_SRC_DIR)%.c | $(EE_OBJS_DIR)
+$(EE_OBJS_DIR)%.o: $(EE_SRC_DIR)%.c
+	@mkdir -p $(dir $@)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
-$(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.c | $(EE_OBJS_DIR)
+$(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.c
+	@mkdir -p $(dir $@)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
 include $(PS2SDK)/samples/Makefile.pref

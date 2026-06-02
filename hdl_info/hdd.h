@@ -1,8 +1,6 @@
 #ifndef _CDVDHDD_H_
 #define _CDVDHDD_H_
 
-#define HDL_IRX 0xD0D0D0D
-
 #define HDD_SECTOR_SIZE 512 /* HDD sector size in bytes */
 
 /* HD Loader I/O interface */
@@ -13,19 +11,19 @@ typedef int (*hio_probe_t)(const char *path,
                            hio_t **hio);
 
 typedef int (*hio_stat_t)(hio_t *hio,
-                          u_long *size_in_kb);
+                          u_int32_t *size_in_kb);
 
 typedef int (*hio_read_t)(hio_t *hio,
-                          u_long start_sector,
-                          u_long num_sectors,
+                          u_int32_t start_sector,
+                          u_int32_t num_sectors,
                           void *output,
-                          u_long *bytes);
+                          u_int32_t *bytes);
 
 typedef int (*hio_write_t)(hio_t *hio,
-                           u_long start_sector,
-                           u_long num_sectors,
+                           u_int32_t start_sector,
+                           u_int32_t num_sectors,
                            const void *input,
-                           u_long *bytes);
+                           u_int32_t *bytes);
 
 typedef int (*hio_flush_t)(hio_t *hio);
 
@@ -50,24 +48,6 @@ struct hio_type
     hio_dispose_error_t dispose_error;
 };
 
-typedef struct hio_iop_type
-{
-    hio_t hio;
-    int unit;
-    size_t size_in_sectors;
-} hio_iop_t;
-
-typedef struct
-{
-    char Partition_Name[32 + 1];
-} Rpc_Packet_Send_GetInfo;
-
-typedef struct
-{
-    char OldName[64];
-    char NewName[64];
-} Rpc_Packet_Send_Rename;
-
 typedef struct
 {
     char Partition_Name[32 + 1];
@@ -76,7 +56,7 @@ typedef struct
     int Is_Dvd;
 } GameInfo;
 
-int HdlGetGameInfo(const char *PartName, GameInfo *GameInf);
-int HdlRenameGame(void *Data);
+extern int HdlGetGameInfo(const char *PartName, GameInfo *GameInf);
+extern int HdlRenameGame(const char *OldName, const char *NewName);
 
 #endif

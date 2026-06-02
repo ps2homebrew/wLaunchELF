@@ -2,12 +2,12 @@
 #define LAUNCHELF_H
 
 #define ULE_VERSION "v4.43a"
-//#ifndef ULE_VERDATE
-//#define ULE_VERDATE __DATE__
-//#endif
+// #ifndef ULE_VERDATE
+// #define ULE_VERDATE __DATE__
+// #endif
 #include "githash.h"
 
-//#define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
+// #define SIO_DEBUG 1	//defined only for debug versions using the EE_SIO patch
 
 #include <stdio.h>
 #include <tamtypes.h>
@@ -41,7 +41,8 @@
 #include <libkbd.h>
 #include <math.h>
 #include <usbhdfsd-common.h>
-#include "hdl_rpc.h"
+#include <hdl_info/ps2_hdd.h>
+#include <hdl_info/hdd.h>
 
 #include <sio.h>
 #include <sior_rpc.h>

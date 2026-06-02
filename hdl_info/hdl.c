@@ -1,13 +1,10 @@
 //--------------------------------------------------------------
 // File name:   hdl.c
 //--------------------------------------------------------------
-#include <thbase.h>
 #include <stdio.h>
-#include <sysclib.h>
-#include <cdvdman.h>
-#include <iomanX.h>
+#include <stdlib.h>
+#include <string.h>
 
-#include "main.h"
 #include "ps2_hdd.h"
 #include "hdd.h"
 #include "hdl.h"
@@ -29,15 +26,15 @@ static int hdl_ginfo_read(hio_t *hio, const ps2_partition_header_t *part, hdl_ga
     /* data we're interested in starts @ 0x101000 and is header
      * plus information for up to 65 partitions
      * (1 main + 64 sub) by 12 bytes each */
-    const u_long offset = 0x101000;
+    const u_int32_t offset = 0x101000;
     char buffer[1024];
     int result;
-    u_long bytes;
+    u_int32_t bytes;
 
     result = hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
     if (result == 0) {
         if (bytes == 1024) {
-            u_long i, size;
+            u_int32_t i, size;
 
             /* calculate total size */
             size = get_u32(&part->length);
@@ -67,7 +64,7 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
 
     result = apa_ptable_read_ex(hio, &ptable);
     if (result == 0) {
-        u_long i, count = 0;
+        u_int32_t i, count = 0;
         void *tmp;
         for (i = 0; i < ptable->part_count; ++i)
             count += (get_u16(&ptable->parts[i].header.flags) == 0x00 &&
@@ -78,7 +75,7 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
             memset(tmp, 0, sizeof(hdl_game_info_t) * count);
             *glist = malloc(sizeof(hdl_games_list_t));
             if (*glist != NULL) {
-                u_long index = 0;
+                u_int32_t index = 0;
                 memset(*glist, 0, sizeof(hdl_games_list_t));
                 (*glist)->count = count;
                 (*glist)->games = tmp;
@@ -108,10 +105,10 @@ int hdl_glist_read(hio_t *hio, hdl_games_list_t **glist)
 //--------------------------------------------------------------
 static int hdl_ginfo_write(hio_t *hio, const ps2_partition_header_t *part, const hdl_game_info_t *ginfo)
 {
-    const u_long offset = 0x101000;
+    const u_int32_t offset = 0x101000;
     char buffer[1024];
     int result;
-    u_long bytes;
+    u_int32_t bytes;
 
     hio->read(hio, get_u32(&part->start) + offset / 512, 2, buffer, &bytes);
 
@@ -132,7 +129,7 @@ int hdl_glist_write(hio_t *hio, const hdl_game_info_t *ginfo)
 
     result = apa_ptable_read_ex(hio, &ptable);
     if (result == 0) {
-        u_long i, count = 0;
+        u_int32_t i, count = 0;
         void *tmp;
         for (i = 0; i < ptable->part_count; ++i)
             count += (get_u16(&ptable->parts[i].header.flags) == 0x00 &&
@@ -145,7 +142,7 @@ int hdl_glist_write(hio_t *hio, const hdl_game_info_t *ginfo)
             memset(tmp, 0, sizeof(hdl_game_info_t) * count);
             tmplist = malloc(sizeof(hdl_games_list_t));
             if (tmplist != NULL) {
-                u_long index = 0;
+                u_int32_t index = 0;
                 memset(tmplist, 0, sizeof(hdl_games_list_t));
                 tmplist->count = count;
                 tmplist->games = tmp;

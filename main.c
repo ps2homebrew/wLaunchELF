@@ -53,8 +53,6 @@ extern u8 cdfs_irx[];
 extern int size_cdfs_irx;
 extern u8 ps2kbd_irx[];
 extern int size_ps2kbd_irx;
-extern u8 hdl_info_irx[];
-extern int size_hdl_info_irx;
 extern u8 mcman_irx[];
 extern int size_mcman_irx;
 extern u8 mcserv_irx[];
@@ -74,7 +72,7 @@ extern int size_extflash_irx;
 extern u8 xfromman_irx[];
 extern int size_xfromman_irx;
 
-//#define DEBUG
+// #define DEBUG
 #ifdef DEBUG
 #define dbgprintf(args...) scr_printf(args)
 #define dbginit_scr()      init_scr()
@@ -133,7 +131,6 @@ static u8 have_ps2smap = 0;
 static u8 have_ps2host = 0;
 static u8 have_ps2ftpd = 0;
 static u8 have_ps2kbd = 0;
-static u8 have_hdl_info = 0;
 // State of Checkable Modules (valid header)
 static u8 have_poweroff = 0;
 static u8 have_ps2dev9 = 0;
@@ -207,7 +204,7 @@ DiscType DiscTypes[] = {
     {SCECdDVDV, "Video DVD"},
     {SCECdIllegalMedia, "Unsupported"},
     {0x00, ""}  // end of list
-};              // ends DiscTypes array
+};  // ends DiscTypes array
 
 // Static function declarations
 static int PrintRow(int row_f, const char *text_p);
@@ -493,7 +490,7 @@ static int drawMainScreen(void)
                 case SETTING_LK_RIGHT:
                     sprintf(c, "%s: ", LNG(RIGHT));
                     break;
-            }                          // ends switch
+            }  // ends switch
             if (setting->Show_Titles)  // Show Launch Titles ?
                 strcpy(f, setting->LK_Title[i]);
             else
@@ -536,7 +533,7 @@ static int drawMainScreen(void)
             printXY(f, x + (len > 9 ? len * FONT_WIDTH : 9 * FONT_WIDTH), y, color, TRUE, 0);
             y += FONT_HEIGHT;
         }  // ends clause for defined LK_Path[i] valid for menu
-    }      // ends for
+    }  // ends for
 
     if (mode == BUTTON)
         sprintf(c, "%s!", LNG(PUSH_ANY_BUTTON_or_DPAD));
@@ -1240,20 +1237,6 @@ static void loadKbdModules(void)
 }
 //------------------------------
 // endfunc loadKbdModules
-//---------------------------------------------------------------------------
-void loadHdlInfoModule(void)
-{
-    int ret;
-
-    if (!have_hdl_info) {
-        drawMsg(LNG(Loading_HDL_Info_Module));
-        SifExecModuleBuffer(hdl_info_irx, size_hdl_info_irx, 0, NULL, &ret);
-        ret = Hdl_Info_BindRpc();
-        have_hdl_info = 1;
-    }
-}
-//------------------------------
-// endfunc loadHdlInfoModule
 //---------------------------------------------------------------------------
 static void closeAllAndPoweroff(void)
 {
@@ -2264,9 +2247,9 @@ static void InitializeBootExecPath()
 // endfunc InitializeBootExecPath
 //---------------------------------------------------------------------------
 
-//#ifdef SMB
-//#include "SMB_test.c"
-//#endif
+// #ifdef SMB
+// #include "SMB_test.c"
+// #endif
 
 //---------------------------------------------------------------------------
 enum BOOT_DEVICE {
@@ -2589,7 +2572,7 @@ int main(int argc, char *argv[])
                     }
                     break;
             }  // ends switch(mode)
-        }      // ends Pad response section
+        }  // ends Pad response section
 
         if (!user_acted && ((timeout / 1000) == 0) && setting->LK_Path[SETTING_LK_AUTO][0] && mode == BUTTON) {
             event |= 8;  // event |= visible timeout change

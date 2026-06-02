@@ -201,7 +201,7 @@ void GetHddInfo(void)
 
             numParty++;
         }  // Ends clause for finding brand new name for PartyInfo[numParty]
-    }      // ends main while loop
+    }  // ends main while loop
     fileXioDclose(hddFd);
     hddFreeSpace = (hddSize - hddUsed) & 0x7FFFFF80;  // free space rounded to useful area
     hddFree = (hddFreeSpace * 100) / hddSize;         // free space percentage
@@ -787,7 +787,6 @@ void hddManager(void)
                 return;
             } else if (new_pad & PAD_SQUARE) {
                 if (PartyInfo[browser_sel].Treatment == TREAT_HDL_RAW) {
-                    loadHdlInfoModule();
                     ret = HdlGetGameInfo(PartyInfo[browser_sel].Name, &PartyInfo[browser_sel].Game);
                     if (ret == 0)
                         PartyInfo[browser_sel].Treatment = TREAT_HDL_GAME;
@@ -855,7 +854,7 @@ void hddManager(void)
                     }
                 }
             }  // Ends clause for R1 menu
-        }      // ends pad response section
+        }  // ends pad response section
 
         if (event || post_event) {  // NB: We need to update two frame buffers per event
 
@@ -1098,7 +1097,7 @@ void hddManager(void)
                     strcpy(tmp, PartyInfo[top + i].Name);
                     printXY(tmp, x + 4, y, Color, TRUE, ((SCREEN_WIDTH - SCREEN_MARGIN) - (SCREEN_WIDTH / 2 - FONT_WIDTH)));
                     y += FONT_HEIGHT;
-                }                             // ends for, so all browser rows were fixed above
+                }  // ends for, so all browser rows were fixed above
                 if (browser_nfiles > rows) {  // if more files than available rows, use scrollbar
                     drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
                               SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
@@ -1108,7 +1107,7 @@ void hddManager(void)
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
                 }  // ends clause for scrollbar
-            }      // ends hdd formated
+            }  // ends hdd formated
             // Tooltip section
             sprintf(tooltip, "R1:%s  \xFF"
                              "3:%s",
