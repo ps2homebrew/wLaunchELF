@@ -482,6 +482,7 @@ void saveConfig(char *mainMsg, const char *CNF)
             "NET_HOSTwrite = %d\r\n"
             "Menu_Title = %s\r\n"
             "Init_Delay = %d\r\n"
+            "GUI_Theme = %d\r\n"
             "USBKBD_USED = %d\r\n"
             "USBKBD_FILE = %s\r\n"
             "KBDMAP_FILE = %s\r\n"
@@ -507,6 +508,7 @@ void saveConfig(char *mainMsg, const char *CNF)
             setting->HOSTwrite,        // NET_HOST_write
             setting->Menu_Title,       // Menu_Title
             setting->Init_Delay,       // Init_Delay
+            setting->GUI_Theme,        // GUI_Theme
             setting->usbkbd_used,      // USBKBD_USED
             setting->usbkbd_file,      // USBKBD_FILE
             setting->kbdmap_file,      // KBDMAP_FILE
@@ -682,6 +684,7 @@ void initConfig(void)
     setting->TV_mode = TV_mode_AUTO;
     setting->Popup_Opaque = DEF_POPUP_OPAQUE;
     setting->Init_Delay = DEF_INIT_DELAY;
+    setting->GUI_Theme = THEME_NORMAL;
     setting->usbkbd_used = DEF_USBKBD_USED;
     setting->Show_Titles = DEF_SHOW_TITLES;
     setting->PathPad_Lock = DEF_PATHPAD_LOCK;
@@ -695,6 +698,44 @@ void initConfig(void)
 }
 //------------------------------
 // endfunc initConfig
+//---------------------------------------------------------------------------
+static const u64 theme_palette[THEME_COUNT][COLOR_COUNT] = {
+    {DEF_COLOR1, DEF_COLOR2, DEF_COLOR3, DEF_COLOR4, DEF_COLOR5, DEF_COLOR6, DEF_COLOR7, DEF_COLOR8},
+    {GS_SETREG_RGBA(24, 24, 32, 0), GS_SETREG_RGBA(64, 64, 80, 0), GS_SETREG_RGBA(255, 140, 0, 0),
+     GS_SETREG_RGBA(220, 220, 220, 0), GS_SETREG_RGBA(200, 200, 64, 0), GS_SETREG_RGBA(64, 200, 64, 0),
+     GS_SETREG_RGBA(180, 180, 180, 0), GS_SETREG_RGBA(200, 64, 64, 0)},
+};
+
+static void applyTheme(int theme)
+{
+    int i;
+
+    if (theme < 0 || theme >= THEME_COUNT)
+        theme = THEME_NORMAL;
+    setting->GUI_Theme = theme;
+    for (i = 0; i < COLOR_COUNT; i++)
+        setting->color[i] = theme_palette[theme][i];
+}
+
+static const char *getThemeName(int theme)
+{
+    if (theme == THEME_DARK)
+        return LNG(Theme_Dark);
+    return LNG(Normal);
+}
+
+static void syncRgbFromColors(u8 rgb[COLOR_COUNT][3])
+{
+    int i;
+
+    for (i = 0; i < COLOR_COUNT; i++) {
+        rgb[i][0] = setting->color[i] & 0xFF;
+        rgb[i][1] = setting->color[i] >> 8 & 0xFF;
+        rgb[i][2] = setting->color[i] >> 16 & 0xFF;
+    }
+}
+//------------------------------
+// endfunc applyTheme / getThemeName / syncRgbFromColors
 //---------------------------------------------------------------------------
 // Load LAUNCHELF.CNF (or LAUNCHELFx.CNF with multiple pages)
 // sincro: ADD load USBD_FILE string
@@ -843,6 +884,8 @@ int loadConfig(char *mainMsg, const char *CNF)
             setting->Menu_Title[MAX_MENU_TITLE] = '\0';
         } else if (!strcmp(name, "Init_Delay"))
             setting->Init_Delay = atoi(value);
+        else if (!strcmp(name, "GUI_Theme"))
+            setting->GUI_Theme = atoi(value);
         else if (!strcmp(name, "USBKBD_USED"))
             setting->usbkbd_used = atoi(value);
         else if (!strcmp(name, "USBKBD_FILE"))
@@ -904,6 +947,10 @@ int loadConfig(char *mainMsg, const char *CNF)
         setting->JpgView_Timer = DEF_JPGVIEW_TIMER;
     if ((setting->JpgView_Trans < 1) || (setting->JpgView_Trans > 4))
         setting->JpgView_Trans = DEF_JPGVIEW_TRANS;
+    if (setting->GUI_Theme >= THEME_COUNT)
+        setting->GUI_Theme = THEME_NORMAL;
+    if (setting->GUI_Theme == THEME_DARK)
+        applyTheme(THEME_DARK);
     sprintf(mainMsg, "%s (%s)", LNG(Loaded_Config), path);
     return 0;
 }
@@ -1192,7 +1239,8 @@ enum CONFIG_SCREEN {
 
     // First option after colour selectors
     CONFIG_SCREEN_AFT_COLORS,
-    CONFIG_SCREEN_TV_MODE = CONFIG_SCREEN_AFT_COLORS,
+    CONFIG_SCREEN_THEME = CONFIG_SCREEN_AFT_COLORS,
+    CONFIG_SCREEN_TV_MODE,
     CONFIG_SCREEN_TV_STARTX,
     CONFIG_SCREEN_TV_STARTY,
 
@@ -1312,6 +1360,10 @@ static void Config_Screen(void)
                         setting->color[s / 3] =
                             GS_SETREG_RGBA(rgb[s / 3][0], rgb[s / 3][1], rgb[s / 3][2], 0);
                     }
+                } else if (s == CONFIG_SCREEN_THEME) {
+                    setting->GUI_Theme = (setting->GUI_Theme + 1) % THEME_COUNT;
+                    applyTheme(setting->GUI_Theme);
+                    syncRgbFromColors(rgb);
                 } else if (s == CONFIG_SCREEN_TV_MODE) {
                     setting->TV_mode = (setting->TV_mode + 1) % TV_mode_COUNT;  // Change between the various modes
                     updateScreenMode();
@@ -1346,14 +1398,7 @@ static void Config_Screen(void)
                     setting->skin[0] = '\0';
                     setting->GUI_skin[0] = '\0';
                     loadSkin(BACKGROUND_PIC, 0, 0);
-                    setting->color[COLOR_BACKGR] = DEF_COLOR1;
-                    setting->color[COLOR_FRAME] = DEF_COLOR2;
-                    setting->color[COLOR_SELECT] = DEF_COLOR3;
-                    setting->color[COLOR_TEXT] = DEF_COLOR4;
-                    setting->color[COLOR_GRAPH1] = DEF_COLOR5;
-                    setting->color[COLOR_GRAPH2] = DEF_COLOR6;
-                    setting->color[COLOR_GRAPH3] = DEF_COLOR7;
-                    setting->color[COLOR_GRAPH4] = DEF_COLOR8;
+                    applyTheme(THEME_NORMAL);
                     setting->TV_mode = TV_mode_AUTO;
                     setting->screen_x = 0;
                     setting->screen_y = 0;
@@ -1363,11 +1408,7 @@ static void Config_Screen(void)
                     setting->Popup_Opaque = DEF_POPUP_OPAQUE;
                     updateScreenMode();
 
-                    for (i = 0; i < COLOR_COUNT; i++) {
-                        rgb[i][0] = setting->color[i] & 0xFF;
-                        rgb[i][1] = setting->color[i] >> 8 & 0xFF;
-                        rgb[i][2] = setting->color[i] >> 16 & 0xFF;
-                    }
+                    syncRgbFromColors(rgb);
                 }
             } else if (new_pad & PAD_TRIANGLE)
                 return;
@@ -1415,6 +1456,11 @@ static void Config_Screen(void)
                 printXY(c, x + (space * (i + 1)) - FONT_WIDTH, y, setting->color[i], TRUE, 0);
             }  // ends loop for colour RGB values
             y += FONT_HEIGHT * 2;
+            sprintf(c, "  %s: %s", LNG(GUI_Theme), getThemeName(setting->GUI_Theme));
+            printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, 0);
+            y += FONT_HEIGHT;
+            y += FONT_HEIGHT / 2;
+
             sprintf(c, "  %s: ", LNG(TV_mode));
             if (setting->TV_mode == TV_mode_NTSC)
                 strcat(c, "NTSC");
@@ -1516,8 +1562,8 @@ static void Config_Screen(void)
                                      "0:%s \xFF"
                                      "1:%s",
                                   LNG(Add), LNG(Subtract));
-            } else if (s == CONFIG_SCREEN_TV_MODE || s == CONFIG_SCREEN_MENU_FRAME || s == CONFIG_SCREEN_POPUP_OPAQUE) {
-                // if cursor at 'TV mode', 'Menu Frame' or 'Popups Opaque'
+            } else if (s == CONFIG_SCREEN_THEME || s == CONFIG_SCREEN_TV_MODE || s == CONFIG_SCREEN_MENU_FRAME || s == CONFIG_SCREEN_POPUP_OPAQUE) {
+                // if cursor at 'Theme', 'TV mode', 'Menu Frame' or 'Popups Opaque'
                 if (swapKeys)
                     len = sprintf(c, "\xFF"
                                      "1:%s",

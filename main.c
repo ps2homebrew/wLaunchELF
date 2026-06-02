@@ -206,10 +206,40 @@ DiscType DiscTypes[] = {
     {0x00, ""}  // end of list
 };  // ends DiscTypes array
 
+typedef struct
+{
+    int row;
+    const char *text;
+} MenuLine;
+
+MenuLine about_lines[] = {
+    {5,  "Project maintainers:"},
+    {-1, "  sp193"},
+    {-1, "  AKuHAK"},
+    {-1, ""},
+    {-1, "uLaunchELF Project maintainers:"},
+    {-1, "  Eric Price       (aka: 'E P')"},
+    {-1, "  Ronald Andersson (aka: 'dlanor')"},
+    {-1, ""},
+    {-1, "Other contributors:"},
+    {-1, "  Polo35, radad, Drakonite, sincro"},
+    {-1, "  kthu, Slam-Tilt, chip, pixel, Hermes"},
+    {-1, "  and others in the PS2Dev community"},
+    {-1, ""},
+    {-1, "Main release site:"},
+    {-1, "  \"https://github.com/ps2homebrew/wLaunchELF/releases\""},
+    {-1, ""},
+    {-1, "Ancestral project: LaunchELF v3.41"},
+    {-1, "Created by:        Mirakichi"},
+    {-1, NULL}
+};
+
+
 // Static function declarations
 static int PrintRow(int row_f, const char *text_p);
 static int PrintPos(int row_f, int column, const char *text_p);
 static void Show_About_uLE(void);
+static void PrintTextList(int hpos, const MenuLine *lines);
 static void getIpConfig(void);
 static void setLaunchKeys(void);
 static int drawMainScreen(void);
@@ -287,6 +317,18 @@ static int PrintPos(int row_f, int column, const char *text_p)
 //------------------------------
 // endfunc PrintPos
 //---------------------------------------------------------------------------
+// Function to print a list of text rows
+//------------------------------
+static void PrintTextList(int hpos, const MenuLine *lines)
+{
+    int i;
+
+    for (i = 0; lines[i].text != NULL; i++)
+        PrintPos(lines[i].row, hpos, lines[i].text);
+}
+//------------------------------
+// endfunc PrintTextList
+//---------------------------------------------------------------------------
 // Function to show a screen with program credits ("About uLE")
 //------------------------------
 static void Show_About_uLE(void)
@@ -315,24 +357,7 @@ static void Show_About_uLE(void)
             PrintPos(03, hpos, TextRow);
             sprintf(TextRow, "                         commit: %s", GIT_HASH);
             PrintPos(04, hpos, TextRow);
-            PrintPos(05, hpos, "Project maintainers:");
-            PrintPos(-1, hpos, "  sp193");
-            PrintPos(-1, hpos, "  AKuHAK");
-            PrintPos(-1, hpos, "");
-            PrintPos(-1, hpos, "uLaunchELF Project maintainers:");
-            PrintPos(-1, hpos, "  Eric Price       (aka: 'E P')");
-            PrintPos(-1, hpos, "  Ronald Andersson (aka: 'dlanor')");
-            PrintPos(-1, hpos, "");
-            PrintPos(-1, hpos, "Other contributors:");
-            PrintPos(-1, hpos, "  Polo35, radad, Drakonite, sincro");
-            PrintPos(-1, hpos, "  kthu, Slam-Tilt, chip, pixel, Hermes");
-            PrintPos(-1, hpos, "  and others in the PS2Dev community");
-            PrintPos(-1, hpos, "");
-            PrintPos(-1, hpos, "Main release site:");
-            PrintPos(-1, hpos, "  \"https://github.com/ps2homebrew/wLaunchELF/releases\"");
-            PrintPos(-1, hpos, "");
-            PrintPos(-1, hpos, "Ancestral project: LaunchELF v3.41");
-            PrintPos(-1, hpos, "Created by:        Mirakichi");
+            PrintTextList(hpos, about_lines);
         }  // ends if(event||post_event)
         drawScr();
         post_event = event;

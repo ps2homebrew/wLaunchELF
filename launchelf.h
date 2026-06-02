@@ -110,6 +110,13 @@ enum COLOR {
     COLOR_COUNT
 };
 
+enum ThemeId {
+    THEME_NORMAL = 0,
+    THEME_DARK,
+
+    THEME_COUNT
+};
+
 enum SETTING_LK {
     SETTING_LK_AUTO = 0,
     SETTING_LK_CIRCLE,
@@ -183,6 +190,7 @@ typedef struct
     int TV_mode;
     int Popup_Opaque;
     int Init_Delay;
+    int GUI_Theme;
     int usbkbd_used;
     int Show_Titles;
     int PathPad_Lock;

@@ -377,6 +377,8 @@ lang(325, Unload_HDL_Game_Info, "Unload HDL Game Info")
 lang(326, HDD_Information_Read_Overflow, "HDD Information Read (truncated)")
 //---------------------------------------------------------------------------
 lang(327, Loading_Flash_Modules, "Loading Flash Modules...")
+lang(328, GUI_Theme, "Theme")
+lang(329, Theme_Dark, "Dark")
 
     // clang-format on
     //---------------------------------------------------------------------------
