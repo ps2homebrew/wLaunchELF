@@ -206,6 +206,17 @@ DiscType DiscTypes[] = {
     {0x00, ""}  // end of list
 };  // ends DiscTypes array
 
+static const char *getDiscTypeName(int type)
+{
+    int i;
+
+    for (i = 0; DiscTypes[i].name[0]; i++)
+        if (DiscTypes[i].type == type)
+            return DiscTypes[i].name;
+    return DiscTypes[0].name;
+}
+// endfunc getDiscTypeName
+
 typedef struct
 {
     int row;
@@ -910,6 +921,10 @@ static void ShowDebugInfo(void)
                 PrintRow(-1, TextRow);
             }
             sprintf(TextRow, "boot_path == \"%s\"", boot_path);
+            PrintRow(-1, TextRow);
+            sprintf(TextRow, "cdmode == %d (%s)", cdmode, getDiscTypeName(cdmode));
+            PrintRow(-1, TextRow);
+            sprintf(TextRow, "uLE_cdmode == %d (%s)", uLE_cdmode, getDiscTypeName(uLE_cdmode));
             PrintRow(-1, TextRow);
             sprintf(TextRow, "LaunchElfDir == \"%s\"", LaunchElfDir);
 #ifndef SMB
@@ -2461,8 +2476,6 @@ int main(int argc, char *argv[])
     event = 1;       // event = initial entry
     //----- Start of main menu event loop -----
     while (1) {
-        int DiscType_ix;
-
         // Background event section
         uLE_cdStop();              // Test disc state and if needed stop disc (updates cdmode)
         if (cdmode == old_cdmode)  // if disc detection did not change state
@@ -2476,12 +2489,7 @@ int main(int argc, char *argv[])
         else  // if(cdmode>=5)
             sprintf(mainMsg, "%s == ", LNG(Stop_Disc));
 
-        DiscType_ix = 0;
-        for (i = 0; DiscTypes[i].name[0]; i++)
-            if (DiscTypes[i].type == uLE_cdmode)
-                DiscType_ix = i;
-
-        sprintf(mainMsg + strlen(mainMsg), DiscTypes[DiscType_ix].name);
+        sprintf(mainMsg + strlen(mainMsg), getDiscTypeName(uLE_cdmode));
     // Comment out the debug output below when not needed
     /*
         sprintf(mainMsg+strlen(mainMsg),
