@@ -539,7 +539,7 @@ void saveConfig(char *mainMsg, const char *CNF)
             );
             CNF_size += CNF_step;
         }  // ends if
-    }      // ends for
+    }  // ends for
 
     CNF_step = 0;
     sprintf(tmp + CNF_size,
@@ -562,7 +562,7 @@ void saveConfig(char *mainMsg, const char *CNF)
             );
             CNF_size += CNF_step;
         }  // ends if
-    }      // ends for
+    }  // ends for
 
     strcpy(c, LaunchElfDir);
     strcat(c, CNF);

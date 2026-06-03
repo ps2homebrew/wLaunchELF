@@ -2,6 +2,7 @@
 // File name:    font_uLE.c  //Holds FontBuffer and font_uLE (default font)
 //---------------------------------------------------------------------------
 unsigned char FontBuffer[256 * 16];  // This holds either default or external font
+// clang-format off
 unsigned char font_uLE[] = {
     // Font position 0x000
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // char 0x000 == '_' (free for use)
@@ -647,6 +648,7 @@ unsigned char font_uLE[] = {
     // sequence, break up the numbers by ending the string after the sequence:
     //       printf("\xFF01234\n"); should be written printf("\xFF0""1234\n");
 };  // ends font_uLE
+// clang-format on
 //---------------------------------------------------------------------------
 // End of file:  font_uLE.c
 //---------------------------------------------------------------------------

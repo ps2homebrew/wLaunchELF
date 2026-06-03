@@ -257,7 +257,7 @@ void Load_External_Language(void)
         aborted_1:
             genClose(fd);
         }  // end if clause for file opened OK
-    }      // end if language file string set
+    }  // end if language file string set
 
     if (error_id < -1) {
         char tmp_s[80 * 16];
@@ -338,9 +338,9 @@ void Load_External_Language(void)
                     else if (!strcmp(tmp + 1, setting->Misc_OSDSYS + strlen(setting->Misc)))
                         sprintf(setting->LK_Path[i], "%s/%s", LNG(MISC), LNG(OSDSYS));
                 }  // end if Misc
-            }      // end if LK assigned
-        }          // end for
-    }              // end if Misc Initialized
+            }  // end if LK assigned
+        }  // end for
+    }  // end if Misc Initialized
 
     sprintf(setting->Misc, "%s/", LNG(MISC));
     sprintf(setting->Misc_PS2Disc, "%s/%s", LNG(MISC), LNG(PS2Disc));

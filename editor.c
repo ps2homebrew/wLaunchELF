@@ -1661,7 +1661,7 @@ void TextEditor(const char *path)
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 2),
                                  SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 6));
                 }  // ends clause for scrollbar with KeyBoard.
-            }      // ends clause for scrollbar.
+            }  // ends clause for scrollbar.
 
             // Tooltip section.
             tmp[0] = '\0', tmp1[0] = '\0', tmp2[0] = '\0';
