@@ -14,14 +14,34 @@ on:
       - ".github/workflows/check-format.yml"
       - ".clang-format"
 
+env:
+  HOMEBREW_NO_ANALYTICS: 1
+  HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_NO_INSTALL_UPGRADE: 1
+  HOMEBREW_NO_INSTALL_CLEANUP: 1
+  DEBIAN_FRONTEND: noninteractive
+  TZ: Japan
+
 jobs:
   check-format:
     runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/homebrew/brew:latest
+      options: "--user 0"
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: DoozyX/clang-format-lint-action@v0.12
-        with:
-          source: "."
-          clangFormatVersion: 12
-          inplace: false
+      - uses: actions/checkout@v4
+      - run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+          git fetch --prune --unshallow
+
+      - name: Install tools
+        run: sudo -H -E -u linuxbrew bash -c 'cd /home/linuxbrew && /home/linuxbrew/.linuxbrew/bin/brew install clang-format make'
+
+      - name: Format
+        run: |
+          export PATH="/home/linuxbrew/.linuxbrew/opt/clang-format/bin:$PATH"
+          make format
+
+      - name: Diff
+        run: git diff --exit-code

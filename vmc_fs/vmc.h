@@ -9,7 +9,7 @@
 #include <cdvdman.h>
 
 //  Define this to enable debugging, will later support debugging levels, so only messages greater then a certain level will be displayed
-//#define DEBUG 8
+// #define DEBUG 8
 // For release versions of uLE, DEBUG should not be defined
 // To avoid slowdown and size bloat
 

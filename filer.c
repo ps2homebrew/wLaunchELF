@@ -120,7 +120,7 @@ int host_elflist = 0;
 int host_use_Bsl = 1;  // By default assume that host paths use backslash
 
 u64 written_size;  // Used for pasting progress report
-u64 PasteTime;               // Used for pasting progress report
+u64 PasteTime;     // Used for pasting progress report
 
 typedef struct
 {
@@ -273,8 +273,8 @@ int mountParty(const char *party)
                 pfs_str[3] = '0' + i;                             // prepare to reuse that mountpoint
                 if (fileXioMount(pfs_str, party, FIO_MT_RDWR) >= 0)
                     break;  // break from the loop on successful mount
-            }               // ends if unneeded by uLE
-        }                   // ends for loop to kill FTP partition mountpoints
+            }  // ends if unneeded by uLE
+        }  // ends for loop to kill FTP partition mountpoints
         // Here i indicates what happened above with the following meanings:
         // 0..4==Success after trying i mountpoints,  5==Failure
         if (i >= MOUNT_LIMIT)
@@ -420,7 +420,7 @@ int ynDialog(const char *message)
             msg[i] = 0;                     // split old line to separate string
             n++;                            // increment string count
         }
-    }                                                 // loop back for next character pos
+    }  // loop back for next character pos
     for (i = len = tw = 0; i < n; i++) {              // start with string 0, assume 0 length & width
         ret = printXY(&msg[len], 0, 0, 0, FALSE, 0);  // get width of current string
         if (ret > tw)
@@ -517,7 +517,7 @@ void nonDialog(const char *message)
             msg[i] = 0;                     // split old line to separate string
             n++;                            // increment string count
         }
-    }                                     // loop back for next character pos
+    }  // loop back for next character pos
     for (i = len = tw = 0; i < n; i++) {  // start with string 0, assume 0 length & width
         int ret;
 
@@ -855,7 +855,7 @@ void genLimObjName(char *uLE_path, int reserve)
     if (r > p) {                          // if this place is above string start
         strcpy(r, q);                     // remove overflow from end of prefix part
         goto limited;                     // which concludes the limitation
-    }                                     // if we fall through here, the prefix part was too short for the limitation needed
+    }  // if we fall through here, the prefix part was too short for the limitation needed
 limit_end:
     p[limit] = 0;  //  remove overflow from end of full name
 limited:
@@ -1593,7 +1593,7 @@ static int getGameTitle(const char *path, const FILEINFO *file, unsigned char *o
         }  // ends for
         // Coming here means that the search for icon.sys failed
         goto finish;  // So go finish off this function
-    }                 // ends if clause for files needing a title
+    }  // ends if clause for files needing a title
 
     // Here we know that the object needing a title is a folder
     // First try to find a valid PS2 icon.sys file inside the folder
@@ -1899,7 +1899,7 @@ char *PathPad_menu(const char *path)
                     PathPad[sel_x * 10 + sel_y][MAX_PATH - 1] = '\0';
                 }
             }  // ends 'if(new_pad)'
-        }      // ends 'if(readpad())'
+        }  // ends 'if(readpad())'
 
         if (event || post_event) {  // NB: We need to update two frame buffers per event
 
@@ -2271,7 +2271,7 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
     if (PasteMode == PM_RENAME && recurses == 0) {  // if renaming requested and valid
         if (keyboard(newfile.name, 36) <= 0)        // if name entered by user made the result invalid
             strcpy(newfile.name, file.name);        //  recopy newname from file.name
-    }                                               // ends if clause for renaming name entry
+    }  // ends if clause for renaming name entry
     // Here the struct 'newfile' is FILEINFO for destination, regardless of renaming
     // for non-renaming cases this is always identical to the struct 'file'
 
@@ -2508,7 +2508,7 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
                 mcSync(0, NULL, &dummy);
                 mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &files[0].stats, MC_SFI);  // Fix file stats
                 mcSync(0, NULL, &dummy);
-            }                                 // ends main for loop of valid PM_PSU_RESTORE mode
+            }  // ends main for loop of valid PM_PSU_RESTORE mode
             genClose(PM_file[recurses + 1]);  // Close the PSU file
                                               // Finally fix the stats of the containing folder
                                               // It has to be done last, as timestamps would change when fixing files
@@ -2573,8 +2573,8 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
                     file.stats.AttrFile = MC_ATTR_norm_folder;  // normalize MC folder attribute
                     if (!strncmp(in, "host", 4)) {              // Handle folder copied from host: to MC
                         ret = 4;                                // request change only of main attribute for host:
-                    }                                           // ends host: source clause
-                }                                               // ends non-MC source clause
+                    }  // ends host: source clause
+                }  // ends non-MC source clause
                 mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
                 mcSync(0, NULL, &dummy);
             } else {                                    // Handle folder copied to non-MC
@@ -2855,9 +2855,9 @@ non_PSU_RESTORE_init:
             file.stats.AttrFile = MC_ATTR_norm_file;  // normalize MC file attribute
             if (!strncmp(in, "host", 4)) {            // Handle folder copied from host: to MC
                 ret = 4;                              // request change only of main attribute for host:
-            }                                         // ends host: source clause
-        }                                             // ends non-MC source clause
-        if (mctype_PSx == 2) {                        // if copying to a PS2 MC
+            }  // ends host: source clause
+        }  // ends non-MC source clause
+        if (mctype_PSx == 2) {  // if copying to a PS2 MC
             mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
             mcSync(0, NULL, &dummy);
         }
@@ -3557,7 +3557,7 @@ int BrowserModePopup(void)
                 case PAD_TRIANGLE:
                     return (file_show != entry_file_show) || (file_sort != entry_file_sort);
             }  // ends switch(new_pad)
-        }      // ends if(readpad())
+        }  // ends if(readpad())
 
         if (event || post_event) {  // NB: We need to update two frame buffers per event
 
@@ -3957,7 +3957,7 @@ int getFilePath(char *out, int cnfmode)
                         make_icon(tmp, tmp1);
                     DoneIcon:
                         strcpy(tmp, tmp1);  // Dummy code to make 'goto DoneIcon' legal for gcc
-                    }                       // ends NEWICON
+                    }  // ends NEWICON
                     else if ((ret == MOUNTVMC0) || (ret == MOUNTVMC1)) {
                         i = ret - MOUNTVMC0;
                         load_vmc_fs();
@@ -4228,7 +4228,7 @@ int getFilePath(char *out, int cnfmode)
                     drawChar(iconbase + 1, x - 3, y, setting->color[iconcolr]);
                 }
                 y += font_height;
-            }                             // ends for, so all browser rows were fixed above
+            }  // ends for, so all browser rows were fixed above
             if (browser_nfiles > rows) {  // if more files than available rows, use scrollbar
                 drawFrame(SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 8, Frame_start_y,
                           SCREEN_WIDTH - SCREEN_MARGIN, Frame_end_y, setting->color[COLOR_FRAME]);
@@ -4237,7 +4237,7 @@ int getFilePath(char *out, int cnfmode)
                 drawOpSprite(setting->color[COLOR_FRAME],
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 6, (y0 + Menu_start_y - 4),
                              SCREEN_WIDTH - SCREEN_MARGIN - LINE_THICKNESS * 2, (y1 + Menu_start_y - 4));
-            }                  // ends clause for scrollbar
+            }  // ends clause for scrollbar
             if (nclipFiles) {  // if Something in clipboard, emulate LED indicator
                 u64 LED_colour, RIM_colour = GS_SETREG_RGBA(0, 0, 0, 0);
                 int RIM_w = 4, LED_w = 6, indicator_w = LED_w + 2 * RIM_w;
