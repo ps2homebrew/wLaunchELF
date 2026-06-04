@@ -37,7 +37,7 @@ int readCluster(int fd, u8 *cluster, unsigned int clusternum)
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
-    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
@@ -99,7 +99,7 @@ int writeCluster(int fd, const u8 *cluster, unsigned int clusternum)
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
-    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
@@ -125,7 +125,7 @@ int writeClusterPart(int fd, const u8 *cluster, unsigned int clusternum, int clu
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
-    Page_Data = (u8 *)malloc((g_Vmc_Image[unit].header.page_size + 0xFF) & ~(unsigned int)0xFF);
+    Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
 
