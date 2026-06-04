@@ -321,7 +321,7 @@ int getHddDVRPParty(const char *path, const FILEINFO *file, char *party, char *d
     if ((p = strchr(&fullpath[10], '/')) == NULL)
         return -1;
     if (dir != NULL)
-        sprintf(dir, "dvr_pfs0:%s", p);
+        sprintf(dir, "dvr_pfs%d:%s", !strcmp(&fullpath[10], "__xdata") ? 1 : 0, p);
     *p = 0;
     if (party != NULL)
         sprintf(party, "dvr_hdd0:%s", &fullpath[10]);
@@ -398,7 +398,6 @@ void unmountAll(void)
     for (i = 0; i < MOUNT_LIMIT; i++) {
         if (mountedDVRPParty[i][0] != 0) {
             dvr_pfs_str[7] = '0' + i;
-            fileXioUmount(dvr_pfs_str);
             mountedDVRPParty[i][0] = 0;
         }
     }
@@ -925,6 +924,8 @@ int genFixPath(const char *inp_path, char *gen_path)
         }
         // Generate standard path to the block device (i.e. dvr_hdd0:/partition results in hdd0:partition)
         sprintf(party, "dvr_hdd0:%s", loc_path);
+        // If partition is __xdata, use dvr_pfs1:
+        gen_path[7] = !strcmp(loc_path, "__xdata") ? '1' : '0';
         if (ndvrpparties == 0) {
             // No partitions recognized? Load modules & populate partition list.
             loadDVRPHddModules();
