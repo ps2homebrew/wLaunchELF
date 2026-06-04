@@ -4,6 +4,8 @@ SMB ?= 0
 SIO_DEBUG ?= 0
 #set SMB to 1 to build uLe with smb support
 
+ifdef PS2SDK
+
 EE_BIN = BOOT-UNC.ELF
 EE_BIN_PKD = BOOT.ELF
 EE_OBJS = main.o pad.o config.o elf.o draw.o loader_elf.o filer.o \
@@ -42,7 +44,7 @@ endif
 
 BIN2C = $(PS2SDK)/bin/bin2c
 
-.PHONY: all run reset clean rebuild format format-check
+.PHONY: all run reset clean rebuild format format-check ps2sdk-not-setup
 
 all: githash.h $(EE_BIN_PKD)
 
@@ -53,12 +55,6 @@ run: all
 	ps2client -h 192.168.0.10 -t 1 execee host:$(EE_BIN)
 reset: clean
 	ps2client -h 192.168.0.10 reset
-
-format:
-	find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -i
-
-format-check:
-	@! find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -style=file -output-replacements-xml | grep "<replacement " >/dev/null
 
 githash.h:
 	printf '#ifndef ULE_VERDATE\n#define ULE_VERDATE "' > $@ && \
@@ -193,5 +189,20 @@ $(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.c
 	@mkdir -p $(dir $@)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
 
+endif
+
+ifndef PS2SDK
+ps2sdk-not-setup:
+	@echo "PS2SDK is not setup. Please setup PS2SDK before building this project"
+endif
+
+format:
+	find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -i
+
+format-check:
+	@! find . -type f -a \( -iname \*.h -o -iname \*.c \) | xargs clang-format -style=file -output-replacements-xml | grep "<replacement " >/dev/null
+
+ifdef PS2SDK
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal
+endif

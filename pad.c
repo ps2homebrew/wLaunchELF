@@ -34,8 +34,8 @@ int readpad_noKBnoRepeat(void)
         } else {
             // Deal with cases where pad state is not valid for padRead
             new_pad_t[port] = 0;
-        }                                   // ends 'if' testing for state valid for padRead
-    }                                       // ends for
+        }  // ends 'if' testing for state valid for padRead
+    }  // ends for
     new_pad = new_pad_t[0] | new_pad_t[1];  // This has only new button bits
     paddata = paddata_t[0] | paddata_t[1];  // This has all pressed button bits
     return (ret[0] | ret[1]);
@@ -110,7 +110,7 @@ int readpad_no_KB(void)
             new_pad_t[port] = 0;
             // old_pad_t[port]=0; //Clearing this could cause hasty repeats
         }  // ends 'if' testing for state valid for padRead
-    }      // ends for
+    }  // ends for
     new_pad = new_pad_t[0] | new_pad_t[1];
     paddata = paddata_t[0] | paddata_t[1];  // This has all pressed button bits
     return (ret[0] | ret[1]);
@@ -334,7 +334,7 @@ int setupPad(void)
                         padtype_t[port] = 2;  // flag normal PS2 controller
                         break;
                     }
-                }                     // ends for (modes)
+                }  // ends for (modes)
             } else {                  // modes == 0, so this is a digital controller
                 padtype_t[port] = 1;  // flag digital controller
             }

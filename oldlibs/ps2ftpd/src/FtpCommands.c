@@ -158,7 +158,7 @@ void FtpClient_OnCmdPasv(FtpClient *pClient)
     strcat(buf, ",");
     itoa(buf + strlen(buf), (addr >> 8) & 0xff);
     strcat(buf, ",");
-    itoa(buf + strlen(buf), (addr)&0xff);
+    itoa(buf + strlen(buf), (addr) & 0xff);
     strcat(buf, ",");
     itoa(buf + strlen(buf), port >> 8);
     strcat(buf, ",");
