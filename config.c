@@ -949,8 +949,10 @@ int loadConfig(char *mainMsg, const char *CNF)
         setting->JpgView_Trans = DEF_JPGVIEW_TRANS;
     if (setting->GUI_Theme >= THEME_COUNT)
         setting->GUI_Theme = THEME_NORMAL;
-    if (setting->GUI_Theme == THEME_DARK)
-        applyTheme(THEME_DARK);
+    //if (setting->GUI_Theme == THEME_DARK)
+        //applyTheme(THEME_DARK);
+        // si jai bien compris le pricincipe ici ça force le theme dark
+        //mais le theme est deja definit dans le loadConfig donc ça ne fait rien
     sprintf(mainMsg, "%s (%s)", LNG(Loaded_Config), path);
     return 0;
 }
