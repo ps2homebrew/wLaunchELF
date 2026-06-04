@@ -42,7 +42,7 @@ endif
 
 BIN2C = $(PS2SDK)/bin/bin2c
 
-.PHONY: all run reset clean rebuild format format-check
+.PHONY: all run reset clean rebuild format format-check test
 
 all: githash.h $(EE_BIN_PKD)
 
@@ -192,6 +192,10 @@ $(EE_OBJS_DIR)%.o: $(EE_SRC_DIR)%.c
 $(EE_OBJS_DIR)%.o: $(EE_ASM_DIR)%.c
 	@mkdir -p $(dir $@)
 	$(EE_CC) $(EE_CFLAGS) $(EE_INCS) -c $< -o $@
+
+test: tests/test_invariant_vmc_ps2.c
+	$(CC) -o tests/test_invariant_vmc_ps2 tests/test_invariant_vmc_ps2.c $$(pkg-config --cflags --libs check)
+	./tests/test_invariant_vmc_ps2
 
 include $(PS2SDK)/samples/Makefile.pref
 include $(PS2SDK)/samples/Makefile.eeglobal

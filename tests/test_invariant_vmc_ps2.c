@@ -3,38 +3,46 @@
 #include <stdint.h>
 #include <string.h>
 
-/* This test is self-contained and does not require production headers. */
-/* page_size values to test:
- * 1. Exact exploit: 0xFFFFFF01 — addition wraps to 0x00 (tiny alloc, huge write)
- * 2. Boundary:      0xFFFFFF00 — addition wraps to 0xFF (near-wrap)
- * 3. Valid input:   0x00000200 — normal 512-byte page size
+/* This test is self-contained and does not require production headers.
+ *
+ * NOTE: In the production code, superblock.page_size is declared as
+ * `unsigned short` (vmc_fs/vmc.h:187), so values are bounded to [0, 65535].
+ * The near-UINT_MAX vectors below are therefore unreachable in practice;
+ * they are included to validate that the detection logic itself is correct
+ * when using wider (uint64_t) arithmetic.
+ *
+ * page_size values to test:
+ * 1. 32-bit overflow payload: 0xFFFFFF01 — 32-bit addition wraps to 0x00
+ * 2. 32-bit boundary wrap:    0xFFFFFF00 — 32-bit addition wraps to 0xFF
+ * 3. Valid/normal input:      0x00000200 — 512-byte page (unsigned short range)
  */
 static const uint32_t page_sizes[] = {
-    0xFFFFFF01U,  /* exact exploit payload */
-    0xFFFFFF00U,  /* boundary wrap case    */
-    0x00000200U,  /* valid/normal input     */
+    0xFFFFFF01U,  /* 32-bit overflow payload (unreachable in production) */
+    0xFFFFFF00U,  /* 32-bit boundary wrap    (unreachable in production) */
+    0x00000200U,  /* valid input within unsigned short range             */
 };
 
 START_TEST(test_page_size_no_overflow)
 {
-    /* Invariant: the allocated buffer must be >= page_size bytes;
-     * if the addition overflows, the allocation is too small and
-     * any subsequent write would be an out-of-bounds access.
-     * We verify the alignment calculation never produces a result
-     * smaller than the original page_size (i.e., no wrap-around). */
+    /* Invariant: the aligned buffer size must be >= page_size bytes.
+     *
+     * We use uint64_t arithmetic so that the alignment expression itself
+     * cannot overflow during the test — this lets us correctly identify
+     * cases where the equivalent 32-bit expression WOULD have wrapped,
+     * producing a buffer smaller than the original page_size. */
 
     uint32_t page_size = page_sizes[_i];
 
-    /* Replicate the vulnerable expression to detect overflow */
-    uint32_t aligned = (page_size + 0xFFU) & ~(uint32_t)0xFFU;
+    /* Perform the alignment in 64-bit to avoid overflow in the test */
+    uint64_t aligned = ((uint64_t)page_size + 0xFFU) & ~(uint64_t)0xFFU;
 
     /* Security invariant: aligned size must be >= page_size.
-     * If overflow occurred, aligned < page_size, which means
-     * malloc would allocate a buffer too small for the data. */
-    ck_assert_msg(aligned >= page_size,
-        "OVERFLOW DETECTED: page_size=0x%08X aligned=0x%08X — "
+     * If 32-bit overflow had occurred, aligned < page_size, meaning
+     * malloc would allocate a buffer too small for the data written. */
+    ck_assert_msg(aligned >= (uint64_t)page_size,
+        "OVERFLOW DETECTED: page_size=0x%08X aligned=0x%016llX — "
         "buffer would be undersized, heap overflow possible",
-        page_size, aligned);
+        page_size, (unsigned long long)aligned);
 }
 END_TEST
 

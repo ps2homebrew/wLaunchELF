@@ -37,6 +37,10 @@ int readCluster(int fd, u8 *cluster, unsigned int clusternum)
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
+    /* page_size is declared as `unsigned short` (see vmc_fs/vmc.h), so its
+     * maximum value is 65535; 32-bit overflow of the former alignment
+     * expression `(page_size + 0xFF) & ~0xFF` is unreachable in practice.
+     * The rounding was unnecessary and has been removed for clarity. */
     Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
@@ -99,6 +103,10 @@ int writeCluster(int fd, const u8 *cluster, unsigned int clusternum)
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
+    /* page_size is declared as `unsigned short` (see vmc_fs/vmc.h), so its
+     * maximum value is 65535; 32-bit overflow of the former alignment
+     * expression `(page_size + 0xFF) & ~0xFF` is unreachable in practice.
+     * The rounding was unnecessary and has been removed for clarity. */
     Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
@@ -125,6 +133,10 @@ int writeClusterPart(int fd, const u8 *cluster, unsigned int clusternum, int clu
 
     Page_Num = clusternum * g_Vmc_Image[unit].header.pages_per_cluster;
 
+    /* page_size is declared as `unsigned short` (see vmc_fs/vmc.h), so its
+     * maximum value is 65535; 32-bit overflow of the former alignment
+     * expression `(page_size + 0xFF) & ~0xFF` is unreachable in practice.
+     * The rounding was unnecessary and has been removed for clarity. */
     Page_Data = (u8 *)malloc(g_Vmc_Image[unit].header.page_size);
 
     for (i = 0; i < g_Vmc_Image[unit].header.pages_per_cluster; i++) {
