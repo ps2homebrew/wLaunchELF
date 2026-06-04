@@ -377,6 +377,12 @@ lang(325, Unload_HDL_Game_Info, "Unload HDL Game Info")
 lang(326, HDD_Information_Read_Overflow, "HDD Information Read (truncated)")
 //---------------------------------------------------------------------------
 lang(327, Loading_Flash_Modules, "Loading Flash Modules...")
+//---------------------------------------------------------------------------
+lang(328, Color_Text, "Text")
+lang(329, Color_Folders, "Folders")
+lang(330, Color_ELFs, "ELFs")
+lang(331, Color_NotReadable, "Not Readable")
+lang(332, Color_FileReadable, "File Readable")
 
     // clang-format on
     //---------------------------------------------------------------------------
