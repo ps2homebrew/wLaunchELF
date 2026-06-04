@@ -3,9 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 
-/* Include the production header/source under test */
-#include "vmc_fs/vmc_ps2.h"
-
+/* This test is self-contained and does not require production headers. */
 /* page_size values to test:
  * 1. Exact exploit: 0xFFFFFF01 — addition wraps to 0x00 (tiny alloc, huge write)
  * 2. Boundary:      0xFFFFFF00 — addition wraps to 0xFF (near-wrap)
