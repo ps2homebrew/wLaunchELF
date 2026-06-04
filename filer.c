@@ -4306,7 +4306,7 @@ int getFilePath(char *out, int cnfmode)
                 else if (freeSpace >= 1024)
                     sprintf(tmp, "[%.1fKB %s]", (double)freeSpace / 1024, LNG(free));
                 else
-                    sprintf(tmp, "[%dB %s]", (int)freeSpace, LNG(free));
+                    sprintf(tmp, "[%uB %s]", (u32)freeSpace, LNG(free));
                 ret = strlen(tmp);
                 drawSprite(setting->color[COLOR_BACKGR],
                            SCREEN_WIDTH - SCREEN_MARGIN - (ret + 1) * FONT_WIDTH, (Menu_message_y - 1),

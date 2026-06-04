@@ -178,10 +178,10 @@ static int fsysRead(int fd, char *buf, int size)
 
     dbgprintf("fsysRead..."
               "  fd: %x\n"
-              "  bf: %x\n"
+              "  bf: %p\n"
               "  sz: %d\n"
               "  ow: %d\n\n",
-              fd, (int)buf, size, fd_info->own_fd);
+              fd, buf, size, fd_info->own_fd);
 
     remove_flag = 0;
 
@@ -362,9 +362,9 @@ static int fsysDread(int fd, void *buf)
 
     dbgprintf("fsysDread..."
               "  fd: %x\n"
-              "  bf: %x\n"
+              "  bf: %p\n"
               "  ow: %d\n\n",
-              fd, (int)buf, fd_info->own_fd);
+              fd, buf, fd_info->own_fd);
 
     remove_flag = 0;
 
