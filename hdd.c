@@ -972,7 +972,7 @@ void hddManager(void)
 
                 Treat = PartyInfo[browser_sel].Treatment;
                 if (Treat == TREAT_SYSTEM) {
-                    sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(Raw_SIZE), PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
@@ -982,7 +982,7 @@ void hddManager(void)
                     y += FONT_HEIGHT;
                     pfsFree = 0;
                 } else if (Treat == TREAT_NOACCESS) {
-                    sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(Raw_SIZE), PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
@@ -994,7 +994,7 @@ void hddManager(void)
                 } else if (Treat == TREAT_HDL_RAW) {  // starts clause for HDL without GameInfo
                     //---------- Start of clause for HDL game partitions ----------
                     // dlanor NB: Not properly implemented yet
-                    sprintf(c, "%s: %d %s", LNG(Raw_SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(Raw_SIZE), PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT * 4;
@@ -1020,7 +1020,7 @@ void hddManager(void)
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT + FONT_HEIGHT / 2;
-                    sprintf(c, "%s: %d %s", LNG(SIZE), (int)PartyInfo[browser_sel].RawSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(SIZE), PartyInfo[browser_sel].RawSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT + FONT_HEIGHT / 2;
@@ -1037,14 +1037,14 @@ void hddManager(void)
                 } else {           // ends clause for HDL, starts clause for normal partitions
                     //---------- Start of clause for PFS partitions ----------
 
-                    sprintf(c, "%s: %d %s", LNG(PFS_SIZE), (int)PartyInfo[browser_sel].TotalSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(PFS_SIZE), PartyInfo[browser_sel].TotalSize, LNG(MB));
                     x = ((((SCREEN_WIDTH / 2 - 25) - Menu_start_x) / 2) + Menu_start_x) - (strlen(c) * FONT_WIDTH) / 2;
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
-                    sprintf(c, "%s: %d %s", LNG(PFS_USED), (int)PartyInfo[browser_sel].UsedSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(PFS_USED), PartyInfo[browser_sel].UsedSize, LNG(MB));
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
                     y += FONT_HEIGHT;
-                    sprintf(c, "%s: %d %s", LNG(PFS_FREE), (int)PartyInfo[browser_sel].FreeSize, LNG(MB));
+                    sprintf(c, "%s: %llu %s", LNG(PFS_FREE), PartyInfo[browser_sel].FreeSize, LNG(MB));
                     printXY(c, x, y, setting->color[COLOR_TEXT], TRUE, ((SCREEN_WIDTH / 2 - 20) - SCREEN_MARGIN - 2 * FONT_WIDTH));
 
                     pfsFree = (PartyInfo[browser_sel].FreeSize * 100) / PartyInfo[browser_sel].TotalSize;

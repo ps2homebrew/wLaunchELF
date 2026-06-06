@@ -198,8 +198,8 @@ static void View_Render(void)
         name = strrchr(tmp, '/');
         strcpy(name, name + 1);
         msg0[0] = '\0';
-        sprintf(msg0, "%s  %s: %s  %s: %d*%d ",
-                LNG(Jpg_Viewer), LNG(Picture), name, LNG(Size), (int)PicW, (int)PicH);
+        sprintf(msg0, "%s  %s: %s  %s: %g*%g ",
+                LNG(Jpg_Viewer), LNG(Picture), name, LNG(Size), PicW, PicH);
         msg1[0] = '\0';
         sprintf(msg1, "Select: %s  ", LNG(Command_List));
         tmp[0] = '\0';
