@@ -71,6 +71,8 @@ extern u8 extflash_irx[];
 extern int size_extflash_irx;
 extern u8 xfromman_irx[];
 extern int size_xfromman_irx;
+extern u8 xfromserv_irx[];
+extern int size_xfromserv_irx;
 
 // #define DEBUG
 #ifdef DEBUG
@@ -140,6 +142,7 @@ static u8 have_ps2hdd = 0;
 static u8 have_ps2fs = 0;
 static u8 have_extflash = 0;
 static u8 have_xfromman = 0;
+static u8 have_xfromserv = 0;
 static u8 have_ps2netfs = 0;
 static u8 have_smbman = 0;
 static u8 have_vmc_fs = 0;
@@ -147,6 +150,8 @@ static u8 have_dvrdrv = 0;
 static u8 have_dvrfile = 0;
 // State of whether DEV9 was successfully loaded or not.
 static u8 ps2dev9_loaded = 0;
+// State of whether XFROMSERV was successfully loaded or not.
+static u8 xfromserv_loaded = 0;
 // State of whether the UI has been initialized.
 // Use this to determine whether code that loads a device's driver(s) can print onto the screen.
 static u8 is_early_init = 1;
@@ -769,6 +774,18 @@ static void load_pflash(void)
         SifExecModuleBuffer(xfromman_irx, size_xfromman_irx, 0, NULL, NULL);
         have_xfromman = 1;
     }
+    if (!is_early_init)  // Do not draw any text before the UI is initialized.
+        drawMsg("Loading xfromserv");
+    if (!have_xfromserv) {
+        int ret;
+        int rcode;
+
+        ret = SifExecModuleBuffer(xfromserv_irx, size_xfromserv_irx, 0, NULL, &rcode);
+        xfromserv_loaded = (ret >= 0 && rcode == 0);
+        if (xfromserv_loaded)
+            xfromInit(MC_TYPE_MC);
+        have_xfromserv = 1;
+    }
 }
 //------------------------------
 // endfunc load_pflash
@@ -1310,7 +1327,7 @@ void loadDVRPHddModules(void)
 //------------------------------
 // endfunc loadDVRPHddModules
 //---------------------------------------------------------------------------
-void loadFlashModules(void)
+int loadFlashModules(void)
 {
     if (!have_Flash_modules) {
         if (!is_early_init)  // Do not draw any text before the UI is initialized.
@@ -1319,6 +1336,7 @@ void loadFlashModules(void)
         load_pflash();
         have_Flash_modules = TRUE;
     }
+    return xfromserv_loaded;
 }
 //------------------------------
 // endfunc loadFlashModules
@@ -1822,7 +1840,8 @@ Recurse_for_ESR:  // Recurse here for PS2Disc command with ESR disc
         *p = 0;
         goto ELFchecked;
     } else if (!strncmp(path, "xfrom", 5)) {
-        loadFlashModules();
+        if (!loadFlashModules())
+            goto ELFnotFound;
         if ((t = checkELFheader(path)) <= 0)
             goto ELFnotFound;
         strcpy(fullpath, path);
@@ -2145,6 +2164,7 @@ static void Reset()
     have_dvrfile = 0;
     have_extflash = 0;
     have_xfromman = 0;
+    have_xfromserv = 0;
     have_NetModules = 0;
     have_HDD_modules = 0;
     have_DVRP_HDD_modules = 0;

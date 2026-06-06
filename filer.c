@@ -685,6 +685,42 @@ int readMC(const char *path, FILEINFO *info, int max)
 //------------------------------
 // endfunc readMC
 //--------------------------------------------------------------
+int readXFROM(const char *path, FILEINFO *info, int max)
+{
+    static sceMcTblGetDir mcDir[MAX_ENTRY] __attribute__((aligned(64)));
+    char dir[MAX_PATH];
+    int i, j, ret;
+
+    if (!loadFlashModules())
+        return 0;
+
+    xfromSync(0, NULL, NULL);
+
+    xfromGetInfo(0, 0, &mctype_PSx, NULL, NULL);
+    xfromSync(0, NULL, &ret);
+    if (mctype_PSx == 2)  // PS2 MC ?
+        time_valid = 1;
+    size_valid = 1;
+
+    strcpy(dir, &path[7]);
+    strcat(dir, "*");
+    xfromGetDir(0, 0, dir, 0, MAX_ENTRY - 2, mcDir);
+    xfromSync(0, NULL, &ret);
+
+    for (i = j = 0; i < ret; i++) {
+        if (mcDir[i].AttrFile & sceMcFileAttrSubdir &&
+            (!strcmp((char *)mcDir[i].EntryName, ".") || !strcmp((char *)mcDir[i].EntryName, "..")))
+            continue;  // Skip pseudopaths "." and ".."
+        strcpy(info[j].name, (char *)mcDir[i].EntryName);
+        info[j].stats = mcDir[i];
+        j++;
+    }
+
+    return j;
+}
+//------------------------------
+// endfunc readXFROM
+//--------------------------------------------------------------
 int readCD(const char *path, FILEINFO *info, int max)
 {
     iox_dirent_t record;
@@ -1235,52 +1271,6 @@ int readHDDDVRP(const char *path, FILEINFO *info, int max)
 //------------------------------
 // endfunc readHDDDVRP
 //--------------------------------------------------------------
-int readXFROM(const char *path, FILEINFO *info, int max)
-{
-    iox_dirent_t dirbuf;
-    char dir[MAX_PATH];
-    int i = 0, fd;
-
-    loadFlashModules();
-
-    strcpy(dir, path);
-    if ((fd = fileXioDopen(path)) < 0)
-        return 0;
-
-    while (fileXioDread(fd, &dirbuf) > 0) {
-        if (dirbuf.stat.mode & FIO_S_IFDIR &&
-            (!strcmp(dirbuf.name, ".") || !strcmp(dirbuf.name, "..")))
-            continue;  // Skip pseudopaths "." and ".."
-
-        strcpy(info[i].name, dirbuf.name);
-        clear_mcTable(&info[i].stats);
-        if (dirbuf.stat.mode & FIO_S_IFDIR) {
-            info[i].stats.AttrFile = MC_ATTR_norm_folder;
-        } else if (dirbuf.stat.mode & FIO_S_IFREG) {
-            info[i].stats.AttrFile = MC_ATTR_norm_file;
-            info[i].stats.FileSizeByte = dirbuf.stat.size;
-            info[i].stats.Reserve2 = dirbuf.stat.hisize;
-        } else
-            continue;  // Skip entry which is neither a file nor a folder
-        memcpy((char *)info[i].stats.EntryName, info[i].name, 32);
-        info[i].stats.EntryName[sizeof(info[i].stats.EntryName) - 1] = 0;
-        memcpy((void *)&info[i].stats._Create, dirbuf.stat.ctime, 8);
-        memcpy((void *)&info[i].stats._Modify, dirbuf.stat.mtime, 8);
-        i++;
-        if (i == max)
-            break;
-    }
-
-    fileXioDclose(fd);
-
-    size_valid = 1;
-    time_valid = 1;
-
-    return i;
-}
-//------------------------------
-// endfunc readXFROM
-//--------------------------------------------------------------
 void scan_USB_mass(void)
 {
     int i;
@@ -1504,6 +1494,8 @@ int getDir(const char *path, FILEINFO *info)
 
     if (!strncmp(path, "mc", 2))
         n = readMC(path, info, max);
+    else if (!strncmp(path, "xfrom", 5))
+        n = readXFROM(path, info, max);
     else if (!strncmp(path, "hdd", 3))
         n = readHDD(path, info, max);
     else if (!strncmp(path, "dvr_hdd", 7))
@@ -1516,8 +1508,6 @@ int getDir(const char *path, FILEINFO *info)
         n = readHOST(path, info, max);
     else if (!strncmp(path, "vmc", 3))
         n = readVMC(path, info, max);
-    else if (!strncmp(path, "xfrom", 5))
-        n = readXFROM(path, info, max);
     else
         return 0;
 
@@ -2051,7 +2041,10 @@ int delete (const char *path, const FILEINFO *file)
             mcSync(0, NULL, NULL);
             mcDelete(dir[2] - '0', 0, &dir[4]);
             mcSync(0, NULL, &ret);
-
+        } else if (!strncmp(dir, "xfrom", 5)) {
+            xfromSync(0, NULL, NULL);
+            xfromDelete(0, 0, &dir[7]);
+            xfromSync(0, NULL, &ret);
         } else if (!strncmp(path, "hdd", 3) || !strncmp(path, "dvr_hdd", 7)) {
             ret = rmdir(hdddir);
 
@@ -2068,6 +2061,10 @@ int delete (const char *path, const FILEINFO *file)
             mcSync(0, NULL, NULL);
             mcDelete(dir[2] - '0', 0, &dir[4]);
             mcSync(0, NULL, &ret);
+        } else if (!strncmp(path, "xfrom", 5)) {
+            xfromSync(0, NULL, NULL);
+            xfromDelete(0, 0, &dir[7]);
+            xfromSync(0, NULL, &ret);
         } else if (!strncmp(path, "hdd", 3) || !strncmp(path, "dvr_hdd", 7)) {
             ret = unlink(hdddir);
         } else if (!strncmp(path, "vmc", 3)) {
@@ -2134,6 +2131,31 @@ int Rename(const char *path, const FILEINFO *file, const char *name)
                 memcpy((void *)file->stats.EntryName, name, 32);
                 mcSetFileInfo(path[2] - '0', 0, oldPath + 4, &file->stats, 0x0010);  // Fix file stats
                 mcSync(0, NULL, &test);
+            }
+        }
+    } else if (!strncmp(path, "xfrom", 5)) {
+        sprintf(oldPath, "%s%s", path, file->name);
+        sprintf(newPath, "%s%s", path, name);
+        if ((test = fileXioDopen(newPath)) >= 0) {  // Does folder of same name exist ?
+            fileXioDclose(test);
+            ret = -EEXIST;
+        } else if ((test = open(newPath, O_RDONLY)) >= 0) {  // Does file of same name exist ?
+            close(test);
+            ret = -EEXIST;
+        } else {  // No file/folder of the same name exists
+            xfromGetInfo(0, 0, &mctype_PSx, NULL, NULL);
+            xfromSync(0, NULL, &test);
+            if (mctype_PSx == 2) {  // PS2 MC ?
+                memcpy((void *)file->stats.EntryName, name, 32);
+            }
+            xfromSetFileInfo(0, 0, oldPath + 7, &file->stats, 0x0010);  // Fix file stats
+            xfromSync(0, NULL, &test);
+            if (ret == -4)
+                ret = -EEXIST;
+            else {  // PS1 MC !
+                memcpy((void *)file->stats.EntryName, name, 32);
+                xfromSetFileInfo(0, 0, oldPath + 7, &file->stats, 0x0010);  // Fix file stats
+                xfromSync(0, NULL, &test);
             }
         }
     } else if (!strncmp(path, "host", 4)) {
@@ -2208,6 +2230,14 @@ int newdir(const char *path, const char *name)
         mcSync(0, NULL, NULL);
         mcMkDir(path[2] - '0', 0, dir);
         mcSync(0, NULL, &ret);
+        if (ret == -4)
+            ret = -EEXIST;  // return fileXio error code for pre-existing folder
+    } else if (!strncmp(path, "xfrom", 5)) {
+        sprintf(dir, "%s%s", path + 7, name);
+        genLimObjName(dir, 0);
+        xfromSync(0, NULL, NULL);
+        xfromMkDir(0, 0, dir);
+        xfromSync(0, NULL, &ret);
         if (ret == -4)
             ret = -EEXIST;  // return fileXio error code for pre-existing folder
     } else if (!strncmp(path, "host", 4)) {
@@ -2504,10 +2534,17 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
                 // correct timestamps and attributes (requires MC-specific functions)
                 strcpy(tmp, out);
                 strncat(tmp, (const char *)files[0].stats.EntryName, 32);
-                mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
-                mcSync(0, NULL, &dummy);
-                mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &files[0].stats, MC_SFI);  // Fix file stats
-                mcSync(0, NULL, &dummy);
+                if (!strncmp(tmp, "mc", 2)) {
+                    mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
+                    mcSync(0, NULL, &dummy);
+                    mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &files[0].stats, MC_SFI);  // Fix file stats
+                    mcSync(0, NULL, &dummy);
+                } else if (!strncmp(tmp, "xfrom", 5)) {
+                    xfromGetInfo(0, 0, &dummy, &dummy, &dummy);  // Wakeup call
+                    xfromSync(0, NULL, &dummy);
+                    xfromSetFileInfo(0, 0, &tmp[7], &files[0].stats, MC_SFI);  // Fix file stats
+                    xfromSync(0, NULL, &dummy);
+                }
             }  // ends main for loop of valid PM_PSU_RESTORE mode
             genClose(PM_file[recurses + 1]);  // Close the PSU file
                                               // Finally fix the stats of the containing folder
@@ -2553,10 +2590,18 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
                 if (size == 64) {
                     strcpy(tmp, out);
                     strncat(tmp, (const char *)stats.EntryName, 32);
-                    mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
-                    mcSync(0, NULL, &dummy);
-                    mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &stats, MC_SFI);  // Fix file stats
-                    mcSync(0, NULL, &dummy);
+                    if (!strncmp(out, "mc", 2)) {
+                        mcGetInfo(tmp[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
+                        mcSync(0, NULL, &dummy);
+                        mcSetFileInfo(tmp[2] - '0', 0, &tmp[4], &stats, MC_SFI);  // Fix file stats
+                        mcSync(0, NULL, &dummy);
+                    } else if (!strncmp(out, "xfrom", 5)) {
+                        xfromGetInfo(0, 0, &dummy, &dummy, &dummy);  // Wakeup call
+                        xfromSync(0, NULL, &dummy);
+                        xfromSetFileInfo(0, 0, &tmp[7], &stats, MC_SFI);  // Fix file stats
+                        xfromSync(0, NULL, &dummy);
+                    }
+
                 } else {
                     genClose(in_fd);
                 }
@@ -2568,15 +2613,27 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
             if (!strncmp(out, "mc", 2)) {                            // Handle folder copied to MC
                 mcGetInfo(out[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
                 mcSync(0, NULL, &dummy);
-                ret = MC_SFI;                                   // default request for changing entire mcTable
-                if (strncmp(in, "mc", 2)) {                     // Handle file copied from non-MC to MC
-                    file.stats.AttrFile = MC_ATTR_norm_folder;  // normalize MC folder attribute
-                    if (!strncmp(in, "host", 4)) {              // Handle folder copied from host: to MC
-                        ret = 4;                                // request change only of main attribute for host:
+                ret = MC_SFI;                                           // default request for changing entire mcTable
+                if (strncmp(in, "mc", 2) && strncmp(in, "xfrom", 5)) {  // Handle file copied from non-MC to MC
+                    file.stats.AttrFile = MC_ATTR_norm_folder;          // normalize MC folder attribute
+                    if (!strncmp(in, "host", 4)) {                      // Handle folder copied from host: to MC
+                        ret = 4;                                        // request change only of main attribute for host:
                     }  // ends host: source clause
                 }  // ends non-MC source clause
                 mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
                 mcSync(0, NULL, &dummy);
+            } else if (!strncmp(out, "xfrom", 5)) {          // Handle folder copied to MC
+                xfromGetInfo(0, 0, &dummy, &dummy, &dummy);  // Wakeup call
+                xfromSync(0, NULL, &dummy);
+                ret = MC_SFI;                                           // default request for changing entire mcTable
+                if (strncmp(in, "mc", 2) && strncmp(in, "xfrom", 5)) {  // Handle file copied from non-MC to MC
+                    file.stats.AttrFile = MC_ATTR_norm_folder;          // normalize MC folder attribute
+                    if (!strncmp(in, "host", 4)) {                      // Handle folder copied from host: to MC
+                        ret = 4;                                        // request change only of main attribute for host:
+                    }  // ends host: source clause
+                }  // ends non-MC source clause
+                xfromSetFileInfo(0, 0, &out[7], &file.stats, ret);
+                xfromSync(0, NULL, &dummy);
             } else {                                    // Handle folder copied to non-MC
                 if (!strncmp(out, "host", 4)) {         // for files copied to host: we skip Chstat
                 } else if (!strncmp(out, "mass", 4)) {  // for files copied to mass: we skip Chstat
@@ -2595,10 +2652,17 @@ restart_copy:  // restart point for PM_PSU_RESTORE to reprocess modified argumen
         if ((PM_flag[recurses + 1] == PM_MC_RESTORE) || (PM_flag[recurses + 1] == PM_PSU_RESTORE)) {
             // Finally fix the stats of the containing folder
             // It has to be done last, as timestamps would change when fixing files
-            mcGetInfo(out[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
-            mcSync(0, NULL, &dummy);
-            mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, MC_SFI);  // Fix folder stats
-            mcSync(0, NULL, &dummy);
+            if (!strncmp(out, "mc", 2)) {
+                mcGetInfo(out[2] - '0', 0, &dummy, &dummy, &dummy);  // Wakeup call
+                mcSync(0, NULL, &dummy);
+                mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, MC_SFI);  // Fix folder stats
+                mcSync(0, NULL, &dummy);
+            } else if (!strncmp(out, "xfrom", 5)) {
+                xfromGetInfo(0, 0, &dummy, &dummy, &dummy);  // Wakeup call
+                xfromSync(0, NULL, &dummy);
+                xfromSetFileInfo(0, 0, &out[7], &file.stats, MC_SFI);  // Fix folder stats
+                xfromSync(0, NULL, &dummy);
+            }
         }
         // the return code below is used if there were no errors copying a folder
         return 0;
@@ -2850,16 +2914,30 @@ non_PSU_RESTORE_init:
     if (!strncmp(out, "mc", 2)) {                                 // Handle file copied to MC
         mcGetInfo(out[2] - '0', 0, &mctype_PSx, &dummy, &dummy);  // Wakeup call & MC type check
         mcSync(0, NULL, &dummy);
-        ret = MC_SFI;                                 // default request for changing entire mcTable
-        if (strncmp(in, "mc", 2)) {                   // Handle file copied from non-MC to MC
-            file.stats.AttrFile = MC_ATTR_norm_file;  // normalize MC file attribute
-            if (!strncmp(in, "host", 4)) {            // Handle folder copied from host: to MC
-                ret = 4;                              // request change only of main attribute for host:
+        ret = MC_SFI;                                           // default request for changing entire mcTable
+        if (strncmp(in, "mc", 2) && strncmp(in, "xfrom", 5)) {  // Handle file copied from non-MC to MC
+            file.stats.AttrFile = MC_ATTR_norm_file;            // normalize MC file attribute
+            if (!strncmp(in, "host", 4)) {                      // Handle folder copied from host: to MC
+                ret = 4;                                        // request change only of main attribute for host:
             }  // ends host: source clause
         }  // ends non-MC source clause
         if (mctype_PSx == 2) {  // if copying to a PS2 MC
             mcSetFileInfo(out[2] - '0', 0, &out[4], &file.stats, ret);
             mcSync(0, NULL, &dummy);
+        }
+    } else if (!strncmp(out, "xfrom", 5)) {               // Handle file copied to MC
+        xfromGetInfo(0, 0, &mctype_PSx, &dummy, &dummy);  // Wakeup call & MC type check
+        xfromSync(0, NULL, &dummy);
+        ret = MC_SFI;                                           // default request for changing entire mcTable
+        if (strncmp(in, "mc", 2) && strncmp(in, "xfrom", 5)) {  // Handle file copied from non-MC to MC
+            file.stats.AttrFile = MC_ATTR_norm_file;            // normalize MC file attribute
+            if (!strncmp(in, "host", 4)) {                      // Handle folder copied from host: to MC
+                ret = 4;                                        // request change only of main attribute for host:
+            }  // ends host: source clause
+        }  // ends non-MC source clause
+        if (mctype_PSx == 2) {  // if copying to a PS2 MC
+            xfromSetFileInfo(0, 0, &out[7], &file.stats, ret);
+            xfromSync(0, NULL, &dummy);
         }
     } else {                                    // Handle file copied to non-MC
         if (!strncmp(out, "host", 4)) {         // for files copied to host: we skip Chstat
@@ -4052,6 +4130,11 @@ int getFilePath(char *out, int cnfmode)
                     mcSync(0, NULL, &ret);
                     freeSpace = mcfreeSpace * ((mctype_PSx == 1) ? 8192 : 1024);
                     vfreeSpace = TRUE;
+                } else if (!strncmp(path, "xfrom", 5)) {
+                    xfromGetInfo(0, 0, &mctype_PSx, &mcfreeSpace, NULL);
+                    xfromSync(0, NULL, &ret);
+                    freeSpace = mcfreeSpace * ((mctype_PSx == 1) ? 8192 : 1024);
+                    vfreeSpace = TRUE;
                 } else if (!strncmp(path, "vmc", 3)) {
                     strncpy(tmp, path, 5);
                     tmp[5] = '\0';
@@ -4415,6 +4498,11 @@ void submenu_func_GetSize(char *mess, const char *path, FILEINFO *files)
         if (!strncmp(path, "mc", 2)) {
             mcGetInfo(path[2] - '0', 0, &mctype_PSx, NULL, NULL);
             mcSync(0, NULL, &ret);
+            sprintf(mess + text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
+            text_pos += text_inc;
+        } else if (!strncmp(path, "xfrom", 5)) {
+            xfromGetInfo(0, 0, &mctype_PSx, NULL, NULL);
+            xfromSync(0, NULL, &ret);
             sprintf(mess + text_pos, " %s=%d%n", LNG(mctype), mctype_PSx, &text_inc);
             text_pos += text_inc;
         }
