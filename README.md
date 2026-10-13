@@ -8,3 +8,6 @@ wLaunchELF, formerly known as uLaunchELF, also known as wLE or uLE (abbreviated)
 * text editor
 * hard drive manager
 * FTP support
+
+>[!TIP]
+[Launchstation](https://nathanneurotic.github.io/Launchstation/) is a fork of this project which heavily uses LLM tools to accelerate its development.  
